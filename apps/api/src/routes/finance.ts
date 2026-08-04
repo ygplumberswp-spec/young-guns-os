@@ -14,6 +14,10 @@ import {
   FinanceDocumentPdfError,
   renderFinanceDocumentPreviewPdf,
 } from '../services/finance-document-pdf.service.js';
+import {
+  FinanceAttachmentError,
+  FinanceAttachmentService,
+} from '../services/finance-attachment.service.js';
 import { canViewFinanceProfit } from '@titan/shared';
 
 const quoteStatusSchema = z.enum([
@@ -83,6 +87,14 @@ const financeDocumentPreviewSchema = z
     xeroInvoiceNumber: z.string().trim().max(60).nullable().optional(),
     jobReference: z.string().trim().max(200).nullable().optional(),
     status: z.string().trim().max(40).nullable().optional(),
+    attachmentScope: z
+      .object({
+        quoteId: z.string().uuid().nullable().optional(),
+        invoiceId: z.string().uuid().nullable().optional(),
+        draftClientActionId: z.string().trim().min(1).max(200).nullable().optional(),
+      })
+      .nullable()
+      .optional(),
   })
   .strict();
 
@@ -146,6 +158,7 @@ const createPaymentSchema = z.object({
 
 type FinanceRouterDeps = {
   financeService: FinanceService;
+  financeAttachmentService: FinanceAttachmentService;
   crmService: CrmService;
   teamService: TeamService;
   db: DatabaseClient;
@@ -159,6 +172,7 @@ function getAuth(req: import('express').Request) {
 
 export function createFinanceRouter({
   financeService,
+  financeAttachmentService,
   crmService,
   teamService,
   db,
@@ -486,6 +500,20 @@ export function createFinanceRouter({
         : parsed.data.addresses,
     });
 
+    const scope = parsed.data.attachmentScope;
+    if (scope?.quoteId || scope?.invoiceId || scope?.draftClientActionId) {
+      const auth = getAuth(req);
+      const attachmentScope = scope.quoteId
+        ? { quoteId: scope.quoteId }
+        : scope.invoiceId
+          ? { invoiceId: scope.invoiceId }
+          : { draftClientActionId: scope.draftClientActionId! };
+      preview.attachments = await financeAttachmentService.buildPreviewAttachments(
+        auth.companyId,
+        attachmentScope,
+      );
+    }
+
     try {
       const pdf = await renderFinanceDocumentPreviewPdf(preview);
       res.setHeader('Content-Type', 'application/pdf');
@@ -500,6 +528,353 @@ export function createFinanceRouter({
         return;
       }
       throw error;
+    }
+  });
+
+  const uploadAttachmentSchema = z.object({
+    fileName: z.string().trim().min(1).max(200),
+    mimeType: z.string().trim().min(3).max(120),
+    dataBase64: z.string().trim().min(1),
+    clientActionId: z.string().trim().min(1).max(200).optional().nullable(),
+    caption: z.string().trim().max(500).optional().nullable(),
+    includeInPdf: z.boolean().optional(),
+  });
+
+  const linkEvidenceSchema = z.object({
+    documentationId: z.string().uuid(),
+    caption: z.string().trim().max(500).optional().nullable(),
+    includeInPdf: z.boolean().optional(),
+    clientActionId: z.string().trim().min(1).max(200).optional().nullable(),
+  });
+
+  const updateAttachmentSchema = z.object({
+    caption: z.string().trim().max(500).optional().nullable(),
+    includeInPdf: z.boolean().optional(),
+    sortOrder: z.number().int().min(0).optional(),
+  });
+
+  const reorderAttachmentsSchema = z.object({
+    attachmentIds: z.array(z.string().uuid()).min(1),
+  });
+
+  router.get('/quotes/:id/attachments', requireAnyPermission('finance:read', 'finance:write'), async (req, res) => {
+    try {
+      const auth = getAuth(req);
+      const attachments = await financeAttachmentService.listAttachments(auth.companyId, {
+        quoteId: routeParam(req.params.id),
+      });
+      res.json({ data: { attachments } });
+    } catch (error) {
+      handleFinanceAttachmentError(res, error);
+    }
+  });
+
+  router.get('/invoices/:id/attachments', requireAnyPermission('finance:read', 'finance:write'), async (req, res) => {
+    try {
+      const auth = getAuth(req);
+      const attachments = await financeAttachmentService.listAttachments(auth.companyId, {
+        invoiceId: routeParam(req.params.id),
+      });
+      res.json({ data: { attachments } });
+    } catch (error) {
+      handleFinanceAttachmentError(res, error);
+    }
+  });
+
+  router.get('/attachments/staging/:clientActionId', requireAnyPermission('finance:read', 'finance:write'), async (req, res) => {
+    try {
+      const auth = getAuth(req);
+      const attachments = await financeAttachmentService.listAttachments(auth.companyId, {
+        draftClientActionId: routeParam(req.params.clientActionId),
+      });
+      res.json({ data: { attachments } });
+    } catch (error) {
+      handleFinanceAttachmentError(res, error);
+    }
+  });
+
+  router.post('/quotes/:id/attachments', requireAnyPermission('finance:write'), async (req, res) => {
+    const parsed = uploadAttachmentSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid attachment upload' } });
+      return;
+    }
+    try {
+      const auth = getAuth(req);
+      const attachment = await financeAttachmentService.uploadAttachment(
+        { companyId: auth.companyId, userId: auth.userId },
+        { quoteId: routeParam(req.params.id) },
+        parsed.data,
+      );
+      res.status(201).json({ data: { attachment } });
+    } catch (error) {
+      handleFinanceAttachmentError(res, error);
+    }
+  });
+
+  router.post('/invoices/:id/attachments', requireAnyPermission('finance:write'), async (req, res) => {
+    const parsed = uploadAttachmentSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid attachment upload' } });
+      return;
+    }
+    try {
+      const auth = getAuth(req);
+      const attachment = await financeAttachmentService.uploadAttachment(
+        { companyId: auth.companyId, userId: auth.userId },
+        { invoiceId: routeParam(req.params.id) },
+        parsed.data,
+      );
+      res.status(201).json({ data: { attachment } });
+    } catch (error) {
+      handleFinanceAttachmentError(res, error);
+    }
+  });
+
+  router.post('/attachments/staging/:clientActionId', requireAnyPermission('finance:write'), async (req, res) => {
+    const parsed = uploadAttachmentSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid attachment upload' } });
+      return;
+    }
+    try {
+      const auth = getAuth(req);
+      const attachment = await financeAttachmentService.uploadAttachment(
+        { companyId: auth.companyId, userId: auth.userId },
+        { draftClientActionId: routeParam(req.params.clientActionId) },
+        parsed.data,
+      );
+      res.status(201).json({ data: { attachment } });
+    } catch (error) {
+      handleFinanceAttachmentError(res, error);
+    }
+  });
+
+  router.post('/quotes/:id/attachments/link-evidence', requireAnyPermission('finance:write'), async (req, res) => {
+    const parsed = linkEvidenceSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid link payload' } });
+      return;
+    }
+    try {
+      const auth = getAuth(req);
+      const attachment = await financeAttachmentService.linkJobEvidence(
+        { companyId: auth.companyId, userId: auth.userId },
+        { quoteId: routeParam(req.params.id) },
+        parsed.data,
+      );
+      res.status(201).json({ data: { attachment } });
+    } catch (error) {
+      handleFinanceAttachmentError(res, error);
+    }
+  });
+
+  router.post('/invoices/:id/attachments/link-evidence', requireAnyPermission('finance:write'), async (req, res) => {
+    const parsed = linkEvidenceSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid link payload' } });
+      return;
+    }
+    try {
+      const auth = getAuth(req);
+      const attachment = await financeAttachmentService.linkJobEvidence(
+        { companyId: auth.companyId, userId: auth.userId },
+        { invoiceId: routeParam(req.params.id) },
+        parsed.data,
+      );
+      res.status(201).json({ data: { attachment } });
+    } catch (error) {
+      handleFinanceAttachmentError(res, error);
+    }
+  });
+
+  router.get('/jobs/:jobId/selectable-evidence', requireAnyPermission('finance:read', 'finance:write'), async (req, res) => {
+    try {
+      const auth = getAuth(req);
+      const quoteId = stringQuery(req.query.quoteId);
+      const invoiceId = stringQuery(req.query.invoiceId);
+      const draftClientActionId = stringQuery(req.query.draftClientActionId);
+      const scope = quoteId
+        ? { quoteId }
+        : invoiceId
+          ? { invoiceId }
+          : draftClientActionId
+            ? { draftClientActionId }
+            : null;
+      if (!scope) {
+        res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Document scope query is required' } });
+        return;
+      }
+      const items = await financeAttachmentService.listSelectableJobEvidence(
+        auth.companyId,
+        routeParam(req.params.jobId),
+        scope,
+      );
+      res.json({ data: { items } });
+    } catch (error) {
+      handleFinanceAttachmentError(res, error);
+    }
+  });
+
+  router.patch('/attachments/:id', requireAnyPermission('finance:write'), async (req, res) => {
+    const parsed = updateAttachmentSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid attachment update' } });
+      return;
+    }
+    try {
+      const auth = getAuth(req);
+      const attachment = await financeAttachmentService.updateAttachment(
+        { companyId: auth.companyId, userId: auth.userId },
+        routeParam(req.params.id),
+        parsed.data,
+      );
+      res.json({ data: { attachment } });
+    } catch (error) {
+      handleFinanceAttachmentError(res, error);
+    }
+  });
+
+  router.post('/attachments/:id/replace', requireAnyPermission('finance:write'), async (req, res) => {
+    const parsed = uploadAttachmentSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid replacement upload' } });
+      return;
+    }
+    try {
+      const auth = getAuth(req);
+      const attachment = await financeAttachmentService.replaceAttachment(
+        { companyId: auth.companyId, userId: auth.userId },
+        routeParam(req.params.id),
+        parsed.data,
+      );
+      res.json({ data: { attachment } });
+    } catch (error) {
+      handleFinanceAttachmentError(res, error);
+    }
+  });
+
+  router.post('/quotes/:id/attachments/reorder', requireAnyPermission('finance:write'), async (req, res) => {
+    const parsed = reorderAttachmentsSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid reorder payload' } });
+      return;
+    }
+    try {
+      const auth = getAuth(req);
+      const attachments = await financeAttachmentService.reorderAttachments(
+        { companyId: auth.companyId, userId: auth.userId },
+        { quoteId: routeParam(req.params.id) },
+        parsed.data,
+      );
+      res.json({ data: { attachments } });
+    } catch (error) {
+      handleFinanceAttachmentError(res, error);
+    }
+  });
+
+  router.post('/invoices/:id/attachments/reorder', requireAnyPermission('finance:write'), async (req, res) => {
+    const parsed = reorderAttachmentsSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid reorder payload' } });
+      return;
+    }
+    try {
+      const auth = getAuth(req);
+      const attachments = await financeAttachmentService.reorderAttachments(
+        { companyId: auth.companyId, userId: auth.userId },
+        { invoiceId: routeParam(req.params.id) },
+        parsed.data,
+      );
+      res.json({ data: { attachments } });
+    } catch (error) {
+      handleFinanceAttachmentError(res, error);
+    }
+  });
+
+  router.delete('/attachments/:id', requireAnyPermission('finance:write'), async (req, res) => {
+    try {
+      const auth = getAuth(req);
+      await financeAttachmentService.deleteAttachment(
+        { companyId: auth.companyId, userId: auth.userId },
+        routeParam(req.params.id),
+      );
+      res.status(204).send();
+    } catch (error) {
+      handleFinanceAttachmentError(res, error);
+    }
+  });
+
+  router.get('/attachments/:id/content', requireAnyPermission('finance:read', 'finance:write'), async (req, res) => {
+    try {
+      const auth = getAuth(req);
+      const content = await financeAttachmentService.readAttachmentContent(
+        auth.companyId,
+        routeParam(req.params.id),
+      );
+      res.setHeader('Content-Type', content.mimeType);
+      res.setHeader('Content-Disposition', `inline; filename="${content.fileName}"`);
+      res.send(content.buffer);
+    } catch (error) {
+      handleFinanceAttachmentError(res, error);
+    }
+  });
+
+  router.post('/attachments/staging/:clientActionId/link-evidence', requireAnyPermission('finance:write'), async (req, res) => {
+    const parsed = linkEvidenceSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid link payload' } });
+      return;
+    }
+    try {
+      const auth = getAuth(req);
+      const attachment = await financeAttachmentService.linkJobEvidence(
+        { companyId: auth.companyId, userId: auth.userId },
+        { draftClientActionId: routeParam(req.params.clientActionId) },
+        parsed.data,
+      );
+      res.status(201).json({ data: { attachment } });
+    } catch (error) {
+      handleFinanceAttachmentError(res, error);
+    }
+  });
+
+  router.post('/attachments/staging/:clientActionId/reorder', requireAnyPermission('finance:write'), async (req, res) => {
+    const parsed = reorderAttachmentsSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid reorder payload' } });
+      return;
+    }
+    try {
+      const auth = getAuth(req);
+      const attachments = await financeAttachmentService.reorderAttachments(
+        { companyId: auth.companyId, userId: auth.userId },
+        { draftClientActionId: routeParam(req.params.clientActionId) },
+        parsed.data,
+      );
+      res.json({ data: { attachments } });
+    } catch (error) {
+      handleFinanceAttachmentError(res, error);
+    }
+  });
+
+  router.post('/attachments/staging/:clientActionId/link-document', requireAnyPermission('finance:write'), async (req, res) => {
+    const quoteId = typeof req.body?.quoteId === 'string' ? req.body.quoteId : undefined;
+    const invoiceId = typeof req.body?.invoiceId === 'string' ? req.body.invoiceId : undefined;
+    if (!quoteId && !invoiceId) {
+      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'quoteId or invoiceId is required' } });
+      return;
+    }
+    try {
+      const auth = getAuth(req);
+      const linked = await financeAttachmentService.linkStagingAttachments(
+        auth.companyId,
+        routeParam(req.params.clientActionId),
+        { quoteId, invoiceId },
+      );
+      res.json({ data: { linked } });
+    } catch (error) {
+      handleFinanceAttachmentError(res, error);
     }
   });
 
@@ -537,4 +912,20 @@ function handleFinanceError(res: import('express').Response, error: unknown) {
   }
 
   throw error;
+}
+
+function handleFinanceAttachmentError(res: import('express').Response, error: unknown) {
+  if (error instanceof FinanceAttachmentError) {
+    const status =
+      error.code === 'NOT_FOUND'
+        ? 404
+        : error.code === 'FORBIDDEN'
+          ? 403
+          : error.code === 'FILE_TOO_LARGE' || error.code === 'INVALID_FILE_TYPE'
+            ? 400
+            : 400;
+    res.status(status).json({ error: { code: error.code, message: error.message } });
+    return;
+  }
+  handleFinanceError(res, error);
 }

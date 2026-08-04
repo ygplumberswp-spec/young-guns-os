@@ -60,6 +60,12 @@ const PRINT_CSS = `
   .titan-doc__totals-row { display: flex; justify-content: space-between; gap: 12px; }
   .titan-doc__totals-row--grand { font-size: 13pt; font-weight: 700; color: #fff; border-top: 1px solid #233043; padding-top: 8px; margin-top: 4px; }
   .titan-doc__footer { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; color: #a4b3c6; font-size: 9.5pt; }
+  .titan-doc__photo-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .titan-doc__photo { margin: 0; break-inside: avoid; }
+  .titan-doc__photo img { width: 100%; height: auto; border-radius: 6px; border: 1px solid #233043; display: block; }
+  .titan-doc__photo figcaption { margin-top: 4px; color: #a4b3c6; font-size: 9pt; }
+  .titan-doc__attachment-list { margin: 0; padding-left: 18px; }
+  .titan-doc__attachment-list li { margin: 4px 0; }
 `;
 
 export function buildFinanceDocumentPreviewHtml(model: FinanceDocumentPreviewModel): string {
@@ -134,6 +140,42 @@ export function buildFinanceDocumentPreviewHtml(model: FinanceDocumentPreviewMod
         </section>
       `);
     }
+  }
+
+  const pdfImages = (model.attachments ?? []).filter((item) => item.mimeType.startsWith('image/'));
+  const pdfFiles = (model.attachments ?? []).filter((item) => item.mimeType === 'application/pdf');
+
+  if (pdfImages.length > 0) {
+    const figures = pdfImages
+      .map(
+        (item) => `
+      <figure class="titan-doc__photo">
+        <img src="${item.dataUrl}" alt="${escapeHtml(item.fileName)}" />
+        ${item.caption?.trim() ? `<figcaption>${escapeHtml(item.caption.trim())}</figcaption>` : ''}
+      </figure>`,
+      )
+      .join('');
+    panels.push(`
+      <section class="titan-doc__panel">
+        <h2 class="titan-doc__section-title">${escapeHtml(documentSectionLabel('image_gallery'))}</h2>
+        <div class="titan-doc__photo-grid">${figures}</div>
+      </section>
+    `);
+  }
+
+  if (pdfFiles.length > 0) {
+    const items = pdfFiles
+      .map((item) => {
+        const label = item.caption?.trim() || item.fileName;
+        return `<li>${escapeHtml(label)}</li>`;
+      })
+      .join('');
+    panels.push(`
+      <section class="titan-doc__panel">
+        <h2 class="titan-doc__section-title">Attachments</h2>
+        <ul class="titan-doc__attachment-list">${items}</ul>
+      </section>
+    `);
   }
 
   if (model.lineItems.length > 0) {

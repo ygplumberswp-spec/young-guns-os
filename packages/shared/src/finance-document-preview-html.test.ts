@@ -41,3 +41,32 @@ test('isValidPdfBuffer accepts genuine PDF signatures only', () => {
   assert.equal(isValidPdfBuffer(Buffer.from('not-a-pdf')), false);
   assert.equal(isValidPdfBuffer(Buffer.from('%PD')), false);
 });
+
+test('preview HTML embeds includeInPdf photo attachments in the gallery section', () => {
+  const model = buildFinanceDocumentPreviewModel({
+    kind: 'quote',
+    lines: [{ description: 'Labour', quantity: 1, unitPriceCents: 10000, vatRateBps: 1500 }],
+  });
+  model.attachments = [
+    {
+      fileName: 'before.jpg',
+      mimeType: 'image/jpeg',
+      caption: 'Corroded pipe',
+      dataUrl: 'data:image/jpeg;base64,YmVmb3Jl',
+    },
+    {
+      fileName: 'certificate.pdf',
+      mimeType: 'application/pdf',
+      caption: 'COC',
+      dataUrl: 'data:application/pdf;base64,Y29j',
+    },
+  ];
+
+  const html = buildFinanceDocumentPreviewHtml(model);
+  assert.match(html, /Photos/);
+  assert.match(html, /before\.jpg/);
+  assert.match(html, /Corroded pipe/);
+  assert.match(html, /data:image\/jpeg;base64,YmVmb3Jl/);
+  assert.match(html, /Attachments/);
+  assert.match(html, /COC/);
+});

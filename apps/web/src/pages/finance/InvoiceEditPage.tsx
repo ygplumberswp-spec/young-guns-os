@@ -30,6 +30,7 @@ import { FinanceNav } from '../../features/finance/FinanceNav';
 import { canManageFinance } from '../../features/finance/utils';
 import { buildFinanceEditorPreviewInput } from '../../features/finance/finance-preview-request';
 import { useFinanceDocumentPreview } from '../../features/finance/useFinanceDocumentPreview';
+import { FinanceDocumentAttachmentsPanel } from '../../features/finance/FinanceDocumentAttachmentsPanel';
 import { PageHeader } from '../../components/ux';
 import { useFormDraftShell } from '../../hooks/useFormDraftShell';
 import { useTitanNotify } from '../../components/ux/TitanNotifications';
@@ -50,6 +51,7 @@ export function InvoiceEditPage() {
   const [dueDate, setDueDate] = useState('');
   const [customerReference, setCustomerReference] = useState('');
   const [message, setMessage] = useState('');
+  const [jobId, setJobId] = useState('');
   const [addresses, setAddresses] = useState<FinanceDocumentAddresses>({
     billingAddress: '',
     siteAddress: '',
@@ -135,6 +137,7 @@ export function InvoiceEditPage() {
         setDueDate(toDateInputValue(invoice.dueDate));
         setCustomerReference(invoice.customerReference ?? invoice.xeroReference ?? '');
         setMessage(invoice.notes ?? '');
+        setJobId(invoice.jobId ?? '');
         setAddresses(addressesFromSnapshot(invoice.addresses));
         setVatMode(inferVatModeFromLines(invoice.lineItems));
         setLines(lineItemsToEditorLines(invoice.lineItems));
@@ -234,6 +237,7 @@ export function InvoiceEditPage() {
           notes: message,
           xeroInvoiceNumber,
           status,
+          attachmentScope: { invoiceId },
         }),
       );
       return;
@@ -375,6 +379,15 @@ export function InvoiceEditPage() {
               showUnitCost={false}
             />
           </FinanceEditorCard>
+
+          {accessToken ? (
+            <FinanceDocumentAttachmentsPanel
+              accessToken={accessToken}
+              scope={{ mode: 'invoice', invoiceId }}
+              jobId={jobId || undefined}
+              disabled={!canWrite || !editable}
+            />
+          ) : null}
 
           <div className="finance-editor__bottom-grid">
             <FinanceEditorCard title="Message / Notes" className="finance-editor-card--notes">

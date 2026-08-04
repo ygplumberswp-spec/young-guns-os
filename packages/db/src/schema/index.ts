@@ -194,3 +194,4 @@ export * from './relations';
 export * from './stock-forecasting.js'
 export * from './facebook-business';
 export * from './document-engine';
+export * from './finance-document-attachments';

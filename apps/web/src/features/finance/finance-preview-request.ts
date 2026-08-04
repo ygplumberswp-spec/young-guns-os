@@ -31,6 +31,11 @@ export type FinanceEditorPreviewContext = {
   xeroInvoiceNumber?: string | null;
   jobReference?: string | null;
   status?: string | null;
+  attachmentScope?: {
+    quoteId?: string | null;
+    invoiceId?: string | null;
+    draftClientActionId?: string | null;
+  } | null;
 };
 
 export function buildFinanceEditorPreviewInput(
@@ -76,5 +81,6 @@ export function buildFinanceEditorPreviewInput(
     xeroInvoiceNumber: context.xeroInvoiceNumber ?? null,
     jobReference: context.jobReference?.trim() || null,
     status: context.status ?? 'draft',
+    attachmentScope: context.attachmentScope ?? null,
   };
 }

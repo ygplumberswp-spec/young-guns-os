@@ -29,6 +29,7 @@ import { customers } from './customers';
 import { jobs } from './jobs';
 import { cxCustomerProperties } from './enterprise-customer-experience';
 import { invoiceLineItems, invoices } from './invoices';
+import { financeDocumentAttachments } from './finance-document-attachments';
 import { inventoryItems } from './inventory-items';
 import { inventoryLocations } from './inventory-locations';
 import { inventoryStockLevels } from './inventory-stock-levels';
@@ -3694,5 +3695,24 @@ export const n8nAuditEventsRelations = relations(n8nAuditEvents, ({ one }) => ({
   actor: one(users, {
     fields: [n8nAuditEvents.actorUserId],
     references: [users.id],
+  }),
+}));
+
+export const financeDocumentAttachmentsRelations = relations(financeDocumentAttachments, ({ one }) => ({
+  company: one(companies, {
+    fields: [financeDocumentAttachments.companyId],
+    references: [companies.id],
+  }),
+  quote: one(quotes, {
+    fields: [financeDocumentAttachments.quoteId],
+    references: [quotes.id],
+  }),
+  invoice: one(invoices, {
+    fields: [financeDocumentAttachments.invoiceId],
+    references: [invoices.id],
+  }),
+  job: one(jobs, {
+    fields: [financeDocumentAttachments.jobId],
+    references: [jobs.id],
   }),
 }));

@@ -32,6 +32,20 @@ export type FinanceDocumentPreviewCustomerInput = {
   phone?: string | null;
 };
 
+export type FinanceDocumentPreviewAttachmentScope = {
+  quoteId?: string | null;
+  invoiceId?: string | null;
+  draftClientActionId?: string | null;
+};
+
+export type FinanceDocumentPreviewAttachment = {
+  fileName: string;
+  mimeType: string;
+  caption: string | null;
+  /** Base64 data URL for embedding in print HTML. */
+  dataUrl: string;
+};
+
 export type FinanceDocumentPreviewInput = {
   kind: FinanceDocumentPreviewKind;
   customer?: FinanceDocumentPreviewCustomerInput | null;
@@ -48,6 +62,8 @@ export type FinanceDocumentPreviewInput = {
   xeroInvoiceNumber?: string | null;
   jobReference?: string | null;
   status?: string | null;
+  /** When set, preview PDF includes attachments marked includeInPdf for this document scope. */
+  attachmentScope?: FinanceDocumentPreviewAttachmentScope | null;
 };
 
 export type FinanceDocumentPreviewModel = {
@@ -69,6 +85,7 @@ export type FinanceDocumentPreviewModel = {
   vatRateLabel: string;
   hideTitle: true;
   hidePaymentOptions: true;
+  attachments?: FinanceDocumentPreviewAttachment[];
 };
 
 const PREVIEW_HIDDEN_SECTIONS = new Set([

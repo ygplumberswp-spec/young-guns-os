@@ -23,7 +23,10 @@ import {
 import { attachDbQueryDiagnostics, createDbDiagnosticsMiddleware } from './lib/db-diagnostics.js';
 import { resolveCompanyMediaStoragePath } from './lib/company-media-storage.js';
 import { resolveJobEvidenceStoragePath } from './lib/job-evidence-storage.js';
+import { resolveFinanceAttachmentStoragePath } from './lib/finance-attachment-storage.js';
 import { JobEvidenceStorageService } from './services/job-evidence-storage.service.js';
+import { FinanceAttachmentStorageService } from './services/finance-attachment-storage.service.js';
+import { FinanceAttachmentService } from './services/finance-attachment.service.js';
 import { createErrorHandler, notFoundHandler } from './middleware/error-handler.js';
 import { requestContextMiddleware } from './middleware/request-context.js';
 import { configureRbacAudit } from './middleware/rbac.js';
@@ -471,11 +474,15 @@ const companyService = new CompanyService(db);
 const payrollTimesheetIntelligenceService = new PayrollTimesheetIntelligenceService(db);
 let companyMediaStoragePath: string;
 let jobEvidenceStoragePath: string;
+let financeAttachmentStoragePath: string;
 try {
   companyMediaStoragePath = resolveCompanyMediaStoragePath(
     process.env.COMPANY_MEDIA_STORAGE_PATH,
   );
   jobEvidenceStoragePath = resolveJobEvidenceStoragePath(process.env.JOB_EVIDENCE_STORAGE_PATH);
+  financeAttachmentStoragePath = resolveFinanceAttachmentStoragePath(
+    process.env.FINANCE_ATTACHMENT_STORAGE_PATH,
+  );
 } catch (error) {
   const message = error instanceof Error ? error.message : String(error);
   console.error(`[titan-api] FATAL: storage path initialization failed\n${message}`);
@@ -496,6 +503,14 @@ logger.info(
 );
 const companyMediaService = new CompanyMediaService(companyMediaStoragePath);
 const jobEvidenceStorageService = new JobEvidenceStorageService(jobEvidenceStoragePath);
+const financeAttachmentStorageService = new FinanceAttachmentStorageService(
+  financeAttachmentStoragePath,
+);
+const financeAttachmentService = new FinanceAttachmentService(
+  db,
+  financeAttachmentStorageService,
+  jobEvidenceStorageService,
+);
 const teamService = new TeamService(db, env.APP_URL);
 const enterpriseSaasPlatformService = new EnterpriseSaasPlatformService({
   db,
@@ -1765,6 +1780,7 @@ app.use(
   '/api/v1/finance',
   createFinanceRouter({
     financeService,
+    financeAttachmentService,
     crmService,
     teamService,
     db,

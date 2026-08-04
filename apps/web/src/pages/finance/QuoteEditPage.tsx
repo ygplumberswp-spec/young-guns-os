@@ -30,6 +30,9 @@ import { FinanceNav } from '../../features/finance/FinanceNav';
 import { canManageFinance, canViewFinanceProfit } from '../../features/finance/utils';
 import { buildFinanceEditorPreviewInput } from '../../features/finance/finance-preview-request';
 import { useFinanceDocumentPreview } from '../../features/finance/useFinanceDocumentPreview';
+import {
+  FinanceDocumentAttachmentsPanel,
+} from '../../features/finance/FinanceDocumentAttachmentsPanel';
 import { PageHeader } from '../../components/ux';
 import { useFormDraftShell } from '../../hooks/useFormDraftShell';
 import { useTitanNotify } from '../../components/ux/TitanNotifications';
@@ -237,6 +240,7 @@ export function QuoteEditPage() {
           xeroQuoteNumber,
           jobReference: job?.title ?? null,
           status,
+          attachmentScope: { quoteId },
         }),
       );
       return;
@@ -375,6 +379,15 @@ export function QuoteEditPage() {
               showUnitCost={canViewUnitCost}
             />
           </FinanceEditorCard>
+
+          {accessToken ? (
+            <FinanceDocumentAttachmentsPanel
+              accessToken={accessToken}
+              scope={{ mode: 'quote', quoteId }}
+              jobId={jobId || undefined}
+              disabled={!canWrite}
+            />
+          ) : null}
 
           <div className="finance-editor__bottom-grid">
             <FinanceEditorCard title="Message / Notes" className="finance-editor-card--notes">

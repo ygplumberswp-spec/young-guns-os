@@ -38,6 +38,11 @@ import { canManageFinance, newFinanceClientActionId } from '../../features/finan
 import { buildFinanceEditorPreviewInput } from '../../features/finance/finance-preview-request';
 import { financeDocumentEditPath } from '../../features/finance/finance-document-save';
 import { useFinanceDocumentPreview } from '../../features/finance/useFinanceDocumentPreview';
+import {
+  FinanceDocumentAttachmentsPanel,
+  financePreviewAttachmentScope,
+} from '../../features/finance/FinanceDocumentAttachmentsPanel';
+import { linkStagingAttachmentsToDocument } from '../../features/finance/finance-attachments-api';
 import { PageHeader } from '../../components/ux';
 import { useFormDraftShell } from '../../hooks/useFormDraftShell';
 import { useTitanNotify } from '../../components/ux/TitanNotifications';
@@ -314,6 +319,11 @@ export function InvoiceCreatePage() {
           notes: message,
           jobReference: job?.title ?? null,
           status,
+          attachmentScope: financePreviewAttachmentScope(
+            savedInvoiceId
+              ? { mode: 'invoice', invoiceId: savedInvoiceId }
+              : { mode: 'staging', draftClientActionId: clientActionId },
+          ),
         }),
       );
       return;
@@ -331,6 +341,7 @@ export function InvoiceCreatePage() {
         if (result?.id) {
           invalidateInvoices();
           if (wasNew) {
+            await linkStagingAttachmentsToDocument(accessToken, clientActionId, { invoiceId: result.id });
             navigate(financeDocumentEditPath('invoice', result.id), { replace: true });
           }
           notify({
@@ -486,6 +497,19 @@ export function InvoiceCreatePage() {
               showUnitCost={false}
             />
           </FinanceEditorCard>
+
+          {accessToken ? (
+            <FinanceDocumentAttachmentsPanel
+              accessToken={accessToken}
+              scope={
+                savedInvoiceId
+                  ? { mode: 'invoice', invoiceId: savedInvoiceId }
+                  : { mode: 'staging', draftClientActionId: clientActionId }
+              }
+              jobId={jobId || undefined}
+              disabled={!canWrite}
+            />
+          ) : null}
 
           <div className="finance-editor__bottom-grid">
             <FinanceEditorCard title="Message / Notes" className="finance-editor-card--notes">
