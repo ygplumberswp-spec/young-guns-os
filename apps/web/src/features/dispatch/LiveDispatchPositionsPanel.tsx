@@ -4,8 +4,12 @@ import {
   deriveFleetPositionHealth,
   formatFleetConnectionDisplayLabel,
   formatFleetPositionHealthLabel,
+  buildVehiclePositionNavigateUrl,
+  formatVehiclePositionFreshness,
+  resolveVehiclePositionAddressDisplay,
 } from '@titan/shared';
 import { useCartrackLivePositions } from './useCartrackLivePositions';
+import { VehiclePositionCard } from '../fleet/VehiclePositionAddress';
 
 type LiveDispatchPositionsPanelProps = {
   accessToken: string | null;
@@ -144,6 +148,7 @@ export function LiveDispatchPositionsPanel({ accessToken }: LiveDispatchPosition
               <tr>
                 <th>Vehicle</th>
                 <th>Registration</th>
+                <th>Address</th>
                 <th>Make / model</th>
                 <th>Driver / assignee</th>
                 <th>Ignition</th>
@@ -151,6 +156,7 @@ export function LiveDispatchPositionsPanel({ accessToken }: LiveDispatchPosition
                 <th>Odometer</th>
                 <th>Last position</th>
                 <th>Health</th>
+                <th>Reach vehicle</th>
               </tr>
             </thead>
             <tbody>
@@ -160,10 +166,30 @@ export function LiveDispatchPositionsPanel({ accessToken }: LiveDispatchPosition
                   recordedAt: position.recordedAt,
                 });
                 const stale = isStale(position.recordedAt);
+                const addressDisplay = resolveVehiclePositionAddressDisplay({
+                  result: position.address,
+                  latitude: position.latitude,
+                  longitude: position.longitude,
+                  recordedAt: position.recordedAt,
+                  cartrackConnected: tracking.cartrackConnected,
+                });
+                const navigateUrl = buildVehiclePositionNavigateUrl({
+                  latitude: position.latitude,
+                  longitude: position.longitude,
+                });
                 return (
                   <tr key={`${position.externalVehicleId}-${position.recordedAt}`}>
                     <td>{position.vehicleName ?? 'Unmapped'}</td>
                     <td>{position.licensePlate ?? '—'}</td>
+                    <td title={addressDisplay.note ?? undefined}>
+                      {addressDisplay.line}
+                      {addressDisplay.note ? (
+                        <>
+                          <br />
+                          <span className="page-muted">{addressDisplay.note}</span>
+                        </>
+                      ) : null}
+                    </td>
                     <td>
                       {[position.make, position.model].filter(Boolean).join(' ') || '—'}
                     </td>
@@ -191,6 +217,10 @@ export function LiveDispatchPositionsPanel({ accessToken }: LiveDispatchPosition
                       <span className="page-muted">
                         {new Date(position.recordedAt).toLocaleString()}
                       </span>
+                      <br />
+                      <span className="page-muted">
+                        {formatVehiclePositionFreshness(position.recordedAt)}
+                      </span>
                     </td>
                     <td>
                       <span
@@ -202,6 +232,15 @@ export function LiveDispatchPositionsPanel({ accessToken }: LiveDispatchPosition
                         {stale ? ` · ${formatRelativeTime(position.recordedAt)}` : ''}
                       </span>
                     </td>
+                    <td>
+                      {navigateUrl ? (
+                        <a href={navigateUrl} target="_blank" rel="noreferrer">
+                          Navigate
+                        </a>
+                      ) : (
+                        <span className="page-muted">No usable coordinate</span>
+                      )}
+                    </td>
                   </tr>
                 );
               })}
@@ -209,6 +248,28 @@ export function LiveDispatchPositionsPanel({ accessToken }: LiveDispatchPosition
           </table>
         </div>
       )}
+
+      {tracking.latestPositions.length > 0 ? (
+        <>
+          <h3 className="page-section-title" style={{ marginTop: '1rem' }}>
+            Reach a vehicle
+          </h3>
+          <p className="page-muted">
+            Readable addresses are reverse-geocoded from the stored Cartrack coordinate and cached —
+            the coordinate stays the source of truth. Sharing opens your own messaging app; TITAN
+            does not send or confirm delivery.
+          </p>
+          <div className="vehicle-position-grid">
+            {tracking.latestPositions.slice(0, 12).map((position) => (
+              <VehiclePositionCard
+                key={`reach-${position.externalVehicleId}-${position.recordedAt}`}
+                position={position}
+                cartrackConnected={tracking.cartrackConnected}
+              />
+            ))}
+          </div>
+        </>
+      ) : null}
 
       <p className="page-muted" style={{ marginTop: '0.75rem' }}>
         Trips and behaviour events remain on{' '}

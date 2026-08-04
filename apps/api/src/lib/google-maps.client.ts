@@ -7,7 +7,7 @@ import type {
   GooglePlacePrediction,
   GoogleRouteEstimate,
 } from '@titan/shared';
-import { classifyGoogleMapsApiStatus } from '@titan/shared';
+import { classifyGoogleMapsApiStatus, parseGoogleGeocodeLocationType } from '@titan/shared';
 
 export class GoogleMapsClientError extends Error {
   constructor(
@@ -41,11 +41,13 @@ function mapAddressResult(input: {
   formattedAddress?: string | null;
   fallbackAddress: string;
   location: { lat: number; lng: number };
+  locationType?: unknown;
   components: Array<{ long_name: string; short_name: string; types: string[] }>;
 }): GoogleGeocodedAddress {
   return {
     placeId: input.placeId ?? null,
     formattedAddress: input.formattedAddress ?? input.fallbackAddress,
+    locationType: parseGoogleGeocodeLocationType(input.locationType),
     street: [component(input.components, 'street_number'), component(input.components, 'route')]
       .filter(Boolean)
       .join(' ')
@@ -247,7 +249,7 @@ export class GoogleMapsClient {
       results?: Array<{
         place_id?: string;
         formatted_address?: string;
-        geometry?: { location?: { lat: number; lng: number } };
+        geometry?: { location?: { lat: number; lng: number }; location_type?: string };
         address_components?: Array<{ long_name: string; short_name: string; types: string[] }>;
       }>;
     }>(`https://maps.googleapis.com/maps/api/geocode/json?${params}`);
@@ -264,6 +266,7 @@ export class GoogleMapsClient {
       formattedAddress: result.formatted_address,
       fallbackAddress: trimmed,
       location: result.geometry.location,
+      locationType: result.geometry.location_type,
       components: result.address_components ?? [],
     });
   }
@@ -291,7 +294,7 @@ export class GoogleMapsClient {
       results?: Array<{
         place_id?: string;
         formatted_address?: string;
-        geometry?: { location?: { lat: number; lng: number } };
+        geometry?: { location?: { lat: number; lng: number }; location_type?: string };
         address_components?: Array<{ long_name: string; short_name: string; types: string[] }>;
       }>;
     }>(`https://maps.googleapis.com/maps/api/geocode/json?${params}`);
@@ -315,6 +318,7 @@ export class GoogleMapsClient {
       formattedAddress: result.formatted_address,
       fallbackAddress: `${input.latitude},${input.longitude}`,
       location,
+      locationType: result.geometry?.location_type,
       components: result.address_components ?? [],
     });
   }

@@ -33,7 +33,11 @@ import type {
   SubmitMobileJobDocumentationRequest,
   UploadJobEvidenceRequest,
 } from '@titan/shared';
-import { buildGoogleMapsNavigateUrl, formatMapsEtaCapabilityLabel } from '@titan/shared';
+import {
+  buildGoogleMapsNavigateUrl,
+  formatMapsEtaCapabilityLabel,
+  unresolvedVehicleAddress,
+} from '@titan/shared';
 import { classifyOfflineFlushByExistingLog } from './job-execution-completion-idempotency.js';
 import type { DatabaseClient } from '@titan/db';
 import {
@@ -343,6 +347,9 @@ export class MobileWorkforceService {
         : liveTrackingAvailable
           ? (tracking.latestPositions[0] ?? null)
           : null;
+    const isAssignedVehiclePosition = Boolean(
+      latestGps && assignedVehicleId != null && latestGps.vehicleId === assignedVehicleId,
+    );
 
     const hasSchedule = route.stops.some((stop) => Boolean(stop.scheduledAt));
     const googleMapsConnected = await this.db.query.integrationConnections
@@ -374,6 +381,13 @@ export class MobileWorkforceService {
             longitude: latestGps.longitude,
             recordedAt: latestGps.recordedAt,
             speedKmh: latestGps.speedKmh,
+            ignitionOn: latestGps.ignitionOn,
+            isAssignedVehicle: isAssignedVehiclePosition,
+            licensePlate: isAssignedVehiclePosition ? latestGps.licensePlate : null,
+            // Only the technician's own vehicle gets a readable address here.
+            address: isAssignedVehiclePosition
+              ? latestGps.address
+              : unresolvedVehicleAddress('not_attempted'),
           }
         : null,
       cartrackConnected: tracking.cartrackConnected,

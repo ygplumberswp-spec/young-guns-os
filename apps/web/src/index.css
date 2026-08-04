@@ -1585,6 +1585,85 @@ a:focus-visible {
   font-size: 0.8125rem;
 }
 
+/* Reverse-geocoded vehicle address — the line an operator actually reads. */
+.exec-live-ops__address {
+  margin: 0.35rem 0 0;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.vehicle-position-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
+  margin-top: 0.5rem;
+}
+
+.vehicle-position-card {
+  padding: 0.75rem 0.875rem;
+  border: 1px solid var(--titan-border-subtle);
+  border-radius: var(--titan-radius-lg);
+  background: var(--titan-surface-muted);
+}
+
+.vehicle-position-card p {
+  margin: 0.3rem 0 0;
+}
+
+.vehicle-position-card__head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.vehicle-position-card__address {
+  margin: 0.45rem 0 0;
+  line-height: 1.4;
+}
+
+.vehicle-position-card__actions {
+  margin-top: 0.6rem;
+  /* Comfortable one-handed tap targets on mobile. */
+  min-height: 2.25rem;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.vehicle-position-card__share {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: var(--titan-accent);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.vehicle-position-card__share-panel {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--titan-border-subtle);
+}
+
+.vehicle-position-card__share-preview {
+  margin: 0 0 0.4rem;
+  padding: 0.5rem;
+  border-radius: var(--titan-radius-md);
+  background: var(--titan-surface);
+  font-size: 0.75rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.vehicle-address-line {
+  display: inline-block;
+  line-height: 1.35;
+}
+
 .exec-active-jobs {
   min-height: 12.5rem;
 }

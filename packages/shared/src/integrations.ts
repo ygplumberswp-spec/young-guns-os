@@ -387,6 +387,12 @@ export type FleetTrackingContext = {
     ignitionOn: boolean | null;
     odometerKm: number | null;
     recordedAt: string;
+    /**
+     * Reverse-geocoded address for the coordinates above. Derived and cached — the
+     * coordinates stay the source of truth. `unresolved` carries the real reason so
+     * surfaces can fall back to coordinates instead of showing a blank.
+     */
+    address: import('./vehicle-position-address.js').VehiclePositionAddressResult;
   }>;
 };
 

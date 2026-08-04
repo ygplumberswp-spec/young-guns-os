@@ -8,6 +8,7 @@ import { ApiClientError } from '../../lib/api-client';
 import { fetchFleetAssignees, fetchVehicle, updateVehicle } from '../../lib/fleet-api';
 import { useAuth } from '../../lib/auth-context';
 import { canManageFleet, formatVehicleStatus } from '../../features/fleet/VehicleList';
+import { VehicleTrackedPositionPanel } from '../../features/fleet/VehicleTrackedPositionPanel';
 
 export function VehicleDetailPage() {
   const [, params] = useRoute('/fleet/:id');
@@ -257,6 +258,8 @@ export function VehicleDetailPage() {
           </dl>
         </Panel>
       )}
+
+      <VehicleTrackedPositionPanel vehicleId={vehicle.id} />
 
       <Panel
         title={`Ask ${AI_NAME}`}

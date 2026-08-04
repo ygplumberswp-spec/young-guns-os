@@ -1,6 +1,14 @@
 import { PageHeader } from '../../components/ux';
 import { Panel, Button } from '@titan/ui';
-import { buildAddressMapsDeepLink } from '@titan/shared';
+import {
+  buildAddressMapsDeepLink,
+  buildVehiclePositionNavigateUrl,
+  formatVehicleIgnitionLabel,
+  formatVehicleMotionLabel,
+  formatVehiclePositionCoordinates,
+  formatVehiclePositionFreshness,
+  resolveVehiclePositionAddressDisplay,
+} from '@titan/shared';
 import { fetchMobileRoute } from '../../lib/mobile-api-client';
 import { useAuth } from '../../lib/auth-context';
 import { useStaffCachedQuery } from '../../lib/use-scoped-cached-query';
@@ -58,6 +66,52 @@ export function MobileRoutePage() {
                   : 'Unavailable — no assigned-vehicle GPS for this technician; fleet-wide tracking is blocked'}
               </p>
             </Panel>
+
+            {route.latestGps?.isAssignedVehicle ? (
+              <Panel
+                title="Your Vehicle Position"
+                description="Latest Cartrack position for the vehicle assigned to you."
+              >
+                {(() => {
+                  const gps = route.latestGps!;
+                  const display = resolveVehiclePositionAddressDisplay({
+                    result: gps.address,
+                    latitude: gps.latitude,
+                    longitude: gps.longitude,
+                    recordedAt: gps.recordedAt,
+                    cartrackConnected: route.cartrackConnected,
+                  });
+                  const navigateUrl = buildVehiclePositionNavigateUrl({
+                    latitude: gps.latitude,
+                    longitude: gps.longitude,
+                  });
+                  return (
+                    <>
+                      <p>
+                        <strong>{gps.licensePlate ?? route.route.assignedVehiclePlate}</strong>
+                      </p>
+                      <p>{display.line}</p>
+                      {display.note ? <p className="page-muted">{display.note}</p> : null}
+                      <p className="page-muted">
+                        {formatVehicleMotionLabel(gps.speedKmh)} ·{' '}
+                        {formatVehicleIgnitionLabel(gps.ignitionOn)}
+                      </p>
+                      <p className="page-muted">
+                        {formatVehiclePositionFreshness(gps.recordedAt)} ·{' '}
+                        {formatVehiclePositionCoordinates(gps.latitude, gps.longitude)}
+                      </p>
+                      {navigateUrl ? (
+                        <p>
+                          <a href={navigateUrl} target="_blank" rel="noreferrer">
+                            Navigate to this position
+                          </a>
+                        </p>
+                      ) : null}
+                    </>
+                  );
+                })()}
+              </Panel>
+            ) : null}
 
             {route.route.nextDestination ? (
               <Panel title="Next Destination">

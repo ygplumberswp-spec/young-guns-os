@@ -147,6 +147,15 @@ export type MobileRouteIntelligence = {
     longitude: number;
     recordedAt: string;
     speedKmh: number | null;
+    ignitionOn: boolean | null;
+    /**
+     * True only when this position belongs to the vehicle assigned to this
+     * technician. A readable address is resolved for their own vehicle only —
+     * technicians never get fleet-wide addresses from this surface.
+     */
+    isAssignedVehicle: boolean;
+    licensePlate: string | null;
+    address: import('./vehicle-position-address.js').VehiclePositionAddressResult;
   } | null;
   cartrackConnected: boolean;
   /** UX-I — never claim live Maps/Cartrack when provider path is absent. */

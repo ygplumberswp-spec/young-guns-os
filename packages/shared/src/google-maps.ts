@@ -84,9 +84,32 @@ export type GooglePlacePrediction = {
   secondaryText: string;
 };
 
+/**
+ * Google `geometry.location_type` — how exactly the coordinate matched.
+ * `ROOFTOP` / `RANGE_INTERPOLATED` are street-level; the rest are area matches.
+ */
+export type GoogleGeocodeLocationType =
+  | 'ROOFTOP'
+  | 'RANGE_INTERPOLATED'
+  | 'GEOMETRIC_CENTER'
+  | 'APPROXIMATE';
+
+export function parseGoogleGeocodeLocationType(
+  value: unknown,
+): GoogleGeocodeLocationType | null {
+  return value === 'ROOFTOP' ||
+    value === 'RANGE_INTERPOLATED' ||
+    value === 'GEOMETRIC_CENTER' ||
+    value === 'APPROXIMATE'
+    ? value
+    : null;
+}
+
 export type GoogleGeocodedAddress = {
   placeId: string | null;
   formattedAddress: string;
+  /** Null where the provider path does not report match quality (e.g. Place Details). */
+  locationType: GoogleGeocodeLocationType | null;
   street: string | null;
   suburb: string | null;
   city: string | null;

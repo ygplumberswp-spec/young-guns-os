@@ -6,7 +6,9 @@ import {
   buildGoogleMapsPlaceUrl,
   buildGoogleStreetViewUrl,
   formatLatLngCoordinates,
+  formatVehiclePositionFreshness,
   isValidLatLng,
+  resolveVehiclePositionAddressDisplay,
   type GoogleRouteEstimate,
 } from '@titan/shared';
 import { useAuth } from '../../lib/auth-context';
@@ -166,7 +168,17 @@ export function PropertyMapPanel({
         id: `vehicle-${p.externalVehicleId}`,
         latitude: p.latitude,
         longitude: p.longitude,
-        label: p.vehicleName ?? p.licensePlate ?? 'Vehicle',
+        label: [
+          p.licensePlate ?? p.vehicleName ?? 'Vehicle',
+          resolveVehiclePositionAddressDisplay({
+            result: p.address,
+            latitude: p.latitude,
+            longitude: p.longitude,
+            recordedAt: p.recordedAt,
+            cartrackConnected: Boolean(tracking?.cartrackConnected),
+          }).line,
+          formatVehiclePositionFreshness(p.recordedAt),
+        ].join(' · '),
         tone: 'vehicle' as const,
       })) ?? []),
   ];

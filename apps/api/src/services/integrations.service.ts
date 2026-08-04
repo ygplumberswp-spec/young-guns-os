@@ -16,6 +16,9 @@ import {
   deriveMappingReviewCategory,
   INTEGRATION_MAPPING_REVIEW_LABELS,
   matchVehicleByRegistration,
+  unresolvedVehicleAddress,
+  vehicleAddressCacheKey,
+  type VehiclePositionAddressResult,
 } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
 import {
@@ -32,6 +35,7 @@ import { CartrackClient, CartrackError } from '../lib/cartrack.client.js';
 import { decryptCartrackCredentials, encryptCartrackCredentials } from '../lib/crypto.js';
 
 import type { IntegrationHubService } from './integration-hub.service.js';
+import type { VehiclePositionAddressService } from './vehicle-position-address.service.js';
 
 export class IntegrationsError extends Error {
   constructor(
@@ -51,6 +55,8 @@ type IntegrationsServiceDeps = {
   db: DatabaseClient;
   encryptionKey?: string;
   hubService?: IntegrationHubService;
+  /** Optional — when absent, positions report addresses as not attempted. */
+  vehicleAddressService?: VehiclePositionAddressService;
 };
 
 export class IntegrationsService {
@@ -61,10 +67,16 @@ export class IntegrationsService {
     private readonly db: DatabaseClient,
     private readonly encryptionKey?: string,
     private readonly hubService?: IntegrationHubService,
+    private readonly vehicleAddressService?: VehiclePositionAddressService,
   ) {}
 
   static create(deps: IntegrationsServiceDeps): IntegrationsService {
-    return new IntegrationsService(deps.db, deps.encryptionKey, deps.hubService);
+    return new IntegrationsService(
+      deps.db,
+      deps.encryptionKey,
+      deps.hubService,
+      deps.vehicleAddressService,
+    );
   }
 
   setOnCartrackConnectedHook(
@@ -642,6 +654,14 @@ export class IntegrationsService {
       ]),
     );
 
+    const addressResults = await this.resolvePositionAddresses(
+      companyId,
+      [...latestByVehicle.values()].map((row) => ({
+        latitude: row.latitude,
+        longitude: row.longitude,
+      })),
+    );
+
     return {
       cartrackStatus: connection.status,
       cartrackConnected,
@@ -691,9 +711,33 @@ export class IntegrationsService {
           ignitionOn,
           odometerKm,
           recordedAt: row.recordedAt.toISOString(),
+          address:
+            addressResults.get(
+              vehicleAddressCacheKey(companyId, row.latitude, row.longitude),
+            ) ?? unresolvedVehicleAddress('not_attempted'),
         };
       }),
     };
+  }
+
+  /**
+   * Reverse-geocodes vehicle coordinates into readable addresses through the shared
+   * cache. A geocoding failure never fails the tracking context — the affected
+   * positions report why and their coordinates are shown instead.
+   */
+  private async resolvePositionAddresses(
+    companyId: string,
+    points: Array<{ latitude: number; longitude: number }>,
+  ): Promise<Map<string, VehiclePositionAddressResult>> {
+    if (!this.vehicleAddressService || points.length === 0) {
+      return new Map();
+    }
+
+    try {
+      return await this.vehicleAddressService.resolveMany(companyId, points);
+    } catch {
+      return new Map();
+    }
   }
 
   private async getOrCreateConnection(companyId: string) {

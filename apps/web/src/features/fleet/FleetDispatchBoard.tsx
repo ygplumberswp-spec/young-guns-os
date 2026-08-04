@@ -13,7 +13,10 @@ import {
   formatFleetPositionHealthLabel,
   formatMapsEtaCapabilityLabel,
   formatTechnicianAvailabilityLabel,
+  formatVehicleMotionLabel,
+  formatVehiclePositionFreshness,
   isDispatcherEmergencyPriority,
+  resolveVehiclePositionAddressDisplay,
   mapDispatcherStepToCommunicationHook,
   mapDualTrackToDispatcherStatus,
   resolveCustomerEtaReadiness,
@@ -33,6 +36,10 @@ import { LiveDispatchPositionsPanel } from '../dispatch/LiveDispatchPositionsPan
 import { DispatcherStatusFlow } from '../dispatch/DispatcherStatusFlow';
 import { GoogleMapView } from '../maps/GoogleMapView';
 import { useCartrackLivePositions } from '../dispatch/useCartrackLivePositions';
+import {
+  VehiclePositionCard,
+  type TrackedVehiclePosition,
+} from './VehiclePositionAddress';
 import { useMemo, useState } from 'react';
 import { ApiClientError } from '../../lib/api-client';
 
@@ -99,6 +106,13 @@ export function FleetDispatchBoard() {
     (jobsQuery.isLoading && !jobsQuery.data) || (vehiclesQuery.isLoading && !vehiclesQuery.data);
 
   const cartrackConnected = Boolean(tracking?.cartrackConnected);
+  const positionsByVehicleId = useMemo(() => {
+    const map = new Map<string, TrackedVehiclePosition>();
+    for (const position of tracking?.latestPositions ?? []) {
+      if (position.vehicleId) map.set(position.vehicleId, position);
+    }
+    return map;
+  }, [tracking?.latestPositions]);
   const positionsByUserHint = useMemo(() => {
     const map = new Map<string, string>();
     for (const position of tracking?.latestPositions ?? []) {
@@ -229,13 +243,27 @@ export function FleetDispatchBoard() {
     const vehicleMarkers = (tracking?.latestPositions ?? [])
       .filter((p) => Number.isFinite(p.latitude) && Number.isFinite(p.longitude))
       .slice(0, 16)
-      .map((position) => ({
-        id: `vehicle-${position.externalVehicleId}`,
-        latitude: position.latitude,
-        longitude: position.longitude,
-        label: position.vehicleName ?? position.licensePlate ?? 'Vehicle',
-        tone: 'vehicle' as const,
-      }));
+      .map((position) => {
+        const addressDisplay = resolveVehiclePositionAddressDisplay({
+          result: position.address,
+          latitude: position.latitude,
+          longitude: position.longitude,
+          recordedAt: position.recordedAt,
+          cartrackConnected,
+        });
+        return {
+          id: `vehicle-${position.externalVehicleId}`,
+          latitude: position.latitude,
+          longitude: position.longitude,
+          label: [
+            position.licensePlate ?? position.vehicleName ?? 'Vehicle',
+            addressDisplay.line,
+            formatVehicleMotionLabel(position.speedKmh),
+            formatVehiclePositionFreshness(position.recordedAt),
+          ].join(' · '),
+          tone: 'vehicle' as const,
+        };
+      });
 
     const jobMarkers = jobs
       .filter(
@@ -261,7 +289,7 @@ export function FleetDispatchBoard() {
       }));
 
     return [...vehicleMarkers, ...jobMarkers];
-  }, [jobs, tracking?.latestPositions]);
+  }, [cartrackConnected, jobs, tracking?.latestPositions]);
 
   async function handleReassign(job: JobSummary, assignedUserId: string) {
     if (!accessToken || !job.scheduledAt) return;
@@ -516,21 +544,36 @@ export function FleetDispatchBoard() {
               <p className="page-muted">No vehicles on file.</p>
             ) : (
               <ul className="portal-list">
-                {vehicles.slice(0, 12).map((vehicle) => (
-                  <li key={vehicle.id}>
-                    <strong>
-                      {vehicle.name} · {vehicle.licensePlate}
-                    </strong>
-                    <span>
-                      {[vehicle.make, vehicle.model].filter(Boolean).join(' ') || 'Make/model unset'}
-                      {' · '}
-                      {vehicle.status.replace(/_/g, ' ')}
-                      {vehicle.assignedUserName
-                        ? ` · driver/tech ${vehicle.assignedUserName}`
-                        : ' · unassigned'}
-                    </span>
-                  </li>
-                ))}
+                {vehicles.slice(0, 12).map((vehicle) => {
+                  const position = positionsByVehicleId.get(vehicle.id) ?? null;
+                  return (
+                    <li key={vehicle.id}>
+                      <strong>
+                        {vehicle.name} · {vehicle.licensePlate}
+                      </strong>
+                      <span>
+                        {[vehicle.make, vehicle.model].filter(Boolean).join(' ') ||
+                          'Make/model unset'}
+                        {' · '}
+                        {vehicle.status.replace(/_/g, ' ')}
+                        {vehicle.assignedUserName
+                          ? ` · driver/tech ${vehicle.assignedUserName}`
+                          : ' · unassigned'}
+                      </span>
+                      {position ? (
+                        <VehiclePositionCard
+                          position={position}
+                          cartrackConnected={cartrackConnected}
+                          compact
+                        />
+                      ) : (
+                        <span className="page-muted">
+                          No Cartrack position stored for this vehicle — TITAN shows no address.
+                        </span>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </>

@@ -84,6 +84,7 @@ import { WhatsappContactEnrichmentService } from './services/whatsapp-contact-en
 import { createIntegrationsRouter } from './routes/integrations.js';
 import { createGoogleMapsRouter } from './routes/google-maps.js';
 import { GoogleMapsService } from './services/google-maps.service.js';
+import { VehiclePositionAddressService } from './services/vehicle-position-address.service.js';
 import { createWhatsappRouter } from './routes/whatsapp.js';
 import { createWhatsappEnrichmentRouter } from './routes/whatsapp-enrichment.js';
 import { createWhatsappWebhookRouter } from './routes/whatsapp-webhook.js';
@@ -496,6 +497,7 @@ const googleMapsService = GoogleMapsService.create({
   db,
   encryptionKey: env.INTEGRATIONS_ENCRYPTION_KEY,
 });
+const vehiclePositionAddressService = VehiclePositionAddressService.create({ googleMapsService });
 const schedulingService = new SchedulingService(db, googleMapsService);
 const financeService = new FinanceService(db);
 const boqService = new BoqService(db, financeService);
@@ -563,6 +565,7 @@ const integrationsService = IntegrationsService.create({
   db,
   encryptionKey: env.INTEGRATIONS_ENCRYPTION_KEY,
   hubService: integrationHubService,
+  vehicleAddressService: vehiclePositionAddressService,
 });
 const whatsappService = WhatsappService.create({
   db,
