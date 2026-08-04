@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import { FINANCE_EDITOR_LINE_CATEGORY_OPTIONS, formatMoney } from '@titan/shared';
 import { FinanceCatalogueItemSearchField } from './FinanceCatalogueItemSearchField';
+import { FinanceLineItemsTotals } from './FinanceLineItemsTotals';
 import type { FinanceDocumentPriceMode, FinanceDocumentVatMode, FinanceEditorLine } from './finance-editor-utils';
 import {
   applyDocumentVatMode,
@@ -20,6 +21,7 @@ type FinanceLineItemsEditorProps = {
   currency?: string;
   disabled?: boolean;
   showUnitCost?: boolean;
+  showTotalsPanel?: boolean;
 };
 
 export function FinanceLineItemsEditor({
@@ -33,9 +35,9 @@ export function FinanceLineItemsEditor({
   currency = 'ZAR',
   disabled,
   showUnitCost = true,
+  showTotalsPanel = false,
 }: FinanceLineItemsEditorProps) {
   const descriptionRefs = useRef<Record<string, HTMLInputElement | null>>({});
-  const totals = calculateEditorLineTotals(lines, { priceMode, vatMode });
 
   function setLines(next: FinanceEditorLine[]) {
     onChange(ensureTrailingBlankLines(next, 2));
@@ -73,7 +75,7 @@ export function FinanceLineItemsEditor({
   }
 
   return (
-    <div className="finance-line-items finance-line-items--editor" onKeyDown={handleFormKeyDown}>
+    <div className="finance-line-items finance-line-items--editor finance-line-items--workspace" onKeyDown={handleFormKeyDown}>
       <div className="finance-line-items__toolbar">
         <div className="finance-line-items__toolbar-group">
           <div className="finance-vat-selector" role="group" aria-label="Document VAT treatment">
@@ -130,14 +132,16 @@ export function FinanceLineItemsEditor({
         <table className="finance-table finance-line-items__table">
           <thead>
             <tr>
-              <th>Category</th>
-              <th>Item / description</th>
-              <th>Qty</th>
-              <th>Unit</th>
-              <th>{priceMode === 'including_vat' ? 'Unit price (incl. VAT)' : 'Unit price (ex VAT)'}</th>
-              {showUnitCost ? <th>Unit cost</th> : null}
-              <th>Line total</th>
-              <th className="finance-line-items__actions-col" aria-label="Line actions" />
+              <th className="finance-line-items__col-category">Category</th>
+              <th className="finance-line-items__col-description">Item / description</th>
+              <th className="finance-line-items__col-qty">Qty</th>
+              <th className="finance-line-items__col-unit">Unit</th>
+              <th className="finance-line-items__col-price">
+                {priceMode === 'including_vat' ? 'Unit price (incl. VAT)' : 'Unit price (ex VAT)'}
+              </th>
+              {showUnitCost ? <th className="finance-line-items__col-cost">Unit cost</th> : null}
+              <th className="finance-line-items__col-total">Line total</th>
+              <th className="finance-line-items__col-actions finance-line-items__actions-col" aria-label="Line actions" />
             </tr>
           </thead>
           <tbody>
@@ -257,20 +261,14 @@ export function FinanceLineItemsEditor({
         </button>
       </div>
 
-      <aside className="finance-line-items__totals-panel" aria-label="Document totals">
-        <div className="finance-line-items__totals-row">
-          <span>Subtotal</span>
-          <strong className="tabular-nums">{formatMoney(totals.subtotalCents, currency)}</strong>
-        </div>
-        <div className="finance-line-items__totals-row">
-          <span>VAT ({vatMode === 'zero' ? '0' : '15'}%)</span>
-          <strong className="tabular-nums">{formatMoney(totals.vatTotalCents, currency)}</strong>
-        </div>
-        <div className="finance-line-items__totals-row finance-line-items__totals-row--grand">
-          <span>Total</span>
-          <strong className="tabular-nums finance-amount">{formatMoney(totals.totalCents, currency)}</strong>
-        </div>
-      </aside>
+      {showTotalsPanel ? (
+        <FinanceLineItemsTotals
+          lines={lines}
+          vatMode={vatMode}
+          priceMode={priceMode}
+          currency={currency}
+        />
+      ) : null}
     </div>
   );
 }

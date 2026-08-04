@@ -1,0 +1,67 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const webRoot = join(dirname(fileURLToPath(import.meta.url)), '../../..');
+const indexCss = readFileSync(join(webRoot, 'src/index.css'), 'utf8');
+
+const editorPages = [
+  'QuoteCreatePage.tsx',
+  'QuoteEditPage.tsx',
+  'InvoiceCreatePage.tsx',
+  'InvoiceEditPage.tsx',
+] as const;
+
+const detailPages = ['QuoteDetailPage.tsx', 'InvoiceDetailPage.tsx'] as const;
+
+function readPage(name: string): string {
+  return readFileSync(join(webRoot, `src/pages/finance/${name}`), 'utf8');
+}
+
+test('finance editor CSS has no restrictive 72rem max-width', () => {
+  assert.doesNotMatch(indexCss, /\.finance-editor\s*\{[^}]*max-width:\s*72rem/s);
+  assert.match(indexCss, /\.finance-editor--workspace\s*\{[^}]*max-width:\s*none/s);
+});
+
+test('line-item table fills workspace container at full width', () => {
+  assert.match(indexCss, /\.finance-line-items--workspace\s+\.finance-line-items__table\s*\{[^}]*width:\s*100%/s);
+  assert.match(indexCss, /\.finance-line-items--workspace\s+\.finance-line-items__table-wrap\s*\{[^}]*width:\s*100%/s);
+  assert.match(indexCss, /\.finance-line-items__col-description\s*\{/s);
+});
+
+test('desktop workspace grid reflows at tablet breakpoint', () => {
+  const layoutRule = indexCss.match(
+    /@media\s*\(\s*max-width:\s*1024px\s*\)\s*\{[\s\S]*?\.finance-editor__layout--workspace[\s\S]*?grid-template-columns:\s*1fr[\s\S]*?\}/,
+  );
+  assert.ok(layoutRule, 'finance workspace tablet reflow rule missing');
+  const block = layoutRule[0]!;
+  assert.match(block, /\.finance-editor__bottom-grid[\s\S]*?grid-template-columns:\s*1fr/);
+  assert.match(block, /\.finance-detail--workspace[\s\S]*?grid-template-columns:\s*1fr/);
+});
+
+test('workspace pages prevent horizontal overflow', () => {
+  assert.match(indexCss, /\.finance-page--workspace\s*\{[^}]*overflow-x:\s*clip/s);
+  assert.match(indexCss, /\.finance-page--workspace\s*\{[^}]*--finance-workspace-gutter:\s*clamp\(1\.25rem/s);
+});
+
+test('all quote and invoice editor pages use workspace layout classes', () => {
+  for (const page of editorPages) {
+    const source = readPage(page);
+    assert.match(source, /finance-page--workspace/, `${page} missing finance-page--workspace`);
+    assert.match(source, /finance-editor--workspace/, `${page} missing finance-editor--workspace`);
+    assert.match(source, /finance-editor__layout--workspace/, `${page} missing finance-editor__layout--workspace`);
+    assert.match(source, /finance-editor__bottom-grid/, `${page} missing notes/totals bottom grid`);
+    assert.match(source, /FinanceLineItemsTotals/, `${page} missing FinanceLineItemsTotals`);
+  }
+});
+
+test('quote and invoice detail/preview pages use workspace layout classes', () => {
+  for (const page of detailPages) {
+    const source = readPage(page);
+    assert.match(source, /finance-page--workspace/, `${page} missing finance-page--workspace`);
+    assert.match(source, /finance-detail--workspace/, `${page} missing finance-detail--workspace`);
+    assert.match(source, /finance-table--workspace/, `${page} missing full-width line table`);
+  }
+});

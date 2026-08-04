@@ -18,6 +18,7 @@ import { FinanceDocumentActionsBar, type FinanceDocumentAction } from '../../fea
 import { FinanceDocumentAddressesFields } from '../../features/finance/FinanceDocumentAddressesFields';
 import { FinanceEditorCard } from '../../features/finance/FinanceEditorCard';
 import { FinanceLineItemsEditor } from '../../features/finance/FinanceLineItemsEditor';
+import { FinanceLineItemsTotals } from '../../features/finance/FinanceLineItemsTotals';
 import {
   createBlankEditorLines,
   addressesToApiPayload,
@@ -351,7 +352,7 @@ export function InvoiceCreatePage() {
   if (isLoading) return <p className="page-muted">Loading form…</p>;
 
   return (
-    <div className="finance-page finance-page--editor">
+    <div className="finance-page finance-page--editor finance-page--workspace">
       <PageHeader
         title="New Invoice"
         description="Professional invoice editor — official numbers are assigned by Xero after sync."
@@ -361,9 +362,9 @@ export function InvoiceCreatePage() {
       {draftShell.guard.unsavedChangesModal}
       {error ? <p className="form-error">{error}</p> : null}
 
-      <div className="finance-editor">
-        <div className="finance-editor__layout">
-          <FinanceEditorCard title="Customer Details">
+      <div className="finance-editor finance-editor--workspace">
+        <div className="finance-editor__layout finance-editor__layout--workspace">
+          <FinanceEditorCard title="Customer Details" className="finance-editor-card--customer">
             {accessToken ? (
               <CustomerSearchField
                 accessToken={accessToken}
@@ -414,7 +415,7 @@ export function InvoiceCreatePage() {
             </label>
           </FinanceEditorCard>
 
-          <FinanceEditorCard title="Document Details">
+          <FinanceEditorCard title="Document Details" className="finance-editor-card--document">
             <Input label="Invoice date" type="date" value={invoiceDate} onChange={(e) => setInvoiceDate(e.target.value)} />
             <Input label="Due date" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
             <label className="titan-input-group finance-editor-field-group">
@@ -434,11 +435,11 @@ export function InvoiceCreatePage() {
             <p className="finance-editor-hint">Draft — Xero invoice number pending</p>
           </FinanceEditorCard>
 
-          <FinanceEditorCard title="Addresses" className="finance-editor-card--full">
+          <FinanceEditorCard title="Addresses" className="finance-editor-card--full finance-editor-card--addresses">
             <FinanceDocumentAddressesFields addresses={addresses} onChange={setAddresses} />
           </FinanceEditorCard>
 
-          <FinanceEditorCard title="Line Items" className="finance-editor-card--full">
+          <FinanceEditorCard title="Line Items" className="finance-editor-card--full finance-editor-card--lines">
             <FinanceLineItemsEditor
               accessToken={accessToken ?? ''}
               lines={lines}
@@ -451,20 +452,28 @@ export function InvoiceCreatePage() {
             />
           </FinanceEditorCard>
 
-          <FinanceEditorCard title="Message / Notes" className="finance-editor-card--full">
-            <label className="titan-input-group finance-editor-field-group">
-              <span className="titan-input-label">Message to customer</span>
-              <textarea
-                className="titan-input finance-editor-field finance-textarea"
-                rows={4}
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-              />
-            </label>
-          </FinanceEditorCard>
+          <div className="finance-editor__bottom-grid">
+            <FinanceEditorCard title="Message / Notes" className="finance-editor-card--notes">
+              <label className="titan-input-group finance-editor-field-group">
+                <span className="titan-input-label">Message to customer</span>
+                <textarea
+                  className="titan-input finance-editor-field finance-textarea"
+                  rows={4}
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                />
+              </label>
+            </FinanceEditorCard>
+            <FinanceLineItemsTotals
+              lines={lines}
+              vatMode={vatMode}
+              priceMode={priceMode}
+              className="finance-line-items__totals-panel--workspace"
+            />
+          </div>
         </div>
 
-        <footer className="finance-editor__footer">
+        <footer className="finance-editor__footer finance-editor__footer--workspace">
           <FinanceDocumentActionsBar
             isSaving={isSaving}
             canApprove={status === 'draft' && !approvedForSend}

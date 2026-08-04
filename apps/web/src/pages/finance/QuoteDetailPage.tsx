@@ -213,7 +213,7 @@ export function QuoteDetailPage() {
   }
 
   return (
-    <div className="finance-page">
+    <div className="finance-page finance-page--workspace">
       <PageHeader
         title={quote.displayQuoteNumber}
         description={`${quote.customerName} · Version ${quote.versionNumber}${quote.isImmutable ? ' · issued (immutable)' : ' · editable'}`}
@@ -232,7 +232,7 @@ export function QuoteDetailPage() {
       {error ? <p className="form-error">{error}</p> : null}
       {success ? <p className="form-success">{success}</p> : null}
 
-      <div className="finance-detail">
+      <div className="finance-detail finance-detail--workspace">
         <Panel title="Summary">
           <dl className="finance-detail-list">
             <div>
@@ -338,9 +338,9 @@ export function QuoteDetailPage() {
           </Panel>
         ) : null}
 
-        <Panel title="Line Items">
-          <div className="finance-table-wrap">
-            <table className="finance-table">
+        <Panel title="Line Items" className="finance-detail-panel--lines">
+          <div className="finance-table-wrap finance-table-wrap--workspace">
+            <table className="finance-table finance-table--workspace">
               <thead>
                 <tr>
                   <th>Description</th>

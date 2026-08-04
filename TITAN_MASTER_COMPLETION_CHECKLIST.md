@@ -109,6 +109,7 @@ Recovery commits on app branch (newest first): `80a2534` → `3bfa085` → `2117
 2. **Xero is the only official** quote/invoice numbering authority.
 3. **Google Maps address search** must be integrated into Quote and Invoice address fields (autocomplete + manual fallback).
 4. Corrections must be **committed and deployed to staging** before Owner smoke test resumes.
+5. **Full-width Quote/Invoice workspace (J-6.1 addendum):** create, edit, detail and preview screens must fill the usable page width beside the TITAN sidebar — no narrow max-width wrappers; 20–24px outer margin; responsive grid; line table at 100% content width; notes + totals two-column section; readable search dropdowns; clean tablet/mobile reflow without horizontal overflow.
 
 **Phase 6 / J-5 result:** **SUPERSEDED** — awaiting new implementation revision and staging deploy.
 
@@ -168,6 +169,17 @@ Recovery commits on app branch (newest first): `80a2534` → `3bfa085` → `2117
 - [ ] **Add line** appears directly below the final row.
 - [ ] **Enter** on the final row creates a new line and focuses Description — **never submits** the document.
 - [ ] Blank or incomplete documents can always **Save Draft**.
+
+### E2 — Full-width workspace layout (J-6.1 addendum)
+
+- [ ] Quote and Invoice **create, edit, detail and preview** screens use the **full usable width** beside the TITAN sidebar (no narrow centred column).
+- [ ] Outer page margin is **20–24px** only; no empty side columns.
+- [ ] Customer and document details use a **balanced responsive grid**; addresses use available width.
+- [ ] Line-item table spans **100% of content width**; Description is the **widest column**; price/qty/VAT/totals remain readable.
+- [ ] Notes and totals sit in a **two-column section** on desktop where applicable.
+- [ ] Customer and catalogue search dropdowns **align with their fields** and show readable results.
+- [ ] **Tablet** reflows to fewer columns; **mobile** stacks vertically with **no horizontal page overflow**.
+- [ ] Long customer names, addresses and descriptions **wrap cleanly**; Young Guns dark theme preserved.
 
 ### F — Round-trip persistence
 
