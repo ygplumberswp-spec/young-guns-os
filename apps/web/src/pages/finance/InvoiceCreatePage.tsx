@@ -36,6 +36,7 @@ import { useStaffMutationInvalidation } from '../../lib/cache-invalidation';
 import { FinanceNav } from '../../features/finance/FinanceNav';
 import { canManageFinance, newFinanceClientActionId } from '../../features/finance/utils';
 import { buildFinanceEditorPreviewInput } from '../../features/finance/finance-preview-request';
+import { financeDocumentEditPath } from '../../features/finance/finance-document-save';
 import { useFinanceDocumentPreview } from '../../features/finance/useFinanceDocumentPreview';
 import { PageHeader } from '../../components/ux';
 import { useFormDraftShell } from '../../hooks/useFormDraftShell';
@@ -238,7 +239,7 @@ export function InvoiceCreatePage() {
         customerId,
         jobId: jobId || null,
         quoteId: quoteId || null,
-        status,
+        status: 'draft' as const,
         stage,
         lineItems: lineItems!,
         dueDate: dueDate ? new Date(dueDate).toISOString() : null,
@@ -250,7 +251,7 @@ export function InvoiceCreatePage() {
       };
 
       if (savedInvoiceId) {
-        return updateInvoice(accessToken, savedInvoiceId, {
+        const updated = await updateInvoice(accessToken, savedInvoiceId, {
           status: payload.status,
           stage: payload.stage,
           lineItems: payload.lineItems,
@@ -262,17 +263,22 @@ export function InvoiceCreatePage() {
           siteAddress: payload.siteAddress,
           postalAddress: payload.postalAddress,
         });
+        setStatus(updated.status);
+        return updated;
       }
 
       const created = await createInvoice(accessToken, payload);
       setSavedInvoiceId(created.id);
+      setStatus(created.status);
       return created;
     },
     [
       accessToken,
+      addresses,
       canWrite,
       clientActionId,
       customerId,
+      customerReference,
       draftShell.autosave,
       dueDate,
       invoiceDate,
@@ -284,7 +290,6 @@ export function InvoiceCreatePage() {
       quoteId,
       savedInvoiceId,
       stage,
-      status,
       vatMode,
     ],
   );
@@ -319,10 +324,21 @@ export function InvoiceCreatePage() {
     try {
       await draftShell.autosave.saveNow();
 
-      if (action === 'save_draft') {
-        await persistInvoice(false);
+      if (action === 'save' || action === 'save_draft') {
+        const wasNew = !savedInvoiceId;
+        const result = await persistInvoice(false);
         draftShell.markSubmitted();
-        notify({ variant: 'saved', message: 'Invoice draft saved', dedupeKey: 'invoice-draft-saved' });
+        if (result?.id) {
+          invalidateInvoices();
+          if (wasNew) {
+            navigate(financeDocumentEditPath('invoice', result.id), { replace: true });
+          }
+          notify({
+            variant: 'saved',
+            message: action === 'save_draft' ? 'Invoice draft saved' : 'Invoice saved',
+            dedupeKey: action === 'save_draft' ? 'invoice-draft-saved' : 'invoice-saved',
+          });
+        }
         return;
       }
 

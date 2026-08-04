@@ -188,7 +188,7 @@ export function QuoteEditPage() {
 
       return updateQuote(accessToken, quoteId, {
         jobId: jobId || null,
-        status,
+        status: strict ? status : 'draft',
         validUntil: validUntil ? new Date(validUntil).toISOString() : null,
         issuedAt: quoteDate ? new Date(quoteDate).toISOString() : null,
         customerNotes: customerReference.trim() || null,
@@ -199,12 +199,14 @@ export function QuoteEditPage() {
     },
     [
       accessToken,
+      addresses,
       canWrite,
       customerReference,
       jobId,
       lines,
       message,
       priceMode,
+      quoteDate,
       quoteId,
       status,
       validUntil,
@@ -245,11 +247,16 @@ export function QuoteEditPage() {
     try {
       await draftShell.autosave.saveNow();
 
-      if (action === 'save_draft') {
-        await persistQuote(false);
+      if (action === 'save' || action === 'save_draft') {
+        const result = await persistQuote(false);
+        if (result) setStatus(result.status);
         draftShell.markSubmitted();
         invalidateQuotes();
-        notify({ variant: 'saved', message: 'Quote draft saved', dedupeKey: `quote-draft-${quoteId}` });
+        notify({
+          variant: 'saved',
+          message: action === 'save_draft' ? 'Quote draft saved' : 'Quote saved',
+          dedupeKey: action === 'save_draft' ? `quote-draft-${quoteId}` : `quote-saved-${quoteId}`,
+        });
         return;
       }
 

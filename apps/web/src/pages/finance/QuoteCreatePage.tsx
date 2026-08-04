@@ -30,6 +30,7 @@ import { useStaffMutationInvalidation } from '../../lib/cache-invalidation';
 import { FinanceNav } from '../../features/finance/FinanceNav';
 import { canManageFinance, canViewFinanceProfit, newFinanceClientActionId } from '../../features/finance/utils';
 import { buildFinanceEditorPreviewInput } from '../../features/finance/finance-preview-request';
+import { financeDocumentEditPath } from '../../features/finance/finance-document-save';
 import { useFinanceDocumentPreview } from '../../features/finance/useFinanceDocumentPreview';
 import { PageHeader } from '../../components/ux';
 import { useFormDraftShell } from '../../hooks/useFormDraftShell';
@@ -247,7 +248,7 @@ export function QuoteCreatePage() {
       const body = {
         customerId: customerId || undefined,
         jobId: jobId || null,
-        status,
+        status: 'draft' as const,
         validUntil: validUntil ? new Date(validUntil).toISOString() : null,
         issuedAt: quoteDate ? new Date(quoteDate).toISOString() : null,
         customerNotes: customerReference.trim() || null,
@@ -276,6 +277,7 @@ export function QuoteCreatePage() {
           postalAddress: body.postalAddress,
           lineItems: body.lineItems,
         });
+        setStatus(updated.status);
         return updated;
       }
 
@@ -294,10 +296,12 @@ export function QuoteCreatePage() {
         clientActionId,
       });
       setSavedQuoteId(created.id);
+      setStatus(created.status);
       return created;
     },
     [
       accessToken,
+      addresses,
       canWrite,
       clientActionId,
       customerId,
@@ -308,8 +312,8 @@ export function QuoteCreatePage() {
       message,
       notify,
       priceMode,
+      quoteDate,
       savedQuoteId,
-      status,
       validUntil,
       vatMode,
     ],
@@ -345,10 +349,21 @@ export function QuoteCreatePage() {
     try {
       await draftShell.autosave.saveNow();
 
-      if (action === 'save_draft') {
-        await persistQuote(false);
+      if (action === 'save' || action === 'save_draft') {
+        const wasNew = !savedQuoteId;
+        const result = await persistQuote(false);
         draftShell.markSubmitted();
-        notify({ variant: 'saved', message: 'Quote draft saved', dedupeKey: 'quote-draft-saved' });
+        if (result?.id) {
+          invalidateQuotes();
+          if (wasNew) {
+            navigate(financeDocumentEditPath('quote', result.id), { replace: true });
+          }
+          notify({
+            variant: 'saved',
+            message: action === 'save_draft' ? 'Quote draft saved' : 'Quote saved',
+            dedupeKey: action === 'save_draft' ? 'quote-draft-saved' : 'quote-saved',
+          });
+        }
         return;
       }
 

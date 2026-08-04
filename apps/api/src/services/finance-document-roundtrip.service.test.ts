@@ -313,3 +313,77 @@ test('finance summaries are title-free and use Xero pending labels until synced'
   assert.equal(invoice.displayOfficialInvoiceNumber, 'Draft — Xero invoice number pending');
   assert.doesNotMatch(quote.displayQuoteNumber, /Q-000001/);
 });
+
+test('quote draft save with blank placeholder line keeps draft status and pending Xero number', async () => {
+  const { db } = createMockFinanceDb();
+  const service = new FinanceService(db);
+  const actor = { companyId: TENANT_A, canWrite: true, userId: 'user-1' };
+
+  await service.updateQuote(actor, 'quote-1', {
+    status: 'draft',
+    notes: 'Blank draft shell',
+    lineItems: [
+      {
+        category: 'other',
+        description: 'Draft — line items pending',
+        quantity: 1,
+        unitPriceCents: 0,
+        vatRateBps: 1500,
+      },
+    ],
+  });
+
+  const detail = await service.getQuoteDetail(TENANT_A, 'quote-1');
+  assert.ok(detail);
+  assert.equal(detail.status, 'draft');
+  assert.equal(detail.notes, 'Blank draft shell');
+  assert.equal(detail.displayQuoteNumber, 'Draft — Xero quote number pending');
+});
+
+test('invoice incomplete draft save preserves reference and stays draft', async () => {
+  const { db } = createMockFinanceDb();
+  const service = new FinanceService(db);
+  const actor = { companyId: TENANT_A, canWrite: true, userId: 'user-1' };
+
+  await service.updateInvoice(actor, 'invoice-1', {
+    status: 'draft',
+    customerReference: 'STAGING-QA-REF',
+    notes: 'Incomplete draft',
+    lineItems: [
+      {
+        category: 'other',
+        description: 'Draft — line items pending',
+        quantity: 1,
+        unitPriceCents: 0,
+        vatRateBps: 1500,
+      },
+    ],
+  });
+
+  const detail = await service.getInvoiceDetail(TENANT_A, 'invoice-1');
+  assert.ok(detail);
+  assert.equal(detail.status, 'draft');
+  assert.equal(detail.customerReference, 'STAGING-QA-REF');
+  assert.equal(detail.displayOfficialInvoiceNumber, 'Draft — Xero invoice number pending');
+});
+
+test('completed draft save keeps real line items and draft status without Xero assignment', async () => {
+  const { db } = createMockFinanceDb();
+  const service = new FinanceService(db);
+  const actor = { companyId: TENANT_A, canWrite: true, userId: 'user-1' };
+
+  await service.updateQuote(actor, 'quote-1', {
+    status: 'draft',
+    notes: 'Completed draft',
+    billingAddress: '1 Main Rd',
+    lineItems: [lineItem('Call-out fee', 45000)],
+  });
+
+  const detail = await service.getQuoteDetail(TENANT_A, 'quote-1');
+  assert.ok(detail);
+  assert.equal(detail.status, 'draft');
+  assert.equal(detail.notes, 'Completed draft');
+  assert.equal(detail.addresses.billingAddress, '1 Main Rd');
+  assert.equal(detail.displayQuoteNumber, 'Draft — Xero quote number pending');
+  assert.equal(detail.xeroQuoteId, null);
+});

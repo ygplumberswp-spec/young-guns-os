@@ -1,6 +1,7 @@
 import type { QuoteLineCategory } from '@titan/shared';
 import { buildCatalogueLineAutoFill, calculateLineAmounts, parseMoneyInput } from '@titan/shared';
 import type { FinanceCatalogueItemSearchResult } from '@titan/shared';
+import { DRAFT_PLACEHOLDER_LINE_DESCRIPTION, isDraftPlaceholderLineItem } from './finance-document-save.js';
 
 export type FinanceEditorLine = {
   key: string;
@@ -163,7 +164,7 @@ export function parseEditorLinesForDraft(
   return [
     {
       category: 'other',
-      description: 'Draft — line items pending',
+      description: DRAFT_PLACEHOLDER_LINE_DESCRIPTION,
       quantity: 1,
       unitPriceCents: 0,
       vatRateBps: resolveDocumentVatBps(options?.vatMode ?? 'standard'),
@@ -261,7 +262,8 @@ export function lineItemsToEditorLines(
   }>,
   priceMode: FinanceDocumentPriceMode = 'excluding_vat',
 ): FinanceEditorLine[] {
-  const mapped = lineItems.map((line) => ({
+  const persisted = lineItems.filter((line) => !isDraftPlaceholderLineItem(line));
+  const mapped = persisted.map((line) => ({
     key: line.id,
     category: line.category as QuoteLineCategory,
     description: line.description,

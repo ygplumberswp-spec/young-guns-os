@@ -187,7 +187,7 @@ export function InvoiceEditPage() {
       }
 
       return updateInvoice(accessToken, invoiceId, {
-        status,
+        status: strict ? status : 'draft',
         stage,
         lineItems: lineItems!,
         dueDate: dueDate ? new Date(dueDate).toISOString() : null,
@@ -199,9 +199,12 @@ export function InvoiceEditPage() {
     },
     [
       accessToken,
+      addresses,
       canWrite,
+      customerReference,
       dueDate,
       editable,
+      invoiceDate,
       invoiceId,
       lines,
       message,
@@ -241,11 +244,16 @@ export function InvoiceEditPage() {
     try {
       await draftShell.autosave.saveNow();
 
-      if (action === 'save_draft') {
-        await persistInvoice(false);
+      if (action === 'save' || action === 'save_draft') {
+        const result = await persistInvoice(false);
+        if (result) setStatus(result.status);
         draftShell.markSubmitted();
         invalidateInvoices();
-        notify({ variant: 'saved', message: 'Invoice draft saved', dedupeKey: `invoice-draft-${invoiceId}` });
+        notify({
+          variant: 'saved',
+          message: action === 'save_draft' ? 'Invoice draft saved' : 'Invoice saved',
+          dedupeKey: action === 'save_draft' ? `invoice-draft-${invoiceId}` : `invoice-saved-${invoiceId}`,
+        });
         return;
       }
 
