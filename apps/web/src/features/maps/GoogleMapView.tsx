@@ -375,7 +375,7 @@ export function GoogleMapView({
         polylineRef.current = new gmaps.Polyline({
           map,
           path,
-          strokeColor: '#22d3ee',
+          strokeColor: '#1f7aec',
           strokeOpacity: 0.9,
           strokeWeight: 4,
         });

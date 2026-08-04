@@ -565,7 +565,7 @@ export function FinanceReportingForecastPage() {
           margin-top: 0.75rem;
         }
         .finance-reporting-forecast-page .frf-card h3 {
-          color: var(--titan-accent, #22d3ee);
+          color: var(--titan-accent, #1f7aec);
         }
         .finance-reporting-forecast-page .ux-actions {
           display: flex;

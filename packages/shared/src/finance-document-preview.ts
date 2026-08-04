@@ -83,7 +83,6 @@ export type FinanceDocumentPreviewModel = {
 
 const PREVIEW_HIDDEN_SECTIONS = new Set([
   'payment_options',
-  'status_panel',
   'review_request',
   'before_after_photos',
   'image_gallery',
@@ -91,7 +90,6 @@ const PREVIEW_HIDDEN_SECTIONS = new Set([
   'warranty',
   'recommended_maintenance',
   'work_completed',
-  'job_details',
 ]);
 
 function dateInputToIso(value: string | null | undefined): string | null {
@@ -176,6 +174,11 @@ export function buildFinanceDocumentPreviewModel(
     if (PREVIEW_HIDDEN_SECTIONS.has(section.kind)) {
       sections = setSectionVisibility(sections, section.id, false);
     }
+  }
+
+  const statusSection = sections.find((section) => section.kind === 'status_panel');
+  if (statusSection) {
+    sections = setSectionVisibility(sections, statusSection.id, true);
   }
 
   if (input.jobReference?.trim()) {

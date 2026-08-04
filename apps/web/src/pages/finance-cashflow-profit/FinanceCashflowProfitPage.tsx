@@ -260,7 +260,7 @@ export function FinanceCashflowProfitPage() {
             {label}
           </Button>
         ))}
-        <Link href="/finance-aura-agent" style={{ marginLeft: 'auto', color: 'var(--titan-cyan, #22d3ee)' }}>
+        <Link href="/finance-aura-agent" style={{ marginLeft: 'auto', color: 'var(--titan-accent, #1f7aec)' }}>
           Finance AURA Agent →
         </Link>
       </div>
@@ -272,7 +272,7 @@ export function FinanceCashflowProfitPage() {
       ) : null}
       {success ? (
         <Panel title="Status">
-          <p style={{ color: 'var(--titan-cyan, #22d3ee)', margin: 0 }}>{success}</p>
+          <p style={{ color: 'var(--titan-accent, #1f7aec)', margin: 0 }}>{success}</p>
         </Panel>
       ) : null}
 
@@ -595,7 +595,7 @@ export function FinanceCashflowProfitPage() {
               <ul>
                 {dashboard.auraConnections.map((c) => (
                   <li key={c.target}>
-                    <Link href={c.href} style={{ color: 'var(--titan-cyan, #22d3ee)' }}>
+                    <Link href={c.href} style={{ color: 'var(--titan-accent, #1f7aec)' }}>
                       {c.label}
                     </Link>
                     <div style={{ color: 'var(--titan-muted, #94a3b8)', fontSize: '0.85rem' }}>

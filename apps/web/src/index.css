@@ -68,7 +68,7 @@ a:focus-visible {
   background-color: var(--titan-accent-soft);
   color: var(--titan-text);
   font-weight: 600;
-  border: 1px solid rgba(34, 211, 238, 0.25);
+  border: 1px solid rgba(var(--titan-accent-rgb), 0.25);
 }
 
 .nav-link:focus-visible {
@@ -85,8 +85,8 @@ a:focus-visible {
   justify-content: center;
   padding: 1.5rem;
   background:
-    radial-gradient(ellipse 80% 50% at 50% -8%, rgba(34, 211, 238, 0.1), transparent 58%),
-    radial-gradient(ellipse 40% 35% at 85% 90%, rgba(34, 211, 238, 0.04), transparent 55%),
+    radial-gradient(ellipse 80% 50% at 50% -8%, rgba(var(--titan-accent-rgb), 0.1), transparent 58%),
+    radial-gradient(ellipse 40% 35% at 85% 90%, rgba(var(--titan-accent-rgb), 0.04), transparent 55%),
     var(--titan-bg);
   overflow-x: hidden;
 }
@@ -97,7 +97,7 @@ a:focus-visible {
   inset: 0;
   background:
     linear-gradient(180deg, transparent 55%, rgba(10, 10, 11, 0.78)),
-    radial-gradient(ellipse 60% 40% at 50% 42%, rgba(34, 211, 238, 0.03), transparent 70%);
+    radial-gradient(ellipse 60% 40% at 50% 42%, rgba(var(--titan-accent-rgb), 0.03), transparent 70%);
 }
 
 .auth-stage__inner {
@@ -167,14 +167,14 @@ a:focus-visible {
 
 .auth-card {
   background:
-    linear-gradient(180deg, rgba(34, 211, 238, 0.04) 0%, transparent 42%),
+    linear-gradient(180deg, rgba(var(--titan-accent-rgb), 0.04) 0%, transparent 42%),
     linear-gradient(180deg, var(--titan-surface-raised) 0%, var(--titan-surface) 100%);
   border: 1px solid rgba(53, 80, 122, 0.85);
   border-radius: var(--titan-radius-xl);
   padding: 1.65rem 1.5rem 1.5rem;
   box-shadow:
     var(--titan-shadow-md),
-    0 0 0 1px rgba(34, 211, 238, 0.06),
+    0 0 0 1px rgba(var(--titan-accent-rgb), 0.06),
     var(--titan-shadow-glow);
 }
 
@@ -810,7 +810,7 @@ a:focus-visible {
 
 .owner-shell--collapsed .app-nav__link--active {
   border-left-color: transparent;
-  box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.28), 0 0 12px rgba(34, 211, 238, 0.1);
+  box-shadow: 0 0 0 1px rgba(var(--titan-accent-rgb), 0.28), 0 0 12px rgba(var(--titan-accent-rgb), 0.1);
 }
 
 .owner-shell--collapsed .app-nav__toolbar {
@@ -2095,9 +2095,9 @@ a:focus-visible {
 }
 
 .exec-quick-links__item--quote .exec-quick-links__icon-wrap {
-  color: #22d3ee;
-  background: rgba(34, 211, 238, 0.12);
-  border-color: rgba(34, 211, 238, 0.28);
+  color: var(--titan-accent);
+  background: rgba(var(--titan-accent-rgb), 0.12);
+  border-color: rgba(var(--titan-accent-rgb), 0.28);
 }
 
 .exec-quick-links__item--invoice .exec-quick-links__icon-wrap {
@@ -4561,7 +4561,7 @@ a:focus-visible {
 }
 
 .aura-message--user .aura-message__markdown a {
-  color: rgba(34, 211, 238, 0.35);
+  color: rgba(var(--titan-accent-rgb), 0.35);
 }
 
 .aura-empty-chat {
@@ -6927,7 +6927,7 @@ a:focus-visible {
 
 .ux-multi-status-filter__pill--active {
   background: var(--titan-accent-soft);
-  border-color: rgba(34, 211, 238, 0.35);
+  border-color: rgba(var(--titan-accent-rgb), 0.35);
   color: var(--titan-text);
   font-weight: 600;
 }
@@ -7607,7 +7607,7 @@ a:focus-visible {
   background: var(--titan-accent-soft);
   color: var(--titan-text);
   font-weight: 600;
-  border: 1px solid rgba(34, 211, 238, 0.3);
+  border: 1px solid rgba(var(--titan-accent-rgb), 0.3);
 }
 
 .portal-nav__link:focus-visible {
@@ -7780,9 +7780,9 @@ a:focus-visible {
   gap: 0.875rem;
   padding: 1.25rem 1.35rem;
   border-radius: var(--titan-radius-lg, 0.75rem);
-  border: 1px solid rgba(34, 211, 238, 0.22);
+  border: 1px solid rgba(var(--titan-accent-rgb), 0.22);
   background:
-    linear-gradient(145deg, rgba(34, 211, 238, 0.08) 0%, transparent 42%),
+    linear-gradient(145deg, rgba(var(--titan-accent-rgb), 0.08) 0%, transparent 42%),
     linear-gradient(180deg, var(--titan-surface-raised) 0%, var(--titan-surface) 100%);
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset;
 }
@@ -7844,7 +7844,7 @@ a:focus-visible {
   padding: 0.65rem 0.8rem;
   border-radius: var(--titan-radius-md, 0.5rem);
   background: rgba(0, 0, 0, 0.22);
-  border: 1px solid rgba(34, 211, 238, 0.12);
+  border: 1px solid rgba(var(--titan-accent-rgb), 0.12);
   color: var(--titan-text-secondary);
   font-size: 0.875rem;
   font-variant-numeric: tabular-nums;
@@ -8182,7 +8182,7 @@ a:focus-visible {
   margin-bottom: 1rem;
   border-radius: 0.75rem;
   background: var(--titan-accent-soft);
-  border: 1px solid rgba(34, 211, 238, 0.35);
+  border: 1px solid rgba(var(--titan-accent-rgb), 0.35);
 }
 
 .aura-tool-activity,
@@ -8405,7 +8405,7 @@ a:focus-visible {
 .status-pill--approval_required {
   background: var(--titan-accent-soft);
   color: var(--titan-accent);
-  border-color: rgba(34, 211, 238, 0.35);
+  border-color: rgba(var(--titan-accent-rgb), 0.35);
 }
 
 .status-pill--unavailable,
@@ -8565,7 +8565,7 @@ a:focus-visible {
 
 .capability-builder__step--active {
   color: #0f766e;
-  border-color: rgba(34, 211, 238, 0.4);
+  border-color: rgba(var(--titan-accent-rgb), 0.4);
   background: var(--titan-accent-soft);
 }
 
@@ -8615,7 +8615,7 @@ a:focus-visible {
 }
 
 .capability-test-result--passed {
-  border-color: rgba(34, 211, 238, 0.4);
+  border-color: rgba(var(--titan-accent-rgb), 0.4);
   background: var(--titan-accent-soft);
 }
 
@@ -9156,7 +9156,7 @@ input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='
   background: var(--titan-accent-soft);
   color: var(--titan-text);
   font-weight: 600;
-  border-color: rgba(34, 211, 238, 0.35);
+  border-color: rgba(var(--titan-accent-rgb), 0.35);
 }
 
 .ux-status-badge {
@@ -9275,7 +9275,7 @@ input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='
 
 .ux-multi-status-filter__pill--active {
   background: var(--titan-accent-soft);
-  border-color: rgba(34, 211, 238, 0.35);
+  border-color: rgba(var(--titan-accent-rgb), 0.35);
   color: var(--titan-text);
   font-weight: 600;
 }
@@ -9811,21 +9811,21 @@ input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='
 }
 
 .finance-customer-search { position: relative; margin-bottom: 0; }
-.finance-customer-search__results { list-style: none; margin: 0.5rem 0 0; padding: 0; border: 1px solid rgba(34, 211, 238, 0.28); border-radius: var(--titan-radius-md); background: var(--titan-bg-elevated); max-height: 16rem; overflow: auto; box-shadow: var(--titan-shadow-sm); }
+.finance-customer-search__results { list-style: none; margin: 0.5rem 0 0; padding: 0; border: 1px solid rgba(var(--titan-accent-rgb), 0.28); border-radius: var(--titan-radius-md); background: var(--titan-bg-elevated); max-height: 16rem; overflow: auto; box-shadow: var(--titan-shadow-sm); }
 .finance-customer-search__option, .finance-customer-search__create { display: block; width: 100%; text-align: left; padding: 0.85rem 1rem; border: 0; background: transparent; cursor: pointer; color: var(--titan-text); font-size: 0.9375rem; }
 .finance-customer-search__option--active, .finance-customer-search__option:hover, .finance-customer-search__create:hover { background: var(--titan-accent-soft); }
 .finance-customer-search__option:focus-visible, .finance-customer-search__create:focus-visible { outline: none; box-shadow: inset var(--titan-focus-ring); }
 .finance-customer-search__option strong { display: block; color: var(--titan-text); font-size: 1rem; margin-bottom: 0.15rem; }
 .finance-customer-search__option span { display: block; font-size: 0.875rem; color: var(--titan-text-secondary); line-height: 1.45; }
 .finance-customer-search__create { color: var(--titan-accent); font-weight: 600; border-top: 1px solid var(--titan-border-subtle); }
-.finance-customer-search__selected { margin-top: 1rem; padding: 1rem 1.125rem; border: 1px solid rgba(34, 211, 238, 0.32); border-radius: var(--titan-radius-md); background: rgba(34, 211, 238, 0.06); }
+.finance-customer-search__selected { margin-top: 1rem; padding: 1rem 1.125rem; border: 1px solid rgba(var(--titan-accent-rgb), 0.32); border-radius: var(--titan-radius-md); background: rgba(var(--titan-accent-rgb), 0.06); }
 .finance-customer-search__selected-main strong { display: block; font-size: 1.0625rem; color: var(--titan-text); margin-bottom: 0.2rem; }
 .finance-customer-search__selected-main span { display: block; color: var(--titan-accent); font-size: 0.9375rem; }
 .finance-customer-search__selected-meta { margin: 0.5rem 0 0; font-size: 0.875rem; color: var(--titan-text-secondary); line-height: 1.5; }
 
 .finance-catalogue-search { position: relative; }
 .finance-catalogue-search__status { display: block; margin-top: 0.35rem; font-size: 0.8125rem; }
-.finance-catalogue-search__results { list-style: none; margin: 0.35rem 0 0; padding: 0; border: 1px solid rgba(34, 211, 238, 0.28); border-radius: var(--titan-radius-md); background: var(--titan-bg-elevated); max-height: 14rem; overflow: auto; box-shadow: var(--titan-shadow-sm); z-index: 4; position: absolute; left: 0; right: 0; }
+.finance-catalogue-search__results { list-style: none; margin: 0.35rem 0 0; padding: 0; border: 1px solid rgba(var(--titan-accent-rgb), 0.28); border-radius: var(--titan-radius-md); background: var(--titan-bg-elevated); max-height: 14rem; overflow: auto; box-shadow: var(--titan-shadow-sm); z-index: 4; position: absolute; left: 0; right: 0; }
 .finance-catalogue-search__option, .finance-catalogue-search__manual { display: block; width: 100%; text-align: left; padding: 0.65rem 0.85rem; border: 0; background: transparent; cursor: pointer; color: var(--titan-text); font-size: 0.875rem; }
 .finance-catalogue-search__option--active, .finance-catalogue-search__option:hover, .finance-catalogue-search__manual--active, .finance-catalogue-search__manual:hover { background: var(--titan-accent-soft); }
 .finance-catalogue-search__option-head { display: flex; gap: 0.5rem; align-items: baseline; flex-wrap: wrap; }
@@ -9834,7 +9834,7 @@ input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='
 .finance-catalogue-search__option-source { font-size: 0.75rem; font-weight: 600; color: var(--titan-text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
 .finance-catalogue-search__status--warning { color: #fbbf24; }
 .finance-line-items__unit { min-width: 4.5rem; max-width: 6rem; }
-.finance-customer-drawer { margin-top: 1rem; padding: 1.25rem; border: 1px solid rgba(34, 211, 238, 0.28); border-radius: var(--titan-radius-lg); display: grid; gap: 1rem; background: var(--titan-surface-raised); }
+.finance-customer-drawer { margin-top: 1rem; padding: 1.25rem; border: 1px solid rgba(var(--titan-accent-rgb), 0.28); border-radius: var(--titan-radius-lg); display: grid; gap: 1rem; background: var(--titan-surface-raised); }
 .finance-customer-drawer__title { margin: 0; font-family: var(--titan-font-display); font-size: 1.0625rem; font-weight: 700; color: var(--titan-accent); }
 .finance-customer-drawer__actions { display: flex; flex-wrap: wrap; gap: 0.75rem; justify-content: flex-end; padding-top: 0.25rem; }
 
@@ -9864,7 +9864,7 @@ input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='
 }
 
 .finance-editor-card:hover {
-  border-color: rgba(34, 211, 238, 0.22);
+  border-color: rgba(var(--titan-accent-rgb), 0.22);
 }
 
 .finance-editor-card--full {
@@ -9919,7 +9919,7 @@ input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='
 
 .finance-editor-field:hover:not(:disabled),
 .finance-editor-card .titan-input:hover:not(:disabled) {
-  border-color: rgba(34, 211, 238, 0.35);
+  border-color: rgba(var(--titan-accent-rgb), 0.35);
 }
 
 .finance-editor-field:focus,
@@ -10072,7 +10072,7 @@ input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='
   flex-wrap: wrap;
   gap: 0.5rem;
   padding: 0.35rem;
-  border: 1px solid rgba(34, 211, 238, 0.28);
+  border: 1px solid rgba(var(--titan-accent-rgb), 0.28);
   border-radius: var(--titan-radius-lg);
   background: var(--titan-bg-elevated);
 }
@@ -10098,7 +10098,7 @@ input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='
 
 .finance-vat-selector__option:hover:not(:disabled) {
   color: var(--titan-text);
-  border-color: rgba(34, 211, 238, 0.35);
+  border-color: rgba(var(--titan-accent-rgb), 0.35);
   background: var(--titan-accent-soft);
 }
 
@@ -10109,7 +10109,7 @@ input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='
 
 .finance-vat-selector__option--active {
   color: var(--titan-text);
-  background: linear-gradient(180deg, rgba(34, 211, 238, 0.22) 0%, rgba(34, 211, 238, 0.1) 100%);
+  background: linear-gradient(180deg, rgba(var(--titan-accent-rgb), 0.22) 0%, rgba(var(--titan-accent-rgb), 0.1) 100%);
   border-color: var(--titan-accent);
   box-shadow: var(--titan-shadow-accent);
 }
@@ -10156,7 +10156,7 @@ input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='
 .finance-line-items__add-btn {
   min-height: 2.75rem;
   padding: 0.5rem 1.25rem;
-  border: 1px dashed rgba(34, 211, 238, 0.45);
+  border: 1px dashed rgba(var(--titan-accent-rgb), 0.45);
   border-radius: var(--titan-radius-md);
   background: transparent;
   color: var(--titan-accent);
@@ -10202,7 +10202,7 @@ input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='
 }
 
 .finance-line-items__action-btn:hover:not(:disabled) {
-  border-color: rgba(34, 211, 238, 0.4);
+  border-color: rgba(var(--titan-accent-rgb), 0.4);
   color: var(--titan-accent);
   background: var(--titan-accent-soft);
 }
@@ -10222,9 +10222,9 @@ input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='
   margin-left: auto;
   width: min(100%, 22rem);
   padding: 1.125rem 1.25rem;
-  border: 1px solid rgba(34, 211, 238, 0.38);
+  border: 1px solid rgba(var(--titan-accent-rgb), 0.38);
   border-radius: var(--titan-radius-lg);
-  background: linear-gradient(180deg, rgba(34, 211, 238, 0.12) 0%, rgba(34, 211, 238, 0.04) 100%);
+  background: linear-gradient(180deg, rgba(var(--titan-accent-rgb), 0.12) 0%, rgba(var(--titan-accent-rgb), 0.04) 100%);
   box-shadow: var(--titan-shadow-accent);
   display: flex;
   flex-direction: column;
@@ -10249,7 +10249,7 @@ input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='
 .finance-line-items__totals-row--grand {
   margin-top: 0.35rem;
   padding-top: 0.75rem;
-  border-top: 1px solid rgba(34, 211, 238, 0.28);
+  border-top: 1px solid rgba(var(--titan-accent-rgb), 0.28);
   font-size: 1rem;
 }
 

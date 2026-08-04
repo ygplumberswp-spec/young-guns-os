@@ -28,13 +28,13 @@ export function AuraMark({ size = 'md', className, title = AI_NAME }: AuraMarkPr
       <title>{title}</title>
       <defs>
         <linearGradient id={ringId} x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#22d3ee" />
-          <stop offset="45%" stopColor="#38bdf8" />
-          <stop offset="100%" stopColor="#0ea5e9" />
+          <stop offset="0%" stopColor="#1f7aec" />
+          <stop offset="45%" stopColor="#3e9bff" />
+          <stop offset="100%" stopColor="#54a6ff" />
         </linearGradient>
         <radialGradient id={glowId} cx="50%" cy="35%" r="65%">
-          <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.22" />
-          <stop offset="100%" stopColor="#22d3ee" stopOpacity="0" />
+          <stop offset="0%" stopColor="#1f7aec" stopOpacity="0.22" />
+          <stop offset="100%" stopColor="#1f7aec" stopOpacity="0" />
         </radialGradient>
       </defs>
       <circle cx="32" cy="32" r="30" fill="var(--titan-surface, #0f172a)" />
