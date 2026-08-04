@@ -137,36 +137,58 @@ All 19 items — **NOT RUN** (requires Owner browser session; agent has no authe
 
 ## Future phases (planned — not started)
 
-### AURA Developer Agent — Owner-only development assistant
+### AURA Developer Agent + Cursor Cloud Agent provider
 
-**Status:** **PLANNED / NOT STARTED** — record only; **do not implement** until explicit Owner approval for this phase.
+**Status:** **PLANNED / NOT STARTED** — documentation only; **do not implement** until explicit Owner approval for this phase.
 
-**Purpose:** An Owner-only development assistant inside TITAN that can send **approved** change requests to Cursor AI for controlled implementation.
+**Purpose:** An Owner-only development assistant inside TITAN that sends **approved** change requests to Cursor AI via a first-class backend provider—not a parallel AI system. Cursor must be integrated into TITAN’s existing AI provider registry alongside OpenAI, Claude and Gemini.
 
 **Required workflow (mandatory sequence):**
 
 1. **Request** — Owner submits a change request inside TITAN.
 2. **AURA specification** — AURA produces a structured spec (scope, files, risks, test plan).
-3. **Owner approval** — Owner explicitly approves the spec before any code work begins.
-4. **Isolated Git branch** — Work proceeds only on a dedicated feature branch (never on `main` or production deploy branches).
-5. **Cursor implementation** — Cursor AI implements the approved spec on that branch.
+3. **Owner approval** — Owner explicitly approves the spec before any Cursor run starts.
+4. **Cursor backend provider** — Approved request is dispatched through the `cursor_cloud_agent` provider adapter (server-side only).
+5. **Isolated Git branch** — Work proceeds only on a dedicated feature branch (never on `main` or production deploy branches).
 6. **Automated tests and builds** — CI runs typecheck, relevant tests, and production builds; failures block progression.
-7. **Pull request and change report** — PR opened with a human-readable change report (diff summary, risks, rollback notes).
-8. **Staging deployment** — Deploy approved revision to staging only.
+7. **Pull request and change report** — PR opened with a human-readable change report (diff summary, changed-file evidence, risks, rollback notes).
+8. **Staging deployment** — Deploy approved revision to staging only (requires separate Owner approval before deploy).
 9. **Owner smoke test** — Owner verifies behaviour in staging before any production consideration.
 10. **Separate production approval** — Distinct Owner gate required for production deploy; staging success alone is insufficient.
+
+**Future provider design (extend existing registry — do not replace):**
+
+1. Add **“Cursor Cloud Agent”** under **Settings → AI Providers**, beside OpenAI, Claude and Gemini.
+2. **Provider key:** `cursor_cloud_agent`.
+3. Integrate via the **official Cursor TypeScript SDK** or **Cloud Agents API**.
+4. Store the Cursor API key **server-side and encrypted**. Never expose it to the browser, logs or prompts.
+5. **Capability-based routing** — route to Cursor only when the task matches an allowed capability:
+   - `software_change`
+   - `bug_diagnosis`
+   - `code_review`
+   - `test_repair`
+   - `build_repair`
+6. **Do not route** ordinary AURA business chat, customer replies, finance questions or operations questions to Cursor. Cursor is the specialist coding/development provider only.
+7. Support **asynchronous run states:** `queued`, `running`, `awaiting_review`, `completed`, `failed`, `cancelled`.
+8. Use **webhooks or safe polling** to update run status inside TITAN.
+9. Every run must use an **isolated Git branch** and produce **tests, build results, changed-file evidence and a review report**.
+10. Require **Owner approval** before starting Cursor, before staging deployment, and separately before production.
+11. **Preserve** the existing OpenAI, Claude and Gemini adapters. **Extend** the existing provider registry—do not create a parallel AI system.
+12. Include **health check**, **usage tracking**, **timeout handling**, **cost visibility**, **audit history** and **rollback evidence**.
+13. **Never permit:** automatic production changes, automatic migrations, secret exposure, force pushes or unapproved external actions.
 
 **Hard prohibitions (never allowed):**
 
 - Direct production edits or production deploy without a separate Owner approval gate
 - Automatic database migrations (migrations require explicit Owner-approved, staged apply — same discipline as Finance 0176/0177)
-- Secret exposure (tokens, passwords, `DATABASE_URL`, API keys) in specs, logs, PRs, or agent output
+- Secret exposure (tokens, passwords, `DATABASE_URL`, API keys) in specs, logs, PRs, prompts or agent output
 - Unapproved external actions (Xero sync/write, Yoco, email, WhatsApp, paid services, third-party writes)
 - Bypassing Git review (no force-push to shared branches, no merge without PR review)
+- Routing non-development AURA chat through Cursor
 
 **Required safeguards:**
 
-- **Complete audit log** — every request, spec, approval, branch, commit, deploy ID, and smoke result recorded with actor and timestamp
+- **Complete audit log** — every request, spec, approval, provider run ID, branch, commit, deploy ID, and smoke result recorded with actor and timestamp
 - **Rollback path** — documented revert steps for code (Git), deploy (Railway prior revision), and database (backup/restore when schema touched)
 
 **Implementation gate:** Owner must approve this phase explicitly before design or code begins. Until then, treat as backlog only.
