@@ -3,11 +3,20 @@ import type { ApiHealthResponse } from '@titan/shared';
 import { probeDbConnection } from '@titan/db';
 import { API_VERSION, type RuntimeControls } from '../config.js';
 import { pingRedisTcp } from '../lib/redis-ping.js';
+import {
+  buildStorageDiagnosticReport,
+  type DeploymentStorageValidationInput,
+  validateDeploymentStorageConfiguration,
+} from '../lib/deployment-storage-validation.js';
+import { probeFinancePdfRendererAvailability } from '../services/finance-document-pdf.service.js';
 
 export type HealthRouterDeps = {
   databaseUrl?: string;
   redisUrl?: string;
   runtime?: RuntimeControls;
+  storage?: DeploymentStorageValidationInput & {
+    financeDirectUsesJobEvidenceRoot?: boolean;
+  };
   /** Optional structured logger; falls back to console for readiness failures. */
   log?: {
     info: (obj: Record<string, unknown>, msg: string) => void;
@@ -176,6 +185,64 @@ export function createHealthRouter(
         schedulersEnabled: deps.runtime?.schedulersEnabled ?? false,
         workersEnabled: deps.runtime?.workersEnabled ?? false,
         webhooksEnabled: deps.runtime?.webhooksEnabled ?? false,
+        timestamp: new Date().toISOString(),
+      },
+    });
+  });
+
+  router.get('/health/pdf-renderer', async (_req, res) => {
+    const probe = await probeFinancePdfRendererAvailability();
+    if (!probe.available) {
+      res.status(503).json({
+        error: {
+          code: 'CHROMIUM_UNAVAILABLE',
+          message: 'Headless Chromium is not available for finance PDF rendering',
+        },
+      });
+      return;
+    }
+    res.json({
+      data: {
+        status: 'available',
+        source: probe.source,
+        timestamp: new Date().toISOString(),
+      },
+    });
+  });
+
+  router.get('/health/storage', async (_req, res) => {
+    if (!deps.storage) {
+      res.status(503).json({
+        error: {
+          code: 'NOT_CONFIGURED',
+          message: 'Storage diagnostics are not configured',
+        },
+      });
+      return;
+    }
+
+    const validation = validateDeploymentStorageConfiguration(deps.storage);
+    const report = buildStorageDiagnosticReport({
+      jobEvidenceStoragePath: deps.storage.jobEvidenceStoragePath,
+      companyMediaStoragePath: deps.storage.companyMediaStoragePath,
+      financeDirectUsesJobEvidenceRoot: deps.storage.financeDirectUsesJobEvidenceRoot ?? true,
+    });
+
+    if (!validation.ok) {
+      res.status(503).json({
+        error: {
+          code: 'STORAGE_MISCONFIGURED',
+          message: validation.errors.join(' '),
+        },
+        data: report,
+      });
+      return;
+    }
+
+    res.json({
+      data: {
+        ...report,
+        warnings: validation.warnings,
         timestamp: new Date().toISOString(),
       },
     });

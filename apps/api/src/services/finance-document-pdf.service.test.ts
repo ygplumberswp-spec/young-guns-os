@@ -5,18 +5,63 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildFinanceDocumentPreviewModel, isValidPdfBuffer } from '@titan/shared';
 import {
+  FinanceDocumentPdfError,
+  probeFinancePdfRendererAvailability,
   renderFinanceDocumentPreviewPdf,
   setFinanceDocumentPdfRenderer,
 } from './finance-document-pdf.service.js';
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '../../../..');
 const financeRouteSource = readFileSync(join(repoRoot, 'apps/api/src/routes/finance.ts'), 'utf8');
+const chromiumSource = readFileSync(
+  join(repoRoot, 'apps/api/src/lib/chromium-executable.ts'),
+  'utf8',
+);
+const pdfServiceSource = readFileSync(
+  join(repoRoot, 'apps/api/src/services/finance-document-pdf.service.ts'),
+  'utf8',
+);
 
 test('finance preview/pdf route returns application/pdf from document engine renderer', () => {
   assert.match(financeRouteSource, /\/documents\/preview\/pdf/);
   assert.match(financeRouteSource, /application\/pdf/);
   assert.match(financeRouteSource, /renderFinanceDocumentPreviewPdf/);
   assert.doesNotMatch(financeRouteSource, /previewDocument[\s\S]*?\.insert\(/);
+});
+
+test('finance PDF renderer resolves executable path without downloading on startup', () => {
+  assert.match(chromiumSource, /PUPPETEER_EXECUTABLE_PATH/);
+  assert.match(chromiumSource, /CHROMIUM_CANDIDATE_PATHS/);
+  assert.match(pdfServiceSource, /launchFinancePdfBrowser/);
+  assert.match(pdfServiceSource, /CHROMIUM_UNAVAILABLE/);
+  assert.match(pdfServiceSource, /browser\.close\(\)/);
+});
+
+test('probeFinancePdfRendererAvailability reports availability shape', async () => {
+  const probe = await probeFinancePdfRendererAvailability();
+  assert.equal(typeof probe.available, 'boolean');
+  assert.ok(['env', 'candidate', 'bundled', 'none'].includes(probe.source));
+});
+
+test('renderFinanceDocumentPreviewPdf surfaces renderer failures clearly', async () => {
+  setFinanceDocumentPdfRenderer({
+    async renderPreviewPdf() {
+      throw new FinanceDocumentPdfError('CHROMIUM_UNAVAILABLE', 'Chromium missing');
+    },
+  });
+
+  await assert.rejects(
+    () =>
+      renderFinanceDocumentPreviewPdf(
+        buildFinanceDocumentPreviewModel({
+          kind: 'quote',
+          lines: [{ description: 'Line', quantity: 1, unitPriceCents: 100, vatRateBps: 1500 }],
+        }),
+      ),
+    (error: unknown) =>
+      error instanceof FinanceDocumentPdfError && error.code === 'CHROMIUM_UNAVAILABLE',
+  );
+  setFinanceDocumentPdfRenderer(null);
 });
 
 test('renderFinanceDocumentPreviewPdf produces a valid PDF signature via renderer hook', async () => {

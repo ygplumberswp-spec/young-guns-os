@@ -23,6 +23,7 @@ import {
 import { attachDbQueryDiagnostics, createDbDiagnosticsMiddleware } from './lib/db-diagnostics.js';
 import { resolveCompanyMediaStoragePath } from './lib/company-media-storage.js';
 import { resolveJobEvidenceStoragePath } from './lib/job-evidence-storage.js';
+import { validateDeploymentStorageConfiguration } from './lib/deployment-storage-validation.js';
 import { JobEvidenceStorageService } from './services/job-evidence-storage.service.js';
 import { FinanceDocumentEvidenceStorageService } from './services/finance-document-evidence-storage.service.js';
 import { createErrorHandler, notFoundHandler } from './middleware/error-handler.js';
@@ -481,6 +482,22 @@ try {
   const message = error instanceof Error ? error.message : String(error);
   console.error(`[titan-api] FATAL: storage path initialization failed\n${message}`);
   process.exit(1);
+}
+
+const storageValidation = validateDeploymentStorageConfiguration({
+  appEnv: env.APP_ENV,
+  titanEnv: env.TITAN_ENV,
+  jobEvidenceStoragePath,
+  companyMediaStoragePath,
+});
+if (!storageValidation.ok) {
+  console.error(
+    `[titan-api] FATAL: deployment storage validation failed\n${storageValidation.errors.join('\n')}`,
+  );
+  process.exit(1);
+}
+for (const warning of storageValidation.warnings) {
+  logger.warn({ warning }, 'Deployment storage configuration warning');
 }
 bootLog('storage paths ready', {
   companyMediaStoragePath,
@@ -1632,6 +1649,13 @@ app.use(
     redisUrl: env.REDIS_URL,
     runtime: env.runtime,
     log: logger,
+    storage: {
+      appEnv: env.APP_ENV,
+      titanEnv: env.TITAN_ENV,
+      jobEvidenceStoragePath,
+      companyMediaStoragePath,
+      financeDirectUsesJobEvidenceRoot: true,
+    },
   }),
 );
 bootLog('health endpoints registered', {
