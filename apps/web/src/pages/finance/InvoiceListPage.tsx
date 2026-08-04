@@ -178,7 +178,7 @@ export function InvoiceListPage() {
                   >
                     <td>
                       <Link href={`/finance/invoices/${invoice.id}`} className="finance-link">
-                        {invoice.displayInvoiceNumber}
+                        {invoice.displayOfficialInvoiceNumber}
                       </Link>
                       {isSyncPending(invoice) ? (
                         <StatusBadge label="Sync Pending" tone="sync" className="finance-sync-badge" />

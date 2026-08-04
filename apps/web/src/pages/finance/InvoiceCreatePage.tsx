@@ -1,12 +1,25 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { useLocation, useSearch } from 'wouter';
 import { Button, Input } from '@titan/ui';
-import type { CustomerSummary, InvoiceStage, InvoiceStatus, JobSummary, QuoteSummary } from '@titan/shared';
-import { parseMoneyInput, INVOICE_STAGE_OPTIONS, INVOICE_STATUS_OPTIONS } from '@titan/shared';
+import type {
+  FinanceCustomerSearchResult,
+  InvoiceStage,
+  InvoiceStatus,
+  JobSummary,
+  QuoteSummary,
+} from '@titan/shared';
+import { INVOICE_STAGE_OPTIONS, INVOICE_STATUS_OPTIONS } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
-import { fetchCustomers } from '../../lib/crm-api';
-import { createInvoice, fetchQuotes } from '../../lib/finance-api';
+import { fetchCustomer } from '../../lib/crm-api';
+import { createInvoice, fetchQuote, fetchQuotes } from '../../lib/finance-api';
 import { fetchJobs } from '../../lib/jobs-api';
+import { CustomerSearchField } from '../../features/finance/CustomerSearchField';
+import { FinanceLineItemsEditor } from '../../features/finance/FinanceLineItemsEditor';
+import {
+  newFinanceEditorLine,
+  parseEditorLinesForApi,
+  type FinanceEditorLine,
+} from '../../features/finance/finance-editor-utils';
 import { fetchDraft } from '../../lib/drafts-api';
 import { useAuth } from '../../lib/auth-context';
 import { useStaffMutationInvalidation } from '../../lib/cache-invalidation';
@@ -21,14 +34,14 @@ export function InvoiceCreatePage() {
   const { invalidateInvoices } = useStaffMutationInvalidation();
   const [, navigate] = useLocation();
   const search = useSearch();
-  const [customers, setCustomers] = useState<CustomerSummary[]>([]);
+  const [selectedCustomer, setSelectedCustomer] = useState<FinanceCustomerSearchResult | null>(null);
+  const customerId = selectedCustomer?.id ?? '';
   const [jobs, setJobs] = useState<JobSummary[]>([]);
   const [quotes, setQuotes] = useState<QuoteSummary[]>([]);
-  const [customerId, setCustomerId] = useState('');
   const [jobId, setJobId] = useState('');
   const [quoteId, setQuoteId] = useState('');
   const [title, setTitle] = useState('');
-  const [amount, setAmount] = useState('');
+  const [lines, setLines] = useState<FinanceEditorLine[]>([newFinanceEditorLine()]);
   const [status, setStatus] = useState<InvoiceStatus>('draft');
   const [stage, setStage] = useState<InvoiceStage>('standard');
   const [dueDate, setDueDate] = useState('');
@@ -50,7 +63,7 @@ export function InvoiceCreatePage() {
       jobId,
       quoteId,
       title,
-      amount,
+      lines,
       status,
       stage,
       dueDate,
@@ -58,8 +71,8 @@ export function InvoiceCreatePage() {
     }),
     getMeta: () => ({
       title: title || 'New invoice',
-      customerLabel: customers.find((customer) => customer.id === customerId)?.name ?? null,
-      completionPct: title.trim() && amount.trim() ? 50 : 20,
+      customerLabel: selectedCustomer?.name ?? null,
+      completionPct: title.trim() && customerId ? 40 : 20,
     }),
   });
 
@@ -79,34 +92,45 @@ export function InvoiceCreatePage() {
       }
 
       try {
-        const [customerData, jobData, quoteData] = await Promise.all([
-          fetchCustomers(accessToken),
+        const [jobData, quoteData] = await Promise.all([
           fetchJobs(accessToken),
           fetchQuotes(accessToken),
         ]);
 
-        if (!cancelled) {
-          setCustomers(customerData);
-          setJobs(jobData);
-          setQuotes(quoteData);
-          const params = new URLSearchParams(search);
-          const preCustomerId = params.get('customerId');
-          const preJobId = params.get('jobId');
-          const prefillJob =
-            preJobId != null ? jobData.find((job) => job.id === preJobId) ?? null : null;
+        if (cancelled) return;
 
-          if (preCustomerId && customerData.some((customer) => customer.id === preCustomerId)) {
-            setCustomerId(preCustomerId);
-          } else if (prefillJob) {
-            setCustomerId(prefillJob.customerId);
-          } else {
-            setCustomerId(customerData[0]?.id ?? '');
-          }
+        setJobs(jobData);
+        setQuotes(quoteData);
 
-          if (prefillJob) {
-            setJobId(prefillJob.id);
-            setTitle(prefillJob.title);
+        const params = new URLSearchParams(search);
+        const preCustomerId = params.get('customerId');
+        const preJobId = params.get('jobId');
+        const preQuoteId = params.get('quoteId');
+        const prefillJob =
+          preJobId != null ? jobData.find((job) => job.id === preJobId) ?? null : null;
+
+        const customerToLoad = preCustomerId ?? prefillJob?.customerId ?? null;
+        if (customerToLoad) {
+          const customer = await fetchCustomer(accessToken, customerToLoad);
+          if (!cancelled) {
+            setSelectedCustomer({
+              id: customer.id,
+              name: customer.name,
+              companyName: customer.companyName,
+              email: customer.email,
+              phone: customer.phone,
+              xeroContactId: customer.xeroContactId,
+            });
           }
+        }
+
+        if (!cancelled && prefillJob) {
+          setJobId(prefillJob.id);
+          setTitle(prefillJob.title);
+        }
+
+        if (!cancelled && preQuoteId) {
+          setQuoteId(preQuoteId);
         }
       } catch (err) {
         if (!cancelled) {
@@ -124,6 +148,33 @@ export function InvoiceCreatePage() {
   }, [accessToken, search]);
 
   useEffect(() => {
+    if (!accessToken || !quoteId) return;
+
+    let cancelled = false;
+    void fetchQuote(accessToken, quoteId).then((quote) => {
+      if (cancelled) return;
+      setTitle(quote.title);
+      setLines(
+        quote.lineItems.length
+          ? quote.lineItems.map((line) => ({
+              key: line.id,
+              category: line.category,
+              description: line.description,
+              quantity: String(line.quantity),
+              unitPrice: (line.unitPriceCents / 100).toFixed(2),
+              unitCost: '',
+              vatRateBps: String(line.vatRateBps),
+            }))
+          : [newFinanceEditorLine()],
+      );
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [accessToken, quoteId]);
+
+  useEffect(() => {
     const params = new URLSearchParams(search);
     const draftId = params.get('draftId');
     if (!accessToken || !draftId) return;
@@ -132,15 +183,27 @@ export function InvoiceCreatePage() {
     void fetchDraft(accessToken, draftId).then((draft) => {
       if (cancelled || draft.recordType !== 'invoice') return;
       const payload = draft.payload;
-      if (typeof payload.customerId === 'string') setCustomerId(payload.customerId);
       if (typeof payload.jobId === 'string') setJobId(payload.jobId);
       if (typeof payload.quoteId === 'string') setQuoteId(payload.quoteId);
       if (typeof payload.title === 'string') setTitle(payload.title);
-      if (typeof payload.amount === 'string') setAmount(payload.amount);
+      if (Array.isArray(payload.lines)) setLines(payload.lines as FinanceEditorLine[]);
       if (typeof payload.status === 'string') setStatus(payload.status as InvoiceStatus);
       if (typeof payload.stage === 'string') setStage(payload.stage as InvoiceStage);
       if (typeof payload.dueDate === 'string') setDueDate(payload.dueDate);
       if (typeof payload.notes === 'string') setNotes(payload.notes);
+      if (typeof payload.customerId === 'string') {
+        void fetchCustomer(accessToken, payload.customerId).then((customer) => {
+          if (cancelled) return;
+          setSelectedCustomer({
+            id: customer.id,
+            name: customer.name,
+            companyName: customer.companyName,
+            email: customer.email,
+            phone: customer.phone,
+            xeroContactId: customer.xeroContactId,
+          });
+        });
+      }
     });
 
     return () => {
@@ -157,7 +220,7 @@ export function InvoiceCreatePage() {
     jobId,
     quoteId,
     title,
-    amount,
+    lines,
     status,
     stage,
     dueDate,
@@ -172,9 +235,9 @@ export function InvoiceCreatePage() {
     event.preventDefault();
     if (!accessToken || !canWrite || !customerId) return;
 
-    const amountCents = parseMoneyInput(amount);
-    if (amountCents === null || amountCents <= 0) {
-      setError('Enter a valid amount greater than zero');
+    const lineItems = parseEditorLinesForApi(lines);
+    if (!lineItems) {
+      setError('Add at least one line item with a description and unit price');
       return;
     }
 
@@ -189,7 +252,7 @@ export function InvoiceCreatePage() {
         title,
         status,
         stage,
-        amountCents,
+        lineItems,
         dueDate: dueDate ? new Date(dueDate).toISOString() : null,
         notes: notes.trim() || null,
         clientActionId,
@@ -211,7 +274,7 @@ export function InvoiceCreatePage() {
     <div className="finance-page">
       <PageHeader
         title="New Invoice"
-        description="Create an invoice linked to a customer and optional job or quote."
+        description="Create an invoice with line items. Official numbers are assigned by Xero after sync."
         guardNavigation={draftShell.guard.guardNavigation}
       />
       <FinanceNav />
@@ -219,119 +282,105 @@ export function InvoiceCreatePage() {
       {draftShell.guard.unsavedChangesModal}
       {error ? <p className="form-error">{error}</p> : null}
 
-      {customers.length === 0 ? (
-        <p className="page-muted">Add a customer before creating an invoice.</p>
-      ) : (
-        <form className="finance-form" onSubmit={(event) => void handleSubmit(event)}>
-          <label className="titan-input-group">
-            <span className="titan-input-label">Customer</span>
-            <select
-              className="titan-input"
-              value={customerId}
-              onChange={(e) => {
-                setCustomerId(e.target.value);
-                setJobId('');
-                setQuoteId('');
-              }}
-              required
-            >
-              {customers.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="titan-input-group">
-            <span className="titan-input-label">Job (optional)</span>
-            <select
-              className="titan-input"
-              value={jobId}
-              onChange={(e) => setJobId(e.target.value)}
-            >
-              <option value="">No linked job</option>
-              {customerJobs.map((job) => (
-                <option key={job.id} value={job.id}>
-                  {job.title}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="titan-input-group">
-            <span className="titan-input-label">Quote (optional)</span>
-            <select
-              className="titan-input"
-              value={quoteId}
-              onChange={(e) => setQuoteId(e.target.value)}
-            >
-              <option value="">No linked quote</option>
-              {customerQuotes.map((quote) => (
-                <option key={quote.id} value={quote.id}>
-                  {quote.quoteNumber} · {quote.title}
-                </option>
-              ))}
-            </select>
-          </label>
-          <Input label="Title" value={title} onChange={(e) => setTitle(e.target.value)} required />
-          <Input
-            label="Amount"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            placeholder="0.00"
-            required
+      <form className="finance-form finance-form--wide" onSubmit={(event) => void handleSubmit(event)}>
+        {accessToken ? (
+          <CustomerSearchField
+            accessToken={accessToken}
+            value={selectedCustomer}
+            onChange={(customer) => {
+              setSelectedCustomer(customer);
+              setJobId('');
+              setQuoteId('');
+            }}
           />
-          <label className="titan-input-group">
-            <span className="titan-input-label">Stage</span>
-            <select
-              className="titan-input"
-              value={stage}
-              onChange={(e) => setStage(e.target.value as InvoiceStage)}
-            >
-              {INVOICE_STAGE_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="titan-input-group">
-            <span className="titan-input-label">Status</span>
-            <select
-              className="titan-input"
-              value={status}
-              onChange={(e) => setStatus(e.target.value as InvoiceStatus)}
-            >
-              {INVOICE_STATUS_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <Input
-            label="Due Date"
-            type="datetime-local"
-            value={dueDate}
-            onChange={(e) => setDueDate(e.target.value)}
+        ) : null}
+
+        <label className="titan-input-group">
+          <span className="titan-input-label">Job (optional)</span>
+          <select
+            className="titan-input"
+            value={jobId}
+            onChange={(e) => setJobId(e.target.value)}
+            disabled={!customerId}
+          >
+            <option value="">No linked job</option>
+            {customerJobs.map((job) => (
+              <option key={job.id} value={job.id}>
+                {job.title}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="titan-input-group">
+          <span className="titan-input-label">Quote (optional)</span>
+          <select
+            className="titan-input"
+            value={quoteId}
+            onChange={(e) => setQuoteId(e.target.value)}
+            disabled={!customerId}
+          >
+            <option value="">No linked quote</option>
+            {customerQuotes.map((quote) => (
+              <option key={quote.id} value={quote.id}>
+                {quote.displayQuoteNumber} · {quote.title}
+              </option>
+            ))}
+          </select>
+        </label>
+        <Input label="Title" value={title} onChange={(e) => setTitle(e.target.value)} required />
+
+        <FinanceLineItemsEditor lines={lines} onChange={setLines} showUnitCost={false} />
+
+        <label className="titan-input-group">
+          <span className="titan-input-label">Stage</span>
+          <select
+            className="titan-input"
+            value={stage}
+            onChange={(e) => setStage(e.target.value as InvoiceStage)}
+          >
+            {INVOICE_STAGE_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="titan-input-group">
+          <span className="titan-input-label">Status</span>
+          <select
+            className="titan-input"
+            value={status}
+            onChange={(e) => setStatus(e.target.value as InvoiceStatus)}
+          >
+            {INVOICE_STATUS_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <Input
+          label="Due Date"
+          type="datetime-local"
+          value={dueDate}
+          onChange={(e) => setDueDate(e.target.value)}
+        />
+        <p className="page-muted">
+          Draft — Xero invoice number pending until sync completes.
+        </p>
+        <label className="titan-input-group">
+          <span className="titan-input-label">Notes</span>
+          <textarea
+            className="titan-input finance-textarea"
+            rows={3}
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
           />
-          <p className="page-muted">
-            The invoice number shown here is an internal placeholder. The official invoice number
-            is assigned only once Xero sync completes.
-          </p>
-          <label className="titan-input-group">
-            <span className="titan-input-label">Notes</span>
-            <textarea
-              className="titan-input finance-textarea"
-              rows={3}
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-            />
-          </label>
-          <Button type="submit" disabled={isSaving || !title.trim()}>
-            {isSaving ? 'Creating…' : 'Create invoice'}
-          </Button>
-        </form>
-      )}
+        </label>
+        <Button type="submit" disabled={isSaving || !title.trim() || !customerId}>
+          {isSaving ? 'Creating…' : 'Create invoice'}
+        </Button>
+      </form>
     </div>
   );
 }

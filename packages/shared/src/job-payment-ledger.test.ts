@@ -10,6 +10,8 @@ import {
 const baseQuote = (overrides: Partial<QuoteSummary>): QuoteSummary => ({
   id: 'q1',
   quoteNumber: 'Q-001',
+  xeroQuoteNumber: null,
+  displayQuoteNumber: 'Draft — Xero quote number pending',
   title: 'Quote',
   status: 'draft',
   versionNumber: 1,
@@ -41,6 +43,7 @@ const baseInvoice = (overrides: Partial<InvoiceSummary>): InvoiceSummary => ({
   invoiceNumber: 'INV-001',
   internalNumber: 'TITAN-INV-000001',
   displayInvoiceNumber: 'INV-001',
+  displayOfficialInvoiceNumber: 'Draft — Xero invoice number pending',
   xeroInvoiceNumber: null,
   xeroReference: null,
   numberAuthority: 'internal_pending_xero',

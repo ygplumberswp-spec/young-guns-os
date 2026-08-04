@@ -9,11 +9,17 @@ export const CUSTOMER_STATUS_OPTIONS: Array<{ value: CustomerStatus; label: stri
 export type CustomerSummary = {
   id: string;
   name: string;
+  companyName: string | null;
   contactPerson: string | null;
   email: string | null;
   phone: string | null;
+  billingAddress: string | null;
+  siteAddress: string | null;
+  vatNumber: string | null;
   /** Primary property address when one exists */
   primaryAddressDisplay: string | null;
+  /** Linked Xero contact id when mapped */
+  xeroContactId: string | null;
   status: CustomerStatus;
   isSupplierOnly: boolean;
   doNotContact: boolean;
@@ -40,9 +46,13 @@ export type CrmStats = {
 
 export type CreateCustomerRequest = {
   name: string;
+  companyName?: string | null;
   contactPerson?: string | null;
   email?: string | null;
   phone?: string | null;
+  billingAddress?: string | null;
+  siteAddress?: string | null;
+  vatNumber?: string | null;
   status?: CustomerStatus;
   isSupplierOnly?: boolean;
   doNotContact?: boolean;
@@ -51,14 +61,23 @@ export type CreateCustomerRequest = {
 
 export type UpdateCustomerRequest = {
   name?: string;
+  companyName?: string | null;
   contactPerson?: string | null;
   email?: string | null;
   phone?: string | null;
+  billingAddress?: string | null;
+  siteAddress?: string | null;
+  vatNumber?: string | null;
   status?: CustomerStatus;
   isSupplierOnly?: boolean;
   doNotContact?: boolean;
   notes?: string | null;
 };
+
+export type FinanceCustomerSearchResult = Pick<
+  CustomerSummary,
+  'id' | 'name' | 'companyName' | 'email' | 'phone' | 'xeroContactId'
+>;
 
 export type CreateCustomerActivityRequest = {
   content: string;

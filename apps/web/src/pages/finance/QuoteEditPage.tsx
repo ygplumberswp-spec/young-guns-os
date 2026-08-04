@@ -1,11 +1,17 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { useLocation, useRoute } from 'wouter';
 import { Button, Input } from '@titan/ui';
-import type { JobSummary, QuoteLineCategory, QuoteStatus } from '@titan/shared';
-import { parseMoneyInput, QUOTE_LINE_CATEGORY_OPTIONS, QUOTE_STATUS_OPTIONS } from '@titan/shared';
+import type { JobSummary, QuoteStatus } from '@titan/shared';
+import { QUOTE_STATUS_OPTIONS } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import { fetchQuote, updateQuote } from '../../lib/finance-api';
 import { fetchJobs } from '../../lib/jobs-api';
+import { FinanceLineItemsEditor } from '../../features/finance/FinanceLineItemsEditor';
+import {
+  newFinanceEditorLine,
+  parseEditorLinesForApi,
+  type FinanceEditorLine,
+} from '../../features/finance/finance-editor-utils';
 import { useAuth } from '../../lib/auth-context';
 import { useStaffMutationInvalidation } from '../../lib/cache-invalidation';
 import { FinanceNav } from '../../features/finance/FinanceNav';
@@ -13,28 +19,6 @@ import { canManageFinance } from '../../features/finance/utils';
 import { PageHeader } from '../../components/ux';
 import { useFormDraftShell } from '../../hooks/useFormDraftShell';
 import { useTitanNotify } from '../../components/ux/TitanNotifications';
-
-type DraftLine = {
-  key: string;
-  category: QuoteLineCategory;
-  description: string;
-  quantity: string;
-  unitPrice: string;
-  unitCost: string;
-  vatRateBps: string;
-};
-
-function newDraftLine(): DraftLine {
-  return {
-    key: `line-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    category: 'labour',
-    description: '',
-    quantity: '1',
-    unitPrice: '',
-    unitCost: '',
-    vatRateBps: '1500',
-  };
-}
 
 export function QuoteEditPage() {
   const [, params] = useRoute('/finance/quotes/:id/edit');
@@ -52,7 +36,7 @@ export function QuoteEditPage() {
   const [scopeOfWork, setScopeOfWork] = useState('');
   const [exclusions, setExclusions] = useState('');
   const [paymentTerms, setPaymentTerms] = useState('');
-  const [lines, setLines] = useState<DraftLine[]>([newDraftLine()]);
+  const [lines, setLines] = useState<FinanceEditorLine[]>([newFinanceEditorLine()]);
   const [belowFloorOverride, setBelowFloorOverride] = useState(false);
   const [belowFloorReason, setBelowFloorReason] = useState('');
   const [customerId, setCustomerId] = useState('');
@@ -141,7 +125,7 @@ export function QuoteEditPage() {
                   line.unitCostCents != null ? (line.unitCostCents / 100).toFixed(2) : '',
                 vatRateBps: String(line.vatRateBps),
               }))
-            : [newDraftLine()],
+            : [newFinanceEditorLine()],
         );
       } catch (err) {
         if (!cancelled) {
@@ -179,18 +163,6 @@ export function QuoteEditPage() {
 
   const customerJobs = jobs.filter((job) => job.customerId === customerId);
 
-  function updateLine(key: string, patch: Partial<DraftLine>) {
-    setLines((prev) => prev.map((line) => (line.key === key ? { ...line, ...patch } : line)));
-  }
-
-  function addLine() {
-    setLines((prev) => [...prev, newDraftLine()]);
-  }
-
-  function removeLine(key: string) {
-    setLines((prev) => (prev.length > 1 ? prev.filter((line) => line.key !== key) : prev));
-  }
-
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!accessToken || !canWrite || !quoteId) return;
@@ -202,28 +174,10 @@ export function QuoteEditPage() {
       return;
     }
 
-    const validLines = lines.filter((line) => line.description.trim() && line.unitPrice.trim());
-    if (validLines.length === 0) {
+    const lineItems = parseEditorLinesForApi(lines);
+    if (!lineItems) {
       setError('Add at least one line item with a description and unit price');
       return;
-    }
-
-    const lineItems = [];
-    for (const line of validLines) {
-      const unitPriceCents = parseMoneyInput(line.unitPrice);
-      if (unitPriceCents === null) {
-        setError(`Enter a valid unit price for "${line.description}"`);
-        return;
-      }
-      const unitCostCents = line.unitCost.trim() ? parseMoneyInput(line.unitCost) : null;
-      lineItems.push({
-        category: line.category,
-        description: line.description.trim(),
-        quantity: Number.parseFloat(line.quantity) || 1,
-        unitPriceCents,
-        ...(unitCostCents != null ? { unitCostCents } : {}),
-        vatRateBps: Number.parseInt(line.vatRateBps, 10) || 1500,
-      });
     }
 
     setIsSaving(true);
@@ -271,7 +225,7 @@ export function QuoteEditPage() {
       {draftShell.guard.unsavedChangesModal}
       {error ? <p className="form-error">{error}</p> : null}
 
-      <form className="finance-form" onSubmit={(event) => void handleSubmit(event)}>
+      <form className="finance-form finance-form--wide" onSubmit={(event) => void handleSubmit(event)}>
         <Input label="Title" value={title} onChange={(e) => setTitle(e.target.value)} required />
         <label className="titan-input-group">
           <span className="titan-input-label">Job (optional)</span>
@@ -307,72 +261,7 @@ export function QuoteEditPage() {
           onChange={(e) => setValidUntil(e.target.value)}
         />
 
-        <div className="finance-line-items">
-          {lines.map((line) => (
-            <div className="finance-line-item-row" key={line.key}>
-              <label className="titan-input-group">
-                <span className="titan-input-label">Description</span>
-                <input
-                  className="titan-input"
-                  value={line.description}
-                  onChange={(e) => updateLine(line.key, { description: e.target.value })}
-                />
-              </label>
-              <label className="titan-input-group">
-                <span className="titan-input-label">Category</span>
-                <select
-                  className="titan-input"
-                  value={line.category}
-                  onChange={(e) =>
-                    updateLine(line.key, { category: e.target.value as QuoteLineCategory })
-                  }
-                >
-                  {QUOTE_LINE_CATEGORY_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="titan-input-group">
-                <span className="titan-input-label">Qty</span>
-                <input
-                  className="titan-input"
-                  value={line.quantity}
-                  onChange={(e) => updateLine(line.key, { quantity: e.target.value })}
-                />
-              </label>
-              <label className="titan-input-group">
-                <span className="titan-input-label">Unit price</span>
-                <input
-                  className="titan-input"
-                  value={line.unitPrice}
-                  onChange={(e) => updateLine(line.key, { unitPrice: e.target.value })}
-                />
-              </label>
-              <label className="titan-input-group">
-                <span className="titan-input-label">Unit cost</span>
-                <input
-                  className="titan-input"
-                  value={line.unitCost}
-                  onChange={(e) => updateLine(line.key, { unitCost: e.target.value })}
-                />
-              </label>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                disabled={lines.length <= 1}
-                onClick={() => removeLine(line.key)}
-              >
-                Remove
-              </Button>
-            </div>
-          ))}
-          <Button type="button" variant="secondary" size="sm" onClick={addLine}>
-            Add line
-          </Button>
-        </div>
+        <FinanceLineItemsEditor lines={lines} onChange={setLines} />
 
         <label className="titan-input-group">
           <span className="titan-input-label">Scope of work</span>

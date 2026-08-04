@@ -139,7 +139,7 @@ export function QuoteListPage() {
                   <tr key={quote.id}>
                     <td>
                       <Link href={`/finance/quotes/${quote.id}`} className="finance-link">
-                        {quote.quoteNumber}
+                        {quote.displayQuoteNumber}
                       </Link>
                     </td>
                     <td>

@@ -10,6 +10,7 @@ import { PortalRouteShell } from './components/PortalRouteShell';
 import { AppLayout } from './layouts/AppLayout';
 import { PageRouteSuspense } from './components/PageRouteSuspense';
 import { TitanNotificationsProvider } from './components/ux';
+import { LiveUpdatesBanner, LiveUpdatesProvider } from './lib/live-updates/LiveUpdatesProvider';
 import { TitanNavigationHistoryProvider } from './hooks/useTitanNavigationHistory';
 import * as OwnerPages from './routes/owner-pages';
 import { LoginPage } from './pages/auth/LoginPage';
@@ -59,7 +60,9 @@ export function App() {
   return (
     <ErrorBoundary>
       <AuthProvider>
+        <LiveUpdatesProvider>
         <TitanNotificationsProvider>
+          <LiveUpdatesBanner />
           <TitanNavigationHistoryProvider>
           <PreloadCoordinator />
           <Switch>
@@ -406,6 +409,10 @@ export function App() {
                           component={OwnerPages.InvoiceCreatePage}
                         />
                         <Route
+                          path="/finance/invoices/:id/edit"
+                          component={OwnerPages.InvoiceEditPage}
+                        />
+                        <Route
                           path="/finance/invoices/:id"
                           component={OwnerPages.InvoiceDetailPage}
                         />
@@ -666,6 +673,7 @@ export function App() {
         </Switch>
           </TitanNavigationHistoryProvider>
         </TitanNotificationsProvider>
+        </LiveUpdatesProvider>
       </AuthProvider>
     </ErrorBoundary>
   );

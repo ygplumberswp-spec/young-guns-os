@@ -4,6 +4,7 @@ import type {
   CreatePaymentRequest,
   CreateQuoteRequest,
   CreateQuoteVersionRequest,
+  FinanceCustomerSearchResult,
   FinanceListQuery,
   FinanceStats,
   InvoiceDetail,
@@ -13,6 +14,7 @@ import type {
   PaymentSummary,
   QuoteDetail,
   QuoteSummary,
+  UpdateInvoiceRequest,
   UpdateQuoteRequest,
 } from '@titan/shared';
 import { request } from './api-client';
@@ -30,6 +32,18 @@ function toQuery(query?: FinanceListQuery): string {
 
 export async function fetchFinanceStats(accessToken: string): Promise<FinanceStats> {
   return request<FinanceStats>('/finance/stats', { accessToken });
+}
+
+export async function searchFinanceCustomers(
+  accessToken: string,
+  query: string,
+): Promise<FinanceCustomerSearchResult[]> {
+  const params = new URLSearchParams({ q: query });
+  const data = await request<{ customers: FinanceCustomerSearchResult[] }>(
+    `/finance/customers/search?${params.toString()}`,
+    { accessToken },
+  );
+  return data.customers;
 }
 
 export async function fetchQuotes(
@@ -143,6 +157,19 @@ export async function createInvoice(
 ): Promise<InvoiceSummary> {
   const data = await request<{ invoice: InvoiceSummary }>('/finance/invoices', {
     method: 'POST',
+    accessToken,
+    body,
+  });
+  return data.invoice;
+}
+
+export async function updateInvoice(
+  accessToken: string,
+  invoiceId: string,
+  body: UpdateInvoiceRequest,
+): Promise<InvoiceDetail> {
+  const data = await request<{ invoice: InvoiceDetail }>(`/finance/invoices/${invoiceId}`, {
+    method: 'PATCH',
     accessToken,
     body,
   });

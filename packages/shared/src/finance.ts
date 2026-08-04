@@ -85,6 +85,11 @@ export const QUOTE_LINE_CATEGORY_OPTIONS: Array<{ value: QuoteLineCategory; labe
   { value: 'other', label: 'Other' },
 ];
 
+/** Line categories shown in the professional editor — discount is intentionally excluded. */
+export const FINANCE_EDITOR_LINE_CATEGORY_OPTIONS = QUOTE_LINE_CATEGORY_OPTIONS.filter(
+  (option) => option.value !== 'discount',
+);
+
 export type QuoteLineItemInput = {
   category?: QuoteLineCategory;
   description: string;
@@ -127,6 +132,9 @@ export type QuoteProfitSummary = {
 export type QuoteSummary = {
   id: string;
   quoteNumber: string;
+  /** Official Xero quote number when synced — never show internal quoteNumber as official. */
+  xeroQuoteNumber: string | null;
+  displayQuoteNumber: string;
   title: string;
   status: QuoteStatus;
   versionNumber: number;
@@ -187,6 +195,8 @@ export type InvoiceSummary = {
   invoiceNumber: string;
   internalNumber: string;
   displayInvoiceNumber: string;
+  /** Official display label for UI — Xero number or pending draft text. */
+  displayOfficialInvoiceNumber: string;
   xeroInvoiceNumber: string | null;
   xeroReference: string | null;
   numberAuthority: InvoiceNumberAuthority;
@@ -360,6 +370,10 @@ export type CreateInvoiceRequest = {
   clientActionId?: string | null;
 };
 
+export type UpdateInvoiceRequest = Partial<
+  Omit<CreateInvoiceRequest, 'customerId' | 'quoteId' | 'clientActionId'>
+>;
+
 export type CreatePaymentRequest = {
   invoiceId: string;
   amountCents: number;
@@ -480,6 +494,48 @@ export function displayInvoiceNumber(input: {
   if (input.numberAuthority === 'xero') return input.invoiceNumber;
   const internal = input.internalNumber?.trim() || input.invoiceNumber;
   return `Pending Xero sync (${internal})`;
+}
+
+/** Xero is the only official invoice number authority for staff-facing UI. */
+export function displayOfficialInvoiceNumber(input: {
+  xeroInvoiceNumber?: string | null;
+}): string {
+  return input.xeroInvoiceNumber?.trim() || 'Draft — Xero invoice number pending';
+}
+
+/** Xero is the only official quote number authority for staff-facing UI. */
+export function displayOfficialQuoteNumber(input: {
+  xeroQuoteNumber?: string | null;
+}): string {
+  return input.xeroQuoteNumber?.trim() || 'Draft — Xero quote number pending';
+}
+
+/** Returns true when a customer name closely matches an existing search result. */
+export function findDuplicateCustomerHint(
+  name: string,
+  results: Array<{ name: string; companyName?: string | null }>,
+): boolean {
+  const normalized = name.trim().toLowerCase();
+  if (normalized.length < 2) return false;
+  return results.some((row) => {
+    const candidate = row.companyName?.trim() || row.name.trim();
+    return candidate.toLowerCase() === normalized || row.name.trim().toLowerCase() === normalized;
+  });
+}
+
+const EDITABLE_INVOICE_STATUSES = new Set<InvoiceStatus>(['draft']);
+
+/** Draft invoices can be edited locally until synced from Xero. */
+export function canEditInvoice(invoice: {
+  status: InvoiceStatus;
+  xeroInvoiceNumber?: string | null;
+  numberAuthority?: InvoiceNumberAuthority | string | null;
+  sourceProvider?: string | null;
+}): boolean {
+  if (invoice.numberAuthority === 'xero') return false;
+  if (invoice.xeroInvoiceNumber?.trim()) return false;
+  if (invoice.sourceProvider === 'xero') return false;
+  return EDITABLE_INVOICE_STATUSES.has(invoice.status);
 }
 
 const EDITABLE_QUOTE_STATUSES = new Set<QuoteStatus>([

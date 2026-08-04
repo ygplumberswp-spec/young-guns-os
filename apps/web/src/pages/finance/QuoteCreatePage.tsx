@@ -1,12 +1,19 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { useLocation, useSearch } from 'wouter';
 import { Button, Input } from '@titan/ui';
-import type { CustomerSummary, JobSummary, QuoteLineCategory, QuoteStatus } from '@titan/shared';
-import { parseMoneyInput, QUOTE_LINE_CATEGORY_OPTIONS, QUOTE_STATUS_OPTIONS } from '@titan/shared';
+import type { FinanceCustomerSearchResult, JobSummary, QuoteStatus } from '@titan/shared';
+import { QUOTE_STATUS_OPTIONS } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
-import { fetchCustomers } from '../../lib/crm-api';
+import { fetchCustomer } from '../../lib/crm-api';
 import { createQuote } from '../../lib/finance-api';
 import { fetchJobs } from '../../lib/jobs-api';
+import { CustomerSearchField } from '../../features/finance/CustomerSearchField';
+import { FinanceLineItemsEditor } from '../../features/finance/FinanceLineItemsEditor';
+import {
+  newFinanceEditorLine,
+  parseEditorLinesForApi,
+  type FinanceEditorLine,
+} from '../../features/finance/finance-editor-utils';
 import { fetchDraft } from '../../lib/drafts-api';
 import { useAuth } from '../../lib/auth-context';
 import { useStaffMutationInvalidation } from '../../lib/cache-invalidation';
@@ -16,36 +23,14 @@ import { PageHeader } from '../../components/ux';
 import { useFormDraftShell } from '../../hooks/useFormDraftShell';
 import { useTitanNotify } from '../../components/ux/TitanNotifications';
 
-type DraftLine = {
-  key: string;
-  category: QuoteLineCategory;
-  description: string;
-  quantity: string;
-  unitPrice: string;
-  unitCost: string;
-  vatRateBps: string;
-};
-
-function newDraftLine(): DraftLine {
-  return {
-    key: `line-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    category: 'labour',
-    description: '',
-    quantity: '1',
-    unitPrice: '',
-    unitCost: '',
-    vatRateBps: '1500',
-  };
-}
-
 export function QuoteCreatePage() {
   const { accessToken, user } = useAuth();
   const { invalidateQuotes } = useStaffMutationInvalidation();
   const [, navigate] = useLocation();
   const search = useSearch();
-  const [customers, setCustomers] = useState<CustomerSummary[]>([]);
+  const [selectedCustomer, setSelectedCustomer] = useState<FinanceCustomerSearchResult | null>(null);
   const [jobs, setJobs] = useState<JobSummary[]>([]);
-  const [customerId, setCustomerId] = useState('');
+  const customerId = selectedCustomer?.id ?? '';
   const [jobId, setJobId] = useState('');
   const [title, setTitle] = useState('');
   const [status, setStatus] = useState<QuoteStatus>('draft');
@@ -54,11 +39,7 @@ export function QuoteCreatePage() {
   const [scopeOfWork, setScopeOfWork] = useState('');
   const [exclusions, setExclusions] = useState('');
   const [paymentTerms, setPaymentTerms] = useState('');
-
-  const [useSimpleAmount, setUseSimpleAmount] = useState(false);
-  const [amount, setAmount] = useState('');
-  const [lines, setLines] = useState<DraftLine[]>([newDraftLine()]);
-
+  const [lines, setLines] = useState<FinanceEditorLine[]>([newFinanceEditorLine()]);
   const [belowFloorOverride, setBelowFloorOverride] = useState(false);
   const [belowFloorReason, setBelowFloorReason] = useState('');
 
@@ -84,15 +65,13 @@ export function QuoteCreatePage() {
       scopeOfWork,
       exclusions,
       paymentTerms,
-      useSimpleAmount,
-      amount,
       lines,
       belowFloorOverride,
       belowFloorReason,
     }),
     getMeta: () => ({
       title: title || 'New quote',
-      customerLabel: customers.find((customer) => customer.id === customerId)?.name ?? null,
+      customerLabel: selectedCustomer?.name ?? null,
       completionPct: title.trim() && customerId ? 40 : customerId ? 20 : 5,
     }),
   });
@@ -113,32 +92,34 @@ export function QuoteCreatePage() {
       }
 
       try {
-        const [customerData, jobData] = await Promise.all([
-          fetchCustomers(accessToken),
-          fetchJobs(accessToken),
-        ]);
+        const jobData = await fetchJobs(accessToken);
+        if (cancelled) return;
 
-        if (!cancelled) {
-          setCustomers(customerData);
-          setJobs(jobData);
-          const params = new URLSearchParams(search);
-          const preCustomerId = params.get('customerId');
-          const preJobId = params.get('jobId');
-          const prefillJob =
-            preJobId != null ? jobData.find((job) => job.id === preJobId) ?? null : null;
+        setJobs(jobData);
+        const params = new URLSearchParams(search);
+        const preCustomerId = params.get('customerId');
+        const preJobId = params.get('jobId');
+        const prefillJob =
+          preJobId != null ? jobData.find((job) => job.id === preJobId) ?? null : null;
 
-          if (preCustomerId && customerData.some((customer) => customer.id === preCustomerId)) {
-            setCustomerId(preCustomerId);
-          } else if (prefillJob) {
-            setCustomerId(prefillJob.customerId);
-          } else {
-            setCustomerId(customerData[0]?.id ?? '');
+        const customerToLoad = preCustomerId ?? prefillJob?.customerId ?? null;
+        if (customerToLoad) {
+          const customer = await fetchCustomer(accessToken, customerToLoad);
+          if (!cancelled) {
+            setSelectedCustomer({
+              id: customer.id,
+              name: customer.name,
+              companyName: customer.companyName,
+              email: customer.email,
+              phone: customer.phone,
+              xeroContactId: customer.xeroContactId,
+            });
           }
+        }
 
-          if (prefillJob) {
-            setJobId(prefillJob.id);
-            setTitle(prefillJob.title);
-          }
+        if (!cancelled && prefillJob) {
+          setJobId(prefillJob.id);
+          setTitle(prefillJob.title);
         }
       } catch (err) {
         if (!cancelled) {
@@ -164,7 +145,6 @@ export function QuoteCreatePage() {
     void fetchDraft(accessToken, draftId).then((draft) => {
       if (cancelled || draft.recordType !== 'quote') return;
       const payload = draft.payload;
-      if (typeof payload.customerId === 'string') setCustomerId(payload.customerId);
       if (typeof payload.jobId === 'string') setJobId(payload.jobId);
       if (typeof payload.title === 'string') setTitle(payload.title);
       if (typeof payload.status === 'string') setStatus(payload.status as QuoteStatus);
@@ -173,14 +153,25 @@ export function QuoteCreatePage() {
       if (typeof payload.scopeOfWork === 'string') setScopeOfWork(payload.scopeOfWork);
       if (typeof payload.exclusions === 'string') setExclusions(payload.exclusions);
       if (typeof payload.paymentTerms === 'string') setPaymentTerms(payload.paymentTerms);
-      if (typeof payload.useSimpleAmount === 'boolean') setUseSimpleAmount(payload.useSimpleAmount);
-      if (typeof payload.amount === 'string') setAmount(payload.amount);
-      if (Array.isArray(payload.lines)) setLines(payload.lines as DraftLine[]);
+      if (Array.isArray(payload.lines)) setLines(payload.lines as FinanceEditorLine[]);
       if (typeof payload.belowFloorOverride === 'boolean') {
         setBelowFloorOverride(payload.belowFloorOverride);
       }
       if (typeof payload.belowFloorReason === 'string') {
         setBelowFloorReason(payload.belowFloorReason);
+      }
+      if (typeof payload.customerId === 'string') {
+        void fetchCustomer(accessToken, payload.customerId).then((customer) => {
+          if (cancelled) return;
+          setSelectedCustomer({
+            id: customer.id,
+            name: customer.name,
+            companyName: customer.companyName,
+            email: customer.email,
+            phone: customer.phone,
+            xeroContactId: customer.xeroContactId,
+          });
+        });
       }
     });
 
@@ -203,8 +194,6 @@ export function QuoteCreatePage() {
     scopeOfWork,
     exclusions,
     paymentTerms,
-    useSimpleAmount,
-    amount,
     lines,
     belowFloorOverride,
     belowFloorReason,
@@ -212,18 +201,6 @@ export function QuoteCreatePage() {
   ]);
 
   const customerJobs = jobs.filter((job) => job.customerId === customerId);
-
-  function updateLine(key: string, patch: Partial<DraftLine>) {
-    setLines((prev) => prev.map((line) => (line.key === key ? { ...line, ...patch } : line)));
-  }
-
-  function addLine() {
-    setLines((prev) => [...prev, newDraftLine()]);
-  }
-
-  function removeLine(key: string) {
-    setLines((prev) => (prev.length > 1 ? prev.filter((line) => line.key !== key) : prev));
-  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -236,46 +213,10 @@ export function QuoteCreatePage() {
       return;
     }
 
-    let lineItems: Array<{
-      category: QuoteLineCategory;
-      description: string;
-      quantity: number;
-      unitPriceCents: number;
-      unitCostCents?: number;
-      vatRateBps: number;
-    }> = [];
-    let amountCents: number | undefined;
-
-    if (useSimpleAmount) {
-      const parsedAmount = parseMoneyInput(amount);
-      if (parsedAmount === null || parsedAmount <= 0) {
-        setError('Enter a valid amount greater than zero');
-        return;
-      }
-      amountCents = parsedAmount;
-    } else {
-      const validLines = lines.filter((line) => line.description.trim() && line.unitPrice.trim());
-      if (validLines.length === 0) {
-        setError('Add at least one line item with a description and unit price');
-        return;
-      }
-
-      for (const line of validLines) {
-        const unitPriceCents = parseMoneyInput(line.unitPrice);
-        if (unitPriceCents === null) {
-          setError(`Enter a valid unit price for "${line.description}"`);
-          return;
-        }
-        const unitCostCents = line.unitCost.trim() ? parseMoneyInput(line.unitCost) : null;
-        lineItems.push({
-          category: line.category,
-          description: line.description.trim(),
-          quantity: Number.parseFloat(line.quantity) || 1,
-          unitPriceCents,
-          ...(unitCostCents != null ? { unitCostCents } : {}),
-          vatRateBps: Number.parseInt(line.vatRateBps, 10) || 1500,
-        });
-      }
+    const lineItems = parseEditorLinesForApi(lines);
+    if (!lineItems) {
+      setError('Add at least one line item with a description and unit price');
+      return;
     }
 
     setIsSaving(true);
@@ -292,7 +233,6 @@ export function QuoteCreatePage() {
         exclusions: exclusions.trim() || null,
         paymentTerms: paymentTerms.trim() || null,
         lineItems,
-        ...(amountCents != null ? { amountCents } : {}),
         belowFloorOverride,
         belowFloorReason: belowFloorOverride ? belowFloorReason.trim() : null,
         clientActionId,
@@ -314,7 +254,7 @@ export function QuoteCreatePage() {
     <div className="finance-page">
       <PageHeader
         title="New Quote"
-        description="Create a quote linked to a customer and optional job."
+        description="Create a quote with searchable customers, line items and VAT totals."
         guardNavigation={draftShell.guard.guardNavigation}
       />
       <FinanceNav />
@@ -324,237 +264,121 @@ export function QuoteCreatePage() {
       {draftShell.guard.unsavedChangesModal}
       {error ? <p className="form-error">{error}</p> : null}
 
-      {customers.length === 0 ? (
-        <p className="page-muted">Add a customer before creating a quote.</p>
-      ) : (
-        <form className="finance-form" onSubmit={(event) => void handleSubmit(event)}>
-          <label className="titan-input-group">
-            <span className="titan-input-label">Customer</span>
-            <select
-              className="titan-input"
-              value={customerId}
-              onChange={(e) => {
-                setCustomerId(e.target.value);
-                setJobId('');
-              }}
-              required
-            >
-              {customers.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="titan-input-group">
-            <span className="titan-input-label">Job (optional)</span>
-            <select
-              className="titan-input"
-              value={jobId}
-              onChange={(e) => setJobId(e.target.value)}
-            >
-              <option value="">No linked job</option>
-              {customerJobs.map((job) => (
-                <option key={job.id} value={job.id}>
-                  {job.title}
-                </option>
-              ))}
-            </select>
-          </label>
-          <Input label="Title" value={title} onChange={(e) => setTitle(e.target.value)} required />
-          <label className="titan-input-group">
-            <span className="titan-input-label">Status</span>
-            <select
-              className="titan-input"
-              value={status}
-              onChange={(e) => setStatus(e.target.value as QuoteStatus)}
-            >
-              {QUOTE_STATUS_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <Input
-            label="Valid Until"
-            type="datetime-local"
-            value={validUntil}
-            onChange={(e) => setValidUntil(e.target.value)}
+      <form className="finance-form finance-form--wide" onSubmit={(event) => void handleSubmit(event)}>
+        {accessToken ? (
+          <CustomerSearchField
+            accessToken={accessToken}
+            value={selectedCustomer}
+            onChange={(customer) => {
+              setSelectedCustomer(customer);
+              setJobId('');
+            }}
           />
+        ) : null}
 
-          <div className="finance-mode-toggle">
-            <label>
-              <input
-                type="radio"
-                name="quote-amount-mode"
-                checked={!useSimpleAmount}
-                onChange={() => setUseSimpleAmount(false)}
-              />
-              Itemized lines
-            </label>
-            <label>
-              <input
-                type="radio"
-                name="quote-amount-mode"
-                checked={useSimpleAmount}
-                onChange={() => setUseSimpleAmount(true)}
-              />
-              Simple amount
-            </label>
-          </div>
+        <label className="titan-input-group">
+          <span className="titan-input-label">Job (optional)</span>
+          <select
+            className="titan-input"
+            value={jobId}
+            onChange={(e) => setJobId(e.target.value)}
+            disabled={!customerId}
+          >
+            <option value="">No linked job</option>
+            {customerJobs.map((job) => (
+              <option key={job.id} value={job.id}>
+                {job.title}
+              </option>
+            ))}
+          </select>
+        </label>
 
-          {useSimpleAmount ? (
-            <Input
-              label="Amount"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="0.00"
-              required={useSimpleAmount}
-            />
-          ) : (
-            <div className="finance-line-items">
-              {lines.map((line) => (
-                <div className="finance-line-item-row" key={line.key}>
-                  <label className="titan-input-group">
-                    <span className="titan-input-label">Description</span>
-                    <input
-                      className="titan-input"
-                      value={line.description}
-                      onChange={(e) => updateLine(line.key, { description: e.target.value })}
-                    />
-                  </label>
-                  <label className="titan-input-group">
-                    <span className="titan-input-label">Category</span>
-                    <select
-                      className="titan-input"
-                      value={line.category}
-                      onChange={(e) =>
-                        updateLine(line.key, { category: e.target.value as QuoteLineCategory })
-                      }
-                    >
-                      {QUOTE_LINE_CATEGORY_OPTIONS.map((o) => (
-                        <option key={o.value} value={o.value}>
-                          {o.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className="titan-input-group">
-                    <span className="titan-input-label">Qty</span>
-                    <input
-                      className="titan-input"
-                      value={line.quantity}
-                      onChange={(e) => updateLine(line.key, { quantity: e.target.value })}
-                    />
-                  </label>
-                  <label className="titan-input-group">
-                    <span className="titan-input-label">Unit price</span>
-                    <input
-                      className="titan-input"
-                      value={line.unitPrice}
-                      onChange={(e) => updateLine(line.key, { unitPrice: e.target.value })}
-                      placeholder="0.00"
-                    />
-                  </label>
-                  <label className="titan-input-group">
-                    <span className="titan-input-label">Unit cost (internal)</span>
-                    <input
-                      className="titan-input"
-                      value={line.unitCost}
-                      onChange={(e) => updateLine(line.key, { unitCost: e.target.value })}
-                      placeholder="0.00"
-                    />
-                  </label>
-                  <label className="titan-input-group">
-                    <span className="titan-input-label">VAT bps</span>
-                    <input
-                      className="titan-input"
-                      value={line.vatRateBps}
-                      onChange={(e) => updateLine(line.key, { vatRateBps: e.target.value })}
-                    />
-                  </label>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="finance-line-item-row__remove"
-                    disabled={lines.length <= 1}
-                    onClick={() => removeLine(line.key)}
-                  >
-                    Remove
-                  </Button>
-                </div>
-              ))}
-              <Button type="button" variant="secondary" size="sm" onClick={addLine}>
-                Add line
-              </Button>
-            </div>
-          )}
+        <Input label="Title" value={title} onChange={(e) => setTitle(e.target.value)} required />
+        <label className="titan-input-group">
+          <span className="titan-input-label">Status</span>
+          <select
+            className="titan-input"
+            value={status}
+            onChange={(e) => setStatus(e.target.value as QuoteStatus)}
+          >
+            {QUOTE_STATUS_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <Input
+          label="Valid Until"
+          type="datetime-local"
+          value={validUntil}
+          onChange={(e) => setValidUntil(e.target.value)}
+        />
 
+        <FinanceLineItemsEditor lines={lines} onChange={setLines} />
+
+        <label className="titan-input-group">
+          <span className="titan-input-label">Scope of work (optional)</span>
+          <textarea
+            className="titan-input finance-textarea"
+            rows={3}
+            value={scopeOfWork}
+            onChange={(e) => setScopeOfWork(e.target.value)}
+          />
+        </label>
+        <label className="titan-input-group">
+          <span className="titan-input-label">Exclusions (optional)</span>
+          <textarea
+            className="titan-input finance-textarea"
+            rows={2}
+            value={exclusions}
+            onChange={(e) => setExclusions(e.target.value)}
+          />
+        </label>
+        <label className="titan-input-group">
+          <span className="titan-input-label">Payment terms (optional)</span>
+          <textarea
+            className="titan-input finance-textarea"
+            rows={2}
+            value={paymentTerms}
+            onChange={(e) => setPaymentTerms(e.target.value)}
+          />
+        </label>
+        <label className="titan-input-group">
+          <span className="titan-input-label">Notes (optional)</span>
+          <textarea
+            className="titan-input finance-textarea"
+            rows={3}
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+          />
+        </label>
+
+        <label className="finance-toolbar__check checkbox-row">
+          <input
+            type="checkbox"
+            checked={belowFloorOverride}
+            onChange={(e) => setBelowFloorOverride(e.target.checked)}
+          />
+          Override profit floor (requires a reason)
+        </label>
+        {belowFloorOverride ? (
           <label className="titan-input-group">
-            <span className="titan-input-label">Scope of work (optional)</span>
-            <textarea
-              className="titan-input finance-textarea"
-              rows={3}
-              value={scopeOfWork}
-              onChange={(e) => setScopeOfWork(e.target.value)}
-            />
-          </label>
-          <label className="titan-input-group">
-            <span className="titan-input-label">Exclusions (optional)</span>
+            <span className="titan-input-label">Override reason</span>
             <textarea
               className="titan-input finance-textarea"
               rows={2}
-              value={exclusions}
-              onChange={(e) => setExclusions(e.target.value)}
+              value={belowFloorReason}
+              onChange={(e) => setBelowFloorReason(e.target.value)}
+              required={belowFloorOverride}
             />
           </label>
-          <label className="titan-input-group">
-            <span className="titan-input-label">Payment terms (optional)</span>
-            <textarea
-              className="titan-input finance-textarea"
-              rows={2}
-              value={paymentTerms}
-              onChange={(e) => setPaymentTerms(e.target.value)}
-            />
-          </label>
-          <label className="titan-input-group">
-            <span className="titan-input-label">Notes (optional)</span>
-            <textarea
-              className="titan-input finance-textarea"
-              rows={3}
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-            />
-          </label>
+        ) : null}
 
-          <label className="finance-toolbar__check checkbox-row">
-            <input
-              type="checkbox"
-              checked={belowFloorOverride}
-              onChange={(e) => setBelowFloorOverride(e.target.checked)}
-            />
-            Override profit floor (requires a reason)
-          </label>
-          {belowFloorOverride ? (
-            <label className="titan-input-group">
-              <span className="titan-input-label">Override reason</span>
-              <textarea
-                className="titan-input finance-textarea"
-                rows={2}
-                value={belowFloorReason}
-                onChange={(e) => setBelowFloorReason(e.target.value)}
-                required={belowFloorOverride}
-              />
-            </label>
-          ) : null}
-
-          <Button type="submit" disabled={isSaving || !title.trim()}>
-            {isSaving ? 'Creating…' : 'Create quote'}
-          </Button>
-        </form>
-      )}
+        <Button type="submit" disabled={isSaving || !title.trim() || !customerId}>
+          {isSaving ? 'Creating…' : 'Create quote'}
+        </Button>
+      </form>
     </div>
   );
 }
