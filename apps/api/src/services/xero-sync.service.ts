@@ -2518,7 +2518,11 @@ export class XeroSyncService {
         const financials = {
           status,
           amountCents: resolvedTotal,
-          subtotalCents: subtotalCents > 0 ? subtotalCents : resolvedTotal,
+          subtotalCents: resolveImportedSubtotalCents({
+            subtotalCents,
+            vatCents,
+            resolvedTotalCents: resolvedTotal,
+          }),
           vatCents,
           totalCents: resolvedTotal,
           currency,
@@ -4408,9 +4412,27 @@ export function buildImportedInvoiceFinancialFields(remote: {
 
   return {
     amountCents: resolvedTotalCents,
-    subtotalCents: subtotalCents > 0 ? subtotalCents : resolvedTotalCents,
+    subtotalCents: resolveImportedSubtotalCents({ subtotalCents, vatCents, resolvedTotalCents }),
     vatCents,
     totalCents: resolvedTotalCents,
     amountPaidCents,
   };
+}
+
+/**
+ * Xero reports a negative SubTotal on documents whose deposit or credit lines outweigh their work,
+ * and that figure is the truth about the document. Substituting the total for it breaks
+ * subtotal + VAT = total on exactly those documents, so the value is only derived when Xero
+ * reports no subtotal at all — and then from the total less tax, which is what a subtotal is.
+ */
+export function resolveImportedSubtotalCents(input: {
+  subtotalCents: number;
+  vatCents: number;
+  resolvedTotalCents: number;
+}): number {
+  if (input.subtotalCents !== 0) {
+    return input.subtotalCents;
+  }
+
+  return input.resolvedTotalCents - input.vatCents;
 }
