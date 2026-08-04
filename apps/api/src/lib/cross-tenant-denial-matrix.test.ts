@@ -165,7 +165,7 @@ describe('cross-tenant denial matrix — key route wiring', () => {
       file: 'finance.ts',
       mustInclude: [
         'financeService.getQuoteDetail(auth.companyId',
-        'financeService.getInvoiceDetail(getAuth(req).companyId',
+        'financeService.getInvoiceDetail(auth.companyId',
         'getAuth(req)',
       ],
     },

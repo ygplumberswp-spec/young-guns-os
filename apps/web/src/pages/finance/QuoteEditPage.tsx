@@ -29,6 +29,11 @@ import { useAuth } from '../../lib/auth-context';
 import { useStaffMutationInvalidation } from '../../lib/cache-invalidation';
 import { FinanceNav } from '../../features/finance/FinanceNav';
 import { canManageFinance, canViewFinanceProfit } from '../../features/finance/utils';
+import {
+  financeDocumentSaveSuccessMessage,
+  resolveFinanceDocumentPersistStatus,
+  type FinanceDocumentPersistMode,
+} from '../../features/finance/finance-document-save';
 import { buildFinanceEditorPreviewInput } from '../../features/finance/finance-preview-request';
 import { useFinanceDocumentPreview } from '../../features/finance/useFinanceDocumentPreview';
 import { FinanceDocumentPhotosPanel } from '../../features/finance/FinanceDocumentPhotosPanel';
@@ -177,7 +182,7 @@ export function QuoteEditPage() {
   const customerJobs = jobs.filter((job) => job.customerId === customerId);
 
   const persistQuote = useCallback(
-    async (strict: boolean) => {
+    async (strict: boolean, mode: FinanceDocumentPersistMode = 'save') => {
       if (!accessToken || !canWrite || !quoteId) return null;
 
       const lineItems = strict
@@ -191,7 +196,7 @@ export function QuoteEditPage() {
 
       return updateQuote(accessToken, quoteId, {
         jobId: jobId || null,
-        status: strict ? status : 'draft',
+        status: strict ? status : (resolveFinanceDocumentPersistStatus(mode, status) as QuoteStatus),
         validUntil: validUntil ? new Date(validUntil).toISOString() : null,
         issuedAt: quoteDate ? new Date(quoteDate).toISOString() : null,
         customerNotes: customerReference.trim() || null,
@@ -284,7 +289,8 @@ export function QuoteEditPage() {
       await draftShell.autosave.saveNow();
 
       if (action === 'save' || action === 'save_draft') {
-        const result = await persistQuote(false);
+        const mode = action === 'save_draft' ? 'save_draft' : 'save';
+        const result = await persistQuote(false, mode);
         if (result) {
           setStatus(result.status);
           await linkPhotosAfterFinanceSave(accessToken, {
@@ -301,14 +307,17 @@ export function QuoteEditPage() {
         invalidateQuotes();
         notify({
           variant: 'saved',
-          message: action === 'save_draft' ? 'Quote draft saved' : 'Quote saved',
-          dedupeKey: action === 'save_draft' ? `quote-draft-${quoteId}` : `quote-saved-${quoteId}`,
+          message: result
+            ? financeDocumentSaveSuccessMessage(mode, 'quote', result.status)
+            : 'Unable to save quote',
+          dedupeKey: mode === 'save_draft' ? `quote-draft-${quoteId}` : `quote-saved-${quoteId}`,
         });
         return;
       }
 
       if (action === 'save_new') {
-        await persistQuote(false);
+        const result = await persistQuote(false, 'save');
+        if (!result) return;
         draftShell.markSubmitted();
         navigate('/finance/quotes/new');
         return;

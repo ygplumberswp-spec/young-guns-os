@@ -124,3 +124,26 @@ export function canViewFinanceProfit(
   if (permissions.includes('*') || permissions.includes('finance:write')) return true;
   return ['Company Owner', 'Accountant', 'Manager'].includes(roleName ?? '');
 }
+
+type FinanceLineCostField = { unitCostCents?: number | null | undefined };
+
+/** Strip internal unit costs from finance line payloads when the caller lacks profit visibility. */
+export function stripUnauthorizedFinanceLineCosts<T extends FinanceLineCostField>(
+  lineItems: readonly T[] | undefined | null,
+  includeCost: boolean,
+): T[] | undefined {
+  if (!lineItems) return undefined;
+  if (includeCost) return lineItems.map((line) => ({ ...line }));
+  return lineItems.map((line) => ({ ...line, unitCostCents: undefined }));
+}
+
+/** Sanitize a finance document write request — never trust client-supplied cost fields. */
+export function sanitizeFinanceDocumentWriteRequest<
+  T extends { lineItems?: readonly FinanceLineCostField[] | null | undefined },
+>(input: T, includeCost: boolean): T {
+  if (!input.lineItems || includeCost) return input;
+  return {
+    ...input,
+    lineItems: stripUnauthorizedFinanceLineCosts(input.lineItems, false),
+  };
+}

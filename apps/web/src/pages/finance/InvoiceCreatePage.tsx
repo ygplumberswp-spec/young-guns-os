@@ -37,7 +37,12 @@ import { useStaffMutationInvalidation } from '../../lib/cache-invalidation';
 import { FinanceNav } from '../../features/finance/FinanceNav';
 import { canManageFinance, canCreateCustomer, newFinanceClientActionId } from '../../features/finance/utils';
 import { buildFinanceEditorPreviewInput } from '../../features/finance/finance-preview-request';
-import { financeDocumentEditPath } from '../../features/finance/finance-document-save';
+import {
+  financeDocumentEditPath,
+  financeDocumentSaveSuccessMessage,
+  resolveFinanceDocumentPersistStatus,
+  type FinanceDocumentPersistMode,
+} from '../../features/finance/finance-document-save';
 import { useFinanceDocumentPreview } from '../../features/finance/useFinanceDocumentPreview';
 import { FinanceDocumentPhotosPanel } from '../../features/finance/FinanceDocumentPhotosPanel';
 import { linkPhotosAfterFinanceSave } from '../../features/finance/finance-document-editor-save';
@@ -218,7 +223,7 @@ export function InvoiceCreatePage() {
   const customerQuotes = quotes.filter((quote) => quote.customerId === customerId);
 
   const persistInvoice = useCallback(
-    async (strict: boolean) => {
+    async (strict: boolean, mode: FinanceDocumentPersistMode = 'save') => {
       if (!accessToken || !canWrite) return null;
       const lineItems = strict
         ? parseEditorLinesForApi(lines, { priceMode, vatMode })
@@ -243,7 +248,7 @@ export function InvoiceCreatePage() {
         customerId,
         jobId: jobId || null,
         quoteId: quoteId || null,
-        status: 'draft' as const,
+        status: resolveFinanceDocumentPersistStatus(mode, 'draft') as InvoiceStatus,
         stage,
         lineItems: lineItems!,
         dueDate: dueDate ? new Date(dueDate).toISOString() : null,
@@ -379,8 +384,9 @@ export function InvoiceCreatePage() {
       await draftShell.autosave.saveNow();
 
       if (action === 'save' || action === 'save_draft') {
+        const mode = action === 'save_draft' ? 'save_draft' : 'save';
         const wasNew = !savedInvoiceId;
-        const result = await persistInvoice(false);
+        const result = await persistInvoice(false, mode);
         draftShell.markSubmitted();
         if (result?.id) {
           await linkPhotosAfterFinanceSave(accessToken, {
@@ -398,15 +404,16 @@ export function InvoiceCreatePage() {
           }
           notify({
             variant: 'saved',
-            message: action === 'save_draft' ? 'Invoice draft saved' : 'Invoice saved',
-            dedupeKey: action === 'save_draft' ? 'invoice-draft-saved' : 'invoice-saved',
+            message: financeDocumentSaveSuccessMessage(mode, 'invoice', result.status),
+            dedupeKey: mode === 'save_draft' ? 'invoice-draft-saved' : 'invoice-saved',
           });
         }
         return;
       }
 
       if (action === 'save_new') {
-        await persistInvoice(false);
+        const result = await persistInvoice(false, 'save');
+        if (!result?.id) return;
         draftShell.markSubmitted();
         navigate('/finance/invoices/new');
         return;

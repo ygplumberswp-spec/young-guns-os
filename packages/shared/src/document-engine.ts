@@ -1061,7 +1061,7 @@ export function replaceDocumentPhoto(
   if (!replacement.documentationId.trim() || !replacement.jobId.trim()) {
     throw new DocumentEngineError(
       'VALIDATION_ERROR',
-      'A replacement photo must reference a stored job documentation record',
+      'A replacement photo must reference stored evidence metadata',
     );
   }
   return photos.map((photo) => (photo.id === photoId ? { ...photo, ...replacement } : photo));

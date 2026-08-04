@@ -24,7 +24,7 @@ describe('customer duplicate merge web wiring', () => {
   });
 
   it('shows side-by-side comparison with links and conflicts', () => {
-    assert.match(panelSource, /Side-by-side merge review/);
+    assert.match(panelSource, /Side-By-Side Merge Review/);
     assert.match(panelSource, /Conflicts requiring Owner confirmation/);
     assert.match(panelSource, /formatLinks/);
     assert.match(panelSource, /Active jobs \/ unpaid invoices/);

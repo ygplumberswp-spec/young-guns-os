@@ -177,6 +177,15 @@ test('finance catalogue route passes includeCost from canViewFinanceProfit', () 
   assert.match(financeRouteSource, /searchCatalogueItems\(companyId, q, \{\s*includeCost: canViewFinanceProfit/);
 });
 
+test('invoice detail route passes includeProfit from canViewFinanceProfit', () => {
+  assert.match(financeRouteSource, /getInvoiceDetail\(auth\.companyId, routeParam\(req\.params\.id\), \{ includeProfit: canViewProfit\(auth\) \}\)/);
+});
+
+test('finance service sanitizes unauthorized line costs on write', () => {
+  assert.match(financeServiceSource, /sanitizeFinanceDocumentWriteRequest/);
+  assert.match(financeServiceSource, /includeProfitForActor\(actor\)/);
+});
+
 test('finance catalogue search limits results to twelve items', () => {
   const inventory = Array.from({ length: 20 }, (_, index) =>
     financeCatalogueItemFromInventory({

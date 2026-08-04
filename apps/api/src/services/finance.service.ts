@@ -39,6 +39,8 @@ import {
   toFinanceDocumentAddressSnapshot,
   buildFinanceDocumentPreviewModel,
   filterFinanceCatalogueCostFields,
+  canViewFinanceProfit,
+  sanitizeFinanceDocumentWriteRequest,
   resolveYoungGunsPricebookForTenant,
   type FinanceDocumentPreviewInput,
   type FinanceDocumentPreviewModel,
@@ -187,39 +189,43 @@ export class FinanceService {
   async createQuote(actorOrCompany: FinanceActor | string, input: CreateQuoteRequest): Promise<QuoteSummary> {
     const actor = toActor(actorOrCompany);
     const { companyId } = actor;
-    if (!input.lineItems?.length && (!input.amountCents || input.amountCents <= 0)) {
+    const sanitized = sanitizeFinanceDocumentWriteRequest(
+      input,
+      this.includeProfitForActor(actor),
+    );
+    if (!sanitized.lineItems?.length && (!sanitized.amountCents || sanitized.amountCents <= 0)) {
       throw new FinanceError('VALIDATION_ERROR', 'Quote line items or amount must be greater than zero');
     }
-    const customer = await this.ensureCustomerBelongsToCompany(companyId, input.customerId);
+    const customer = await this.ensureCustomerBelongsToCompany(companyId, sanitized.customerId);
     const title = legacyFinanceDocumentTitle(customer.name);
-    if (input.jobId) await this.ensureJobBelongsToCompany(companyId, input.jobId, input.customerId);
-    if (input.clientActionId) {
-      const existing = await this.db.query.quotes.findFirst({ where: and(eq(quotes.companyId, companyId), eq(quotes.clientActionId, input.clientActionId)), with: { customer: true, job: true } });
+    if (sanitized.jobId) await this.ensureJobBelongsToCompany(companyId, sanitized.jobId, sanitized.customerId);
+    if (sanitized.clientActionId) {
+      const existing = await this.db.query.quotes.findFirst({ where: and(eq(quotes.companyId, companyId), eq(quotes.clientActionId, sanitized.clientActionId)), with: { customer: true, job: true } });
       if (existing) return toQuoteSummary(existing);
     }
     const settings = await this.ensureFinanceSettings(companyId);
-    const computed = quoteAmounts(input.lineItems ?? legacyQuoteLines(input.amountCents!, settings.defaultVatRateBps), settings.profitFloorMarginBps, input.discountCents ?? 0);
-    this.assertFloor(actor, computed.profit.belowFloor, input.belowFloorOverride, input.belowFloorReason, settings.allowBelowFloorWithOverride);
+    const computed = quoteAmounts(sanitized.lineItems ?? legacyQuoteLines(sanitized.amountCents!, settings.defaultVatRateBps), settings.profitFloorMarginBps, sanitized.discountCents ?? 0);
+    this.assertFloor(actor, computed.profit.belowFloor, sanitized.belowFloorOverride, sanitized.belowFloorReason, settings.allowBelowFloorWithOverride);
     const [created] = await this.db.insert(quotes).values({
-      companyId, customerId: input.customerId, jobId: input.jobId ?? null, propertyId: input.propertyId ?? null,
-      leadId: input.leadId ?? null, estimatorUserId: input.estimatorUserId ?? actor.userId ?? null,
-      quoteNumber: await this.nextQuoteNumber(companyId), title, status: input.status ?? 'draft',
+      companyId, customerId: sanitized.customerId, jobId: sanitized.jobId ?? null, propertyId: sanitized.propertyId ?? null,
+      leadId: sanitized.leadId ?? null, estimatorUserId: sanitized.estimatorUserId ?? actor.userId ?? null,
+      quoteNumber: await this.nextQuoteNumber(companyId), title, status: sanitized.status ?? 'draft',
       amountCents: computed.totalCents, subtotalCents: computed.subtotalCents, vatCents: computed.vatCents,
       totalCents: computed.totalCents, estimatedCostCents: computed.profit.estimatedCostCents,
       grossProfitCents: computed.profit.grossProfitCents, markupBps: computed.profit.markupBps,
       marginBps: computed.profit.marginBps, profitFloorCents: computed.profit.profitFloorCents,
-      targetPriceCents: computed.profit.targetPriceCents, discountCents: input.discountCents ?? 0,
-      belowFloorOverride: Boolean(input.belowFloorOverride), belowFloorReason: normalizeOptionalText(input.belowFloorReason),
-      belowFloorAuthorizedBy: input.belowFloorOverride ? actor.userId ?? null : null, currency: input.currency?.trim() || settings.currency,
-      validUntil: parseOptionalDate(input.validUntil), scopeOfWork: normalizeOptionalText(input.scopeOfWork), exclusions: normalizeOptionalText(input.exclusions),
-      assumptions: normalizeOptionalText(input.assumptions), customerNotes: normalizeOptionalText(input.customerNotes),
-      internalNotes: normalizeOptionalText(input.internalNotes), paymentTerms: normalizeOptionalText(input.paymentTerms),
-      depositPercent: input.depositPercent ?? null, optionTier: normalizeOptionalText(input.optionTier), notes: normalizeOptionalText(input.notes),
-      issuedAt: parseOptionalDate(input.issuedAt),
-      billingAddress: normalizeOptionalText(input.billingAddress),
-      siteAddress: normalizeOptionalText(input.siteAddress),
-      postalAddress: normalizeOptionalText(input.postalAddress),
-      clientActionId: normalizeOptionalText(input.clientActionId),
+      targetPriceCents: computed.profit.targetPriceCents, discountCents: sanitized.discountCents ?? 0,
+      belowFloorOverride: Boolean(sanitized.belowFloorOverride), belowFloorReason: normalizeOptionalText(sanitized.belowFloorReason),
+      belowFloorAuthorizedBy: sanitized.belowFloorOverride ? actor.userId ?? null : null, currency: sanitized.currency?.trim() || settings.currency,
+      validUntil: parseOptionalDate(sanitized.validUntil), scopeOfWork: normalizeOptionalText(sanitized.scopeOfWork), exclusions: normalizeOptionalText(sanitized.exclusions),
+      assumptions: normalizeOptionalText(sanitized.assumptions), customerNotes: normalizeOptionalText(sanitized.customerNotes),
+      internalNotes: normalizeOptionalText(sanitized.internalNotes), paymentTerms: normalizeOptionalText(sanitized.paymentTerms),
+      depositPercent: sanitized.depositPercent ?? null, optionTier: normalizeOptionalText(sanitized.optionTier), notes: normalizeOptionalText(sanitized.notes),
+      issuedAt: parseOptionalDate(sanitized.issuedAt),
+      billingAddress: normalizeOptionalText(sanitized.billingAddress),
+      siteAddress: normalizeOptionalText(sanitized.siteAddress),
+      postalAddress: normalizeOptionalText(sanitized.postalAddress),
+      clientActionId: normalizeOptionalText(sanitized.clientActionId),
     }).returning();
     if (!created) throw new FinanceError('CREATE_FAILED', 'Unable to create quote');
     await this.insertQuoteLines(created.id, companyId, computed.lines);
@@ -230,58 +236,62 @@ export class FinanceService {
   async createInvoice(actorOrCompany: FinanceActor | string, input: CreateInvoiceRequest): Promise<InvoiceSummary> {
     const actor = toActor(actorOrCompany);
     const companyId = actor.companyId;
+    const sanitized = sanitizeFinanceDocumentWriteRequest(
+      input,
+      this.includeProfitForActor(actor),
+    );
 
-    if ((!input.lineItems?.length && !input.amountCents) || (input.amountCents ?? 0) <= 0 && !input.lineItems?.length) {
+    if ((!sanitized.lineItems?.length && !sanitized.amountCents) || (sanitized.amountCents ?? 0) <= 0 && !sanitized.lineItems?.length) {
       throw new FinanceError('VALIDATION_ERROR', 'Invoice amount must be greater than zero');
     }
 
-    const customer = await this.ensureCustomerBelongsToCompany(companyId, input.customerId);
+    const customer = await this.ensureCustomerBelongsToCompany(companyId, sanitized.customerId);
     const title = legacyFinanceDocumentTitle(customer.name);
 
-    if (input.jobId) {
-      await this.ensureJobBelongsToCompany(companyId, input.jobId, input.customerId);
+    if (sanitized.jobId) {
+      await this.ensureJobBelongsToCompany(companyId, sanitized.jobId, sanitized.customerId);
     }
 
-    if (input.quoteId) {
-      await this.ensureQuoteBelongsToCompany(companyId, input.quoteId, input.customerId);
+    if (sanitized.quoteId) {
+      await this.ensureQuoteBelongsToCompany(companyId, sanitized.quoteId, sanitized.customerId);
     }
 
-    if (input.clientActionId) {
-      const existing = await this.db.query.invoices.findFirst({ where: and(eq(invoices.companyId, companyId), eq(invoices.clientActionId, input.clientActionId)), with: { customer: true, job: true, quote: true } });
+    if (sanitized.clientActionId) {
+      const existing = await this.db.query.invoices.findFirst({ where: and(eq(invoices.companyId, companyId), eq(invoices.clientActionId, sanitized.clientActionId)), with: { customer: true, job: true, quote: true } });
       if (existing) return toInvoiceSummary(existing);
     }
     const settings = await this.ensureFinanceSettings(companyId);
-    const computed = quoteAmounts(input.lineItems ?? legacyQuoteLines(input.amountCents!, settings.defaultVatRateBps), settings.profitFloorMarginBps, 0);
+    const computed = quoteAmounts(sanitized.lineItems ?? legacyQuoteLines(sanitized.amountCents!, settings.defaultVatRateBps), settings.profitFloorMarginBps, 0);
     const invoiceNumber = await this.nextInvoiceNumber(companyId);
 
     const [created] = await this.db
       .insert(invoices)
       .values({
         companyId,
-        customerId: input.customerId,
-        jobId: input.jobId ?? null,
-        quoteId: input.quoteId ?? null,
-        propertyId: input.propertyId ?? null,
+        customerId: sanitized.customerId,
+        jobId: sanitized.jobId ?? null,
+        quoteId: sanitized.quoteId ?? null,
+        propertyId: sanitized.propertyId ?? null,
         invoiceNumber,
         internalNumber: invoiceNumber,
         numberAuthority: 'internal_pending_xero',
         title,
-        status: input.status ?? 'draft',
-        stage: input.stage ?? 'standard',
+        status: sanitized.status ?? 'draft',
+        stage: sanitized.stage ?? 'standard',
         amountCents: computed.totalCents,
         subtotalCents: computed.subtotalCents,
         vatCents: computed.vatCents,
         totalCents: computed.totalCents,
-        currency: input.currency?.trim() || settings.currency,
-        dueDate: parseOptionalDate(input.dueDate),
-        issuedAt: parseOptionalDate(input.issuedAt) ?? new Date(),
-        paymentTerms: normalizeOptionalText(input.paymentTerms),
-        notes: normalizeOptionalText(input.notes),
-        xeroReference: mapCustomerReferenceToStorage(input.customerReference),
-        billingAddress: normalizeOptionalText(input.billingAddress),
-        siteAddress: normalizeOptionalText(input.siteAddress),
-        postalAddress: normalizeOptionalText(input.postalAddress),
-        clientActionId: normalizeOptionalText(input.clientActionId),
+        currency: sanitized.currency?.trim() || settings.currency,
+        dueDate: parseOptionalDate(sanitized.dueDate),
+        issuedAt: parseOptionalDate(sanitized.issuedAt) ?? new Date(),
+        paymentTerms: normalizeOptionalText(sanitized.paymentTerms),
+        notes: normalizeOptionalText(sanitized.notes),
+        xeroReference: mapCustomerReferenceToStorage(sanitized.customerReference),
+        billingAddress: normalizeOptionalText(sanitized.billingAddress),
+        siteAddress: normalizeOptionalText(sanitized.siteAddress),
+        postalAddress: normalizeOptionalText(sanitized.postalAddress),
+        clientActionId: normalizeOptionalText(sanitized.clientActionId),
       })
       .returning();
 
@@ -430,24 +440,28 @@ export class FinanceService {
 
   async updateQuote(actorOrCompany: FinanceActor | string, quoteId: string, input: UpdateQuoteRequest): Promise<QuoteSummary> {
     const actor = toActor(actorOrCompany);
+    const sanitized = sanitizeFinanceDocumentWriteRequest(
+      input,
+      this.includeProfitForActor(actor),
+    );
     const current = await this.db.query.quotes.findFirst({ where: and(eq(quotes.id, quoteId), eq(quotes.companyId, actor.companyId)) });
     if (!current) throw new FinanceError('NOT_FOUND', 'Quote not found');
     if (current.isImmutable) throw new FinanceError('VALIDATION_ERROR', 'Issued quotes are immutable; create a version');
     const settings = await this.ensureFinanceSettings(actor.companyId);
-    const computed = input.lineItems ? quoteAmounts(input.lineItems, settings.profitFloorMarginBps, input.discountCents ?? current.discountCents) : null;
-    if (computed) this.assertFloor(actor, computed.profit.belowFloor, input.belowFloorOverride, input.belowFloorReason, settings.allowBelowFloorWithOverride);
+    const computed = sanitized.lineItems ? quoteAmounts(sanitized.lineItems, settings.profitFloorMarginBps, sanitized.discountCents ?? current.discountCents) : null;
+    if (computed) this.assertFloor(actor, computed.profit.belowFloor, sanitized.belowFloorOverride, sanitized.belowFloorReason, settings.allowBelowFloorWithOverride);
     let issuedAtUpdate: Date | null | undefined;
     try {
-      issuedAtUpdate = resolveQuoteIssuedAtUpdate(current.issuedAt, input.issuedAt, current.isImmutable);
+      issuedAtUpdate = resolveQuoteIssuedAtUpdate(current.issuedAt, sanitized.issuedAt, current.isImmutable);
     } catch {
       throw new FinanceError('VALIDATION_ERROR', 'Invalid quote date');
     }
-    const addressUpdate = resolveDocumentAddressColumns(current, input);
+    const addressUpdate = resolveDocumentAddressColumns(current, sanitized);
     await this.db.update(quotes).set({
-      status: input.status ?? current.status, currency: input.currency?.trim() || current.currency,
-      jobId: input.jobId === undefined ? current.jobId : input.jobId ?? null,
-      customerNotes: input.customerNotes === undefined ? current.customerNotes : normalizeOptionalText(input.customerNotes),
-      validUntil: input.validUntil === undefined ? current.validUntil : parseOptionalDate(input.validUntil), notes: input.notes === undefined ? current.notes : normalizeOptionalText(input.notes),
+      status: sanitized.status ?? current.status, currency: sanitized.currency?.trim() || current.currency,
+      jobId: sanitized.jobId === undefined ? current.jobId : sanitized.jobId ?? null,
+      customerNotes: sanitized.customerNotes === undefined ? current.customerNotes : normalizeOptionalText(sanitized.customerNotes),
+      validUntil: sanitized.validUntil === undefined ? current.validUntil : parseOptionalDate(sanitized.validUntil), notes: sanitized.notes === undefined ? current.notes : normalizeOptionalText(sanitized.notes),
       ...(issuedAtUpdate !== undefined ? { issuedAt: issuedAtUpdate } : {}),
       ...(addressUpdate ?? {}),
       ...computed && { amountCents: computed.totalCents, subtotalCents: computed.subtotalCents, vatCents: computed.vatCents, totalCents: computed.totalCents, estimatedCostCents: computed.profit.estimatedCostCents, grossProfitCents: computed.profit.grossProfitCents, markupBps: computed.profit.markupBps, marginBps: computed.profit.marginBps, profitFloorCents: computed.profit.profitFloorCents, targetPriceCents: computed.profit.targetPriceCents },
@@ -516,10 +530,37 @@ export class FinanceService {
     return this.createInvoiceFromQuote(actor, acceptedQuote.id, input);
   }
 
-  async getInvoiceDetail(companyId: string, invoiceId: string): Promise<InvoiceDetail | null> {
+  async getInvoiceDetail(
+    companyId: string,
+    invoiceId: string,
+    _options: { includeProfit?: boolean } = {},
+  ): Promise<InvoiceDetail | null> {
     const row = await this.db.query.invoices.findFirst({ where: and(eq(invoices.id, invoiceId), eq(invoices.companyId, companyId)), with: { customer: true, job: true, quote: true, lineItems: true, payments: { with: { invoice: { with: { customer: true } } } } } });
     if (!row) return null;
-    return { ...toInvoiceSummary(row), subtotalCents: row.subtotalCents, vatCents: row.vatCents, paymentTerms: row.paymentTerms, billingName: row.billingName, billingEmail: row.billingEmail, billingPhone: row.billingPhone, notes: row.notes, addresses: toFinanceDocumentAddressSnapshot(row), lineItems: row.lineItems.map(line => ({ id: line.id, position: line.position, category: line.category, description: line.description, quantity: Number(line.quantity), unitPriceCents: line.unitPriceCents, vatRateBps: line.vatRateBps, lineSubtotalCents: line.lineSubtotalCents, lineVatCents: line.lineVatCents, lineTotalCents: line.lineTotalCents })), payments: row.payments.map(toPaymentSummary) };
+    return {
+      ...toInvoiceSummary(row),
+      subtotalCents: row.subtotalCents,
+      vatCents: row.vatCents,
+      paymentTerms: row.paymentTerms,
+      billingName: row.billingName,
+      billingEmail: row.billingEmail,
+      billingPhone: row.billingPhone,
+      notes: row.notes,
+      addresses: toFinanceDocumentAddressSnapshot(row),
+      lineItems: row.lineItems.map((line) => ({
+        id: line.id,
+        position: line.position,
+        category: line.category,
+        description: line.description,
+        quantity: Number(line.quantity),
+        unitPriceCents: line.unitPriceCents,
+        vatRateBps: line.vatRateBps,
+        lineSubtotalCents: line.lineSubtotalCents,
+        lineVatCents: line.lineVatCents,
+        lineTotalCents: line.lineTotalCents,
+      })),
+      payments: row.payments.map(toPaymentSummary),
+    };
   }
 
   async updateInvoice(
@@ -528,6 +569,10 @@ export class FinanceService {
     input: UpdateInvoiceRequest,
   ): Promise<InvoiceDetail> {
     const actor = toActor(actorOrCompany);
+    const sanitized = sanitizeFinanceDocumentWriteRequest(
+      input,
+      this.includeProfitForActor(actor),
+    );
     const current = await this.db.query.invoices.findFirst({
       where: and(eq(invoices.id, invoiceId), eq(invoices.companyId, actor.companyId)),
     });
@@ -537,30 +582,30 @@ export class FinanceService {
     }
 
     const settings = await this.ensureFinanceSettings(actor.companyId);
-    const computed = input.lineItems
-      ? quoteAmounts(input.lineItems, settings.profitFloorMarginBps, 0)
+    const computed = sanitized.lineItems
+      ? quoteAmounts(sanitized.lineItems, settings.profitFloorMarginBps, 0)
       : null;
 
     let issuedAtUpdate: Date | null | undefined;
     try {
-      issuedAtUpdate = resolveInvoiceIssuedAtUpdate(current.issuedAt, input.issuedAt);
+      issuedAtUpdate = resolveInvoiceIssuedAtUpdate(current.issuedAt, sanitized.issuedAt);
     } catch {
       throw new FinanceError('VALIDATION_ERROR', 'Invalid invoice date');
     }
-    const addressUpdate = resolveDocumentAddressColumns(current, input);
+    const addressUpdate = resolveDocumentAddressColumns(current, sanitized);
 
     await this.db
       .update(invoices)
       .set({
-        status: input.status ?? current.status,
-        stage: input.stage ?? current.stage,
-        currency: input.currency?.trim() || current.currency,
-        dueDate: input.dueDate === undefined ? current.dueDate : parseOptionalDate(input.dueDate),
-        notes: input.notes === undefined ? current.notes : normalizeOptionalText(input.notes),
+        status: sanitized.status ?? current.status,
+        stage: sanitized.stage ?? current.stage,
+        currency: sanitized.currency?.trim() || current.currency,
+        dueDate: sanitized.dueDate === undefined ? current.dueDate : parseOptionalDate(sanitized.dueDate),
+        notes: sanitized.notes === undefined ? current.notes : normalizeOptionalText(sanitized.notes),
         paymentTerms:
-          input.paymentTerms === undefined ? current.paymentTerms : normalizeOptionalText(input.paymentTerms),
-        ...(input.customerReference !== undefined
-          ? { xeroReference: mapCustomerReferenceToStorage(input.customerReference) }
+          sanitized.paymentTerms === undefined ? current.paymentTerms : normalizeOptionalText(sanitized.paymentTerms),
+        ...(sanitized.customerReference !== undefined
+          ? { xeroReference: mapCustomerReferenceToStorage(sanitized.customerReference) }
           : {}),
         ...(issuedAtUpdate !== undefined ? { issuedAt: issuedAtUpdate } : {}),
         ...(addressUpdate ?? {}),
@@ -950,6 +995,10 @@ export class FinanceService {
     if (!quote) {
       throw new FinanceError('QUOTE_NOT_FOUND', 'Quote not found for this customer');
     }
+  }
+
+  private includeProfitForActor(actor: FinanceActor): boolean {
+    return canViewFinanceProfit(actor.permissions ?? [], actor.roleName ?? null);
   }
 
   private assertFloor(actor: FinanceActor, belowFloor: boolean, override?: boolean, reason?: string | null, allowed = true) {

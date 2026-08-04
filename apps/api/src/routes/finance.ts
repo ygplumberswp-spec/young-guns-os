@@ -438,7 +438,8 @@ export function createFinanceRouter({
     }
   });
   router.get('/invoices/:id', requireAnyPermission('finance:read', 'finance:write'), async (req, res) => {
-    const invoice = await financeService.getInvoiceDetail(getAuth(req).companyId, routeParam(req.params.id));
+    const auth = getAuth(req);
+    const invoice = await financeService.getInvoiceDetail(auth.companyId, routeParam(req.params.id), { includeProfit: canViewProfit(auth) });
     if (!invoice) { res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Invoice not found' } }); return; }
     res.json({ data: { invoice } });
   });

@@ -6,6 +6,8 @@ import {
   filterFinanceCatalogueCostFields,
   isYoungGunsFinanceTenant,
   resolveYoungGunsPricebookForTenant,
+  sanitizeFinanceDocumentWriteRequest,
+  stripUnauthorizedFinanceLineCosts,
   canViewFinanceProfit,
 } from './finance-tenant-pricebook.js';
 import { financeCatalogueItemFromInventory } from './finance-catalogue.js';
@@ -54,4 +56,23 @@ test('canViewFinanceProfit authorises owners and blocks technicians', () => {
   assert.equal(canViewFinanceProfit(['finance:read'], 'Company Owner'), true);
   assert.equal(canViewFinanceProfit(['finance:write'], 'Technician'), true);
   assert.equal(canViewFinanceProfit(['finance:read'], 'Technician'), false);
+});
+
+test('stripUnauthorizedFinanceLineCosts removes unitCostCents from write payloads', () => {
+  const lines = [{ description: 'Labour', unitPriceCents: 10000, unitCostCents: 4500 }];
+  const stripped = stripUnauthorizedFinanceLineCosts(lines, false);
+  assert.equal(stripped?.[0]?.unitCostCents, undefined);
+  const kept = stripUnauthorizedFinanceLineCosts(lines, true);
+  assert.equal(kept?.[0]?.unitCostCents, 4500);
+});
+
+test('sanitizeFinanceDocumentWriteRequest strips line costs when unauthorized', () => {
+  const sanitized = sanitizeFinanceDocumentWriteRequest(
+    {
+      customerId: 'cust-1',
+      lineItems: [{ description: 'Part', unitPriceCents: 5000, unitCostCents: 1200 }],
+    },
+    false,
+  );
+  assert.equal(sanitized.lineItems?.[0]?.unitCostCents, undefined);
 });

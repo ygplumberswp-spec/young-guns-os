@@ -13,7 +13,10 @@ const root = path.resolve(__dirname, '..');
 const repoRoot = path.resolve(root, '../..');
 const envPath = path.resolve(repoRoot, 'apps/api/.env.staging.local');
 const FORBIDDEN = 'rshuiaghmtrvvilhqpwm';
+const STAGING_REF = 'cpkuwtaipjxeipvbssvn';
 const MIGRATION_TAG = '0176_titan_finance_editor_fields';
+const BACKUP_DIR = '/home/ubuntu/titan-staging-backups';
+const BACKUP_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 
 function loadEnv(filePath) {
   const out = {};
@@ -31,6 +34,21 @@ function loadEnv(filePath) {
   return out;
 }
 
+function findLatestBackup() {
+  if (!fs.existsSync(BACKUP_DIR)) return null;
+  const files = fs
+    .readdirSync(BACKUP_DIR)
+    .filter((name) => name.startsWith('titan-staging-') && name.endsWith('.dump'))
+    .map((name) => {
+      const fullPath = path.join(BACKUP_DIR, name);
+      const stat = fs.statSync(fullPath);
+      return { path: fullPath, name, mtimeMs: stat.mtimeMs, bytes: stat.size };
+    })
+    .filter((row) => row.bytes > 0)
+    .sort((a, b) => b.mtimeMs - a.mtimeMs);
+  return files[0] ?? null;
+}
+
 const env = loadEnv(envPath);
 if (env.APP_ENV !== 'staging' || env.TITAN_ENV !== 'staging') {
   console.error('NO-GO: APP_ENV/TITAN_ENV must be staging');
@@ -38,6 +56,31 @@ if (env.APP_ENV !== 'staging' || env.TITAN_ENV !== 'staging') {
 }
 if (!env.DATABASE_URL || env.DATABASE_URL.toLowerCase().includes(FORBIDDEN)) {
   console.error('Refused: staging DATABASE_URL missing or forbidden ref');
+  process.exit(2);
+}
+if (!env.DATABASE_URL.includes(STAGING_REF)) {
+  console.error(`NO-GO: DATABASE_URL must target staging ref ${STAGING_REF}`);
+  process.exit(2);
+}
+
+const latestBackup = findLatestBackup();
+const backupAgeMs = latestBackup ? Date.now() - latestBackup.mtimeMs : null;
+const backupOk =
+  latestBackup != null &&
+  latestBackup.bytes > 0 &&
+  backupAgeMs != null &&
+  backupAgeMs <= BACKUP_MAX_AGE_MS;
+if (!backupOk) {
+  console.error(
+    JSON.stringify({
+      status: 'NO-GO',
+      reason: 'missing_or_stale_backup',
+      backupDir: BACKUP_DIR,
+      latestBackup: latestBackup?.name ?? null,
+      backupAgeMs,
+      maxAgeMs: BACKUP_MAX_AGE_MS,
+    }),
+  );
   process.exit(2);
 }
 
@@ -114,6 +157,8 @@ try {
 
   const precheck = {
     phase: 'precheck',
+    stagingRef: STAGING_REF,
+    backup: { path: latestBackup.path, name: latestBackup.name, bytes: latestBackup.bytes, ageMs: backupAgeMs },
     appliedMigrationCount: migRows.length,
     lastAppliedJournalTag: lastTag,
     has0175Applied: has0175 || lastTag === '0175_titan_document_engine_yoco_links',

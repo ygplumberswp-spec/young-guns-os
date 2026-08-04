@@ -28,6 +28,11 @@ import { useAuth } from '../../lib/auth-context';
 import { useStaffMutationInvalidation } from '../../lib/cache-invalidation';
 import { FinanceNav } from '../../features/finance/FinanceNav';
 import { canManageFinance } from '../../features/finance/utils';
+import {
+  financeDocumentSaveSuccessMessage,
+  resolveFinanceDocumentPersistStatus,
+  type FinanceDocumentPersistMode,
+} from '../../features/finance/finance-document-save';
 import { buildFinanceEditorPreviewInput } from '../../features/finance/finance-preview-request';
 import { useFinanceDocumentPreview } from '../../features/finance/useFinanceDocumentPreview';
 import { FinanceDocumentPhotosPanel } from '../../features/finance/FinanceDocumentPhotosPanel';
@@ -178,7 +183,7 @@ export function InvoiceEditPage() {
   ]);
 
   const persistInvoice = useCallback(
-    async (strict: boolean) => {
+    async (strict: boolean, mode: FinanceDocumentPersistMode = 'save') => {
       if (!accessToken || !canWrite || !invoiceId || !editable) return null;
 
       const lineItems = strict
@@ -191,7 +196,7 @@ export function InvoiceEditPage() {
       }
 
       return updateInvoice(accessToken, invoiceId, {
-        status: strict ? status : 'draft',
+        status: strict ? status : (resolveFinanceDocumentPersistStatus(mode, status) as InvoiceStatus),
         stage,
         lineItems: lineItems!,
         dueDate: dueDate ? new Date(dueDate).toISOString() : null,
@@ -282,7 +287,8 @@ export function InvoiceEditPage() {
       await draftShell.autosave.saveNow();
 
       if (action === 'save' || action === 'save_draft') {
-        const result = await persistInvoice(false);
+        const mode = action === 'save_draft' ? 'save_draft' : 'save';
+        const result = await persistInvoice(false, mode);
         if (result) {
           setStatus(result.status);
           await linkPhotosAfterFinanceSave(accessToken, {
@@ -299,14 +305,17 @@ export function InvoiceEditPage() {
         invalidateInvoices();
         notify({
           variant: 'saved',
-          message: action === 'save_draft' ? 'Invoice draft saved' : 'Invoice saved',
-          dedupeKey: action === 'save_draft' ? `invoice-draft-${invoiceId}` : `invoice-saved-${invoiceId}`,
+          message: result
+            ? financeDocumentSaveSuccessMessage(mode, 'invoice', result.status)
+            : 'Unable to save invoice',
+          dedupeKey: mode === 'save_draft' ? `invoice-draft-${invoiceId}` : `invoice-saved-${invoiceId}`,
         });
         return;
       }
 
       if (action === 'save_new') {
-        await persistInvoice(false);
+        const result = await persistInvoice(false, 'save');
+        if (!result) return;
         draftShell.markSubmitted();
         navigate('/finance/invoices/new');
         return;

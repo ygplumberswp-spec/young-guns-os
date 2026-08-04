@@ -13,7 +13,9 @@ import {
 import {
   DRAFT_PLACEHOLDER_LINE_DESCRIPTION,
   financeDocumentEditPath,
+  financeDocumentSaveSuccessMessage,
   isDraftPlaceholderLineItem,
+  resolveFinanceDocumentPersistStatus,
 } from './finance-document-save.js';
 
 const webRoot = join(dirname(fileURLToPath(import.meta.url)), '../../..');
@@ -116,7 +118,7 @@ test('quote and invoice editor pages wire Save and Save Draft without side effec
     const saveBlock =
       source.match(/if \(action === 'save' \|\| action === 'save_draft'\) \{[\s\S]*?\n      \}/)?.[0] ?? '';
     assert.ok(saveBlock.length > 0, `save block missing in ${page}`);
-    assert.match(saveBlock, /persist(Quote|Invoice)\(false\)/);
+    assert.match(saveBlock, /persist(Quote|Invoice)\(false, mode\)/);
     assert.doesNotMatch(saveBlock, /issue(Quote|Invoice)\(/);
     assert.doesNotMatch(saveBlock, /status: 'sent'/);
   }
@@ -145,4 +147,38 @@ test('editor pages show Xero pending numbering until official numbers exist', ()
     readSource('src/pages/finance/InvoiceEditPage.tsx'),
     /displayInvoiceNumber \|\| 'Draft — Xero invoice number pending'/,
   );
+});
+
+test('resolveFinanceDocumentPersistStatus keeps Save Draft explicit and Save preserves status', () => {
+  assert.equal(resolveFinanceDocumentPersistStatus('save_draft', 'sent'), 'draft');
+  assert.equal(resolveFinanceDocumentPersistStatus('save', 'sent'), 'sent');
+  assert.equal(resolveFinanceDocumentPersistStatus('save', 'draft'), 'draft');
+});
+
+test('financeDocumentSaveSuccessMessage reflects saved status honestly', () => {
+  assert.equal(financeDocumentSaveSuccessMessage('save_draft', 'quote', 'draft'), 'Quote draft saved');
+  assert.equal(financeDocumentSaveSuccessMessage('save', 'quote', 'draft'), 'Quote saved as draft');
+  assert.match(financeDocumentSaveSuccessMessage('save', 'invoice', 'sent'), /Invoice saved \(sent\)/);
+});
+
+test('edit pages preserve non-draft status on Save but force draft on Save Draft', () => {
+  for (const page of ['src/pages/finance/QuoteEditPage.tsx', 'src/pages/finance/InvoiceEditPage.tsx']) {
+    const source = readSource(page);
+    assert.match(source, /resolveFinanceDocumentPersistStatus\(mode, status\)/);
+  }
+});
+
+test('save and save new wait for successful persistence before navigation', () => {
+  for (const page of [
+    'src/pages/finance/QuoteCreatePage.tsx',
+    'src/pages/finance/InvoiceCreatePage.tsx',
+    'src/pages/finance/QuoteEditPage.tsx',
+    'src/pages/finance/InvoiceEditPage.tsx',
+  ]) {
+    const source = readSource(page);
+    const saveNewBlock =
+      source.match(/if \(action === 'save_new'\) \{[\s\S]*?\n      \}/)?.[0] ?? '';
+    assert.ok(saveNewBlock.length > 0, `save_new block missing in ${page}`);
+    assert.match(saveNewBlock, /if \(!result/);
+  }
 });

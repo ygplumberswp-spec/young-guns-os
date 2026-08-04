@@ -543,15 +543,23 @@ export function formatOdometerValue(
   return `${Math.floor(value).toLocaleString('en-ZA').replace(/\u00a0/g, ' ')} km`;
 }
 
-/** Local wall-clock time of the provider's reading, e.g. `10:01`. */
+/** Young Guns operational timezone — Cartrack timestamps are interpreted in SAST. */
+export const CARTRACK_OPERATIONAL_TIME_ZONE = 'Africa/Johannesburg';
+
+/** Local wall-clock time of the provider's reading in SAST, e.g. `10:01`. */
 export function formatPositionUpdatedTime(
   recordedAt: string | null | undefined,
-  locale?: string,
+  locale = 'en-ZA',
 ): string | null {
   if (!recordedAt) return null;
   const date = new Date(recordedAt);
   if (Number.isNaN(date.getTime())) return null;
-  return date.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', hour12: false });
+  return date.toLocaleTimeString(locale, {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    timeZone: CARTRACK_OPERATIONAL_TIME_ZONE,
+  });
 }
 
 /** Driver name from a Cartrack tag or a TITAN assignment, else an honest `Unassigned`. */
