@@ -20,7 +20,7 @@ import {
   validateCustomerStatusChange,
 } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
-import { customerActivities, customers, cxCustomerProperties, jobs } from '@titan/db';
+import { customerActivities, customers, cxCustomerProperties, jobs, xeroCustomerMappings } from '@titan/db';
 import { emitBusinessEvent } from '../lib/automation-events.js';
 import {
   buildTenantCacheKey,
@@ -120,19 +120,31 @@ export class CrmService {
             eq(cxCustomerProperties.companyId, companyId),
           ),
         )
+        .leftJoin(
+          xeroCustomerMappings,
+          and(
+            eq(xeroCustomerMappings.customerId, customers.id),
+            eq(xeroCustomerMappings.companyId, companyId),
+          ),
+        )
         .where(
           and(
             eq(customers.companyId, companyId),
             isNull(customers.mergedIntoCustomerId),
             or(
               ilike(customers.name, pattern),
+              ilike(customers.companyName, pattern),
               ilike(customers.email, pattern),
               ilike(customers.phone, pattern),
               ilike(customers.contactPerson, pattern),
+              ilike(customers.billingAddress, pattern),
+              ilike(customers.siteAddress, pattern),
+              ilike(customers.vatNumber, pattern),
               ilike(cxCustomerProperties.addressLine1, pattern),
               ilike(cxCustomerProperties.suburb, pattern),
               ilike(cxCustomerProperties.city, pattern),
               ilike(cxCustomerProperties.postalCode, pattern),
+              ilike(xeroCustomerMappings.xeroContactId, pattern),
               ...mobileMatchers,
             ),
           ),
@@ -153,9 +165,14 @@ export class CrmService {
       companyId,
       customerRows.map((row) => row.id),
     );
+    const xeroByCustomerId = await loadXeroContactIds(
+      this.db,
+      companyId,
+      customerRows.map((row) => row.id),
+    );
 
     return customerRows.map((row) =>
-      toCustomerSummary(row, addressByCustomerId.get(row.id) ?? null),
+      toCustomerSummary(row, addressByCustomerId.get(row.id) ?? null, xeroByCustomerId.get(row.id) ?? null),
     );
   }
 
@@ -176,8 +193,11 @@ export class CrmService {
       return null;
     }
 
+    const addressByCustomerId = await loadPrimaryAddressDisplays(this.db, companyId, [customer.id]);
+    const xeroContactId = (await loadXeroContactIds(this.db, companyId, [customer.id])).get(customer.id) ?? null;
+
     return {
-      ...toCustomerSummary(customer),
+      ...toCustomerSummary(customer, addressByCustomerId.get(customer.id) ?? null, xeroContactId),
       notes: customer.notes,
       activities: customer.activities.map((activity) => ({
         id: activity.id,
@@ -346,9 +366,13 @@ export class CrmService {
       .values({
         companyId,
         name,
+        companyName: normalizeOptionalText(input.companyName),
         contactPerson,
         email,
         phone,
+        billingAddress: normalizeOptionalText(input.billingAddress),
+        siteAddress: normalizeOptionalText(input.siteAddress),
+        vatNumber: normalizeOptionalText(input.vatNumber),
         status: input.status ?? 'active',
         isSupplierOnly: input.isSupplierOnly ?? false,
         doNotContact: input.doNotContact ?? false,
@@ -429,6 +453,22 @@ export class CrmService {
 
     if (input.contactPerson !== undefined) {
       updates.contactPerson = normalizeOptionalText(input.contactPerson);
+    }
+
+    if (input.companyName !== undefined) {
+      updates.companyName = normalizeOptionalText(input.companyName);
+    }
+
+    if (input.billingAddress !== undefined) {
+      updates.billingAddress = normalizeOptionalText(input.billingAddress);
+    }
+
+    if (input.siteAddress !== undefined) {
+      updates.siteAddress = normalizeOptionalText(input.siteAddress);
+    }
+
+    if (input.vatNumber !== undefined) {
+      updates.vatNumber = normalizeOptionalText(input.vatNumber);
     }
 
     if (input.email !== undefined) {
@@ -681,20 +721,43 @@ export class CrmService {
 function toCustomerSummary(
   row: typeof customers.$inferSelect,
   primaryAddressDisplay: string | null = null,
+  xeroContactId: string | null = null,
 ): CustomerSummary {
   return {
     id: row.id,
     name: row.name,
+    companyName: row.companyName ?? null,
     contactPerson: row.contactPerson,
     email: row.email,
     phone: row.phone,
+    billingAddress: row.billingAddress ?? null,
+    siteAddress: row.siteAddress ?? null,
+    vatNumber: row.vatNumber ?? null,
     primaryAddressDisplay,
+    xeroContactId,
     status: row.status,
     isSupplierOnly: row.isSupplierOnly,
     doNotContact: row.doNotContact,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
+}
+
+async function loadXeroContactIds(
+  db: DatabaseClient,
+  companyId: string,
+  customerIds: string[],
+): Promise<Map<string, string>> {
+  if (customerIds.length === 0) return new Map();
+  const rows = await db
+    .select({ customerId: xeroCustomerMappings.customerId, xeroContactId: xeroCustomerMappings.xeroContactId })
+    .from(xeroCustomerMappings)
+    .where(and(eq(xeroCustomerMappings.companyId, companyId), inArray(xeroCustomerMappings.customerId, customerIds)));
+  const map = new Map<string, string>();
+  for (const row of rows) {
+    if (row.xeroContactId?.trim()) map.set(row.customerId, row.xeroContactId.trim());
+  }
+  return map;
 }
 
 function toPropertySummary(row: typeof cxCustomerProperties.$inferSelect): CustomerPropertySummary {

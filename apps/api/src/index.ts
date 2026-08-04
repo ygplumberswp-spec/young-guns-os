@@ -59,6 +59,8 @@ import { CompletionReportService } from './services/completion-report.service.js
 import { SchedulingService } from './services/scheduling.service.js';
 import { FinanceService } from './services/finance.service.js';
 import { createFinanceRouter } from './routes/finance.js';
+import { createLiveUpdatesRouter } from './routes/live-updates.js';
+import './lib/live-updates.js';
 import { createBoqRouter } from './routes/boq.js';
 import { createDraftsRouter } from './routes/drafts.js';
 import { createJobDocumentPackRouter } from './routes/job-document-packs.js';
@@ -1763,8 +1765,16 @@ app.use(
   '/api/v1/finance',
   createFinanceRouter({
     financeService,
+    crmService,
     teamService,
     db,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/live-updates',
+  createLiveUpdatesRouter({
     jwtSecret: env.JWT_SECRET,
     authService,
   }),

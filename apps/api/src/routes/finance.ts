@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { hasAnyPermission } from '@titan/auth';
 import type { FinanceService } from '../services/finance.service.js';
 import { FinanceError } from '../services/finance.service.js';
+import type { CrmService } from '../services/crm.service.js';
 import type { TeamService } from '../services/team.service.js';
 import type { DatabaseClient } from '@titan/db';
 import { createAuthMiddleware, type AuthenticatedRequest } from '../middleware/auth.js';
@@ -89,6 +90,7 @@ const createPaymentSchema = z.object({
 
 type FinanceRouterDeps = {
   financeService: FinanceService;
+  crmService: CrmService;
   teamService: TeamService;
   db: DatabaseClient;
   jwtSecret: string;
@@ -101,6 +103,7 @@ function getAuth(req: import('express').Request) {
 
 export function createFinanceRouter({
   financeService,
+  crmService,
   teamService,
   db,
   jwtSecret,
@@ -122,6 +125,28 @@ export function createFinanceRouter({
     const { companyId } = getAuth(req);
     const stats = await financeService.getStats(companyId);
     res.json({ data: stats });
+  });
+
+  router.get('/customers/search', requireAnyPermission('finance:read', 'finance:write'), async (req, res) => {
+    const { companyId } = getAuth(req);
+    const q = stringQuery(req.query.q);
+    if (!q || q.length < 2) {
+      res.json({ data: { customers: [] } });
+      return;
+    }
+    const customers = await crmService.listCustomers(companyId, q);
+    res.json({
+      data: {
+        customers: customers.slice(0, 12).map((customer) => ({
+          id: customer.id,
+          name: customer.name,
+          companyName: customer.companyName,
+          email: customer.email,
+          phone: customer.phone,
+          xeroContactId: customer.xeroContactId,
+        })),
+      },
+    });
   });
 
   router.get('/quotes', requireAnyPermission('finance:read', 'finance:write'), async (req, res) => {
@@ -323,6 +348,21 @@ export function createFinanceRouter({
     if (!invoice) { res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Invoice not found' } }); return; }
     res.json({ data: { invoice } });
   });
+  router.patch('/invoices/:id', requireAnyPermission('finance:write'), async (req, res) => {
+    try {
+      res.json({
+        data: {
+          invoice: await financeService.updateInvoice(
+            toFinanceActor(getAuth(req)),
+            routeParam(req.params.id),
+            req.body,
+          ),
+        },
+      });
+    } catch (error) {
+      handleFinanceError(res, error);
+    }
+  });
   router.get('/payments/:id', requireAnyPermission('finance:read', 'finance:write'), async (req, res) => {
     const payment = await financeService.getPaymentDetail(getAuth(req).companyId, routeParam(req.params.id));
     if (!payment) { res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Payment not found' } }); return; }
@@ -349,9 +389,11 @@ function handleFinanceError(res: import('express').Response, error: unknown) {
       error.code === 'JOB_NOT_FOUND' ||
       error.code === 'QUOTE_NOT_FOUND'
         ? 404
-        : error.code === 'VALIDATION_ERROR'
-          ? 400
-          : 400;
+        : error.code === 'SYNC_CONFLICT'
+          ? 409
+          : error.code === 'VALIDATION_ERROR'
+            ? 400
+            : 400;
 
     res.status(status).json({
       error: {

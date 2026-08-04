@@ -16,11 +16,15 @@ import type {
   QuoteDetail,
   QuoteSummary,
   UpdateQuoteRequest,
+  UpdateInvoiceRequest,
 } from '@titan/shared';
 import {
   calculateLineAmounts,
   calculateQuoteProfit,
+  canEditInvoice,
   displayInvoiceNumber,
+  displayOfficialInvoiceNumber,
+  displayOfficialQuoteNumber,
   formatInternalInvoiceNumber,
   formatMoney,
   deriveJobPaymentLedger,
@@ -488,6 +492,63 @@ export class FinanceService {
     return { ...toInvoiceSummary(row), subtotalCents: row.subtotalCents, vatCents: row.vatCents, paymentTerms: row.paymentTerms, billingName: row.billingName, billingEmail: row.billingEmail, billingPhone: row.billingPhone, notes: row.notes, lineItems: row.lineItems.map(line => ({ id: line.id, position: line.position, category: line.category, description: line.description, quantity: Number(line.quantity), unitPriceCents: line.unitPriceCents, vatRateBps: line.vatRateBps, lineSubtotalCents: line.lineSubtotalCents, lineVatCents: line.lineVatCents, lineTotalCents: line.lineTotalCents })), payments: row.payments.map(toPaymentSummary) };
   }
 
+  async updateInvoice(
+    actorOrCompany: FinanceActor | string,
+    invoiceId: string,
+    input: UpdateInvoiceRequest,
+  ): Promise<InvoiceDetail> {
+    const actor = toActor(actorOrCompany);
+    const current = await this.db.query.invoices.findFirst({
+      where: and(eq(invoices.id, invoiceId), eq(invoices.companyId, actor.companyId)),
+    });
+    if (!current) throw new FinanceError('NOT_FOUND', 'Invoice not found');
+    if (!canEditInvoice(current)) {
+      throw new FinanceError('SYNC_CONFLICT', 'Cannot edit synced invoice without approval workflow');
+    }
+
+    const settings = await this.ensureFinanceSettings(actor.companyId);
+    const computed = input.lineItems
+      ? quoteAmounts(input.lineItems, settings.profitFloorMarginBps, 0)
+      : null;
+
+    await this.db
+      .update(invoices)
+      .set({
+        title: input.title?.trim() || current.title,
+        status: input.status ?? current.status,
+        stage: input.stage ?? current.stage,
+        currency: input.currency?.trim() || current.currency,
+        dueDate: input.dueDate === undefined ? current.dueDate : parseOptionalDate(input.dueDate),
+        notes: input.notes === undefined ? current.notes : normalizeOptionalText(input.notes),
+        paymentTerms:
+          input.paymentTerms === undefined ? current.paymentTerms : normalizeOptionalText(input.paymentTerms),
+        ...(computed && {
+          amountCents: computed.totalCents,
+          subtotalCents: computed.subtotalCents,
+          vatCents: computed.vatCents,
+          totalCents: computed.totalCents,
+        }),
+        updatedAt: new Date(),
+      })
+      .where(eq(invoices.id, invoiceId));
+
+    if (computed) {
+      await this.db.delete(invoiceLineItems).where(eq(invoiceLineItems.invoiceId, invoiceId));
+      await this.insertInvoiceLines(invoiceId, actor.companyId, computed.lines);
+    }
+
+    emitBusinessEvent({
+      companyId: actor.companyId,
+      eventType: 'invoice.created',
+      entityType: 'invoice',
+      entityId: invoiceId,
+      payload: { invoiceId, updated: true },
+      actorUserId: actor.userId,
+    });
+
+    return (await this.getInvoiceDetail(actor.companyId, invoiceId))!;
+  }
+
   async getPaymentDetail(companyId: string, paymentId: string): Promise<PaymentDetail | null> {
     const row = await this.db.query.payments.findFirst({ where: and(eq(payments.id, paymentId), eq(payments.companyId, companyId)), with: { invoice: { with: { customer: true } }, receipt: true } });
     if (!row) return null;
@@ -844,6 +905,8 @@ function toQuoteSummary(row: QuoteWithRelations & Record<string, any>, profit: Q
   return {
     id: row.id,
     quoteNumber: row.quoteNumber,
+    xeroQuoteNumber: row.xeroQuoteNumber ?? null,
+    displayQuoteNumber: displayOfficialQuoteNumber({ xeroQuoteNumber: row.xeroQuoteNumber }),
     title: row.title,
     status: row.status,
     versionNumber: row.versionNumber ?? 1,
@@ -877,6 +940,7 @@ function toInvoiceSummary(row: InvoiceWithRelations & Record<string, any>): Invo
     invoiceNumber: row.invoiceNumber,
     internalNumber: row.internalNumber ?? row.invoiceNumber,
     displayInvoiceNumber: displayInvoiceNumber(row),
+    displayOfficialInvoiceNumber: displayOfficialInvoiceNumber({ xeroInvoiceNumber: row.xeroInvoiceNumber }),
     xeroInvoiceNumber: row.xeroInvoiceNumber ?? null,
     xeroReference: row.xeroReference ?? null,
     numberAuthority: (row.numberAuthority ?? 'internal_pending_xero') as InvoiceSummary['numberAuthority'],

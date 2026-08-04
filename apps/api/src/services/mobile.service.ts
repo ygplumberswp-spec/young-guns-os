@@ -19,6 +19,7 @@ import type {
   MobileTechnicianFleetInfo,
   MobileTechnicianSchedule,
 } from '@titan/shared';
+import { displayOfficialInvoiceNumber } from '@titan/shared';
 import type { PortalAccessPermission } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
 import {
@@ -381,6 +382,9 @@ export class MobileService {
           invoiceNumber: row.invoiceNumber,
           internalNumber,
           displayInvoiceNumber,
+          displayOfficialInvoiceNumber: displayOfficialInvoiceNumber({
+            xeroInvoiceNumber: row.xeroInvoiceNumber,
+          }),
           xeroInvoiceNumber: row.xeroInvoiceNumber ?? null,
           xeroReference: row.xeroReference ?? null,
           numberAuthority: (row.numberAuthority ?? 'internal_pending_xero') as

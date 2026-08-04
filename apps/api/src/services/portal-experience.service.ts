@@ -15,6 +15,7 @@ import type {
   PortalKnowledgeSearchRequest,
   PortalQuoteDetail,
 } from '@titan/shared';
+import { displayOfficialInvoiceNumber, displayOfficialQuoteNumber } from '@titan/shared';
 import type { PortalAccessPermission } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
 import {
@@ -949,6 +950,8 @@ function toQuoteSummary(
   return {
     id: row.id,
     quoteNumber: row.quoteNumber,
+    xeroQuoteNumber: row.xeroQuoteNumber ?? null,
+    displayQuoteNumber: displayOfficialQuoteNumber({ xeroQuoteNumber: row.xeroQuoteNumber }),
     title: row.title,
     status: row.status,
     versionNumber: row.versionNumber ?? 1,
@@ -991,6 +994,9 @@ function toInvoiceSummary(
     invoiceNumber: row.invoiceNumber,
     internalNumber,
     displayInvoiceNumber,
+    displayOfficialInvoiceNumber: displayOfficialInvoiceNumber({
+      xeroInvoiceNumber: row.xeroInvoiceNumber,
+    }),
     xeroInvoiceNumber: row.xeroInvoiceNumber ?? null,
     xeroReference: row.xeroReference ?? null,
     numberAuthority: (row.numberAuthority ?? 'internal_pending_xero') as
