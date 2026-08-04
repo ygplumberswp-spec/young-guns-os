@@ -1,6 +1,7 @@
 import { Link } from 'wouter';
 import { Panel } from '@titan/ui';
 import {
+  CARTRACK_SLOW_SNAPSHOT_BANNER,
   deriveFleetPositionHealth,
   formatFleetConnectionDisplayLabel,
   formatFleetPositionHealthLabel,
@@ -133,7 +134,17 @@ export function LiveDispatchPositionsPanel({ accessToken }: LiveDispatchPosition
         </div>
       </dl>
 
-      {tracking.lastError ? <p className="form-error">{tracking.lastError}</p> : null}
+      {tracking.providerRefresh?.showingCachedSnapshot ? (
+        <p className="form-warning" role="status">
+          {CARTRACK_SLOW_SNAPSHOT_BANNER}
+          {tracking.providerRefresh.failedEndpoint
+            ? ` Failed endpoint: ${tracking.providerRefresh.failedEndpoint}.`
+            : ''}
+        </p>
+      ) : null}
+      {tracking.lastError && !tracking.providerRefresh?.showingCachedSnapshot ? (
+        <p className="form-error">{tracking.lastError}</p>
+      ) : null}
       {error ? <p className="form-error">{error}</p> : null}
 
       {!showStoredPositions || tracking.latestPositions.length === 0 ? (

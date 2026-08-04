@@ -1,6 +1,7 @@
 import { and, desc, eq, inArray, isNull, notInArray, sql } from 'drizzle-orm';
 import type {
   CartrackConnectionSummary,
+  CartrackProviderRefreshState,
   CartrackSyncResult,
   FleetTrackingContext,
   FleetVehicleTrailResponse,
@@ -84,9 +85,18 @@ type IntegrationsServiceDeps = {
   vehicleAddressService?: VehiclePositionAddressService;
 };
 
+/** After a Cartrack timeout, skip provider calls for this long to avoid a request storm. */
+export const CARTRACK_TIMEOUT_COOLDOWN_MS = 60_000;
+
 export class IntegrationsService {
   private onCartrackConnectedHook: ((input: { companyId: string }) => void | Promise<void>) | null =
     null;
+
+  /** One in-flight Cartrack sync per company — overlapping polls share the same promise. */
+  private readonly cartrackSyncInflight = new Map<string, Promise<CartrackSyncResult>>();
+
+  /** Per-company cooldown after a provider timeout (bounded backoff). */
+  private readonly cartrackSyncCooldownUntil = new Map<string, number>();
 
   constructor(
     private readonly db: DatabaseClient,
@@ -411,7 +421,41 @@ export class IntegrationsService {
   }
 
   async syncCartrack(companyId: string): Promise<CartrackSyncResult> {
+    const inflight = this.cartrackSyncInflight.get(companyId);
+    if (inflight) {
+      return inflight;
+    }
+
+    const run = this.executeCartrackSync(companyId).finally(() => {
+      this.cartrackSyncInflight.delete(companyId);
+    });
+    this.cartrackSyncInflight.set(companyId, run);
+    return run;
+  }
+
+  private async executeCartrackSync(companyId: string): Promise<CartrackSyncResult> {
     const connection = await this.requireConnectedConnection(companyId);
+    const previousSuccessfulAt = connection.lastSyncAt?.toISOString() ?? null;
+    const cachedPositionCount = await this.countStoredGpsVehicles(companyId);
+    const hasCachedSnapshot = Boolean(previousSuccessfulAt) || cachedPositionCount > 0;
+
+    const cooldownUntil = this.cartrackSyncCooldownUntil.get(companyId) ?? 0;
+    if (Date.now() < cooldownUntil && hasCachedSnapshot) {
+      return {
+        externalVehicleCount: 0,
+        mappingsCreated: 0,
+        mappingsUpdated: 0,
+        autoMappedCount: 0,
+        positionsStored: 0,
+        positionsUnchanged: 0,
+        syncedAt: previousSuccessfulAt ?? new Date().toISOString(),
+        degraded: true,
+        failedEndpoint: null,
+        timeoutMessage: connection.lastError,
+        showingCachedSnapshot: true,
+      };
+    }
+
     const syncJobId = await this.hubService?.startSyncJob({
       companyId,
       provider: 'cartrack',
@@ -424,76 +468,92 @@ export class IntegrationsService {
       where: eq(vehicles.companyId, companyId),
     });
 
-    const externalVehicles = await client.fetchVehicles();
+    // Independent endpoints — one slow call must not serialise the other, and a
+    // single failure must not invent or wipe the other result.
+    const [vehiclesSettled, statusesSettled] = await Promise.allSettled([
+      client.fetchVehicles(),
+      client.fetchVehicleStatuses(),
+    ]);
+
+    const vehiclesFailure =
+      vehiclesSettled.status === 'rejected' ? vehiclesSettled.reason : null;
+    const statusesFailure =
+      statusesSettled.status === 'rejected' ? statusesSettled.reason : null;
+    const externalVehicles =
+      vehiclesSettled.status === 'fulfilled' ? vehiclesSettled.value : [];
+    const statuses = statusesSettled.status === 'fulfilled' ? statusesSettled.value : [];
+
     let mappingsCreated = 0;
     let mappingsUpdated = 0;
     let autoMappedCount = 0;
 
-    for (const externalVehicle of externalVehicles) {
-      const existing = await this.db.query.integrationVehicleMappings.findFirst({
-        where: and(
-          eq(integrationVehicleMappings.integrationConnectionId, connection.id),
-          eq(integrationVehicleMappings.externalVehicleId, externalVehicle.externalVehicleId),
-        ),
-      });
+    if (vehiclesSettled.status === 'fulfilled') {
+      for (const externalVehicle of externalVehicles) {
+        const existing = await this.db.query.integrationVehicleMappings.findFirst({
+          where: and(
+            eq(integrationVehicleMappings.integrationConnectionId, connection.id),
+            eq(integrationVehicleMappings.externalVehicleId, externalVehicle.externalVehicleId),
+          ),
+        });
 
-      const match = matchVehicleByRegistration(
-        companyVehicles,
-        externalVehicle.externalRegistration,
-      );
+        const match = matchVehicleByRegistration(
+          companyVehicles,
+          externalVehicle.externalRegistration,
+        );
 
-      if (existing) {
-        const shouldAutoMap =
-          !existing.vehicleId && existing.status === 'unmapped' && match.kind === 'unique';
+        if (existing) {
+          const shouldAutoMap =
+            !existing.vehicleId && existing.status === 'unmapped' && match.kind === 'unique';
 
-        await this.db
-          .update(integrationVehicleMappings)
-          .set({
-            externalRegistration: externalVehicle.externalRegistration,
-            externalName: externalVehicle.externalName,
-            lastSeenAt: new Date(),
-            vehicleId: shouldAutoMap ? match.vehicleId : existing.vehicleId,
-            status: shouldAutoMap ? 'mapped' : existing.status,
-            updatedAt: new Date(),
-          })
-          .where(eq(integrationVehicleMappings.id, existing.id));
+          await this.db
+            .update(integrationVehicleMappings)
+            .set({
+              externalRegistration: externalVehicle.externalRegistration,
+              externalName: externalVehicle.externalName,
+              lastSeenAt: new Date(),
+              vehicleId: shouldAutoMap ? match.vehicleId : existing.vehicleId,
+              status: shouldAutoMap ? 'mapped' : existing.status,
+              updatedAt: new Date(),
+            })
+            .where(eq(integrationVehicleMappings.id, existing.id));
 
-        mappingsUpdated += 1;
+          mappingsUpdated += 1;
 
-        if (shouldAutoMap) {
+          if (shouldAutoMap) {
+            autoMappedCount += 1;
+            await this.recordAutoMappingAudit(companyId, {
+              externalVehicleId: externalVehicle.externalVehicleId,
+              externalRegistration: externalVehicle.externalRegistration,
+              vehicleId: match.vehicleId,
+            });
+          }
+
+          continue;
+        }
+
+        const autoMappedVehicleId = match.kind === 'unique' ? match.vehicleId : null;
+
+        await this.db.insert(integrationVehicleMappings).values({
+          companyId,
+          integrationConnectionId: connection.id,
+          externalVehicleId: externalVehicle.externalVehicleId,
+          externalRegistration: externalVehicle.externalRegistration,
+          externalName: externalVehicle.externalName,
+          vehicleId: autoMappedVehicleId,
+          status: autoMappedVehicleId ? 'mapped' : 'unmapped',
+          lastSeenAt: new Date(),
+        });
+
+        mappingsCreated += 1;
+
+        if (autoMappedVehicleId) {
           autoMappedCount += 1;
           await this.recordAutoMappingAudit(companyId, {
             externalVehicleId: externalVehicle.externalVehicleId,
             externalRegistration: externalVehicle.externalRegistration,
-            vehicleId: match.vehicleId,
+            vehicleId: autoMappedVehicleId,
           });
         }
-
-        continue;
-      }
-
-      const autoMappedVehicleId = match.kind === 'unique' ? match.vehicleId : null;
-
-      await this.db.insert(integrationVehicleMappings).values({
-        companyId,
-        integrationConnectionId: connection.id,
-        externalVehicleId: externalVehicle.externalVehicleId,
-        externalRegistration: externalVehicle.externalRegistration,
-        externalName: externalVehicle.externalName,
-        vehicleId: autoMappedVehicleId,
-        status: autoMappedVehicleId ? 'mapped' : 'unmapped',
-        lastSeenAt: new Date(),
-      });
-
-      mappingsCreated += 1;
-
-      if (autoMappedVehicleId) {
-        autoMappedCount += 1;
-        await this.recordAutoMappingAudit(companyId, {
-          externalVehicleId: externalVehicle.externalVehicleId,
-          externalRegistration: externalVehicle.externalRegistration,
-          vehicleId: autoMappedVehicleId,
-        });
       }
     }
 
@@ -508,9 +568,7 @@ export class IntegrationsService {
     let positionsStored = 0;
     let positionsUnchanged = 0;
 
-    try {
-      const statuses = await client.fetchVehicleStatuses();
-
+    if (statusesSettled.status === 'fulfilled') {
       for (const status of statuses) {
         const mapping = mappingByExternalId.get(status.externalVehicleId);
 
@@ -575,9 +633,30 @@ export class IntegrationsService {
 
         positionsStored += 1;
       }
-    } catch (error) {
-      const message = mapCartrackError(error);
+    }
 
+    const primaryFailure = statusesFailure ?? vehiclesFailure;
+    const failedEndpoint =
+      primaryFailure instanceof CartrackError ? (primaryFailure.endpoint ?? null) : null;
+    const timeoutMessage =
+      primaryFailure instanceof CartrackError && primaryFailure.code === 'TIMEOUT'
+        ? primaryFailure.message
+        : primaryFailure
+          ? mapCartrackError(primaryFailure)
+          : null;
+    const providerTimedOut =
+      (vehiclesFailure instanceof CartrackError && vehiclesFailure.code === 'TIMEOUT') ||
+      (statusesFailure instanceof CartrackError && statusesFailure.code === 'TIMEOUT');
+
+    if (providerTimedOut) {
+      this.cartrackSyncCooldownUntil.set(companyId, Date.now() + CARTRACK_TIMEOUT_COOLDOWN_MS);
+    }
+
+    const bothFailed = vehiclesSettled.status === 'rejected' && statusesSettled.status === 'rejected';
+
+    // Hard fail only when every provider call failed and there is no stored snapshot.
+    if (bothFailed && !hasCachedSnapshot) {
+      const message = mapCartrackError(primaryFailure);
       await this.db
         .update(integrationConnections)
         .set({
@@ -597,30 +676,43 @@ export class IntegrationsService {
     }
 
     const syncedAt = new Date();
+    const fullySuccessful = !primaryFailure;
+    const showingCachedSnapshot = Boolean(primaryFailure) && hasCachedSnapshot;
+    const errorForStore = primaryFailure
+      ? formatCartrackProviderError(timeoutMessage ?? mapCartrackError(primaryFailure), failedEndpoint)
+      : null;
 
     await this.db
       .update(integrationConnections)
       .set({
-        lastSyncAt: syncedAt,
-        lastError: null,
+        // Keep the last successful sync timestamp when we only have a cached snapshot.
+        lastSyncAt: fullySuccessful ? syncedAt : (connection.lastSyncAt ?? null),
+        lastError: errorForStore,
         updatedAt: syncedAt,
       })
       .where(eq(integrationConnections.id, connection.id));
 
-    const result = {
+    const result: CartrackSyncResult = {
       externalVehicleCount: externalVehicles.length,
       mappingsCreated,
       mappingsUpdated,
       autoMappedCount,
       positionsStored,
       positionsUnchanged,
-      syncedAt: syncedAt.toISOString(),
+      syncedAt: fullySuccessful
+        ? syncedAt.toISOString()
+        : (previousSuccessfulAt ?? syncedAt.toISOString()),
       syncJobId,
+      degraded: Boolean(primaryFailure),
+      failedEndpoint,
+      timeoutMessage,
+      showingCachedSnapshot,
     };
 
     if (syncJobId) {
       await this.hubService?.completeSyncJob(syncJobId, {
         status: 'completed',
+        errorMessage: errorForStore ?? undefined,
         resultSummary: {
           externalVehicleCount: result.externalVehicleCount,
           mappingsCreated: result.mappingsCreated,
@@ -629,11 +721,22 @@ export class IntegrationsService {
           positionsStored: result.positionsStored,
           positionsUnchanged: result.positionsUnchanged,
           syncedAt: result.syncedAt,
+          degraded: result.degraded ?? false,
+          failedEndpoint: result.failedEndpoint ?? null,
+          showingCachedSnapshot: result.showingCachedSnapshot ?? false,
         },
       });
     }
 
     return result;
+  }
+
+  private async countStoredGpsVehicles(companyId: string): Promise<number> {
+    const [row] = await this.db
+      .select({ count: sql<number>`count(distinct ${gpsPositions.vehicleId})::int` })
+      .from(gpsPositions)
+      .where(eq(gpsPositions.companyId, companyId));
+    return row?.count ?? 0;
   }
 
   async buildFleetTrackingContext(companyId: string): Promise<FleetTrackingContext> {
@@ -736,6 +839,13 @@ export class IntegrationsService {
       ]),
     );
 
+    const providerRefresh = buildCartrackProviderRefreshState({
+      lastSuccessfulAt: lastSyncAt,
+      lastError: connection.lastError,
+      positionCount: positionCountRow?.count ?? 0,
+      nowMs: Date.now(),
+    });
+
     return {
       cartrackStatus: connection.status,
       cartrackConnected,
@@ -749,6 +859,7 @@ export class IntegrationsService {
       lastError: connection.lastError,
       livePollingAllowed,
       syncIntervalMs: syncIntervalMs ?? null,
+      providerRefresh,
       latestPositions: positionRows.map((row) => {
         const telemetry = telemetryByRow.get(row)!;
         const recordedAt = row.recordedAt.toISOString();
@@ -1225,6 +1336,81 @@ function emptyTrackingContext(): FleetTrackingContext {
     lastError: null,
     livePollingAllowed: false,
     syncIntervalMs: null,
+    providerRefresh: {
+      status: 'unavailable',
+      lastSuccessfulAt: null,
+      dataAgeMs: null,
+      failedEndpoint: null,
+      timeoutMessage: null,
+      showingCachedSnapshot: false,
+    },
     latestPositions: [],
   };
+}
+
+/** Pure helper — exported for unit tests. */
+export function buildCartrackProviderRefreshState(input: {
+  lastSuccessfulAt: string | null;
+  lastError: string | null;
+  positionCount: number;
+  nowMs?: number;
+}): CartrackProviderRefreshState {
+  const nowMs = input.nowMs ?? Date.now();
+  const timeoutMessage =
+    input.lastError && /timed out/i.test(input.lastError) ? input.lastError : null;
+  const failedEndpoint = extractCartrackFailedEndpoint(input.lastError);
+  const lastSuccessfulMs = input.lastSuccessfulAt
+    ? new Date(input.lastSuccessfulAt).getTime()
+    : NaN;
+  const dataAgeMs = Number.isFinite(lastSuccessfulMs) ? Math.max(0, nowMs - lastSuccessfulMs) : null;
+  const showingCachedSnapshot =
+    Boolean(timeoutMessage || failedEndpoint || input.lastError) && input.positionCount > 0;
+
+  if (showingCachedSnapshot) {
+    return {
+      status: 'degraded',
+      lastSuccessfulAt: input.lastSuccessfulAt,
+      dataAgeMs,
+      failedEndpoint,
+      timeoutMessage: timeoutMessage ?? input.lastError,
+      showingCachedSnapshot: true,
+    };
+  }
+
+  if (input.lastError && input.positionCount === 0) {
+    return {
+      status: 'unavailable',
+      lastSuccessfulAt: input.lastSuccessfulAt,
+      dataAgeMs,
+      failedEndpoint,
+      timeoutMessage: timeoutMessage ?? input.lastError,
+      showingCachedSnapshot: false,
+    };
+  }
+
+  return {
+    status: 'ok',
+    lastSuccessfulAt: input.lastSuccessfulAt,
+    dataAgeMs,
+    failedEndpoint: null,
+    timeoutMessage: null,
+    showingCachedSnapshot: false,
+  };
+}
+
+export function extractCartrackFailedEndpoint(lastError: string | null | undefined): string | null {
+  if (!lastError) return null;
+  // Prefer an explicit path if the service stored one in brackets.
+  const bracket = lastError.match(/\[(\/vehicles(?:\/status)?)\]/);
+  if (bracket?.[1]) return bracket[1];
+  if (/vehicles\/status/i.test(lastError)) return '/vehicles/status';
+  if (/\/vehicles\b/i.test(lastError)) return '/vehicles';
+  if (/timed out/i.test(lastError)) return '/vehicles/status';
+  return null;
+}
+
+export function formatCartrackProviderError(message: string, endpoint: string | null): string {
+  if (!endpoint) return message;
+  if (message.includes(`[${endpoint}]`)) return message;
+  return `${message} [${endpoint}]`;
 }

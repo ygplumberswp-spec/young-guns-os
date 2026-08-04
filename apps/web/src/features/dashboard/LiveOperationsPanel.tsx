@@ -8,6 +8,7 @@ import type {
   OpsSourceState,
 } from '@titan/shared';
 import {
+  CARTRACK_SLOW_SNAPSHOT_BANNER,
   formatFleetConnectionDisplayLabel,
   formatVehicleMotionLabel,
   formatVehiclePositionFreshness,
@@ -199,8 +200,21 @@ export function LiveOperationsPanel({
 
         {renderLiveOpsFutureSections(liveOpsExtensions)}
 
+        {tracking?.providerRefresh?.showingCachedSnapshot ? (
+          <p className="form-warning" role="status">
+            {CARTRACK_SLOW_SNAPSHOT_BANNER}
+            {tracking.providerRefresh.failedEndpoint
+              ? ` Failed endpoint: ${tracking.providerRefresh.failedEndpoint}.`
+              : ''}
+            {tracking.providerRefresh.timeoutMessage
+              ? ` ${tracking.providerRefresh.timeoutMessage}`
+              : ''}
+          </p>
+        ) : null}
         {fleetError ? <p className="form-error">{fleetError}</p> : null}
-        {tracking?.lastError ? <p className="form-error">{tracking.lastError}</p> : null}
+        {tracking?.lastError && !tracking.providerRefresh?.showingCachedSnapshot ? (
+          <p className="form-error">{tracking.lastError}</p>
+        ) : null}
 
         <p className="exec-live-ops-map__footer">
           <span>{mapFooterLabel(tracking, isPolling)}</span>

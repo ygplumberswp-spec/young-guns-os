@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
+  CARTRACK_SLOW_SNAPSHOT_BANNER,
+  cartrackSlowSnapshotBanner,
   deriveFleetConnectionDisplayState,
   deriveFleetPositionHealth,
   isFleetPositionStale,
@@ -74,5 +76,14 @@ describe('fleet tracking honesty', () => {
     });
     assert.equal(display, 'stale');
     assert.notEqual(display, 'connected');
+  });
+
+  it('shows the Owner-approved slow-snapshot banner only when cached data is displayed', () => {
+    assert.equal(
+      cartrackSlowSnapshotBanner(true),
+      'Cartrack is temporarily slow — showing the last successful update.',
+    );
+    assert.equal(cartrackSlowSnapshotBanner(true), CARTRACK_SLOW_SNAPSHOT_BANNER);
+    assert.equal(cartrackSlowSnapshotBanner(false), null);
   });
 });

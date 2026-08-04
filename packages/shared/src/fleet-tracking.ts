@@ -195,6 +195,18 @@ export function formatFleetPositionHealthLabel(health: FleetPositionHealth): str
   }
 }
 
+export const CARTRACK_SLOW_SNAPSHOT_BANNER =
+  'Cartrack is temporarily slow — showing the last successful update.';
+
+/**
+ * Banner copy when Cartrack timed out / failed a refresh but stored positions remain.
+ * Never invents coordinates — surfaces keep the last successful snapshot.
+ */
+export function cartrackSlowSnapshotBanner(showingCachedSnapshot: boolean): string | null {
+  if (!showingCachedSnapshot) return null;
+  return CARTRACK_SLOW_SNAPSHOT_BANNER;
+}
+
 export function deriveCartrackCapabilityState(input: {
   connectionStatus: IntegrationConnectionStatus;
   hasCredentials: boolean;

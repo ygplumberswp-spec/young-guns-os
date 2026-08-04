@@ -359,6 +359,24 @@ export type CartrackSyncResult = {
   positionsUnchanged: number;
   syncedAt: string;
   syncJobId?: string;
+  /**
+   * True when the provider call was slow/failed and TITAN kept the last stored snapshot
+   * instead of inventing positions or blanking the fleet map.
+   */
+  degraded?: boolean;
+  failedEndpoint?: string | null;
+  timeoutMessage?: string | null;
+  showingCachedSnapshot?: boolean;
+};
+
+/** Honest provider-refresh state for fleet surfaces when Cartrack is slow or partial. */
+export type CartrackProviderRefreshState = {
+  status: 'ok' | 'degraded' | 'unavailable';
+  lastSuccessfulAt: string | null;
+  dataAgeMs: number | null;
+  failedEndpoint: string | null;
+  timeoutMessage: string | null;
+  showingCachedSnapshot: boolean;
 };
 
 export type FleetTrackingContext = {
@@ -382,6 +400,8 @@ export type FleetTrackingContext = {
    * state this rather than implying a streaming connection.
    */
   syncIntervalMs: number | null;
+  /** Present when the latest provider refresh was slow, partial, or unavailable. */
+  providerRefresh: CartrackProviderRefreshState;
   latestPositions: Array<{
     vehicleId: string | null;
     vehicleName: string | null;
