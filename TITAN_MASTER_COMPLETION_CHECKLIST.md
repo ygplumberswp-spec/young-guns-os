@@ -263,6 +263,32 @@ Recovery commits on app branch (newest first): `80a2534` → `3bfa085` → `2117
 
 ---
 
+## Phase J-6.2 Addendum — Quote/Invoice PDF preview
+
+**Status:** **IMPLEMENTED locally** — awaiting Owner approval before staging release.
+
+### Preview path (verified)
+
+`Preview PDF` → editor handler → `POST /api/v1/finance/documents/preview` → shared `buildFinanceDocumentPreviewModel` → `TitanDocumentView` in full-page modal → `Download PDF` serialises the same renderer to `application/pdf` (`YGP-Draft-Quote.pdf` / `YGP-Draft-Invoice.pdf`).
+
+### Acceptance requirements
+
+| Area | Requirement | Status |
+|------|-------------|--------|
+| Surfaces | New/Edit Quote and New/Edit Invoice | **DONE** |
+| Unsaved form | Customer, dates, reference, addresses, lines, VAT modes, notes/terms reflected without save | **DONE** |
+| Document engine | Young Guns A4 template via `TitanDocumentView`; no second PDF layout engine | **DONE** |
+| Draft numbering | `Draft — Xero quote/invoice number pending`; no TITAN internal IDs; no Title field | **DONE** |
+| UX | Full-page modal; Download PDF + Close; genuine `application/pdf` download filename | **DONE** |
+| Safety | No save, approve, Xero sync, email/WhatsApp, Yoco, inventory deduction, or form loss | **DONE** |
+
+### J-6.2 addendum automated tests
+
+- `packages/shared/src/finance-document-preview.test.ts` — mapper, numbering, VAT, sections
+- `apps/web/src/features/finance/finance-document-preview.test.ts` — editor wiring, API client, renderer props
+
+---
+
 ## Correct future staging release sequence (J-6.2)
 
 **Use only after Owner approval of local J-6.2 commit.**

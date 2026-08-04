@@ -37,6 +37,9 @@ import {
   resolveQuoteIssuedAtUpdate,
   searchFinanceCatalogueItems,
   toFinanceDocumentAddressSnapshot,
+  buildFinanceDocumentPreviewModel,
+  type FinanceDocumentPreviewInput,
+  type FinanceDocumentPreviewModel,
 } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
 import {
@@ -755,6 +758,14 @@ export class FinanceService {
     );
 
     return searchFinanceCatalogueItems(trimmed, catalogue, { limit: 12 });
+  }
+
+  /** Read-only preview — maps live form values through the document engine without persisting. */
+  previewDocument(
+    _actor: { companyId: string; userId: string },
+    input: FinanceDocumentPreviewInput,
+  ): FinanceDocumentPreviewModel {
+    return buildFinanceDocumentPreviewModel(input);
   }
 
   async buildAuraContext(companyId: string): Promise<AuraFinanceContext> {

@@ -42,6 +42,7 @@ export * from './scheduling.js';
 export * from './finance.js';
 export * from './finance-catalogue.js';
 export * from './finance-document-roundtrip.js';
+export * from './finance-document-preview.js';
 export * from './job-payment-ledger.js';
 export * from './inventory.js';
 export * from './job-costing.js';

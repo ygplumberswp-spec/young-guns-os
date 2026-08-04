@@ -16,6 +16,8 @@
     "@titan/auth": "workspace:*",
     "@titan/shared": "workspace:*",
     "@titan/ui": "workspace:*",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^4.2.1",
     "react": "catalog:",
     "react-dom": "catalog:",
     "react-markdown": "^10.1.0",

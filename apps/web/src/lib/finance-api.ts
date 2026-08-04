@@ -6,6 +6,8 @@ import type {
   CreateQuoteVersionRequest,
   FinanceCatalogueItemSearchResult,
   FinanceCustomerSearchResult,
+  FinanceDocumentPreviewInput,
+  FinanceDocumentPreviewModel,
   FinanceListQuery,
   FinanceStats,
   InvoiceDetail,
@@ -227,4 +229,16 @@ export async function fetchJobFinanceSummary(
     { accessToken },
   );
   return data.summary;
+}
+
+export async function previewFinanceDocument(
+  accessToken: string,
+  body: FinanceDocumentPreviewInput,
+): Promise<FinanceDocumentPreviewModel> {
+  const data = await request<{ preview: FinanceDocumentPreviewModel }>('/finance/documents/preview', {
+    method: 'POST',
+    accessToken,
+    body,
+  });
+  return data.preview;
 }

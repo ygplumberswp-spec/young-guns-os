@@ -37,6 +37,50 @@ const quoteLineItemSchema = z.object({
   optionTier: z.string().nullable().optional(),
 });
 
+const financeDocumentPreviewSchema = z
+  .object({
+    kind: z.enum(['quote', 'invoice']),
+    customer: z
+      .object({
+        name: z.string().trim().min(1),
+        contactPerson: z.string().trim().max(200).nullable().optional(),
+        email: z.string().trim().max(320).nullable().optional(),
+        phone: z.string().trim().max(80).nullable().optional(),
+      })
+      .nullable()
+      .optional(),
+    customerReference: z.string().trim().max(200).nullable().optional(),
+    issuedAt: z.string().trim().max(40).nullable().optional(),
+    dueDate: z.string().trim().max(40).nullable().optional(),
+    addresses: z
+      .object({
+        billingAddress: z.string().trim().max(5000).nullable().optional(),
+        siteAddress: z.string().trim().max(5000).nullable().optional(),
+        postalAddress: z.string().trim().max(5000).nullable().optional(),
+      })
+      .nullable()
+      .optional(),
+    lines: z.array(
+      z.object({
+        id: z.string().trim().max(80).optional(),
+        category: z.string().trim().max(80).optional(),
+        description: z.string().trim().min(1),
+        quantity: z.number().positive(),
+        unitPriceCents: z.number().int(),
+        vatRateBps: z.number().int().min(0).max(10000),
+      }),
+    ),
+    notes: z.string().trim().max(5000).nullable().optional(),
+    paymentTerms: z.string().trim().max(2000).nullable().optional(),
+    scopeOfWork: z.string().trim().max(10000).nullable().optional(),
+    exclusions: z.string().trim().max(10000).nullable().optional(),
+    xeroQuoteNumber: z.string().trim().max(60).nullable().optional(),
+    xeroInvoiceNumber: z.string().trim().max(60).nullable().optional(),
+    jobReference: z.string().trim().max(200).nullable().optional(),
+    status: z.string().trim().max(40).nullable().optional(),
+  })
+  .strict();
+
 const createQuoteSchema = z
   .object({
     customerId: z.string().uuid(),
@@ -391,6 +435,27 @@ export function createFinanceRouter({
   router.get('/jobs/:jobId/finance-summary', requireAnyPermission('finance:read', 'finance:write'), async (req, res) => {
     const auth = getAuth(req);
     res.json({ data: { summary: await financeService.getJobFinanceSummary(auth.companyId, routeParam(req.params.jobId), { includeProfit: canViewProfit(auth) }) } });
+  });
+
+  router.post('/documents/preview', requireAnyPermission('finance:read', 'finance:write'), async (req, res) => {
+    const parsed = financeDocumentPreviewSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({
+        error: { code: 'VALIDATION_ERROR', message: parsed.error.issues[0]?.message ?? 'Invalid preview payload' },
+      });
+      return;
+    }
+    const preview = financeService.previewDocument(toFinanceActor(getAuth(req)), {
+      ...parsed.data,
+      addresses: parsed.data.addresses
+        ? {
+            billingAddress: parsed.data.addresses.billingAddress ?? null,
+            siteAddress: parsed.data.addresses.siteAddress ?? null,
+            postalAddress: parsed.data.addresses.postalAddress ?? null,
+          }
+        : parsed.data.addresses,
+    });
+    res.json({ data: { preview } });
   });
 
   return router;

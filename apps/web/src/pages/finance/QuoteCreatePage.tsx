@@ -29,6 +29,8 @@ import { useAuth } from '../../lib/auth-context';
 import { useStaffMutationInvalidation } from '../../lib/cache-invalidation';
 import { FinanceNav } from '../../features/finance/FinanceNav';
 import { canManageFinance, canViewFinanceProfit, newFinanceClientActionId } from '../../features/finance/utils';
+import { buildFinanceEditorPreviewInput } from '../../features/finance/finance-preview-request';
+import { useFinanceDocumentPreview } from '../../features/finance/useFinanceDocumentPreview';
 import { PageHeader } from '../../components/ux';
 import { useFormDraftShell } from '../../hooks/useFormDraftShell';
 import { useTitanNotify } from '../../components/ux/TitanNotifications';
@@ -93,6 +95,7 @@ export function QuoteCreatePage() {
   });
 
   const { notify } = useTitanNotify();
+  const { openPreview, previewModal } = useFinanceDocumentPreview({ accessToken });
 
   useEffect(() => {
     if (user && !canWrite) navigate('/finance/quotes');
@@ -314,6 +317,29 @@ export function QuoteCreatePage() {
 
   async function handleAction(action: FinanceDocumentAction) {
     if (!accessToken || !canWrite) return;
+
+    if (action === 'preview_pdf') {
+      setError(null);
+      const job = customerJobs.find((entry) => entry.id === jobId);
+      await openPreview(
+        buildFinanceEditorPreviewInput({
+          kind: 'quote',
+          customer: selectedCustomer,
+          customerReference,
+          issuedAt: quoteDate,
+          dueDate: validUntil,
+          addresses,
+          lines,
+          vatMode,
+          priceMode,
+          notes: message,
+          jobReference: job?.title ?? null,
+          status,
+        }),
+      );
+      return;
+    }
+
     setError(null);
     setIsSaving(true);
     try {
@@ -330,14 +356,6 @@ export function QuoteCreatePage() {
         await persistQuote(false);
         draftShell.markSubmitted();
         navigate('/finance/quotes/new');
-        return;
-      }
-
-      if (action === 'preview_pdf') {
-        const record = await persistQuote(false);
-        const id = record && 'id' in record ? record.id : savedQuoteId;
-        if (id) window.open(`/finance/quotes/${id}`, '_blank', 'noopener,noreferrer');
-        else setError('Save the quote with a customer before previewing');
         return;
       }
 
@@ -387,6 +405,7 @@ export function QuoteCreatePage() {
       />
       <FinanceNav />
       {draftShell.guard.unsavedChangesModal}
+      {previewModal}
       {error ? <p className="form-error">{error}</p> : null}
 
       <div className="finance-editor finance-editor--workspace">

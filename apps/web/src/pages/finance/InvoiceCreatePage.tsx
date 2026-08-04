@@ -35,6 +35,8 @@ import { useAuth } from '../../lib/auth-context';
 import { useStaffMutationInvalidation } from '../../lib/cache-invalidation';
 import { FinanceNav } from '../../features/finance/FinanceNav';
 import { canManageFinance, newFinanceClientActionId } from '../../features/finance/utils';
+import { buildFinanceEditorPreviewInput } from '../../features/finance/finance-preview-request';
+import { useFinanceDocumentPreview } from '../../features/finance/useFinanceDocumentPreview';
 import { PageHeader } from '../../components/ux';
 import { useFormDraftShell } from '../../hooks/useFormDraftShell';
 import { useTitanNotify } from '../../components/ux/TitanNotifications';
@@ -104,6 +106,7 @@ export function InvoiceCreatePage() {
   });
 
   const { notify } = useTitanNotify();
+  const { openPreview, previewModal } = useFinanceDocumentPreview({ accessToken });
 
   useEffect(() => {
     if (user && !canWrite) navigate('/finance/invoices');
@@ -288,6 +291,29 @@ export function InvoiceCreatePage() {
 
   async function handleAction(action: FinanceDocumentAction) {
     if (!accessToken || !canWrite) return;
+
+    if (action === 'preview_pdf') {
+      setError(null);
+      const job = customerJobs.find((entry) => entry.id === jobId);
+      await openPreview(
+        buildFinanceEditorPreviewInput({
+          kind: 'invoice',
+          customer: selectedCustomer,
+          customerReference,
+          issuedAt: invoiceDate,
+          dueDate,
+          addresses,
+          lines,
+          vatMode,
+          priceMode,
+          notes: message,
+          jobReference: job?.title ?? null,
+          status,
+        }),
+      );
+      return;
+    }
+
     setError(null);
     setIsSaving(true);
     try {
@@ -304,14 +330,6 @@ export function InvoiceCreatePage() {
         await persistInvoice(false);
         draftShell.markSubmitted();
         navigate('/finance/invoices/new');
-        return;
-      }
-
-      if (action === 'preview_pdf') {
-        const record = await persistInvoice(false);
-        const id = record && 'id' in record ? record.id : savedInvoiceId;
-        if (id) window.open(`/finance/invoices/${id}`, '_blank', 'noopener,noreferrer');
-        else setError('Save the invoice with a customer before previewing');
         return;
       }
 
@@ -360,6 +378,7 @@ export function InvoiceCreatePage() {
       />
       <FinanceNav />
       {draftShell.guard.unsavedChangesModal}
+      {previewModal}
       {error ? <p className="form-error">{error}</p> : null}
 
       <div className="finance-editor finance-editor--workspace">

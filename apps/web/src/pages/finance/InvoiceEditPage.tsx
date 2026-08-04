@@ -28,6 +28,8 @@ import { useAuth } from '../../lib/auth-context';
 import { useStaffMutationInvalidation } from '../../lib/cache-invalidation';
 import { FinanceNav } from '../../features/finance/FinanceNav';
 import { canManageFinance } from '../../features/finance/utils';
+import { buildFinanceEditorPreviewInput } from '../../features/finance/finance-preview-request';
+import { useFinanceDocumentPreview } from '../../features/finance/useFinanceDocumentPreview';
 import { PageHeader } from '../../components/ux';
 import { useFormDraftShell } from '../../hooks/useFormDraftShell';
 import { useTitanNotify } from '../../components/ux/TitanNotifications';
@@ -41,6 +43,7 @@ export function InvoiceEditPage() {
 
   const [customer, setCustomer] = useState<FinanceCustomerSearchResult | null>(null);
   const [displayInvoiceNumber, setDisplayInvoiceNumber] = useState('');
+  const [xeroInvoiceNumber, setXeroInvoiceNumber] = useState<string | null>(null);
   const [status, setStatus] = useState<InvoiceStatus>('draft');
   const [stage, setStage] = useState<InvoiceStage>('standard');
   const [invoiceDate, setInvoiceDate] = useState('');
@@ -90,6 +93,7 @@ export function InvoiceEditPage() {
   });
 
   const { notify } = useTitanNotify();
+  const { openPreview, previewModal } = useFinanceDocumentPreview({ accessToken });
 
   useEffect(() => {
     if (user && !canWrite) navigate(`/finance/invoices/${invoiceId}`);
@@ -124,6 +128,7 @@ export function InvoiceEditPage() {
           xeroContactId: null,
         });
         setDisplayInvoiceNumber(invoice.displayOfficialInvoiceNumber);
+        setXeroInvoiceNumber(invoice.xeroInvoiceNumber);
         setStatus(invoice.status);
         setStage(invoice.stage);
         setInvoiceDate(toDateInputValue(invoice.issuedAt ?? invoice.createdAt));
@@ -209,6 +214,28 @@ export function InvoiceEditPage() {
 
   async function handleAction(action: FinanceDocumentAction) {
     if (!accessToken || !canWrite || !editable) return;
+
+    if (action === 'preview_pdf') {
+      setError(null);
+      await openPreview(
+        buildFinanceEditorPreviewInput({
+          kind: 'invoice',
+          customer,
+          customerReference,
+          issuedAt: invoiceDate,
+          dueDate,
+          addresses,
+          lines,
+          vatMode,
+          priceMode,
+          notes: message,
+          xeroInvoiceNumber,
+          status,
+        }),
+      );
+      return;
+    }
+
     setError(null);
     setIsSaving(true);
     try {
@@ -226,12 +253,6 @@ export function InvoiceEditPage() {
         await persistInvoice(false);
         draftShell.markSubmitted();
         navigate('/finance/invoices/new');
-        return;
-      }
-
-      if (action === 'preview_pdf') {
-        await persistInvoice(false);
-        window.open(`/finance/invoices/${invoiceId}`, '_blank', 'noopener,noreferrer');
         return;
       }
 
@@ -288,6 +309,7 @@ export function InvoiceEditPage() {
       />
       <FinanceNav />
       {draftShell.guard.unsavedChangesModal}
+      {previewModal}
       {error ? <p className="form-error">{error}</p> : null}
 
       <div className="finance-editor finance-editor--workspace">

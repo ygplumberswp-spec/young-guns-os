@@ -171,6 +171,16 @@ export function parseEditorLinesForDraft(
   ];
 }
 
+/** Preview parse — includes every entered line; skips fully blank rows. */
+export function parseEditorLinesForPreview(
+  lines: FinanceEditorLine[],
+  options?: { priceMode?: FinanceDocumentPriceMode; vatMode?: FinanceDocumentVatMode },
+): ParsedEditorLine[] {
+  return lines
+    .map((line) => mapLineForApi(line, options?.priceMode ?? 'excluding_vat', options?.vatMode ?? 'standard'))
+    .filter((line): line is ParsedEditorLine => line !== null);
+}
+
 export function isEditorLineBlank(line: FinanceEditorLine): boolean {
   return !line.description.trim() && !line.unitPrice.trim();
 }
