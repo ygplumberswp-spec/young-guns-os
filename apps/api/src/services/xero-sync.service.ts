@@ -165,7 +165,8 @@ export type XeroEntityCoverageWrite = {
  * The stage must have finished with nothing failed before a complete-history timestamp is written,
  * so a stage that imported nothing while records failed can never be recorded as complete. A claim
  * left behind by an earlier run is cleared once the evidence contradicts it, and what it claimed is
- * carried into `lastError` so the correction is visible rather than silent.
+ * carried into `lastError` so the correction is visible rather than silent. An incremental run
+ * reports only its own delta, so it adds to the recorded holding rather than replacing it.
  */
 export function resolveEntityCoverageWrite(input: {
   stage: XeroImportStage;
@@ -178,13 +179,21 @@ export function resolveEntityCoverageWrite(input: {
   now: Date;
 }): XeroEntityCoverageWrite {
   const { counts, existing, now, stage } = input;
-  const importedCount = counts.createdCount + counts.updatedCount;
+  const runImportedCount = counts.createdCount + counts.updatedCount;
+  // An incremental run only sees what changed since its floor, so its tally is not a measure of
+  // what this entity holds. Letting it overwrite the count makes an entity Xero did not touch read
+  // as holding nothing — "Xero returned no records, so there is nothing to answer from" over a
+  // ledger that is sitting right there. An incremental can add to the holding through records it
+  // created; it can never reduce it.
+  const importedCount = input.isFullHistoryRun
+    ? runImportedCount
+    : (existing?.importedCount ?? 0) + counts.createdCount;
   const stageFinishedCleanly = counts.failedCount === 0 && input.failedStage !== stage;
   const canClaimFullHistory = input.isFullHistoryRun && stageFinishedCleanly;
   const staleFullHistoryClaim = Boolean(existing?.fullHistorySyncedAt) && !stageFinishedCleanly;
   const staleClaimNote =
     existing && staleFullHistoryClaim
-      ? `Cleared a stale complete-history claim from ${existing.fullHistorySyncedAt?.toISOString()} (${existing.importedCount} imported / ${existing.failedCount} failed): this run finished ${stage} with ${importedCount} imported and ${counts.failedCount} failed.`
+      ? `Cleared a stale complete-history claim from ${existing.fullHistorySyncedAt?.toISOString()} (${existing.importedCount} imported / ${existing.failedCount} failed): this run finished ${stage} with ${runImportedCount} imported and ${counts.failedCount} failed.`
       : null;
 
   return {

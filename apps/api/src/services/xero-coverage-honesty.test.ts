@@ -118,6 +118,92 @@ test('an incremental run keeps a complete-history claim an earlier clean run ear
   assert.equal('fullHistorySyncedAt' in write, false, 'the earned claim must be left untouched');
 });
 
+test('an incremental run does not shrink what an entity is recorded as holding', () => {
+  // Observed on staging: the incremental returned 61 modified invoices, and the coverage row went
+  // from 585 imported to 61 — so the Owner's evidence for a fully imported ledger read 61.
+  const earned = new Date('2026-08-04T09:09:15.895Z');
+  const write = resolveEntityCoverageWrite({
+    stage: 'invoices',
+    counts: counts({ updatedCount: 61 }),
+    failedStage: null,
+    stageError: null,
+    isFullHistoryRun: false,
+    existing: { fullHistorySyncedAt: earned, importedCount: 585, failedCount: 0 },
+    now: NOW,
+  });
+
+  assert.equal(write.importedCount, 585);
+});
+
+test('an entity the incremental did not touch keeps its history instead of reading as empty', () => {
+  // The bill on staging. Xero returned nothing for it, and the row went to 0 imported, which the
+  // read path words as "Xero returned no records, so there is nothing to answer from".
+  const earned = new Date('2026-08-04T09:09:20.776Z');
+  const write = resolveEntityCoverageWrite({
+    stage: 'bills',
+    counts: counts(),
+    failedStage: null,
+    stageError: null,
+    isFullHistoryRun: false,
+    existing: { fullHistorySyncedAt: earned, importedCount: 1, failedCount: 0 },
+    now: NOW,
+  });
+
+  assert.equal(write.importedCount, 1);
+  assert.equal(
+    resolveStageCoverageState({
+      importedCount: write.importedCount,
+      failedCount: write.failedCount,
+      skippedCount: write.skippedCount,
+      fullHistorySynced: true,
+    }).coverage,
+    'complete',
+  );
+});
+
+test('records an incremental creates are added to the holding', () => {
+  const earned = new Date('2026-08-04T09:22:36.222Z');
+  const write = resolveEntityCoverageWrite({
+    stage: 'payments',
+    counts: counts({ createdCount: 3, updatedCount: 48 }),
+    failedStage: null,
+    stageError: null,
+    isFullHistoryRun: false,
+    existing: { fullHistorySyncedAt: earned, importedCount: 511, failedCount: 0 },
+    now: NOW,
+  });
+
+  assert.equal(write.importedCount, 514, 'three payments that did not exist before now do');
+});
+
+test('a full historical run remains authoritative over the recorded count', () => {
+  const write = resolveEntityCoverageWrite({
+    stage: 'invoices',
+    counts: counts({ updatedCount: 585 }),
+    failedStage: null,
+    stageError: null,
+    isFullHistoryRun: true,
+    existing: { fullHistorySyncedAt: null, importedCount: 9_999, failedCount: 0 },
+    now: NOW,
+  });
+
+  assert.equal(write.importedCount, 585, 'a complete re-pull replaces an inherited figure');
+});
+
+test('the first run for an entity records what it imported even when incremental', () => {
+  const write = resolveEntityCoverageWrite({
+    stage: 'bank_transactions',
+    counts: counts({ createdCount: 42 }),
+    failedStage: null,
+    stageError: null,
+    isFullHistoryRun: false,
+    existing: null,
+    now: NOW,
+  });
+
+  assert.equal(write.importedCount, 42);
+});
+
 // --- Stale pre-fix coverage rows are recomputed, not believed ---
 
 test('a stale complete-history claim is cleared on the next write, with the correction recorded', () => {
