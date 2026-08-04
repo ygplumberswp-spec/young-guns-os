@@ -83,6 +83,7 @@ export function createInitialImportJobState(options?: {
     completedStages: [],
     failedStage: null,
     stageError: null,
+    stageErrorCode: null,
     idempotencyKey: options?.idempotencyKey,
     trigger: options?.trigger,
   };
@@ -104,6 +105,7 @@ export function importJobStateToSummary(state: XeroImportJobState): Record<strin
     completedStages: state.completedStages,
     failedStage: state.failedStage,
     stageError: state.stageError,
+    stageErrorCode: state.stageErrorCode ?? null,
     carriedFailureCount: state.carriedFailureCount ?? 0,
     idempotencyKey: state.idempotencyKey,
     trigger: state.trigger,
@@ -150,6 +152,7 @@ export function parseImportJobState(
       : [],
     failedStage: (summary?.failedStage as XeroImportStage | null | undefined) ?? null,
     stageError: typeof summary?.stageError === 'string' ? summary.stageError : null,
+    stageErrorCode: typeof summary?.stageErrorCode === 'string' ? summary.stageErrorCode : null,
     carriedFailureCount: Number.isFinite(Number(summary?.carriedFailureCount))
       ? Number(summary?.carriedFailureCount)
       : 0,

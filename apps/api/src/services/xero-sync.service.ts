@@ -87,6 +87,7 @@ import {
 } from './xero-import-job.processor.js';
 import {
   buildXeroImportSyncMessage,
+  requiresOwnerActionToRetry,
   summarizeCounts,
   type XeroImportJobState,
 } from './xero-import-job.shared.js';
@@ -718,6 +719,7 @@ export class XeroSyncService {
 
     resumeState.failedStage = null;
     resumeState.stageError = null;
+    resumeState.stageErrorCode = null;
     resumeState.nextRetryAt = null;
     resumeState.resumedFromAbandoned = true;
     resumeState.trigger = 'resume';
@@ -1001,6 +1003,7 @@ export class XeroSyncService {
         error instanceof XeroError && error.code === 'TIMEOUT'
           ? `Xero API timed out during ${stage}: ${error.message}`
           : mapError(error);
+      state.stageErrorCode = error instanceof XeroError ? error.code : null;
       return { stageComplete: false, budgetExhausted: false };
     }
   }
@@ -1281,6 +1284,14 @@ export class XeroSyncService {
         continue;
       }
 
+      // Xero rejecting the grant is not something another tick can fix. Auto-resuming it just
+      // reruns the same rejection every tick, which both hides the real cause behind a job that
+      // looks busy and never lets the tenant reach a quiet state. The job stays failed with its
+      // reason until the Owner reconnects Xero and retries.
+      if (requiresOwnerActionToRetry(state.stageErrorCode)) {
+        continue;
+      }
+
       const activeJob = await this.db.query.integrationSyncJobs.findFirst({
         where: and(
           eq(integrationSyncJobs.companyId, job.companyId),
@@ -1301,6 +1312,7 @@ export class XeroSyncService {
 
       state.failedStage = null;
       state.stageError = null;
+      state.stageErrorCode = null;
       state.nextRetryAt = null;
       state.abandoned = false;
       state.resumedFromAbandoned = true;
@@ -3465,6 +3477,20 @@ export class XeroSyncService {
           counts.pulledCount += 1;
         }
       } catch (error) {
+        // A rejected grant is not a per-record problem: every remaining parent would be rejected
+        // the same way. Fail the stage once with the real reason instead of recording one
+        // fabricated record failure per parent and reporting a scope gap as bad data.
+        if (error instanceof XeroError && requiresOwnerActionToRetry(error.code)) {
+          await this.writeLog(ctx, {
+            entityType: 'attachment',
+            xeroEntityId: parent.xeroId,
+            action: 'pull',
+            status: 'failed',
+            message: `Xero rejected attachment access while reading ${parent.parentType} ${parent.xeroId}: ${mapError(error)} Attachment metadata needs the accounting.attachments.read scope — reconnect Xero to grant it.`,
+          });
+          throw error;
+        }
+
         counts.failedCount += 1;
         await this.writeLog(ctx, {
           entityType: 'attachment',

@@ -38,11 +38,27 @@ export const XERO_IMPORT_COUNT_KEYS: XeroImportStageCountsKey[] = Object.values(
 
 export type XeroImportStageCounts = Record<XeroImportStageCountsKey, XeroImportEntityCounts>;
 
+/**
+ * Xero error codes no amount of retrying can clear — the grant itself is wrong or missing a scope,
+ * so the tenant has to be reconnected before the stage can succeed. Retrying one of these is not a
+ * recovery attempt, it is the same rejection on a timer.
+ */
+export const XERO_OWNER_ACTION_ERROR_CODES: ReadonlySet<string> = new Set([
+  'AUTH_FAILED',
+  'CONFIG_ERROR',
+]);
+
+export function requiresOwnerActionToRetry(stageErrorCode: string | null | undefined): boolean {
+  return stageErrorCode != null && XERO_OWNER_ACTION_ERROR_CODES.has(stageErrorCode);
+}
+
 export type XeroImportJobState = XeroImportStageCounts & {
   checkpoint: XeroImportCheckpoint;
   completedStages: XeroImportStage[];
   failedStage: XeroImportStage | null;
   stageError: string | null;
+  /** The Xero error code behind `stageError`, so a retry can tell recoverable from not. */
+  stageErrorCode?: string | null;
   /** Failures from stages a resume moved past. Still missing, so still counted against the run. */
   carriedFailureCount?: number;
   idempotencyKey?: string;
