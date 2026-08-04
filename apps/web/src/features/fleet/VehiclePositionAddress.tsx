@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { FleetTrackingContext } from '@titan/shared';
 import {
   buildSmsShareUrl,
+  buildVehicleCardModel,
   buildVehiclePositionNavigateUrl,
   buildVehiclePositionShareMessage,
   buildWhatsappShareUrl,
@@ -14,6 +15,7 @@ import {
   resolveVehicleNavigateWarning,
   resolveVehiclePositionAddressDisplay,
   type VehicleAddressDisplay,
+  type VehicleStatusTone,
 } from '@titan/shared';
 
 export type TrackedVehiclePosition = FleetTrackingContext['latestPositions'][number];
@@ -80,9 +82,56 @@ export function describeVehiclePosition(
   };
 }
 
+function statusToneClass(tone: VehicleStatusTone): string {
+  switch (tone) {
+    case 'active':
+      return 'fleet-status-dot--active';
+    case 'attention':
+      return 'fleet-status-dot--attention';
+    case 'neutral':
+      return 'fleet-status-dot--neutral';
+    case 'muted':
+      return 'fleet-status-dot--muted';
+  }
+}
+
+/**
+ * Coloured indicator shown before the plate. The status is also given as text for
+ * screen readers and for anyone who cannot rely on colour alone.
+ */
+export function VehicleStatusDot({
+  tone,
+  statusLabel,
+}: {
+  tone: VehicleStatusTone;
+  statusLabel: string;
+}) {
+  return (
+    <span
+      className={`fleet-status-dot ${statusToneClass(tone)}`}
+      role="img"
+      aria-label={statusLabel}
+      title={statusLabel}
+    />
+  );
+}
+
+export function freshnessPillClass(label: string): string {
+  switch (label) {
+    case 'LIVE':
+    case 'FRESH':
+      return 'status-pill--success';
+    case 'DELAYED':
+      return 'status-pill--warning';
+    default:
+      return 'status-pill--disabled';
+  }
+}
+
 function addressToneClass(state: VehicleAddressDisplay['state']): string {
   switch (state) {
     case 'precise':
+    case 'street_level':
       return 'status-pill--success';
     case 'approximate':
     case 'stale':
@@ -133,22 +182,27 @@ export function VehiclePositionCard({
   showDriver?: boolean;
   compact?: boolean;
 }) {
-  const {
-    display,
-    healthLabel,
-    health,
-    navigateUrl,
-    navigateWarning,
-    shareMessage,
-    coordinates,
-    motionLabel,
-    ignitionLabel,
-    freshnessLabel,
-  } = describeVehiclePosition(position, cartrackConnected);
+  const { display, navigateUrl, navigateWarning, shareMessage, coordinates } =
+    describeVehiclePosition(position, cartrackConnected);
+  // Status, freshness and telemetry come from the shared card model so this card cannot
+  // describe a vehicle differently from the Fleet Overview row or the follow panel.
+  const model = buildVehicleCardModel({
+    licensePlate: position.licensePlate,
+    vehicleName: position.vehicleName,
+    externalVehicleId: position.externalVehicleId,
+    latitude: position.latitude,
+    longitude: position.longitude,
+    recordedAt: position.recordedAt,
+    cartrackConnected,
+    address: position.address,
+    telemetry: position.telemetry,
+    assignedUserName: position.assignedUserName,
+    assignedJob: position.assignedJob,
+  });
   const [shareNote, setShareNote] = useState<string | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
+  const [coordsOpen, setCoordsOpen] = useState(false);
 
-  const driverName = position.driverName || position.assignedUserName || null;
   const identifier = position.licensePlate ?? position.externalVehicleId;
   const whatsappUrl = buildWhatsappShareUrl(shareMessage);
   const smsUrl = buildSmsShareUrl(shareMessage);
@@ -166,16 +220,17 @@ export function VehiclePositionCard({
   return (
     <div className="vehicle-position-card">
       <div className="vehicle-position-card__head">
+        <VehicleStatusDot tone={model.statusTone} statusLabel={model.statusLabel} />
         <strong>{identifier}</strong>
-        {position.vehicleName && position.vehicleName !== identifier ? (
-          <span className="page-muted"> · {position.vehicleName}</span>
+        {model.secondaryName ? (
+          <span className="page-muted"> · {model.secondaryName}</span>
         ) : null}
-        <span
-          className={`status-pill ${health === 'live' ? 'status-pill--success' : 'status-pill--warning'}`}
-        >
-          {healthLabel}
+        <span className={`status-pill ${freshnessPillClass(model.freshnessLabel)}`}>
+          {model.freshnessLabel}
         </span>
       </div>
+
+      <p className="vehicle-position-card__status">{model.statusLabel}</p>
 
       <p className="vehicle-position-card__address">
         <span className={`status-pill ${addressToneClass(display.state)}`}>{display.line}</span>
@@ -183,13 +238,25 @@ export function VehiclePositionCard({
       {display.note ? <p className="page-muted">{display.note}</p> : null}
 
       <p className="page-muted">
-        {motionLabel} · {ignitionLabel}
-        {showDriver && driverName ? ` · ${driverName}` : ''}
+        {model.updatedAgoLabel}
+        {model.speedValue ? ` · ${model.speedValue}` : ''}
+        {model.roadSpeedValue ? ` · limit ${model.roadSpeedValue}` : ''}
+        {model.ignitionValue ? ` · ignition ${model.ignitionValue}` : ''}
+        {showDriver && model.driverSource !== 'unassigned' ? ` · ${model.driverLabel}` : ''}
       </p>
-      <p className="page-muted">
-        {freshnessLabel}
-        {coordinates ? ` · ${coordinates}` : ''}
-      </p>
+
+      {coordinates ? (
+        <p className="page-muted vehicle-position-card__coords">
+          <button
+            type="button"
+            className="jobs-link"
+            onClick={() => setCoordsOpen((open) => !open)}
+          >
+            {coordsOpen ? 'Hide coordinates' : 'View coordinates'}
+          </button>
+          {coordsOpen ? <span> {coordinates}</span> : null}
+        </p>
+      ) : null}
 
       {navigateWarning ? <p className="form-error">{navigateWarning}</p> : null}
 

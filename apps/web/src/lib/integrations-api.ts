@@ -4,6 +4,7 @@ import type {
   EmailConnectionSummary,
   EmailSyncResult,
   FleetTrackingContext,
+  FleetVehicleTrailResponse,
   IntegrationVehicleMappingSummary,
   ResendConnectionSummary,
   ResendDeliverySummary,
@@ -118,6 +119,23 @@ export async function fetchCartrackTracking(accessToken: string): Promise<FleetT
     },
   );
   return data.tracking;
+}
+
+/**
+ * Stored Cartrack readings for one vehicle, used to draw the breadcrumb trail behind a
+ * followed vehicle. Points are provider readings only — never interpolated.
+ */
+export async function fetchCartrackVehicleTrail(
+  accessToken: string,
+  vehicleId: string,
+  options: { maxPoints?: number } = {},
+): Promise<FleetVehicleTrailResponse> {
+  const query = options.maxPoints ? `?maxPoints=${options.maxPoints}` : '';
+  const data = await request<{ trail: FleetVehicleTrailResponse }>(
+    `/integrations/cartrack/vehicles/${encodeURIComponent(vehicleId)}/trail${query}`,
+    { accessToken, timeoutMs: 15_000 },
+  );
+  return data.trail;
 }
 
 export async function updateCartrackMapping(

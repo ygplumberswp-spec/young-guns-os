@@ -37,6 +37,10 @@ const updateMappingSchema = z.object({
   status: z.enum(['unmapped', 'mapped', 'ignored']).optional(),
 });
 
+const vehicleTrailQuerySchema = z.object({
+  maxPoints: z.coerce.number().int().min(2).max(500).optional(),
+});
+
 const createWebhookEndpointSchema = z.object({
   name: z.string().trim().min(1).max(120),
   description: z.string().trim().max(500).optional().nullable(),
@@ -421,16 +425,6 @@ export function createIntegrationsRouter({
     },
   );
 
-  router.get(
-    '/cartrack/tracking',
-    requireAnyPermission('integrations:read', 'integrations:manage', 'dispatch:read'),
-    async (req, res) => {
-      const { companyId } = getAuth(req);
-      const tracking = await integrationsService.buildFleetTrackingContext(companyId);
-      res.json({ data: { tracking } });
-    },
-  );
-
   router.patch(
     '/cartrack/mappings/:mappingId',
     requireAnyPermission('integrations:manage'),
@@ -480,6 +474,41 @@ export function createIntegrationsRouter({
       const { companyId } = getAuth(req);
       const tracking = await integrationsService.buildFleetTrackingContext(companyId);
       res.json({ data: { tracking } });
+    },
+  );
+
+  /**
+   * Breadcrumb trail for one vehicle, drawn behind it in Follow Vehicle mode.
+   * Scoped to the caller's company so a vehicle id from another tenant returns 404.
+   */
+  router.get(
+    '/cartrack/vehicles/:vehicleId/trail',
+    requireAnyPermission('integrations:read', 'integrations:manage', 'dispatch:read', 'fleet:read'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      const parsed = vehicleTrailQuerySchema.safeParse(req.query);
+
+      if (!parsed.success) {
+        res.status(400).json({
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid trail query',
+            details: parsed.error.flatten(),
+          },
+        });
+        return;
+      }
+
+      try {
+        const trail = await integrationsService.getVehicleTrail(
+          companyId,
+          getRouteParam(req.params.vehicleId),
+          { maxPoints: parsed.data.maxPoints },
+        );
+        res.json({ data: { trail } });
+      } catch (error) {
+        handleIntegrationsError(res, error);
+      }
     },
   );
 

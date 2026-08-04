@@ -21,9 +21,19 @@ import {
   generateFleetRecommendations,
   generateMonthlyReport,
 } from '../../lib/fleet-intelligence-api-client';
+import {
+  CARTRACK_UI_POLL_MS,
+  useCartrackLivePositions,
+} from '../../features/dispatch/useCartrackLivePositions';
+import { FollowVehiclePanel } from '../../features/fleet/FollowVehiclePanel';
+import {
+  FleetOverviewVehicleRow,
+  buildPositionCardModel,
+} from '../../features/fleet/FleetVehicleCards';
 
 type FleetTab =
   | 'dashboard'
+  | 'live-map'
   | 'trips'
   | 'reports'
   | 'behaviour'
@@ -56,7 +66,12 @@ export function FleetIntelligencePage() {
   const { accessToken, user } = useAuth();
   const { formatMoney } = useCompanyLocale();
   const [activeTab, setActiveTab] = useState<FleetTab>('dashboard');
+  const [followPlate, setFollowPlate] = useState<string | null>(null);
   const [dashboard, setDashboard] = useState<FleetExecutiveDashboard | null>(null);
+  const { tracking, lastFetchedAt } = useCartrackLivePositions({
+    accessToken,
+    enabled: Boolean(accessToken),
+  });
   const [trips, setTrips] = useState<Awaited<ReturnType<typeof fetchTripHistory>>>([]);
   const [reports, setReports] = useState<Awaited<ReturnType<typeof fetchMonthlyReports>>>([]);
   const [behaviourEvents, setBehaviourEvents] = useState<
@@ -260,8 +275,25 @@ export function FleetIntelligencePage() {
     );
   }
 
+  // Same polled tracking context the dispatch surfaces use, so Fleet Overview and the
+  // live map can never disagree about a vehicle.
+  const trackedVehicles = useMemo(() => {
+    const connected = Boolean(tracking?.cartrackConnected);
+    return (tracking?.latestPositions ?? [])
+      .filter(
+        (position) =>
+          Number.isFinite(position.latitude) && Number.isFinite(position.longitude),
+      )
+      .map((position) => ({
+        markerId: `vehicle-${position.externalVehicleId}`,
+        model: buildPositionCardModel(position, connected),
+      }))
+      .sort((a, b) => a.model.plate.localeCompare(b.model.plate));
+  }, [tracking?.cartrackConnected, tracking?.latestPositions]);
+
   const tabs: Array<{ id: FleetTab; label: string }> = [
     { id: 'dashboard', label: 'Dashboard' },
+    { id: 'live-map', label: 'Live Map' },
     { id: 'trips', label: 'Trips' },
     { id: 'reports', label: 'Reports' },
     { id: 'behaviour', label: 'Behaviour' },
@@ -312,8 +344,27 @@ export function FleetIntelligencePage() {
             <StatCard label="Pending Actions" value={String(dashboard.pendingActionCount)} />
           </div>
           <Panel title="Fleet Overview">
-            <p>{dashboard.summary}</p>
-            <p>
+            {trackedVehicles.length > 0 ? (
+              <ul className="fleet-overview-list">
+                {trackedVehicles.map((entry) => (
+                  <FleetOverviewVehicleRow
+                    key={entry.markerId}
+                    model={entry.model}
+                    onSelect={() => {
+                      setFollowPlate(entry.model.plate);
+                      setActiveTab('live-map');
+                    }}
+                  />
+                ))}
+              </ul>
+            ) : (
+              <p className="page-muted">
+                No stored Cartrack positions yet. TITAN shows no vehicle status it cannot
+                source from the provider.
+              </p>
+            )}
+            <p className="page-muted">{dashboard.summary}</p>
+            <p className="page-muted">
               Maintenance due: {dashboard.maintenanceDueCount} · Inspections due:{' '}
               {dashboard.inspectionsDueCount} · Utilization: {dashboard.utilizationPercent ?? '—'}%
               · Downtime: {dashboard.downtimePercent ?? '—'}%
@@ -325,6 +376,23 @@ export function FleetIntelligencePage() {
               geofence events. Trip history and behaviour events below use existing GPS-derived
               paths only.
             </p>
+          </Panel>
+        </div>
+      ) : null}
+
+      {activeTab === 'live-map' ? (
+        <div className="stack">
+          <Panel
+            title="Live map & Follow Vehicle"
+            description="Vehicle positions polled from Cartrack. Follow Vehicle keeps the selected vehicle centred, pauses when you move the map, and holds the last known position when a tracker goes quiet."
+          >
+            <FollowVehiclePanel
+              accessToken={accessToken}
+              tracking={tracking}
+              uiRefreshIntervalMs={CARTRACK_UI_POLL_MS}
+              lastFetchedAt={lastFetchedAt}
+              initialPlate={followPlate}
+            />
           </Panel>
         </div>
       ) : null}

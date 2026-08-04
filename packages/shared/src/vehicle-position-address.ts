@@ -7,7 +7,10 @@
  * known address, or the coordinates themselves when geocoding produced nothing.
  */
 
-import { FLEET_POSITION_STALE_MS, isFleetPositionStale } from './fleet-tracking.js';
+import {
+  deriveVehiclePositionFreshness,
+  isPositionBehaviourUnreliable,
+} from './fleet-tracking.js';
 import {
   buildGoogleMapsNavigateUrl,
   formatLatLngCoordinates,
@@ -38,13 +41,20 @@ export type VehiclePositionAddress = {
   street: string | null;
   suburb: string | null;
   city: string | null;
+  /** Province/state, when the source supplied one. Never derived from the city. */
+  region?: string | null;
   placeId: string | null;
   precision: VehicleAddressPrecision;
   /** Coordinate this address was resolved for — not necessarily the newest position. */
   resolvedForLatitude: number;
   resolvedForLongitude: number;
   resolvedAt: string;
-  source: 'google_maps';
+  /**
+   * `cartrack` is the provider's own `position_description`, which arrives with the
+   * telemetry and costs no geocoding call. `google_maps` is the reverse-geocode
+   * fallback for coordinates Cartrack did not describe.
+   */
+  source: 'google_maps' | 'cartrack';
 };
 
 /** Why no address is available. Never a silent blank. */
@@ -63,6 +73,8 @@ export type VehiclePositionAddressResult =
 
 export type VehicleAddressDisplayState =
   | 'precise'
+  /** Road and area are correct, the building is not identified. */
+  | 'street_level'
   | 'approximate'
   | 'stale'
   | 'coordinates'
@@ -151,8 +163,11 @@ export function formatVehiclePositionCoordinates(
 
 /**
  * Decide what a surface may claim about a vehicle's whereabouts.
- * Stale positions are labelled as last known, approximate matches as "Near",
- * and a failed lookup falls back to the coordinates rather than a guess.
+ *
+ * Readable street and area are the primary answer whenever one exists. Stale positions
+ * are labelled as last known, a road-level match says so rather than posing as a
+ * property address, a genuinely approximate match is prefixed "Near", and a failed
+ * lookup falls back to the coordinates rather than a guess.
  */
 export function resolveVehiclePositionAddressDisplay(input: {
   result: VehiclePositionAddressResult | null;
@@ -161,7 +176,11 @@ export function resolveVehiclePositionAddressDisplay(input: {
   recordedAt: string | null | undefined;
   cartrackConnected: boolean;
   nowMs?: number;
-  staleMs?: number;
+  /**
+   * Defaults to the compact `street, suburb` form used by list rows and map popovers.
+   * Pass `false` on a detail surface that wants the provider's full formatted address.
+   */
+  compact?: boolean;
 }): VehicleAddressDisplay {
   const coordinates = formatVehiclePositionCoordinates(input.latitude, input.longitude);
   const hasUsableCoordinates = isValidLatLng(input.latitude, input.longitude);
@@ -175,9 +194,15 @@ export function resolveVehiclePositionAddressDisplay(input: {
     };
   }
 
-  const stale =
-    !input.cartrackConnected ||
-    isFleetPositionStale(input.recordedAt, input.nowMs, input.staleMs ?? FLEET_POSITION_STALE_MS);
+  // Judged against the real polling cadence, so a position that is as current as the
+  // integration allows is not mislabelled "last known".
+  const stale = isPositionBehaviourUnreliable(
+    deriveVehiclePositionFreshness({
+      recordedAt: input.recordedAt,
+      cartrackConnected: input.cartrackConnected,
+      nowMs: input.nowMs,
+    }),
+  );
 
   const address = input.result?.status === 'resolved' ? input.result.address : null;
 
@@ -194,7 +219,10 @@ export function resolveVehiclePositionAddressDisplay(input: {
     };
   }
 
-  const label = address.shortAddress || address.formattedAddress;
+  const label =
+    input.compact === false
+      ? address.formattedAddress || address.shortAddress
+      : address.shortAddress || address.formattedAddress;
 
   if (stale) {
     return {
@@ -206,6 +234,17 @@ export function resolveVehiclePositionAddressDisplay(input: {
   }
 
   if (address.precision === 'approximate') {
+    // Cartrack describes the road the vehicle is on. That is a true answer to "where is
+    // it", so it is shown plainly — but it must never read as a verified street number.
+    if (address.source === 'cartrack') {
+      return {
+        state: 'street_level',
+        line: label,
+        note: 'Road and area supplied by Cartrack with the position. The street number is not verified.',
+        isExactAndCurrent: false,
+      };
+    }
+
     return {
       state: 'approximate',
       line: `Near ${label}`,

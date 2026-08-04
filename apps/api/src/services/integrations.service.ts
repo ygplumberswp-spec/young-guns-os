@@ -1,8 +1,9 @@
-import { and, desc, eq, inArray, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, isNull, notInArray, sql } from 'drizzle-orm';
 import type {
   CartrackConnectionSummary,
   CartrackSyncResult,
   FleetTrackingContext,
+  FleetVehicleTrailResponse,
   IntegrationMappingStatus,
   IntegrationSyncHealth,
   IntegrationVehicleMappingSummary,
@@ -11,11 +12,16 @@ import type {
   ValidateCartrackCredentialsResult,
 } from '@titan/shared';
 import {
+  buildVehicleTrail,
+  cartrackNativeAddressResult,
+  CARTRACK_SYNC_INTERVAL_MS,
   deriveCartrackCapabilityState,
   deriveFleetConnectionDisplayState,
   deriveMappingReviewCategory,
   INTEGRATION_MAPPING_REVIEW_LABELS,
   matchVehicleByRegistration,
+  parseCartrackStatusPayload,
+  readingValue,
   unresolvedVehicleAddress,
   vehicleAddressCacheKey,
   type VehiclePositionAddressResult,
@@ -26,6 +32,8 @@ import {
   integrationConnections,
   integrationSyncSchedules,
   integrationVehicleMappings,
+  jobs,
+  jobVehicleAssignments,
   securityAuditLogs,
   users,
   vehicles,
@@ -50,6 +58,23 @@ export class IntegrationsError extends Error {
 type SaveCartrackActor = {
   userId: string;
 };
+
+/**
+ * Whether an incoming Cartrack reading is worth storing.
+ *
+ * Cartrack answers every poll with its last known reading, so most polls carry a position
+ * TITAN already has. Storing it again would inflate the position count and turn a parked
+ * vehicle's breadcrumb trail into a heap of identical points, so only a genuinely newer
+ * provider timestamp is persisted. A reading equal to or older than the newest stored one
+ * is a repeat, not new movement.
+ */
+export function shouldStoreCartrackPosition(input: {
+  incomingRecordedAt: Date;
+  latestStoredRecordedAt: Date | null | undefined;
+}): boolean {
+  if (!input.latestStoredRecordedAt) return true;
+  return input.incomingRecordedAt.getTime() > input.latestStoredRecordedAt.getTime();
+}
 
 type IntegrationsServiceDeps = {
   db: DatabaseClient;
@@ -481,6 +506,7 @@ export class IntegrationsService {
     );
 
     let positionsStored = 0;
+    let positionsUnchanged = 0;
 
     try {
       const statuses = await client.fetchVehicleStatuses();
@@ -489,6 +515,32 @@ export class IntegrationsService {
         const mapping = mappingByExternalId.get(status.externalVehicleId);
 
         if (!mapping || mapping.status !== 'mapped' || !mapping.vehicleId) {
+          continue;
+        }
+
+        // Cartrack returns its last known reading on every poll, so most polls carry a
+        // position that is already stored. Re-inserting it would pile up identical rows
+        // — which inflates the position count and turns a parked vehicle's breadcrumb
+        // trail into a heap of points at one spot. Only genuinely newer readings persist.
+        const [latestStored] = await this.db
+          .select({ recordedAt: gpsPositions.recordedAt })
+          .from(gpsPositions)
+          .where(
+            and(
+              eq(gpsPositions.companyId, companyId),
+              eq(gpsPositions.vehicleId, mapping.vehicleId),
+            ),
+          )
+          .orderBy(desc(gpsPositions.recordedAt))
+          .limit(1);
+
+        if (
+          !shouldStoreCartrackPosition({
+            incomingRecordedAt: status.recordedAt,
+            latestStoredRecordedAt: latestStored?.recordedAt,
+          })
+        ) {
+          positionsUnchanged += 1;
           continue;
         }
 
@@ -561,6 +613,7 @@ export class IntegrationsService {
       mappingsUpdated,
       autoMappedCount,
       positionsStored,
+      positionsUnchanged,
       syncedAt: syncedAt.toISOString(),
       syncJobId,
     };
@@ -574,6 +627,7 @@ export class IntegrationsService {
           mappingsUpdated: result.mappingsUpdated,
           autoMappedCount: result.autoMappedCount,
           positionsStored: result.positionsStored,
+          positionsUnchanged: result.positionsUnchanged,
           syncedAt: result.syncedAt,
         },
       });
@@ -654,13 +708,32 @@ export class IntegrationsService {
       ]),
     );
 
+    const positionRows = [...latestByVehicle.values()];
+
+    // Parse the provider payload once per vehicle — every downstream field reads from this.
+    const telemetryByRow = new Map(
+      positionRows.map((row) => [row, parseCartrackStatusPayload(row.rawPayload)]),
+    );
+
+    // Cartrack ships a readable description with the position, so those coordinates need
+    // no reverse-geocoding at all. Only the remainder is sent to Google, which keeps the
+    // lookup from being duplicated for a location the provider already resolved.
+    const needsGeocoding = positionRows.filter(
+      (row) => readingValue(telemetryByRow.get(row)!.positionDescription) === null,
+    );
     const addressResults = await this.resolvePositionAddresses(
       companyId,
-      [...latestByVehicle.values()].map((row) => ({
-        latitude: row.latitude,
-        longitude: row.longitude,
-      })),
+      needsGeocoding.map((row) => ({ latitude: row.latitude, longitude: row.longitude })),
     );
+
+    const assignedJobsByVehicleId = await this.loadAssignedJobsByVehicleId(
+      companyId,
+      positionRows
+        .map((row) => row.vehicleId)
+        .filter((id): id is string => Boolean(id)),
+    );
+
+    const syncIntervalMs = await this.getCartrackSyncIntervalMs(companyId);
 
     return {
       cartrackStatus: connection.status,
@@ -674,26 +747,24 @@ export class IntegrationsService {
       lastSyncAt,
       lastError: connection.lastError,
       livePollingAllowed,
-      latestPositions: [...latestByVehicle.values()].map((row) => {
-        const raw =
-          row.rawPayload && typeof row.rawPayload === 'object'
-            ? (row.rawPayload as Record<string, unknown>)
-            : null;
-        const ignitionOn =
-          typeof raw?.ignition_on === 'boolean'
-            ? raw.ignition_on
-            : typeof raw?.ignitionOn === 'boolean'
-              ? raw.ignitionOn
-              : null;
-        const odometerRaw = raw?.odometer_km ?? raw?.odometerKm ?? raw?.odometer;
-        const odometerKm =
-          typeof odometerRaw === 'number' && Number.isFinite(odometerRaw) ? odometerRaw : null;
-        const driverName =
-          (typeof raw?.driver_name === 'string' ? raw.driver_name : null) ??
-          (typeof raw?.driverName === 'string' ? raw.driverName : null);
+      syncIntervalMs: syncIntervalMs ?? null,
+      latestPositions: positionRows.map((row) => {
+        const telemetry = telemetryByRow.get(row)!;
+        const recordedAt = row.recordedAt.toISOString();
         const assignedUserName = row.vehicle?.assignedUserId
           ? (assigneesById.get(row.vehicle.assignedUserId) ?? null)
           : null;
+
+        // Cartrack's own description first; Google only where the provider gave none.
+        const address =
+          cartrackNativeAddressResult({
+            positionDescription: readingValue(telemetry.positionDescription),
+            latitude: row.latitude,
+            longitude: row.longitude,
+            recordedAt,
+          }) ??
+          addressResults.get(vehicleAddressCacheKey(companyId, row.latitude, row.longitude)) ??
+          unresolvedVehicleAddress('not_attempted');
 
         return {
           vehicleId: row.vehicleId,
@@ -702,21 +773,133 @@ export class IntegrationsService {
           make: row.vehicle?.make ?? null,
           model: row.vehicle?.model ?? null,
           assignedUserName,
-          driverName,
+          driverName: readingValue(telemetry.driver)?.fullName ?? null,
           externalVehicleId: row.externalVehicleId,
           latitude: row.latitude,
           longitude: row.longitude,
-          speedKmh: row.speedKmh,
-          heading: row.heading ?? null,
-          ignitionOn,
-          odometerKm,
-          recordedAt: row.recordedAt.toISOString(),
-          address:
-            addressResults.get(
-              vehicleAddressCacheKey(companyId, row.latitude, row.longitude),
-            ) ?? unresolvedVehicleAddress('not_attempted'),
+          speedKmh: readingValue(telemetry.speedKmh) ?? row.speedKmh,
+          heading: readingValue(telemetry.heading) ?? row.heading ?? null,
+          ignitionOn: readingValue(telemetry.ignitionOn),
+          odometerKm: readingValue(telemetry.odometerKm),
+          recordedAt,
+          address,
+          telemetry,
+          assignedJob: row.vehicleId
+            ? (assignedJobsByVehicleId.get(row.vehicleId) ?? null)
+            : null,
         };
       }),
+    };
+  }
+
+  /**
+   * Jobs currently assigned to these vehicles. Only live assignments count — an
+   * unassigned row must never keep showing a job the vehicle has finished with.
+   */
+  private async loadAssignedJobsByVehicleId(
+    companyId: string,
+    vehicleIds: string[],
+  ): Promise<Map<string, { id: string; reference: string }>> {
+    if (vehicleIds.length === 0) return new Map();
+
+    const rows = await this.db
+      .select({
+        vehicleId: jobVehicleAssignments.vehicleId,
+        jobId: jobs.id,
+        jobNumber: jobs.jobNumber,
+        title: jobs.title,
+        assignedAt: jobVehicleAssignments.assignedAt,
+      })
+      .from(jobVehicleAssignments)
+      .innerJoin(jobs, eq(jobs.id, jobVehicleAssignments.jobId))
+      .where(
+        and(
+          eq(jobVehicleAssignments.companyId, companyId),
+          inArray(jobVehicleAssignments.vehicleId, vehicleIds),
+          isNull(jobVehicleAssignments.unassignedAt),
+          notInArray(jobs.status, ['completed', 'cancelled']),
+        ),
+      )
+      .orderBy(desc(jobVehicleAssignments.assignedAt));
+
+    const byVehicle = new Map<string, { id: string; reference: string }>();
+    for (const row of rows) {
+      // Ordered newest-first, so the first assignment seen is the current one.
+      if (byVehicle.has(row.vehicleId)) continue;
+      byVehicle.set(row.vehicleId, {
+        id: row.jobId,
+        reference: [row.jobNumber, row.title].filter(Boolean).join(' · ') || row.jobId,
+      });
+    }
+    return byVehicle;
+  }
+
+  /**
+   * Stored Cartrack readings for one vehicle, collapsed to the positions it actually
+   * reported from. Drives the breadcrumb trail behind a followed vehicle.
+   */
+  async getVehicleTrail(
+    companyId: string,
+    vehicleId: string,
+    options: { maxPoints?: number } = {},
+  ): Promise<FleetVehicleTrailResponse> {
+    const vehicle = await this.db.query.vehicles.findFirst({
+      where: and(eq(vehicles.companyId, companyId), eq(vehicles.id, vehicleId)),
+    });
+
+    if (!vehicle) {
+      throw new IntegrationsError('NOT_FOUND', 'Vehicle not found');
+    }
+
+    const connection = await this.db.query.integrationConnections.findFirst({
+      where: and(
+        eq(integrationConnections.companyId, companyId),
+        eq(integrationConnections.provider, 'cartrack'),
+      ),
+    });
+
+    const rows = await this.db
+      .select({
+        latitude: gpsPositions.latitude,
+        longitude: gpsPositions.longitude,
+        recordedAt: gpsPositions.recordedAt,
+        speedKmh: gpsPositions.speedKmh,
+      })
+      .from(gpsPositions)
+      .where(
+        and(eq(gpsPositions.companyId, companyId), eq(gpsPositions.vehicleId, vehicleId)),
+      )
+      .orderBy(desc(gpsPositions.recordedAt))
+      .limit(500);
+
+    const trail = buildVehicleTrail(
+      rows.map((row) => ({
+        latitude: row.latitude,
+        longitude: row.longitude,
+        recordedAt: row.recordedAt?.toISOString() ?? null,
+        speedKmh: row.speedKmh,
+      })),
+      { maxPoints: options.maxPoints ?? 100 },
+    );
+
+    const distinctPositionCount = buildVehicleTrail(
+      rows.map((row) => ({
+        latitude: row.latitude,
+        longitude: row.longitude,
+        recordedAt: row.recordedAt?.toISOString() ?? null,
+        speedKmh: row.speedKmh,
+      })),
+      { maxPoints: Number.MAX_SAFE_INTEGER },
+    ).length;
+
+    return {
+      vehicleId,
+      licensePlate: vehicle.licensePlate ?? null,
+      cartrackConnected:
+        connection?.status === 'connected' && Boolean(connection.credentialsEncrypted),
+      syncIntervalMs: await this.getCartrackSyncIntervalMs(companyId),
+      points: trail,
+      distinctPositionCount,
     };
   }
 
@@ -883,6 +1066,26 @@ export class IntegrationsService {
     return schedule?.nextRunAt?.toISOString() ?? null;
   }
 
+  /**
+   * The configured poll cadence, so surfaces can state how current a position can
+   * possibly be. Falls back to the documented default when no schedule row exists —
+   * never to zero, which would imply streaming.
+   */
+  private async getCartrackSyncIntervalMs(companyId: string): Promise<number> {
+    const schedule = await this.db.query.integrationSyncSchedules.findFirst({
+      where: and(
+        eq(integrationSyncSchedules.companyId, companyId),
+        eq(integrationSyncSchedules.enabled, true),
+      ),
+      orderBy: [desc(integrationSyncSchedules.nextRunAt)],
+    });
+
+    const minutes = schedule?.frequencyMinutes;
+    return typeof minutes === 'number' && minutes > 0
+      ? minutes * 60_000
+      : CARTRACK_SYNC_INTERVAL_MS;
+  }
+
   private async recordConnectionAudit(
     companyId: string,
     userId: string,
@@ -1020,6 +1223,7 @@ function emptyTrackingContext(): FleetTrackingContext {
     lastSyncAt: null,
     lastError: null,
     livePollingAllowed: false,
+    syncIntervalMs: null,
     latestPositions: [],
   };
 }

@@ -15,6 +15,13 @@ export type MapMarker = {
   longitude: number;
   label?: string;
   tone?: 'customer' | 'vehicle' | 'job';
+  /** Provider heading in degrees — rotates the vehicle marker when supplied. */
+  headingDegrees?: number | null;
+};
+
+/** Breadcrumb trail drawn behind a followed vehicle, from stored provider readings. */
+export type MapTrail = {
+  points: Array<{ latitude: number; longitude: number }>;
 };
 
 export type GoogleMapViewProps = {
@@ -40,6 +47,17 @@ export type GoogleMapViewProps = {
   followMarkerId?: string | null;
   /** Parent increments to trigger a one-shot locate/fitBounds. */
   locateToken?: number | null;
+  /**
+   * Called when the operator pans or zooms the map themselves. Follow mode uses this to
+   * suspend re-centring so the map does not fight the person reading it.
+   */
+  onManualMapMove?: () => void;
+  /** Breadcrumb trail behind the followed vehicle. */
+  trail?: MapTrail | null;
+  /** Zoom applied when centring on a single followed vehicle. */
+  followZoom?: number;
+  /** Shows the native full-screen control. */
+  allowFullscreen?: boolean;
 };
 
 type GoogleMapTypeId = 'roadmap' | 'satellite' | 'hybrid' | 'terrain';
@@ -57,6 +75,7 @@ type GoogleMarkerInstance = {
   setMap: (map: GoogleMapInstance | null) => void;
   setPosition: (c: { lat: number; lng: number }) => void;
   setTitle: (title: string) => void;
+  setIcon: (icon: unknown) => void;
 };
 
 type GooglePolylineInstance = {
@@ -90,6 +109,10 @@ declare global {
           HYBRID: GoogleMapTypeId;
           TERRAIN: GoogleMapTypeId;
         };
+        SymbolPath: {
+          FORWARD_CLOSED_ARROW: unknown;
+          CIRCLE: unknown;
+        };
       };
     };
     __titanGoogleMapsLoader?: Promise<void>;
@@ -110,6 +133,28 @@ function loadGoogleMapsScript(apiKey: string): Promise<void> {
   });
 
   return window.__titanGoogleMapsLoader;
+}
+
+/**
+ * A vehicle marker points the way the provider says the vehicle was facing. Without a
+ * heading it stays a plain dot rather than guessing a direction from previous positions.
+ */
+function vehicleMarkerIcon(marker: MapMarker): unknown {
+  const gmaps = window.google?.maps;
+  if (!gmaps || marker.tone !== 'vehicle') return undefined;
+
+  const heading = marker.headingDegrees;
+  const hasHeading = typeof heading === 'number' && Number.isFinite(heading);
+
+  return {
+    path: hasHeading ? gmaps.SymbolPath.FORWARD_CLOSED_ARROW : gmaps.SymbolPath.CIRCLE,
+    scale: hasHeading ? 5 : 6,
+    rotation: hasHeading ? heading : 0,
+    fillColor: '#0ea5e9',
+    fillOpacity: 1,
+    strokeColor: '#0c4a6e',
+    strokeWeight: 2,
+  };
 }
 
 function applyCameraToMarkers(map: GoogleMapInstance, markers: MapMarker[]) {
@@ -138,13 +183,22 @@ export function GoogleMapView({
   followVehicleId = null,
   followMarkerId = null,
   locateToken = null,
+  onManualMapMove,
+  trail = null,
+  followZoom = 15,
+  allowFullscreen = false,
 }: GoogleMapViewProps) {
   const { accessToken } = useAuth();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<GoogleMapInstance | null>(null);
   const overlayMarkersRef = useRef<Map<string, GoogleMarkerInstance>>(new Map());
   const polylineRef = useRef<GooglePolylineInstance | null>(null);
+  const trailPolylineRef = useRef<GooglePolylineInstance | null>(null);
   const didInitialCameraRef = useRef(false);
+  /** Read inside map listeners, which are registered once and must not capture a stale prop. */
+  const onManualMapMoveRef = useRef(onManualMapMove);
+  /** Tracks which vehicle the camera last locked onto, so a new target zooms in once. */
+  const lastFollowTargetRef = useRef<string | null>(null);
   const lastCameraContextKeyRef = useRef<string | null | undefined>(undefined);
   const lastLocateTokenRef = useRef<number | null>(null);
   /** Persists map type across marker/GPS refreshes; never reset on overlay updates. */
@@ -154,6 +208,10 @@ export function GoogleMapView({
   const [browserKeyMissing, setBrowserKeyMissing] = useState(false);
 
   const hasContent = markers.length > 0 || Boolean(routePolyline);
+
+  useEffect(() => {
+    onManualMapMoveRef.current = onManualMapMove;
+  }, [onManualMapMove]);
 
   // Create the map once — never tear down on marker/GPS polling updates.
   useEffect(() => {
@@ -195,7 +253,7 @@ export function GoogleMapView({
             position: gmaps.ControlPosition.LEFT_BOTTOM,
           },
           streetViewControl: false,
-          fullscreenControl: false,
+          fullscreenControl: allowFullscreen,
           scaleControl: true,
           zoom: 12,
           center: {
@@ -203,6 +261,13 @@ export function GoogleMapView({
             lng: markers[0]?.longitude ?? 18.4241,
           },
           gestureHandling: 'greedy',
+        });
+
+        // `dragstart` only fires for a real user gesture, so this cannot be tripped by
+        // TITAN's own re-centring. Zoom is deliberately not treated as a manual move —
+        // the operator is meant to be able to zoom while still following.
+        gmaps.event.addListener(map, 'dragstart', () => {
+          onManualMapMoveRef.current?.();
         });
 
         gmaps.event.addListener(map, 'maptypeid_changed', () => {
@@ -234,7 +299,7 @@ export function GoogleMapView({
     };
     // Intentionally omit markers — map instance must survive live updates.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accessToken, hasContent]);
+  }, [accessToken, hasContent, allowFullscreen]);
 
   // Sync overlays; camera moves only on initial load, context change, or follow mode.
   useEffect(() => {
@@ -257,14 +322,48 @@ export function GoogleMapView({
       if (existing) {
         existing.setPosition({ lat: marker.latitude, lng: marker.longitude });
         if (marker.label) existing.setTitle(marker.label);
+        existing.setIcon(vehicleMarkerIcon(marker));
       } else {
         const created = new gmaps.Marker({
           map,
           position: { lat: marker.latitude, lng: marker.longitude },
           title: marker.label,
+          icon: vehicleMarkerIcon(marker),
         });
         overlayMarkersRef.current.set(marker.id, created);
       }
+    }
+
+    // Breadcrumb trail behind the followed vehicle. Dashed, so it never reads as a
+    // routed path — the straight segments between readings are not the road driven.
+    const trailPoints = (trail?.points ?? []).map((point) => ({
+      lat: point.latitude,
+      lng: point.longitude,
+    }));
+
+    if (trailPoints.length > 1) {
+      if (trailPolylineRef.current) {
+        trailPolylineRef.current.setPath(trailPoints);
+        trailPolylineRef.current.setMap(map);
+      } else {
+        trailPolylineRef.current = new gmaps.Polyline({
+          map,
+          path: trailPoints,
+          strokeColor: '#0ea5e9',
+          strokeOpacity: 0,
+          strokeWeight: 3,
+          icons: [
+            {
+              icon: { path: 'M 0,-1 0,1', strokeOpacity: 0.85, scale: 3 },
+              offset: '0',
+              repeat: '12px',
+            },
+          ],
+        });
+      }
+    } else if (trailPolylineRef.current) {
+      trailPolylineRef.current.setMap(null);
+      trailPolylineRef.current = null;
     }
 
     if (routePolyline && gmaps.geometry?.encoding) {
@@ -309,15 +408,28 @@ export function GoogleMapView({
       const target = markers.find((marker) => marker.id === resolvedFollowId);
       if (target) {
         map.setCenter({ lat: target.latitude, lng: target.longitude });
+        // Zoom in once when a new vehicle is picked up, then leave zoom to the operator
+        // so they can zoom freely while following.
+        if (lastFollowTargetRef.current !== resolvedFollowId) {
+          map.setZoom(followZoom);
+          lastFollowTargetRef.current = resolvedFollowId;
+        }
       }
+      return;
+    }
+
+    if (!resolvedFollowId) {
+      lastFollowTargetRef.current = null;
     }
   }, [
     markers,
     routePolyline,
+    trail,
     contextKey,
     cameraContextKey,
     followVehicleId,
     followMarkerId,
+    followZoom,
     locateToken,
     ready,
     hasContent,
@@ -332,9 +444,12 @@ export function GoogleMapView({
       overlayMarkersRef.current.clear();
       polylineRef.current?.setMap(null);
       polylineRef.current = null;
+      trailPolylineRef.current?.setMap(null);
+      trailPolylineRef.current = null;
       mapRef.current = null;
       didInitialCameraRef.current = false;
       lastCameraContextKeyRef.current = undefined;
+      lastFollowTargetRef.current = null;
     };
   }, []);
 

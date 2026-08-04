@@ -3,8 +3,15 @@ import type { FleetTrackingContext } from '@titan/shared';
 import { isFleetPositionStale } from '@titan/shared';
 import { fetchCartrackTracking } from '../../lib/integrations-api';
 
-/** Aggressive poll only while Cartrack live polling is allowed. */
-const LIVE_POLL_MS = 3_000;
+/**
+ * Poll interval while Cartrack live polling is allowed.
+ *
+ * Cartrack itself is only polled every ~15 minutes, so a stored position cannot change
+ * faster than that. This is deliberately far shorter — so a manually triggered sync shows
+ * up quickly — but not so short that the tenant is re-queried needlessly for data that
+ * has not moved. Exported so surfaces can state the real interval rather than imply a stream.
+ */
+export const CARTRACK_UI_POLL_MS = 15_000;
 const HIDDEN_POLL_MS = 60_000;
 /** When disconnected / credentials missing — slow health check only. */
 const DISCONNECTED_POLL_MS = 60_000;
@@ -76,7 +83,7 @@ export function useCartrackLivePositions({
 
     const nextDelayMs = () => {
       if (document.visibilityState !== 'visible') return HIDDEN_POLL_MS;
-      return liveAllowedRef.current ? LIVE_POLL_MS : DISCONNECTED_POLL_MS;
+      return liveAllowedRef.current ? CARTRACK_UI_POLL_MS : DISCONNECTED_POLL_MS;
     };
 
     const schedule = (delayMs: number) => {

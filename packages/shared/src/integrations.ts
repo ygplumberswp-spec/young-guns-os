@@ -351,6 +351,11 @@ export type CartrackSyncResult = {
   mappingsUpdated: number;
   autoMappedCount: number;
   positionsStored: number;
+  /**
+   * Polls that returned a position TITAN had already stored. Cartrack repeats its last
+   * known reading, so this being the common case is normal and not a failure.
+   */
+  positionsUnchanged: number;
   syncedAt: string;
   syncJobId?: string;
 };
@@ -371,6 +376,11 @@ export type FleetTrackingContext = {
   lastError: string | null;
   /** False when credentials missing or connection is not usable for live polling. */
   livePollingAllowed: boolean;
+  /**
+   * How often TITAN polls Cartrack, from the connector's own schedule. Surfaces must
+   * state this rather than implying a streaming connection.
+   */
+  syncIntervalMs: number | null;
   latestPositions: Array<{
     vehicleId: string | null;
     vehicleName: string | null;
@@ -388,12 +398,38 @@ export type FleetTrackingContext = {
     odometerKm: number | null;
     recordedAt: string;
     /**
-     * Reverse-geocoded address for the coordinates above. Derived and cached — the
-     * coordinates stay the source of truth. `unresolved` carries the real reason so
-     * surfaces can fall back to coordinates instead of showing a blank.
+     * Readable address for the coordinates above. Preferred source is Cartrack's own
+     * `position_description`, which arrives with the telemetry; Google reverse-geocoding
+     * is the fallback. Derived either way — the coordinates stay the source of truth, and
+     * `unresolved` carries the real reason so surfaces fall back to coordinates rather
+     * than showing a blank.
      */
     address: import('./vehicle-position-address.js').VehiclePositionAddressResult;
+    /**
+     * Full parsed provider reading. Each field is a real Cartrack value or an
+     * `unavailable` reason — never a default — so a surface can show road speed,
+     * ignition, odometer and driver only where the account actually supplies them.
+     */
+    telemetry: import('./cartrack-telemetry.js').CartrackVehicleTelemetry;
+    /** Real TITAN job this vehicle is assigned to right now, when there is one. */
+    assignedJob: { id: string; reference: string } | null;
   }>;
+};
+
+/** One stored Cartrack reading for a single vehicle, used to draw the follow trail. */
+export type FleetVehicleTrailResponse = {
+  vehicleId: string;
+  licensePlate: string | null;
+  cartrackConnected: boolean;
+  syncIntervalMs: number | null;
+  points: Array<{
+    latitude: number;
+    longitude: number;
+    recordedAt: string;
+    speedKmh: number | null;
+  }>;
+  /** Distinct reported positions before the display cap was applied. */
+  distinctPositionCount: number;
 };
 
 export type XeroConnectionSummary = {
