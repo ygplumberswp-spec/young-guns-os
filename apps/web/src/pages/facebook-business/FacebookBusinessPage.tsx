@@ -747,15 +747,19 @@ function ContentTab({
               onChange={(event) => onDraftTitle(event.target.value)}
               required
             />
-            <label className="block">
-              <span>Post copy</span>
+            <div className="titan-input-group">
+              <label className="titan-input-label" htmlFor="fb-post-copy">
+                Post copy
+              </label>
               <textarea
+                id="fb-post-copy"
+                className="titan-input"
                 value={draftBody}
                 onChange={(event) => onDraftBody(event.target.value)}
                 rows={5}
                 required
               />
-            </label>
+            </div>
             <Input
               label="Link (optional)"
               value={draftLink}
@@ -942,14 +946,18 @@ function CommentsTab({
 
                 {canWrite && !comment.answered ? (
                   <>
-                    <label className="block">
-                      <span>Draft a reply</span>
+                    <div className="titan-input-group">
+                      <label className="titan-input-label" htmlFor={`fb-reply-${comment.id}`}>
+                        Draft a reply
+                      </label>
                       <textarea
+                        id={`fb-reply-${comment.id}`}
+                        className="titan-input"
                         rows={3}
                         value={replyDrafts[comment.id] ?? ''}
                         onChange={(event) => onReplyDraftChange(comment.id, event.target.value)}
                       />
-                    </label>
+                    </div>
                     <div className="flex flex-wrap gap-2">
                       <Button onClick={() => onDraftReply(comment.id)} disabled={isBusy}>
                         Save draft for approval
