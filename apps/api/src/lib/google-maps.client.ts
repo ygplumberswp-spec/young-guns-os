@@ -22,7 +22,15 @@ export class GoogleMapsClientError extends Error {
 type GoogleMapsClientOptions = {
   apiKey: string;
   fetchImpl?: typeof fetch;
+  /** Per-request bound. Google has no server-side cap, so an unanswered call would otherwise hang the caller. */
+  timeoutMs?: number;
 };
+
+/**
+ * Node's fetch has no overall request timeout, so a Google call that never answers
+ * would hold an Owner dashboard request open until the browser gave up on it.
+ */
+export const GOOGLE_MAPS_REQUEST_TIMEOUT_MS = 4_000;
 
 /** Fixed Cape Town reference points for connection probes only — not used as fake job pins. */
 const PROBE_ORIGIN = { latitude: -33.9249, longitude: 18.4241 };
@@ -70,10 +78,31 @@ function mapAddressResult(input: {
 export class GoogleMapsClient {
   private readonly apiKey: string;
   private readonly fetchImpl: typeof fetch;
+  private readonly timeoutMs: number;
 
   constructor(options: GoogleMapsClientOptions) {
     this.apiKey = options.apiKey;
     this.fetchImpl = options.fetchImpl ?? fetch;
+    this.timeoutMs = options.timeoutMs ?? GOOGLE_MAPS_REQUEST_TIMEOUT_MS;
+  }
+
+  /** Every provider call goes through here so none of them can run unbounded. */
+  private async fetchBounded(url: string, init: RequestInit): Promise<Response> {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), this.timeoutMs);
+    try {
+      return await this.fetchImpl(url, { ...init, signal: controller.signal });
+    } catch (error) {
+      if (controller.signal.aborted) {
+        throw new GoogleMapsClientError(
+          `Google Maps did not answer within ${this.timeoutMs} ms`,
+          'TIMEOUT',
+        );
+      }
+      throw error;
+    } finally {
+      clearTimeout(timer);
+    }
   }
 
   /**
@@ -657,7 +686,7 @@ export class GoogleMapsClient {
   }
 
   private async getJson<T>(url: string): Promise<T> {
-    const response = await this.fetchImpl(url, {
+    const response = await this.fetchBounded(url, {
       method: 'GET',
       headers: { Accept: 'application/json' },
     });
@@ -672,7 +701,7 @@ export class GoogleMapsClient {
   }
 
   private async getJsonAuthed<T>(url: string, extraHeaders: Record<string, string>): Promise<T> {
-    const response = await this.fetchImpl(url, {
+    const response = await this.fetchBounded(url, {
       method: 'GET',
       headers: {
         Accept: 'application/json',
@@ -695,7 +724,7 @@ export class GoogleMapsClient {
     body: Record<string, unknown>,
     extraHeaders: Record<string, string> = {},
   ): Promise<T> {
-    const response = await this.fetchImpl(url, {
+    const response = await this.fetchBounded(url, {
       method: 'POST',
       headers: {
         Accept: 'application/json',

@@ -649,7 +649,6 @@ export class IntegrationsService {
     }
 
     const hasCredentials = Boolean(connection.credentialsEncrypted);
-    const counts = await this.getMappingCounts(companyId, connection.id);
     const lastSyncAt = connection.lastSyncAt?.toISOString() ?? null;
     const capabilityState = deriveCartrackCapabilityState({
       connectionStatus: connection.status,
@@ -668,17 +667,23 @@ export class IntegrationsService {
       capabilityState === 'connected_usable' &&
       connectionDisplayState === 'connected';
 
-    const [positionCountRow] = await this.db
-      .select({ count: sql<number>`count(distinct ${gpsPositions.vehicleId})::int` })
-      .from(gpsPositions)
-      .where(eq(gpsPositions.companyId, companyId));
-
-    const latestRows = await this.db.query.gpsPositions.findMany({
-      where: eq(gpsPositions.companyId, companyId),
-      with: { vehicle: true },
-      orderBy: [desc(gpsPositions.recordedAt)],
-      limit: 80,
-    });
+    // These four reads share no inputs. Running them serially cost four round trips
+    // on every dashboard render of the Live Fleet Map.
+    const [counts, positionCountRows, latestRows, syncIntervalMs] = await Promise.all([
+      this.getMappingCounts(companyId, connection.id),
+      this.db
+        .select({ count: sql<number>`count(distinct ${gpsPositions.vehicleId})::int` })
+        .from(gpsPositions)
+        .where(eq(gpsPositions.companyId, companyId)),
+      this.db.query.gpsPositions.findMany({
+        where: eq(gpsPositions.companyId, companyId),
+        with: { vehicle: true },
+        orderBy: [desc(gpsPositions.recordedAt)],
+        limit: 80,
+      }),
+      this.getCartrackSyncIntervalMs(companyId),
+    ]);
+    const [positionCountRow] = positionCountRows;
 
     const latestByVehicle = new Map<string, (typeof latestRows)[number]>();
     for (const row of latestRows) {
@@ -694,20 +699,6 @@ export class IntegrationsService {
           .filter((id): id is string => Boolean(id)),
       ),
     ];
-    const assigneeRows =
-      assigneeIds.length > 0
-        ? await this.db.query.users.findMany({
-            where: and(eq(users.companyId, companyId), inArray(users.id, assigneeIds)),
-            columns: { id: true, firstName: true, lastName: true },
-          })
-        : [];
-    const assigneesById = new Map(
-      assigneeRows.map((user) => [
-        user.id,
-        `${user.firstName} ${user.lastName}`.trim() || null,
-      ]),
-    );
-
     const positionRows = [...latestByVehicle.values()];
 
     // Parse the provider payload once per vehicle — every downstream field reads from this.
@@ -721,19 +712,29 @@ export class IntegrationsService {
     const needsGeocoding = positionRows.filter(
       (row) => readingValue(telemetryByRow.get(row)!.positionDescription) === null,
     );
-    const addressResults = await this.resolvePositionAddresses(
-      companyId,
-      needsGeocoding.map((row) => ({ latitude: row.latitude, longitude: row.longitude })),
-    );
 
-    const assignedJobsByVehicleId = await this.loadAssignedJobsByVehicleId(
-      companyId,
-      positionRows
-        .map((row) => row.vehicleId)
-        .filter((id): id is string => Boolean(id)),
+    const [assigneeRows, addressResults, assignedJobsByVehicleId] = await Promise.all([
+      assigneeIds.length > 0
+        ? this.db.query.users.findMany({
+            where: and(eq(users.companyId, companyId), inArray(users.id, assigneeIds)),
+            columns: { id: true, firstName: true, lastName: true },
+          })
+        : Promise.resolve([]),
+      this.resolvePositionAddresses(
+        companyId,
+        needsGeocoding.map((row) => ({ latitude: row.latitude, longitude: row.longitude })),
+      ),
+      this.loadAssignedJobsByVehicleId(
+        companyId,
+        positionRows.map((row) => row.vehicleId).filter((id): id is string => Boolean(id)),
+      ),
+    ]);
+    const assigneesById = new Map(
+      assigneeRows.map((user) => [
+        user.id,
+        `${user.firstName} ${user.lastName}`.trim() || null,
+      ]),
     );
-
-    const syncIntervalMs = await this.getCartrackSyncIntervalMs(companyId);
 
     return {
       cartrackStatus: connection.status,

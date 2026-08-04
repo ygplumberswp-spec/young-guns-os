@@ -17,6 +17,20 @@ export async function fetchOpsIntelligenceSnapshot(
   return data.snapshot;
 }
 
+/**
+ * Forces a live re-evaluation. The read path deliberately serves the stored snapshot,
+ * so an Owner asking for current figures has to say so explicitly.
+ */
+export async function refreshOpsIntelligenceSnapshot(
+  accessToken: string,
+): Promise<OpsIntelligenceSnapshot> {
+  const data = await request<{ snapshot: OpsIntelligenceSnapshot }>(
+    '/ops-intelligence/snapshot/refresh',
+    { accessToken, method: 'POST' },
+  );
+  return data.snapshot;
+}
+
 export async function fetchOpsLiveStrip(accessToken: string): Promise<OpsLiveStrip> {
   const data = await request<{ liveStrip: OpsLiveStrip }>('/ops-intelligence/live-strip', {
     accessToken,

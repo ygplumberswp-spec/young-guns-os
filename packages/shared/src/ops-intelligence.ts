@@ -22,6 +22,134 @@ export const OPS_ON_ARRIVAL_RADIUS_METERS = 150;
 /** Suppress duplicate reminder emissions within this window. */
 export const OPS_REMINDER_DEDUPE_COOLDOWN_MS = 30 * 60_000;
 
+/**
+ * A stored evaluation younger than this is served as-is. The Owner dashboard reads
+ * the stored snapshot; live provider work happens on refresh, not in the render path.
+ */
+export const OPS_SNAPSHOT_FRESH_MS = 60_000;
+
+/** Past this age a stored evaluation is served but labelled stale, and a refresh is started. */
+export const OPS_SNAPSHOT_STALE_MS = 5 * 60_000;
+
+/** Beyond this the stored evaluation is too old to present as the current picture. */
+export const OPS_SNAPSHOT_MAX_SERVE_MS = 30 * 60_000;
+
+/** How long a cold request waits for a first evaluation before answering honestly instead. */
+export const OPS_SNAPSHOT_INLINE_DEADLINE_MS = 6_000;
+
+/** How soon the dashboard looks again after being told an evaluation is still running. */
+export const OPS_SNAPSHOT_FOLLOW_UP_MS = 5_000;
+
+/** Total wall-clock budget for live routing lookups in one evaluation. */
+export const OPS_TRAVEL_PROVIDER_BUDGET_MS = 5_000;
+
+/** Concurrent routing lookups — enough to beat serial latency without spiking provider usage. */
+export const OPS_TRAVEL_LOOKUP_CONCURRENCY = 4;
+
+/** Where one part of the Ops Intelligence picture comes from. */
+export type OpsSourceKey = 'schedule' | 'fleet_tracking' | 'travel_routing' | 'morning_brief';
+
+export type OpsSourceStatus =
+  | 'live'
+  | 'stale'
+  | 'not_configured'
+  | 'unavailable'
+  | 'timed_out';
+
+/** Honest per-source state so one slow provider never mislabels the whole card. */
+export type OpsSourceState = {
+  key: OpsSourceKey;
+  label: string;
+  status: OpsSourceStatus;
+  /** Plain-language reason when the status is not `live`. */
+  detail: string | null;
+};
+
+/**
+ * Overall state of a snapshot payload.
+ * - `live` — evaluated just now, every source answered
+ * - `partial` — evaluated now, but at least one source could not answer
+ * - `stale` — stored evaluation served while a refresh runs
+ * - `timed_out` — no stored evaluation and the first one did not finish in time
+ * - `unavailable` — the evaluation failed outright
+ */
+export type OpsSnapshotFreshness = 'live' | 'partial' | 'stale' | 'timed_out' | 'unavailable';
+
+const OPS_SOURCE_LABELS: Record<OpsSourceKey, string> = {
+  schedule: 'Schedule',
+  fleet_tracking: 'Cartrack tracking',
+  travel_routing: 'Google Maps routing',
+  morning_brief: 'Morning brief',
+};
+
+export function opsSourceLabel(key: OpsSourceKey): string {
+  return OPS_SOURCE_LABELS[key];
+}
+
+export function buildOpsSourceState(
+  key: OpsSourceKey,
+  status: OpsSourceStatus,
+  detail: string | null = null,
+): OpsSourceState {
+  return { key, label: OPS_SOURCE_LABELS[key], status, detail };
+}
+
+/** `live` only when every source answered; a single degraded source makes it `partial`. */
+export function resolveOpsSnapshotFreshness(sources: OpsSourceState[]): OpsSnapshotFreshness {
+  const degraded = sources.some(
+    (source) => source.status === 'unavailable' || source.status === 'timed_out',
+  );
+  return degraded ? 'partial' : 'live';
+}
+
+/** Age-based state for a stored evaluation that is being served without recomputing. */
+export function resolveStoredSnapshotFreshness(ageMs: number): OpsSnapshotFreshness {
+  if (ageMs <= OPS_SNAPSHOT_FRESH_MS) return 'live';
+  if (ageMs <= OPS_SNAPSHOT_MAX_SERVE_MS) return 'stale';
+  return 'unavailable';
+}
+
+export function formatOpsSnapshotFreshnessLabel(
+  freshness: OpsSnapshotFreshness,
+  ageSeconds: number,
+): string {
+  switch (freshness) {
+    case 'live':
+      return 'Live';
+    case 'partial':
+      return 'Partial — some sources did not answer';
+    case 'stale':
+      return `Stale — ${formatOpsAge(ageSeconds)} old, refreshing`;
+    case 'timed_out':
+      return 'Timed out — no figures rather than guessed ones';
+    case 'unavailable':
+    default:
+      return 'Unavailable';
+  }
+}
+
+export function formatOpsAge(ageSeconds: number): string {
+  if (!Number.isFinite(ageSeconds) || ageSeconds < 0) return 'unknown age';
+  if (ageSeconds < 60) return `${Math.round(ageSeconds)}s`;
+  const minutes = Math.round(ageSeconds / 60);
+  if (minutes < 60) return `${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  const rem = minutes % 60;
+  return rem === 0 ? `${hours} hr` : `${hours} hr ${rem} min`;
+}
+
+/** The one line the Live Fleet Map shows instead of blanking when insights lag behind. */
+export const OPS_INSIGHTS_DEGRADED_MESSAGE = 'Operational insights temporarily unavailable.';
+
+/**
+ * Whether the map card should keep its vehicles and drop only the insight numbers.
+ * Cartrack positions are independent of Ops Intelligence, so a slow evaluation must
+ * never take the map down with it.
+ */
+export function shouldKeepFleetMapOnOpsFailure(): true {
+  return true;
+}
+
 export type OpsTravelSource = 'google_maps' | 'default' | 'unavailable';
 
 export type OpsReminderType =
@@ -146,6 +274,16 @@ export type OpsIntelligenceSnapshot = {
   events: OpsIntelligenceEvent[];
   morningBrief: OpsMorningBrief;
   liveStrip: OpsLiveStrip;
+  /** How current this payload is — see {@link OpsSnapshotFreshness}. */
+  freshness: OpsSnapshotFreshness;
+  /** Age of the underlying evaluation. 0 when it was just computed. */
+  ageSeconds: number;
+  /** True while a background refresh is running for this company. */
+  refreshing: boolean;
+  /** False when TITAN has no evaluation yet and is reporting that instead of zeros. */
+  dataAvailable: boolean;
+  /** Per-source honesty behind the headline state. */
+  sources: OpsSourceState[];
   /** Explicit V1 guarantees. */
   guarantees: {
     autoCustomerMessages: false;

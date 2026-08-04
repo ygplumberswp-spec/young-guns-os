@@ -2,20 +2,28 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
   OPS_DEFAULT_TRAVEL_FALLBACK_MINUTES,
+  OPS_INSIGHTS_DEGRADED_MESSAGE,
   OPS_INTELLIGENCE_GUARANTEES,
+  OPS_SNAPSHOT_FRESH_MS,
+  OPS_SNAPSHOT_MAX_SERVE_MS,
   buildNavigateHref,
   buildOpsReminderDedupeKey,
+  buildOpsSourceState,
   buildRouteOptimisationSuggestedAction,
   buildRunningLateSuggestedActions,
   buildStandardEventActions,
   computeLeaveByMs,
   detectJobScheduleReminder,
+  formatOpsSnapshotFreshnessLabel,
   isLeaveNow,
   isNextJobApproaching,
   isOnArrival,
   isRunningLate,
   resolveOpsMapsCapability,
+  resolveOpsSnapshotFreshness,
+  resolveStoredSnapshotFreshness,
   shouldEmitReminder,
+  shouldKeepFleetMapOnOpsFailure,
 } from './ops-intelligence.js';
 
 describe('ops-intelligence leave-by timing', () => {
@@ -236,5 +244,45 @@ describe('ops-intelligence dedupe + advisory guarantees', () => {
       includeRouteOptimisation: true,
     });
     assert.ok(standard.some((a) => a.type === 'suggest_route_order'));
+  });
+});
+
+describe('ops-intelligence honesty states', () => {
+  it('calls a snapshot partial when any single source could not answer', () => {
+    const healthy = [
+      buildOpsSourceState('schedule', 'live'),
+      buildOpsSourceState('fleet_tracking', 'live'),
+      buildOpsSourceState('travel_routing', 'not_configured'),
+      buildOpsSourceState('morning_brief', 'live'),
+    ];
+    assert.equal(resolveOpsSnapshotFreshness(healthy), 'live');
+
+    const routingTimedOut = [
+      ...healthy.slice(0, 2),
+      buildOpsSourceState('travel_routing', 'timed_out', 'Routing budget spent.'),
+      buildOpsSourceState('morning_brief', 'live'),
+    ];
+    assert.equal(resolveOpsSnapshotFreshness(routingTimedOut), 'partial');
+  });
+
+  it('distinguishes live, stale and too-old stored snapshots by age', () => {
+    assert.equal(resolveStoredSnapshotFreshness(0), 'live');
+    assert.equal(resolveStoredSnapshotFreshness(OPS_SNAPSHOT_FRESH_MS), 'live');
+    assert.equal(resolveStoredSnapshotFreshness(OPS_SNAPSHOT_FRESH_MS + 1), 'stale');
+    assert.equal(resolveStoredSnapshotFreshness(OPS_SNAPSHOT_MAX_SERVE_MS), 'stale');
+    assert.equal(resolveStoredSnapshotFreshness(OPS_SNAPSHOT_MAX_SERVE_MS + 1), 'unavailable');
+  });
+
+  it('labels each state without implying data it does not have', () => {
+    assert.equal(formatOpsSnapshotFreshnessLabel('live', 0), 'Live');
+    assert.match(formatOpsSnapshotFreshnessLabel('partial', 0), /Partial/);
+    assert.match(formatOpsSnapshotFreshnessLabel('stale', 300), /Stale — 5 min old/);
+    assert.match(formatOpsSnapshotFreshnessLabel('timed_out', 0), /Timed out/);
+    assert.equal(formatOpsSnapshotFreshnessLabel('unavailable', 0), 'Unavailable');
+  });
+
+  it('keeps the fleet map when ops intelligence is the part that failed', () => {
+    assert.equal(shouldKeepFleetMapOnOpsFailure(), true);
+    assert.match(OPS_INSIGHTS_DEGRADED_MESSAGE, /Operational insights temporarily unavailable/);
   });
 });

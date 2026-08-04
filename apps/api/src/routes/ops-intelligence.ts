@@ -59,6 +59,13 @@ export function createOpsIntelligenceRouter({
     res.json({ data: { snapshot } });
   });
 
+  /** Owner-triggered refresh — the live provider work runs here, not in the dashboard read. */
+  router.post('/snapshot/refresh', requireRead, async (req, res) => {
+    const { companyId } = getAuth(req);
+    const snapshot = await opsIntelligenceService.refreshSnapshot(companyId);
+    res.json({ data: { snapshot } });
+  });
+
   router.get('/morning-brief', requireRead, async (req, res) => {
     const { companyId } = getAuth(req);
     const morningBrief = await opsIntelligenceService.getMorningBrief(companyId);

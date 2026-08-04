@@ -1,6 +1,11 @@
+import { useEffect } from 'react';
+import { OPS_SNAPSHOT_FOLLOW_UP_MS } from '@titan/shared';
 import { useAuth } from '../../lib/auth-context';
 import { fetchExecutiveDashboardSummary } from '../../lib/dashboard-api-client';
-import { fetchOpsIntelligenceSnapshot } from '../../lib/ops-intelligence-api-client';
+import {
+  fetchOpsIntelligenceSnapshot,
+  refreshOpsIntelligenceSnapshot,
+} from '../../lib/ops-intelligence-api-client';
 import { useStaffCachedQuery } from '../../lib/use-scoped-cached-query';
 import { SectionErrorBoundary } from '../../components/ux';
 import { useCartrackLivePositions } from '../dispatch/useCartrackLivePositions';
@@ -52,7 +57,31 @@ export function ExecutiveDashboard() {
   const opsSnapshot = opsQuery.data;
   const opsLoading = opsQuery.isLoading && !opsSnapshot;
   const opsEvents = opsSnapshot?.events ?? [];
+  const opsRefreshing = opsSnapshot?.refreshing ?? false;
+  const opsDataAvailable = opsSnapshot?.dataAvailable ?? true;
+  const opsGeneratedAt = opsSnapshot?.generatedAt ?? null;
+  const refetchOps = opsQuery.refetch;
+
+  // The snapshot says when an evaluation is still running behind it. Look again once
+  // it should have landed, so a stale or still-evaluating card catches up on its own
+  // instead of waiting for the Owner to reload the page.
+  useEffect(() => {
+    if (!opsRefreshing && opsDataAvailable) return;
+    const timer = setTimeout(() => void refetchOps(), OPS_SNAPSHOT_FOLLOW_UP_MS);
+    return () => clearTimeout(timer);
+  }, [opsRefreshing, opsDataAvailable, opsGeneratedAt, refetchOps]);
+
   const refetchSummary = () => void summaryQuery.refetch();
+  // Retry means "go and look again", so it triggers the live re-evaluation rather
+  // than re-reading the stored snapshot it just showed.
+  const refreshOps = () => {
+    void (async () => {
+      if (accessToken) {
+        await refreshOpsIntelligenceSnapshot(accessToken).catch(() => undefined);
+      }
+      await opsQuery.refetch();
+    })();
+  };
 
   return (
     <div className="exec-dashboard">
@@ -63,16 +92,13 @@ export function ExecutiveDashboard() {
       />
 
       {opsEvents.length > 0 || opsQuery.error ? (
-        <SectionErrorBoundary
-          sectionName="Operations intelligence"
-          onRetry={() => void opsQuery.refetch()}
-        >
+        <SectionErrorBoundary sectionName="Operations intelligence" onRetry={refreshOps}>
           <OpsIntelligenceAlerts
             events={opsEvents}
             generatedAt={opsSnapshot?.generatedAt ?? null}
             isLoading={opsLoading}
             error={opsQuery.error}
-            onRetry={() => void opsQuery.refetch()}
+            onRetry={refreshOps}
             onDismissed={() => void opsQuery.refetch()}
           />
         </SectionErrorBoundary>
@@ -122,6 +148,11 @@ export function ExecutiveDashboard() {
             opsStrip={opsSnapshot?.liveStrip ?? null}
             opsStripLoading={opsLoading}
             opsStripError={opsQuery.error}
+            opsFreshness={opsSnapshot?.freshness ?? null}
+            opsAgeSeconds={opsSnapshot?.ageSeconds ?? 0}
+            opsRefreshing={opsRefreshing}
+            opsDataAvailable={opsDataAvailable}
+            opsSources={opsSnapshot?.sources ?? []}
           />
         </SectionErrorBoundary>
         <SectionErrorBoundary sectionName="Outstanding invoices" onRetry={refetchSummary}>

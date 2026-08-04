@@ -16,6 +16,14 @@ export type TravelTimeRequest = {
    */
   vehicleOrigin?: { latitude: number; longitude: number } | null;
   defaultMinutes: number;
+  /**
+   * Connection state the caller already resolved. Supplying these keeps a
+   * per-job loop from re-reading the same two integration rows for every stop.
+   */
+  knownCartrackConnected?: boolean;
+  knownGoogleMapsConnected?: boolean;
+  /** Skip the routing call and answer with default minutes — used when the routing budget is spent. */
+  skipProviderLookup?: boolean;
 };
 
 export type TravelTimeResult = {
@@ -57,10 +65,11 @@ export class TravelTimeService {
   }
 
   async estimateTravelMinutes(input: TravelTimeRequest): Promise<TravelTimeResult> {
-    const cartrackConnected = await this.isCartrackConnected(input.companyId);
-    const googleMapsConnected = this.googleMapsService
-      ? await this.googleMapsService.isConnected(input.companyId)
-      : false;
+    const [cartrackConnected, googleMapsConnected] = await Promise.all([
+      input.knownCartrackConnected ?? this.isCartrackConnected(input.companyId),
+      input.knownGoogleMapsConnected ??
+        (this.googleMapsService ? this.googleMapsService.isConnected(input.companyId) : false),
+    ]);
 
     const vehicleOrigin =
       input.vehicleOrigin &&
@@ -68,17 +77,20 @@ export class TravelTimeService {
         ? input.vehicleOrigin
         : null;
 
-    const origin =
+    const [resolvedOrigin, resolvedDestination] = await Promise.all([
       vehicleOrigin ??
-      input.origin ??
-      (input.fromJobId ? await this.loadJobCoords(input.companyId, input.fromJobId) : null);
-    const destination =
+        input.origin ??
+        (input.fromJobId ? this.loadJobCoords(input.companyId, input.fromJobId) : null),
       input.destination ??
-      (input.toJobId ? await this.loadJobCoords(input.companyId, input.toJobId) : null);
+        (input.toJobId ? this.loadJobCoords(input.companyId, input.toJobId) : null),
+    ]);
+    const origin = resolvedOrigin;
+    const destination = resolvedDestination;
 
     const vehicleOriginUsed = Boolean(vehicleOrigin && origin === vehicleOrigin);
 
     if (
+      !input.skipProviderLookup &&
       googleMapsConnected &&
       this.googleMapsService &&
       origin &&
@@ -119,7 +131,10 @@ export class TravelTimeService {
     }
 
     let warning: string | null = null;
-    if (googleMapsConnected && (!origin || !destination)) {
+    if (input.skipProviderLookup && googleMapsConnected) {
+      warning =
+        'Live routing was skipped for this stop — the routing budget for this refresh was already spent. Using default travel minutes.';
+    } else if (googleMapsConnected && (!origin || !destination)) {
       warning =
         vehicleOrigin == null && cartrackConnected
           ? 'Travel estimate is approximate: Cartrack is connected but no live vehicle coordinates were supplied, and one or both endpoints lack verified coordinates — using default travel minutes.'

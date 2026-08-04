@@ -19,14 +19,21 @@ import type {
   OpsMorningBrief,
   OpsReminderStateSummary,
   OpsReminderType,
+  OpsSourceState,
   OpsTravelEstimate,
   OpsTravelSource,
 } from '@titan/shared';
 import {
   OPS_DEFAULT_TRAVEL_FALLBACK_MINUTES,
   OPS_INTELLIGENCE_GUARANTEES,
+  OPS_SNAPSHOT_FRESH_MS,
+  OPS_SNAPSHOT_INLINE_DEADLINE_MS,
+  OPS_SNAPSHOT_MAX_SERVE_MS,
+  OPS_TRAVEL_LOOKUP_CONCURRENCY,
+  OPS_TRAVEL_PROVIDER_BUDGET_MS,
   buildNavigateHref,
   buildOpsReminderDedupeKey,
+  buildOpsSourceState,
   buildRouteOptimisationSuggestedAction,
   buildRunningLateSuggestedActions,
   buildStandardEventActions,
@@ -36,6 +43,8 @@ import {
   isValidLatLng,
   localPlanDateIso,
   resolveOpsMapsCapability,
+  resolveOpsSnapshotFreshness,
+  resolveStoredSnapshotFreshness,
   shouldEmitReminder,
   computeLeaveByMs,
 } from '@titan/shared';
@@ -78,6 +87,71 @@ type JobRow = {
   executionPhase: string;
 };
 
+/** One evaluation of the live picture, plus the honesty state behind it. */
+type OpsEvaluation = {
+  events: OpsIntelligenceEvent[];
+  liveStrip: OpsLiveStrip;
+  morningBrief: OpsMorningBrief;
+  mapsCapability: ReturnType<typeof resolveOpsMapsCapability>;
+  cartrackConnected: boolean;
+  defaultTravelFallbackMinutes: number;
+  planDate: string;
+  sources: OpsSourceState[];
+};
+
+type StoredEvaluation = {
+  snapshot: OpsIntelligenceSnapshot;
+  computedAtMs: number;
+};
+
+/**
+ * Runs tasks a few at a time. Serial awaits were the whole problem here, but an
+ * unbounded fan-out would push the small database pool over and hurt every other
+ * request on the page.
+ */
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  limit: number,
+  worker: (item: T, index: number) => Promise<R>,
+): Promise<R[]> {
+  if (items.length === 0) return [];
+  const results = new Array<R>(items.length);
+  let cursor = 0;
+  const runners = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    for (;;) {
+      const index = cursor++;
+      if (index >= items.length) return;
+      results[index] = await worker(items[index]!, index);
+    }
+  });
+  await Promise.all(runners);
+  return results;
+}
+
+/**
+ * Waits up to `ms` for a promise. The promise keeps running either way — the caller
+ * simply stops waiting, so a slow evaluation still lands in the store for the next read.
+ */
+async function withDeadline<T>(
+  promise: Promise<T>,
+  ms: number,
+): Promise<{ completed: true; value: T } | { completed: false }> {
+  let timer: NodeJS.Timeout | undefined;
+  const expiry = new Promise<{ completed: false }>((resolve) => {
+    timer = setTimeout(() => resolve({ completed: false }), ms);
+  });
+  try {
+    return await Promise.race([
+      promise.then((value) => ({ completed: true as const, value })).catch(() => ({
+        completed: false as const,
+      })),
+      expiry,
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
 function dayBounds(planDate: string): { start: Date; end: Date } {
   const start = new Date(`${planDate}T00:00:00`);
   const end = new Date(start);
@@ -101,6 +175,10 @@ function technicianDisplayName(
 
 export class OpsIntelligenceService {
   private readonly travelTime: TravelTimeService;
+  /** Last completed evaluation per company — the dashboard reads this, not the providers. */
+  private readonly stored = new Map<string, StoredEvaluation>();
+  /** One refresh per company at a time; concurrent readers share it. */
+  private readonly refreshing = new Map<string, Promise<OpsIntelligenceSnapshot>>();
 
   constructor(
     private readonly db: DatabaseClient,
@@ -111,40 +189,171 @@ export class OpsIntelligenceService {
     this.travelTime = new TravelTimeService(db, googleMapsService);
   }
 
-  async getSnapshot(companyId: string): Promise<OpsIntelligenceSnapshot> {
-    const planDate = localPlanDateIso();
-    const now = new Date();
-    const { events, liveStrip, mapsCapability, cartrackConnected, defaultTravelFallbackMinutes } =
-      await this.evaluateLive(companyId, planDate, now);
-    const morningBrief = await this.buildMorningBrief(companyId, planDate);
+  /**
+   * Serves the stored evaluation and refreshes behind the request.
+   *
+   * A live evaluation reads scheduling, Cartrack and Google routing, so putting it in
+   * the dashboard's render path meant the Live Fleet Map card waited on every provider
+   * before it could show anything. It now waits on none of them: a stored evaluation
+   * answers immediately, and a cold start is bounded by
+   * {@link OPS_SNAPSHOT_INLINE_DEADLINE_MS} and reports honestly if it needs longer.
+   */
+  async getSnapshot(
+    companyId: string,
+    options: { forceRefresh?: boolean } = {},
+  ): Promise<OpsIntelligenceSnapshot> {
+    const stored = options.forceRefresh ? undefined : this.stored.get(companyId);
 
-    return {
-      generatedAt: now.toISOString(),
-      planDate,
-      mapsCapability,
-      cartrackConnected,
-      defaultTravelFallbackMinutes,
-      events,
-      morningBrief,
-      liveStrip,
-      guarantees: OPS_INTELLIGENCE_GUARANTEES,
-    };
+    if (stored) {
+      const ageMs = Date.now() - stored.computedAtMs;
+      if (ageMs <= OPS_SNAPSHOT_FRESH_MS) {
+        return this.present(stored, ageMs, this.refreshing.has(companyId));
+      }
+      if (ageMs <= OPS_SNAPSHOT_MAX_SERVE_MS) {
+        void this.startRefresh(companyId);
+        return this.present(stored, ageMs, true);
+      }
+    }
+
+    const refresh = this.startRefresh(companyId, options.forceRefresh === true);
+    const fresh = await withDeadline(refresh, OPS_SNAPSHOT_INLINE_DEADLINE_MS);
+    if (fresh.completed) return fresh.value;
+
+    // The evaluation is still running and will populate the store when it lands.
+    const fallback = this.stored.get(companyId);
+    if (fallback) {
+      return this.present(fallback, Date.now() - fallback.computedAtMs, true);
+    }
+    return this.buildPendingSnapshot(companyId);
+  }
+
+  /** Explicit Owner-triggered refresh — bypasses the stored evaluation. */
+  async refreshSnapshot(companyId: string): Promise<OpsIntelligenceSnapshot> {
+    return this.getSnapshot(companyId, { forceRefresh: true });
   }
 
   async getMorningBrief(companyId: string): Promise<OpsMorningBrief> {
-    return this.buildMorningBrief(companyId, localPlanDateIso());
+    return (await this.getSnapshot(companyId)).morningBrief;
   }
 
   async getLiveStrip(companyId: string): Promise<OpsLiveStrip> {
-    const planDate = localPlanDateIso();
-    const { liveStrip } = await this.evaluateLive(companyId, planDate, new Date());
-    return liveStrip;
+    return (await this.getSnapshot(companyId)).liveStrip;
   }
 
   async getEvents(companyId: string): Promise<OpsIntelligenceEvent[]> {
+    return (await this.getSnapshot(companyId)).events;
+  }
+
+  /** Drops the stored evaluation so an acknowledged reminder stops being reported. */
+  private invalidate(companyId: string): void {
+    this.stored.delete(companyId);
+  }
+
+  private startRefresh(companyId: string, force = false): Promise<OpsIntelligenceSnapshot> {
+    const existing = this.refreshing.get(companyId);
+    if (existing && !force) return existing;
+
+    const run = (async () => {
+      const now = new Date();
+      const planDate = localPlanDateIso();
+      const evaluation = await this.evaluateLive(companyId, planDate, now);
+      const snapshot: OpsIntelligenceSnapshot = {
+        generatedAt: now.toISOString(),
+        planDate: evaluation.planDate,
+        mapsCapability: evaluation.mapsCapability,
+        cartrackConnected: evaluation.cartrackConnected,
+        defaultTravelFallbackMinutes: evaluation.defaultTravelFallbackMinutes,
+        events: evaluation.events,
+        morningBrief: evaluation.morningBrief,
+        liveStrip: evaluation.liveStrip,
+        freshness: resolveOpsSnapshotFreshness(evaluation.sources),
+        ageSeconds: 0,
+        refreshing: false,
+        dataAvailable: true,
+        sources: evaluation.sources,
+        guarantees: OPS_INTELLIGENCE_GUARANTEES,
+      };
+      this.stored.set(companyId, { snapshot, computedAtMs: Date.now() });
+      return snapshot;
+    })();
+
+    const tracked = run.finally(() => {
+      if (this.refreshing.get(companyId) === tracked) this.refreshing.delete(companyId);
+    });
+    this.refreshing.set(companyId, tracked);
+    // A background refresh must never surface as an unhandled rejection.
+    tracked.catch(() => {});
+    return tracked;
+  }
+
+  private present(
+    stored: StoredEvaluation,
+    ageMs: number,
+    refreshing: boolean,
+  ): OpsIntelligenceSnapshot {
+    const ageSeconds = Math.max(0, Math.round(ageMs / 1000));
+    const aged = resolveStoredSnapshotFreshness(ageMs);
+    // A partial evaluation stays partial however recently it ran.
+    const freshness =
+      aged === 'live' && stored.snapshot.freshness === 'partial' ? 'partial' : aged;
+    return { ...stored.snapshot, freshness, ageSeconds, refreshing };
+  }
+
+  /**
+   * What TITAN returns before it has ever evaluated this company: no counts, no
+   * invented figures, and a state the UI can label truthfully.
+   */
+  private buildPendingSnapshot(companyId: string): OpsIntelligenceSnapshot {
     const planDate = localPlanDateIso();
-    const { events } = await this.evaluateLive(companyId, planDate, new Date());
-    return events;
+    const now = new Date();
+    const note =
+      'TITAN is still evaluating operations for today. No figures are shown until the evaluation completes.';
+    return {
+      generatedAt: now.toISOString(),
+      planDate,
+      mapsCapability: 'not_configured',
+      cartrackConnected: false,
+      defaultTravelFallbackMinutes: OPS_DEFAULT_TRAVEL_FALLBACK_MINUTES,
+      events: [],
+      morningBrief: {
+        generatedAt: now.toISOString(),
+        planDate,
+        summaryLine: note,
+        sections: [],
+        highestPriorities: [],
+        auraHref: '/aura',
+        weatherIncluded: false,
+        weatherNote: 'Weather omitted — no weather provider is connected in TITAN.',
+        honestyNotes: [note],
+      },
+      liveStrip: {
+        generatedAt: now.toISOString(),
+        counts: {
+          techniciansDriving: 0,
+          lateArrivals: 0,
+          upcomingDepartures: 0,
+          longestTravelMinutes: null,
+          longestTravelLabel: null,
+          jobsWaiting: 0,
+          completedJobs: 0,
+          emergencyQueue: 0,
+        },
+        mapsCapability: 'not_configured',
+        cartrackConnected: false,
+        honestyNotes: [note],
+      },
+      freshness: 'timed_out',
+      ageSeconds: 0,
+      refreshing: this.refreshing.has(companyId),
+      dataAvailable: false,
+      sources: [
+        buildOpsSourceState('schedule', 'timed_out', note),
+        buildOpsSourceState('fleet_tracking', 'timed_out', note),
+        buildOpsSourceState('travel_routing', 'timed_out', note),
+        buildOpsSourceState('morning_brief', 'timed_out', note),
+      ],
+      guarantees: OPS_INTELLIGENCE_GUARANTEES,
+    };
   }
 
   async acknowledgeReminder(
@@ -178,6 +387,9 @@ export class OpsIntelligenceService {
     if (!updated) {
       throw new OpsIntelligenceError('NOT_FOUND', 'Reminder state not found');
     }
+
+    // The stored evaluation still lists this reminder — drop it so the next read re-evaluates.
+    this.invalidate(scope.companyId);
 
     return {
       id: updated.id,
@@ -223,6 +435,7 @@ export class OpsIntelligenceService {
       if (!created) {
         throw new OpsIntelligenceError('WRITE_FAILED', 'Unable to persist reminder acknowledgement');
       }
+      this.invalidate(scope.companyId);
       return {
         id: created.id,
         reminderType: created.reminderType,
@@ -252,27 +465,45 @@ export class OpsIntelligenceService {
     return 'next_job_approaching';
   }
 
-  private async evaluateLive(companyId: string, planDate: string, now: Date) {
+  private async evaluateLive(
+    companyId: string,
+    planDate: string,
+    now: Date,
+  ): Promise<OpsEvaluation> {
     const { start, end } = dayBounds(planDate);
-    const settings = await this.db.query.companySchedulingSettings.findFirst({
-      where: eq(companySchedulingSettings.companyId, companyId),
-    });
+
+    // None of these five reads depends on another. Awaiting them one after the other
+    // cost five sequential database round trips before any work could start.
+    const [settings, googleMapsConnected, fleet, todayJobsRows, existingStates, morningBrief] =
+      await Promise.all([
+        this.db.query.companySchedulingSettings.findFirst({
+          where: eq(companySchedulingSettings.companyId, companyId),
+        }),
+        this.googleMapsService.isConnected(companyId),
+        this.integrationsService.buildFleetTrackingContext(companyId),
+        this.db.query.jobs.findMany({
+          where: and(
+            eq(jobs.companyId, companyId),
+            gte(jobs.scheduledAt, start),
+            lt(jobs.scheduledAt, end),
+            inArray(jobs.status, ['scheduled', 'in_progress', 'completed']),
+          ),
+          orderBy: [asc(jobs.scheduledAt)],
+        }),
+        this.db.query.opsIntelligenceReminderStates.findMany({
+          where: and(
+            eq(opsIntelligenceReminderStates.companyId, companyId),
+            eq(opsIntelligenceReminderStates.planDate, planDate),
+          ),
+        }),
+        this.buildMorningBrief(companyId, planDate),
+      ]);
+
     const defaultTravelFallbackMinutes =
       settings?.defaultTravelMinutes ?? OPS_DEFAULT_TRAVEL_FALLBACK_MINUTES;
-
-    const googleMapsConnected = await this.googleMapsService.isConnected(companyId);
-    const fleet = await this.integrationsService.buildFleetTrackingContext(companyId);
     const cartrackConnected = fleet.cartrackConnected;
-
-    const todayJobs = (await this.db.query.jobs.findMany({
-      where: and(
-        eq(jobs.companyId, companyId),
-        gte(jobs.scheduledAt, start),
-        lt(jobs.scheduledAt, end),
-        inArray(jobs.status, ['scheduled', 'in_progress', 'completed']),
-      ),
-      orderBy: [asc(jobs.scheduledAt)],
-    })) as JobRow[];
+    const todayJobs = todayJobsRows as JobRow[];
+    const stateByKey = new Map(existingStates.map((s) => [s.dedupeKey, s]));
 
     const mapsCapability = resolveOpsMapsCapability({
       googleMapsConnected,
@@ -282,13 +513,24 @@ export class OpsIntelligenceService {
     const techIds = [
       ...new Set(todayJobs.map((j) => j.assignedUserId).filter((id): id is string => Boolean(id))),
     ];
-    const techRows =
+    const vehicleIds = fleet.latestPositions
+      .map((p) => p.vehicleId)
+      .filter((id): id is string => Boolean(id));
+
+    const [techRows, vehicleRows] = await Promise.all([
       techIds.length > 0
-        ? await this.db.query.users.findMany({
+        ? this.db.query.users.findMany({
             where: and(eq(users.companyId, companyId), inArray(users.id, techIds)),
             columns: { id: true, firstName: true, lastName: true },
           })
-        : [];
+        : Promise.resolve([]),
+      vehicleIds.length > 0
+        ? this.db.query.vehicles.findMany({
+            where: and(eq(vehicles.companyId, companyId), inArray(vehicles.id, vehicleIds)),
+            columns: { id: true, assignedUserId: true },
+          })
+        : Promise.resolve([] as Array<{ id: string; assignedUserId: string | null }>),
+    ]);
     const techById = new Map(techRows.map((u) => [u.id, u]));
 
     const positionsByUser = new Map<
@@ -296,42 +538,27 @@ export class OpsIntelligenceService {
       { latitude: number; longitude: number; speedKmh: number | null; recordedAt: string }
     >();
     // Resolve GPS via vehicle assignedUserId when available — never invent positions.
-    const vehicleIds = fleet.latestPositions
-      .map((p) => p.vehicleId)
-      .filter((id): id is string => Boolean(id));
-    if (vehicleIds.length > 0) {
-      const vehicleRows = await this.db.query.vehicles.findMany({
-        where: and(eq(vehicles.companyId, companyId), inArray(vehicles.id, vehicleIds)),
-        columns: { id: true, assignedUserId: true },
+    const vehicleUser = new Map(
+      vehicleRows
+        .filter((v) => v.assignedUserId)
+        .map((v) => [v.id, v.assignedUserId as string]),
+    );
+    for (const position of fleet.latestPositions) {
+      if (!position.vehicleId) continue;
+      const userId = vehicleUser.get(position.vehicleId);
+      if (!userId) continue;
+      if (!isValidLatLng(position.latitude, position.longitude)) continue;
+      positionsByUser.set(userId, {
+        latitude: position.latitude,
+        longitude: position.longitude,
+        speedKmh: position.speedKmh,
+        recordedAt: position.recordedAt,
       });
-      const vehicleUser = new Map(
-        vehicleRows
-          .filter((v) => v.assignedUserId)
-          .map((v) => [v.id, v.assignedUserId as string]),
-      );
-      for (const position of fleet.latestPositions) {
-        if (!position.vehicleId) continue;
-        const userId = vehicleUser.get(position.vehicleId);
-        if (!userId) continue;
-        if (!isValidLatLng(position.latitude, position.longitude)) continue;
-        positionsByUser.set(userId, {
-          latitude: position.latitude,
-          longitude: position.longitude,
-          speedKmh: position.speedKmh,
-          recordedAt: position.recordedAt,
-        });
-      }
     }
 
-    const existingStates = await this.db.query.opsIntelligenceReminderStates.findMany({
-      where: and(
-        eq(opsIntelligenceReminderStates.companyId, companyId),
-        eq(opsIntelligenceReminderStates.planDate, planDate),
-      ),
-    });
-    const stateByKey = new Map(existingStates.map((s) => [s.dedupeKey, s]));
-
     const events: OpsIntelligenceEvent[] = [];
+    /** Reminder persistence and notifications — flushed once the response is shaped. */
+    const followUpWrites: Array<() => Promise<void>> = [];
     const travelByJobId = new Map<string, OpsTravelEstimate>();
     let longestTravelMinutes: number | null = null;
     let longestTravelLabel: string | null = null;
@@ -358,6 +585,15 @@ export class OpsIntelligenceService {
       byTech.set(key, list);
     }
 
+    // Every stop, in schedule order, with the origin/destination already resolved.
+    type Stop = {
+      job: JobRow;
+      previous: JobRow | null;
+      techPos: { latitude: number; longitude: number } | undefined;
+      origin: { latitude: number; longitude: number } | null;
+      destination: { latitude: number; longitude: number } | null;
+    };
+    const stops: Stop[] = [];
     for (const [, techJobs] of byTech) {
       techJobs.sort(
         (a, b) => (a.scheduledAt?.getTime() ?? 0) - (b.scheduledAt?.getTime() ?? 0),
@@ -366,10 +602,10 @@ export class OpsIntelligenceService {
         const job = techJobs[i]!;
         if (!job.scheduledAt) continue;
 
-        const previous = i > 0 ? techJobs[i - 1] : null;
+        const previous = i > 0 ? techJobs[i - 1]! : null;
         const techPos = job.assignedUserId ? positionsByUser.get(job.assignedUserId) : undefined;
 
-        let origin =
+        const origin =
           techPos != null
             ? { latitude: techPos.latitude, longitude: techPos.longitude }
             : previous &&
@@ -389,14 +625,43 @@ export class OpsIntelligenceService {
             ? { latitude: job.snapshotLatitude, longitude: job.snapshotLongitude }
             : null;
 
-        const travelResult = await this.travelTime.estimateTravelMinutes({
+        stops.push({ job, previous, techPos, origin, destination });
+      }
+    }
+
+    /**
+     * Routing runs a few stops at a time against a shared wall-clock budget, with the
+     * connection state passed in. Previously each stop re-read the Cartrack and Google
+     * rows and then waited on Google before the next stop could start, so a day's
+     * schedule turned into a chain of provider calls the dashboard had to sit through.
+     */
+    let routingBudgetSpent = false;
+    const routingDeadline = Date.now() + OPS_TRAVEL_PROVIDER_BUDGET_MS;
+    const travelResults = await mapWithConcurrency(
+      stops,
+      OPS_TRAVEL_LOOKUP_CONCURRENCY,
+      async (stop) => {
+        const overBudget = Date.now() >= routingDeadline;
+        if (overBudget) routingBudgetSpent = true;
+        return this.travelTime.estimateTravelMinutes({
           companyId,
-          fromJobId: previous?.id,
-          toJobId: job.id,
-          origin,
-          destination,
+          fromJobId: stop.previous?.id,
+          toJobId: stop.job.id,
+          origin: stop.origin,
+          destination: stop.destination,
           defaultMinutes: defaultTravelFallbackMinutes,
+          knownCartrackConnected: cartrackConnected,
+          knownGoogleMapsConnected: googleMapsConnected,
+          skipProviderLookup: overBudget,
         });
+      },
+    );
+
+    for (const [index, stop] of stops.entries()) {
+      {
+        const { job, techPos } = stop;
+        if (!job.scheduledAt) continue;
+        const travelResult = travelResults[index]!;
 
         const source: OpsTravelSource =
           travelResult.source === 'google_maps'
@@ -511,31 +776,36 @@ export class OpsIntelligenceService {
         });
         if (!shouldNotify) continue;
 
-        await this.persistNotifiedState({
-          companyId,
-          reminderType: effectiveType,
-          dedupeKey,
-          jobId: job.id,
-          technicianId: job.assignedUserId,
-          planDate,
-          summary: event.title,
-          existingId: existing?.id,
-          now,
-        });
-
-        // Technician leave-now in-app notification (never customer-facing).
-        if (effectiveType === 'leave_now' && job.assignedUserId) {
-          await this.notificationService.createNotification({
+        // Reminder bookkeeping does not shape the response, so it is collected here
+        // and flushed together rather than blocking each stop in turn.
+        const assignedUserId = job.assignedUserId;
+        followUpWrites.push(async () => {
+          await this.persistNotifiedState({
             companyId,
-            recipientType: 'staff',
-            recipientUserId: job.assignedUserId,
-            notificationType: 'dispatch_alert',
-            title: event.title,
-            body: event.body,
-            entityType: 'job',
-            entityId: job.id,
+            reminderType: effectiveType,
+            dedupeKey,
+            jobId: job.id,
+            technicianId: assignedUserId,
+            planDate,
+            summary: event.title,
+            existingId: existing?.id,
+            now,
           });
-        }
+
+          // Technician leave-now in-app notification (never customer-facing).
+          if (effectiveType === 'leave_now' && assignedUserId) {
+            await this.notificationService.createNotification({
+              companyId,
+              recipientType: 'staff',
+              recipientUserId: assignedUserId,
+              notificationType: 'dispatch_alert',
+              title: event.title,
+              body: event.body,
+              entityType: 'job',
+              entityId: job.id,
+            });
+          }
+        });
       }
     }
 
@@ -621,16 +891,19 @@ export class OpsIntelligenceService {
           nowMs: now.getTime(),
         })
       ) {
-        await this.persistNotifiedState({
-          companyId,
-          reminderType: 'post_completion_next_job',
-          dedupeKey,
-          jobId: nextJob.id,
-          technicianId: completed.assignedUserId,
-          planDate,
-          summary: event.title,
-          existingId: existing?.id,
-          now,
+        const technicianId = completed.assignedUserId;
+        followUpWrites.push(async () => {
+          await this.persistNotifiedState({
+            companyId,
+            reminderType: 'post_completion_next_job',
+            dedupeKey,
+            jobId: nextJob.id,
+            technicianId,
+            planDate,
+            summary: event.title,
+            existingId: existing?.id,
+            now,
+          });
         });
       }
     }
@@ -644,7 +917,9 @@ export class OpsIntelligenceService {
     });
     const briefState = stateByKey.get(briefKey);
     if (briefState?.status !== 'acknowledged' && briefState?.status !== 'dismissed') {
-      const brief = await this.buildMorningBrief(companyId, planDate);
+      // The brief was already built alongside the other reads — building it a second
+      // time here was doubling the query count of every snapshot request.
+      const brief = morningBrief;
       // Surface morning brief in the morning window (before noon local) or when not yet notified.
       const localHour = now.getHours();
       const showBrief = localHour < 12 || briefState?.status == null;
@@ -695,20 +970,24 @@ export class OpsIntelligenceService {
             cooldownMs: 12 * 60 * 60_000,
           })
         ) {
-          await this.persistNotifiedState({
-            companyId,
-            reminderType: 'morning_brief',
-            dedupeKey: briefKey,
-            jobId: null,
-            technicianId: null,
-            planDate,
-            summary: brief.summaryLine,
-            existingId: briefState?.id,
-            now,
+          followUpWrites.push(async () => {
+            await this.persistNotifiedState({
+              companyId,
+              reminderType: 'morning_brief',
+              dedupeKey: briefKey,
+              jobId: null,
+              technicianId: null,
+              planDate,
+              summary: brief.summaryLine,
+              existingId: briefState?.id,
+              now,
+            });
           });
         }
       }
     }
+
+    await mapWithConcurrency(followUpWrites, OPS_TRAVEL_LOOKUP_CONCURRENCY, (write) => write());
 
     const techniciansDriving = fleet.latestPositions.filter(
       (p) => p.speedKmh != null && p.speedKmh > 5,
@@ -725,9 +1004,52 @@ export class OpsIntelligenceService {
         'Cartrack is not connected — technician driving/on-arrival uses stored GPS only when available.',
       );
     }
+    if (routingBudgetSpent) {
+      honestyNotes.push(
+        'Some stops fell back to default travel minutes — live routing ran out of time for this refresh.',
+      );
+    }
     honestyNotes.push(
       'Ops Intelligence never auto-messages customers or changes bookings. Owner approval required.',
     );
+
+    // Each source reports for itself so one degraded provider cannot take the card down.
+    const fleetStatus: OpsSourceState = !cartrackConnected
+      ? buildOpsSourceState(
+          'fleet_tracking',
+          'not_configured',
+          'Cartrack is not connected for this company.',
+        )
+      : fleet.lastError
+        ? buildOpsSourceState('fleet_tracking', 'unavailable', fleet.lastError)
+        : fleet.connectionDisplayState === 'stale' || fleet.connectionDisplayState === 'degraded'
+          ? buildOpsSourceState(
+              'fleet_tracking',
+              'stale',
+              'Cartrack positions are older than the expected sync interval.',
+            )
+          : buildOpsSourceState('fleet_tracking', 'live');
+
+    const routingStatus: OpsSourceState = !googleMapsConnected
+      ? buildOpsSourceState(
+          'travel_routing',
+          'not_configured',
+          'Google Maps routing is not connected — default travel minutes only.',
+        )
+      : routingBudgetSpent
+        ? buildOpsSourceState(
+            'travel_routing',
+            'timed_out',
+            'Live routing exceeded its budget for this refresh; the remaining stops used default travel minutes.',
+          )
+        : buildOpsSourceState('travel_routing', 'live');
+
+    const sources: OpsSourceState[] = [
+      buildOpsSourceState('schedule', 'live'),
+      fleetStatus,
+      routingStatus,
+      buildOpsSourceState('morning_brief', 'live'),
+    ];
 
     const liveStrip: OpsLiveStrip = {
       generatedAt: now.toISOString(),
@@ -749,9 +1071,12 @@ export class OpsIntelligenceService {
     return {
       events,
       liveStrip,
+      morningBrief,
       mapsCapability,
       cartrackConnected,
       defaultTravelFallbackMinutes,
+      planDate,
+      sources,
     };
   }
 

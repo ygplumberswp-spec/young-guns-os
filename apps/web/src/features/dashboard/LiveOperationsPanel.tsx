@@ -1,6 +1,12 @@
 import { useMemo } from 'react';
 import { Link } from 'wouter';
-import type { ExecutiveLiveJob, FleetTrackingContext, OpsLiveStrip } from '@titan/shared';
+import type {
+  ExecutiveLiveJob,
+  FleetTrackingContext,
+  OpsLiveStrip,
+  OpsSnapshotFreshness,
+  OpsSourceState,
+} from '@titan/shared';
 import {
   formatFleetConnectionDisplayLabel,
   formatVehicleMotionLabel,
@@ -24,6 +30,11 @@ type LiveOperationsPanelProps = {
   opsStrip?: OpsLiveStrip | null;
   opsStripLoading?: boolean;
   opsStripError?: string | null;
+  opsFreshness?: OpsSnapshotFreshness | null;
+  opsAgeSeconds?: number;
+  opsRefreshing?: boolean;
+  opsDataAvailable?: boolean;
+  opsSources?: OpsSourceState[];
   /** Typed seams for cameras / route playback / driver events — not rendered until enabled. */
   futureModules?: LiveOpsFutureModules;
 };
@@ -63,6 +74,11 @@ export function LiveOperationsPanel({
   opsStrip = null,
   opsStripLoading = false,
   opsStripError = null,
+  opsFreshness = null,
+  opsAgeSeconds = 0,
+  opsRefreshing = false,
+  opsDataAvailable = true,
+  opsSources = [],
   futureModules,
 }: LiveOperationsPanelProps) {
   const liveOpsExtensions = useMemo(
@@ -146,6 +162,11 @@ export function LiveOperationsPanel({
           strip={opsStrip}
           isLoading={opsStripLoading}
           error={opsStripError}
+          freshness={opsFreshness}
+          ageSeconds={opsAgeSeconds}
+          refreshing={opsRefreshing}
+          dataAvailable={opsDataAvailable}
+          sources={opsSources}
         />
 
         {showMapSurface ? (
