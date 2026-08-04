@@ -38,6 +38,9 @@ type DashboardSourceMetaProps = {
 /**
  * Provenance footer shown under every Owner dashboard card so the value on screen
  * can always be traced to a data source, a freshness timestamp and its module.
+ *
+ * Reads `Source · Updated · Status`. Status trails deliberately: on a healthy dashboard
+ * every card is live, so leading with it turned the state into repeated visual noise.
  */
 export function DashboardSourceMeta({
   source,
@@ -49,13 +52,13 @@ export function DashboardSourceMeta({
 }: DashboardSourceMetaProps) {
   return (
     <p className="exec-source-meta">
-      <span className={`exec-source-meta__state ${DASHBOARD_STATE_TONES[state]}`}>
-        {DASHBOARD_STATE_LABELS[state]}
-      </span>
-      {' · '}
       <span>Source: {source}</span>
       {' · '}
       <span>Updated {formatUpdatedLabel(updatedAt)}</span>
+      {' · '}
+      <span className={`exec-source-meta__state ${DASHBOARD_STATE_TONES[state]}`}>
+        {DASHBOARD_STATE_LABELS[state]}
+      </span>
       {href ? (
         <>
           {' · '}

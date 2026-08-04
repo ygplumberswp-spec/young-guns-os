@@ -1278,10 +1278,22 @@ a:focus-visible {
 .exec-dashboard-row {
   display: grid;
   gap: 0.875rem;
-  align-items: stretch;
+  align-items: start;
 }
 
-.exec-dashboard-row--primary,
+/*
+ * Operations is a two-column row so the live map can be the centrepiece: Live Operations
+ * owns the wider left column across both rows, and the two summary cards stack beside it.
+ */
+.exec-dashboard-row--primary {
+  grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr);
+}
+
+.exec-dashboard-row--primary > .exec-dashboard-row__wide {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+}
+
 .exec-dashboard-row--secondary {
   grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr);
 }
@@ -1296,9 +1308,13 @@ a:focus-visible {
   gap: 0.875rem;
 }
 
+/*
+ * Panels size to their content instead of stretching to the tallest sibling. Equal-height
+ * cards padded the short ones with dead space, which read as unfinished rather than dense.
+ */
 .exec-dashboard-row .titan-panel,
 .exec-dashboard-row__stack .titan-panel {
-  height: 100%;
+  height: auto;
 }
 
 .exec-dashboard-header {
@@ -2041,18 +2057,28 @@ a:focus-visible {
   color: var(--titan-text-muted);
 }
 
+/* Quiet by default: the status word only earns weight and colour when it needs action. */
 .exec-source-meta__state {
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  font-weight: 500;
+  letter-spacing: 0.01em;
 }
 
-.exec-source-meta__state.is-ok {
-  color: var(--titan-success, #15803d);
+.exec-source-meta__state.is-quiet {
+  color: inherit;
 }
 
 .exec-source-meta__state.is-warn {
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
   color: var(--titan-warning, #b45309);
+}
+
+.exec-source-meta__state.is-error {
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--titan-danger, #ef4444);
 }
 
 .exec-source-meta__state.is-muted {
@@ -2129,15 +2155,19 @@ a:focus-visible {
   text-decoration: underline;
 }
 
+/*
+ * Height lives here rather than as a pixel prop on GoogleMapView so the breakpoints below
+ * can actually shrink the map — an inline height silently beat every min-height override.
+ */
 .exec-live-ops-map {
-  min-height: 20rem;
+  height: 27.5rem;
   border-radius: var(--titan-radius-lg);
   overflow: hidden;
 }
 
 .exec-live-ops-map .titan-google-map,
 .exec-live-ops-map .titan-empty-state {
-  min-height: 20rem;
+  min-height: 100%;
 }
 
 .titan-address-autocomplete {
@@ -2707,14 +2737,20 @@ a:focus-visible {
 }
 
 @media (max-width: 1280px) {
-  .exec-dashboard-row--primary,
+  .exec-dashboard-row--primary {
+    grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);
+  }
+
   .exec-dashboard-row--secondary {
     grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
   }
 
-  .exec-dashboard-row--primary > :last-child,
   .exec-dashboard-row--secondary > :last-child {
     grid-column: 1 / -1;
+  }
+
+  .exec-live-ops-map {
+    height: 24rem;
   }
 
   .exec-schedule-overview__aside {
@@ -2742,6 +2778,11 @@ a:focus-visible {
     grid-template-columns: 1fr;
   }
 
+  .exec-dashboard-row--primary > .exec-dashboard-row__wide {
+    grid-column: auto;
+    grid-row: auto;
+  }
+
   .exec-dashboard-row--primary > :last-child,
   .exec-dashboard-row--secondary > :last-child {
     grid-column: auto;
@@ -2766,16 +2807,18 @@ a:focus-visible {
     min-height: 0;
   }
 
-  .exec-live-ops-map,
-  .exec-live-ops-map .titan-google-map,
-  .exec-live-ops-map .titan-empty-state {
-    min-height: 16rem;
+  .exec-live-ops-map {
+    height: 22rem;
   }
 }
 
 @media (max-width: 640px) {
   .exec-quick-links {
     grid-template-columns: 1fr;
+  }
+
+  .exec-live-ops-map {
+    height: 18rem;
   }
 
   .exec-completed-today--timeline::before {

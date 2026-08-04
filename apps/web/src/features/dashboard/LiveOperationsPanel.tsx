@@ -177,7 +177,7 @@ export function LiveOperationsPanel({
               <GoogleMapView
                 markers={mapMarkers}
                 cameraContextKey="live-ops"
-                height={320}
+                height="100%"
                 emptyTitle="Google Maps Unavailable"
                 emptyDescription="Cartrack positions or verified job coordinates exist, but Google Maps browser key is not configured. TITAN will not invent a map."
               />

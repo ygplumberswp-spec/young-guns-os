@@ -356,15 +356,12 @@
   min-width: 0;
 }
 
+/*
+ * Only the live map area gets a floor. Panels in the wide column used to inherit a
+ * min-height too, which padded Active Jobs and Schedule Overview with empty space.
+ */
 @media (min-width: 1440px) {
-  .exec-live-ops-fleet,
-  .exec-dashboard-row__wide .titan-panel {
+  .exec-live-ops-fleet {
     min-height: 20rem;
-  }
-}
-
-@media (min-width: 1920px) {
-  .exec-dashboard-row__wide .titan-panel {
-    min-height: 24rem;
   }
 }

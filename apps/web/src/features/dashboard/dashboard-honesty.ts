@@ -19,10 +19,14 @@ export const DASHBOARD_STATE_LABELS: Record<DashboardDataState, string> = {
   needs_setup: 'Needs setup',
 };
 
+/**
+ * Colour is reserved for states the Owner must act on. `live` stays quiet so a healthy
+ * dashboard reads as calm and a coloured footer always means "this one needs attention".
+ */
 export const DASHBOARD_STATE_TONES: Record<DashboardDataState, string> = {
-  live: 'is-ok',
+  live: 'is-quiet',
   partial: 'is-warn',
-  unavailable: 'is-muted',
+  unavailable: 'is-error',
   disconnected: 'is-muted',
   needs_setup: 'is-warn',
 };
