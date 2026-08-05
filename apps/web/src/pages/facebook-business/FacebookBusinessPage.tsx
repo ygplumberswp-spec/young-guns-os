@@ -15,6 +15,7 @@ import {
 } from '@titan/shared';
 import { PageHeader } from '../../components/ux';
 import { useAuth } from '../../lib/auth-context';
+import { FacebookConnectionActions } from '../../features/integrations/FacebookConnectionActions';
 import {
   acknowledgeFacebookPrivacy,
   approveAndSendFacebookReply,
@@ -203,9 +204,26 @@ export function FacebookBusinessPage() {
 
   async function handleLoadPages() {
     if (!accessToken || !canManage) return;
-    await withAction(async () => {
-      setPageDiscovery(await fetchFacebookPages(accessToken));
-    });
+    setError(null);
+    setSuccess(null);
+    setIsBusy(true);
+    try {
+      const discovery = await fetchFacebookPages(accessToken);
+      setPageDiscovery(discovery);
+      setSuccess(
+        discovery.pages.some((page) => page.selectable)
+          ? 'Selectable Pages loaded from Meta. Choose Young Guns Plumbing – Cape Town.'
+          : `${FACEBOOK_PAGE_DISCOVERY_STATUS_LABELS[discovery.status]}: ${discovery.detail}`,
+      );
+    } catch (err) {
+      setError(
+        err instanceof FacebookBusinessApiClientError
+          ? err.message
+          : 'Could not load Pages from Meta.',
+      );
+    } finally {
+      setIsBusy(false);
+    }
   }
 
   async function handleSelectPage(pageId: string) {
@@ -456,6 +474,7 @@ export function FacebookBusinessPage() {
               onSelectPage={handleSelectPage}
               onCheck={handleCheck}
               onDisconnect={handleDisconnect}
+              onReconnect={handleConnect}
             />
           ) : null}
 
@@ -580,6 +599,7 @@ function ConnectionTab({
   onSelectPage,
   onCheck,
   onDisconnect,
+  onReconnect,
 }: {
   connection: FacebookConnectionView | null;
   pageDiscovery: FacebookPagesDiscoveryResponse | null;
@@ -589,8 +609,16 @@ function ConnectionTab({
   onLoadPages: () => void;
   onSelectPage: (pageId: string) => void;
   onCheck: () => void;
-  onDisconnect: () => void;
+  onDisconnect: () => Promise<void>;
+  onReconnect: () => void;
 }) {
+  const [confirmDisconnect, setConfirmDisconnect] = useState(false);
+
+  async function handleDisconnectConfirmed() {
+    await onDisconnect();
+    setConfirmDisconnect(false);
+  }
+
   if (!connection) {
     return <Panel title="Connection">No connection information is available.</Panel>;
   }
@@ -674,24 +702,20 @@ function ConnectionTab({
 
       {canManage ? (
         <Panel title="Manage the connection">
-          <div className="flex flex-wrap gap-2">
-            <Button onClick={onConnect} disabled={isBusy || needsConfiguration}>
-              {connection.hasStoredCredentials ? 'Reconnect Facebook' : 'Connect Facebook'}
-            </Button>
-            <Button variant="secondary" onClick={onLoadPages} disabled={isBusy || needsConfiguration}>
-              Choose Page
-            </Button>
-            <Button variant="secondary" onClick={onCheck} disabled={isBusy}>
-              Run connection check
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={onDisconnect}
-              disabled={isBusy || !connection.hasStoredCredentials}
-            >
-              Disconnect
-            </Button>
-          </div>
+          <FacebookConnectionActions
+            connectionState={connection.state}
+            busy={isBusy}
+            canManage={canManage}
+            needsConfiguration={needsConfiguration}
+            confirmDisconnect={confirmDisconnect}
+            onConnect={onConnect}
+            onChoosePage={onLoadPages}
+            onCheckHealth={onCheck}
+            onReconnect={onReconnect}
+            onDisconnect={() => void handleDisconnectConfirmed()}
+            onRequestDisconnect={() => setConfirmDisconnect(true)}
+            onCancelDisconnect={() => setConfirmDisconnect(false)}
+          />
 
           {pageDiscovery ? (
             <div className="space-y-3">

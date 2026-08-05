@@ -23,6 +23,7 @@ import {
   startSocialConnectionOAuth,
 } from '../../lib/social-connection-api-client';
 import { useAuth } from '../../lib/auth-context';
+import { FacebookConnectionActions } from './FacebookConnectionActions';
 
 function statusPillModifier(status: SocialConnectionProviderCard['foundationStatus']): string {
   switch (status) {
@@ -55,6 +56,7 @@ function SocialConnectionCard({
 }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [setupOpen, setSetupOpen] = useState(false);
   const [setupText, setSetupText] = useState<string | null>(null);
   const [confirmDisconnect, setConfirmDisconnect] = useState(false);
@@ -63,6 +65,7 @@ function SocialConnectionCard({
   async function handleConnect() {
     setBusy(true);
     setError(null);
+    setSuccess(null);
     try {
       if (card.delegatedTo === 'facebook_business') {
         const result = await startFacebookOAuth(accessToken, '/facebook-business');
@@ -83,6 +86,7 @@ function SocialConnectionCard({
   async function handleReconnect() {
     setBusy(true);
     setError(null);
+    setSuccess(null);
     try {
       if (card.delegatedTo === 'facebook_business') {
         const result = await startFacebookOAuth(accessToken, '/facebook-business');
@@ -100,11 +104,14 @@ function SocialConnectionCard({
   async function handleHealth() {
     setBusy(true);
     setError(null);
+    setSuccess(null);
     try {
       if (card.delegatedTo === 'facebook_business') {
-        await checkFacebookConnection(accessToken);
+        const result = await checkFacebookConnection(accessToken);
+        setSuccess(`Check health complete — ${result.stateLabel}. ${result.detail}`);
       } else {
-        await checkSocialConnectionHealth(accessToken, card.provider);
+        const result = await checkSocialConnectionHealth(accessToken, card.provider);
+        setSuccess(result.message || 'Health check complete.');
       }
       onRefresh();
     } catch (err) {
@@ -117,11 +124,14 @@ function SocialConnectionCard({
   async function handleDisconnect() {
     setBusy(true);
     setError(null);
+    setSuccess(null);
     try {
       if (card.delegatedTo === 'facebook_business') {
         await disconnectFacebook(accessToken);
+        setSuccess('Facebook disconnected. Stored credentials were cleared.');
       } else {
         await disconnectSocialConnection(accessToken, card.provider);
+        setSuccess('Disconnected.');
       }
       setConfirmDisconnect(false);
       onRefresh();
@@ -202,68 +212,83 @@ function SocialConnectionCard({
         <p className="page-muted">Setup: {card.setupRequirementCategory.replace(/_/g, ' ')}</p>
       ) : null}
       {card.statusDetail ? <p className="page-muted">{card.statusDetail}</p> : null}
+      {success ? <p className="form-success">{success}</p> : null}
       {card.safeErrorMessage ? <p className="form-error">{card.safeErrorMessage}</p> : null}
       {error ? <p className="form-error">{error}</p> : null}
       {setupOpen && setupText ? (
         <pre className="social-connection-card__setup">{setupText}</pre>
       ) : null}
       {canManage ? (
-        <div className="social-connection-card__actions">
-          {card.canConnect ? (
-            <Button size="sm" variant="primary" disabled={busy} onClick={() => void handleConnect()}>
-              Connect
-            </Button>
-          ) : null}
-          {card.canCompleteAccountSelection && card.accountSelectionPath ? (
-            <Link href={card.accountSelectionPath}>
-              <Button size="sm" variant="primary" disabled={busy}>
-                Choose Page
+        card.delegatedTo === 'facebook_business' ? (
+          <FacebookConnectionActions
+            foundationStatus={card.foundationStatus}
+            busy={busy}
+            canManage={canManage}
+            confirmDisconnect={confirmDisconnect}
+            choosePageHref={card.accountSelectionPath}
+            showViewSetup={card.canViewSetupRequirements}
+            onConnect={() => void handleConnect()}
+            onChoosePage={() => void handleConnect()}
+            onCheckHealth={() => void handleHealth()}
+            onReconnect={() => void handleReconnect()}
+            onDisconnect={() => void handleDisconnect()}
+            onRequestDisconnect={() => setConfirmDisconnect(true)}
+            onCancelDisconnect={() => setConfirmDisconnect(false)}
+            onViewSetup={() => void handleViewSetup()}
+          />
+        ) : (
+          <div className="social-connection-card__actions">
+            {card.canConnect ? (
+              <Button size="sm" variant="primary" disabled={busy} onClick={() => void handleConnect()}>
+                Connect
               </Button>
-            </Link>
-          ) : null}
-          {card.canCompleteAccountSelection && !card.accountSelectionPath ? (
-            <Button
-              size="sm"
-              variant="secondary"
-              disabled={busy}
-              onClick={() => {
-                setSelectOpen(true);
-                void handleCompleteSelection();
-              }}
-            >
-              Complete account selection
-            </Button>
-          ) : null}
-          {card.canReconnect ? (
-            <Button size="sm" variant="secondary" disabled={busy} onClick={() => void handleReconnect()}>
-              Reconnect
-            </Button>
-          ) : null}
-          {card.canDisconnect ? (
-            confirmDisconnect ? (
-              <>
-                <Button size="sm" variant="destructive" disabled={busy} onClick={() => void handleDisconnect()}>
-                  Confirm disconnect
-                </Button>
-                <Button size="sm" variant="ghost" disabled={busy} onClick={() => setConfirmDisconnect(false)}>
-                  Cancel
-                </Button>
-              </>
-            ) : (
-              <Button size="sm" variant="secondary" disabled={busy} onClick={() => setConfirmDisconnect(true)}>
-                Disconnect
+            ) : null}
+            {card.canCompleteAccountSelection ? (
+              <Button
+                size="sm"
+                variant="secondary"
+                disabled={busy}
+                onClick={() => {
+                  setSelectOpen(true);
+                  void handleCompleteSelection();
+                }}
+              >
+                Complete account selection
               </Button>
-            )
-          ) : null}
-          <Button size="sm" variant="ghost" disabled={busy} onClick={() => void handleHealth()}>
-            Check health
-          </Button>
-          {card.canViewSetupRequirements ? (
-            <Button size="sm" variant="ghost" disabled={busy} onClick={() => void handleViewSetup()}>
-              View setup requirements
-            </Button>
-          ) : null}
-        </div>
+            ) : null}
+            {card.canReconnect ? (
+              <Button size="sm" variant="secondary" disabled={busy} onClick={() => void handleReconnect()}>
+                Reconnect
+              </Button>
+            ) : null}
+            {card.canDisconnect ? (
+              confirmDisconnect ? (
+                <>
+                  <Button size="sm" variant="destructive" disabled={busy} onClick={() => void handleDisconnect()}>
+                    Confirm disconnect
+                  </Button>
+                  <Button size="sm" variant="ghost" disabled={busy} onClick={() => setConfirmDisconnect(false)}>
+                    Cancel
+                  </Button>
+                </>
+              ) : (
+                <Button size="sm" variant="secondary" disabled={busy} onClick={() => setConfirmDisconnect(true)}>
+                  Disconnect
+                </Button>
+              )
+            ) : null}
+            {card.foundationStatus === 'CONNECTED' ? (
+              <Button size="sm" variant="ghost" disabled={busy} onClick={() => void handleHealth()}>
+                Check health
+              </Button>
+            ) : null}
+            {card.canViewSetupRequirements ? (
+              <Button size="sm" variant="ghost" disabled={busy} onClick={() => void handleViewSetup()}>
+                View setup requirements
+              </Button>
+            ) : null}
+          </div>
+        )
       ) : null}
       {selectOpen ? <p className="page-muted">Validating account selection…</p> : null}
     </article>

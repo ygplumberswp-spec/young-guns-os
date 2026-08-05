@@ -122,14 +122,34 @@ test.describe('Social connection foundation (J-6.7F)', () => {
       join(repoRoot, 'apps/web/src/features/integrations/SocialConnectionsSection.tsx'),
       'utf8',
     );
+    const actionsSource = readFileSync(
+      join(repoRoot, 'apps/web/src/features/integrations/FacebookConnectionActions.tsx'),
+      'utf8',
+    );
     const integrationsSource = readFileSync(
       join(repoRoot, 'apps/web/src/pages/integrations/IntegrationsDashboardPage.tsx'),
       'utf8',
     );
     expect(serviceSource).toMatch(/resolveFacebookOAuthBrowserReturnPath/);
     expect(sectionSource).toMatch(/startFacebookOAuth\(accessToken, '\/facebook-business'\)/);
-    expect(sectionSource).toMatch(/Choose Page/);
+    expect(actionsSource).toMatch(/choose_page/);
+    expect(actionsSource).toMatch(/FACEBOOK_CONNECTION_ACTION_LABELS/);
     expect(integrationsSource).toMatch(/FACEBOOK_PAGE_SELECTION_WORKSPACE_PATH/);
+  });
+
+  test('Facebook connection actions follow single-primary state plan', async () => {
+    const actionsSource = readFileSync(
+      join(repoRoot, 'apps/web/src/features/integrations/FacebookConnectionActions.tsx'),
+      'utf8',
+    );
+    const sharedSource = readFileSync(
+      join(repoRoot, 'packages/shared/src/facebook-connection-actions.ts'),
+      'utf8',
+    );
+    expect(sharedSource).toMatch(/resolveFacebookConnectionActionPlan/);
+    expect(sharedSource).toMatch(/primary: 'choose_page'/);
+    expect(actionsSource).toMatch(/facebook-connection-actions/);
+    expect(actionsSource).not.toMatch(/Run connection check/);
   });
 
   test('Facebook page discovery exposes honest status codes', async () => {

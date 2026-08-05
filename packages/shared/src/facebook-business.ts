@@ -328,7 +328,7 @@ export const FACEBOOK_CONNECTION_STATE_LABELS: Record<FacebookConnectionState, s
   configuration_required: 'Configuration required',
   disconnected: 'Disconnected',
   connected: 'Connected',
-  partial: 'Partial',
+  partial: 'Account selection required',
   missing_permission: 'Missing permission',
   reauthorisation_required: 'Reauthorisation required',
   expired: 'Expired',

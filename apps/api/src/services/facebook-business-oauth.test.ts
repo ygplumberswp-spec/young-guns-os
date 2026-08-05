@@ -76,11 +76,15 @@ describe('Facebook Business OAuth hygiene and Page selection (J-6.7F)', () => {
   });
 
   it('Integrations card exposes Choose Page primary action for partial Facebook', () => {
+    const actionsSource = readFileSync(
+      join(here, '../../../web/src/features/integrations/FacebookConnectionActions.tsx'),
+      'utf8',
+    );
     assert.ok(socialServiceSource.includes('FACEBOOK_PAGE_SELECTION_WORKSPACE_PATH'));
     assert.ok(socialServiceSource.includes('FACEBOOK_PENDING_PAGE_SELECTION_DETAIL'));
     assert.ok(socialServiceSource.includes('accountSelectionPath'));
-    assert.ok(sectionSource.includes('Choose Page'));
-    assert.ok(sectionSource.includes('card.accountSelectionPath'));
+    assert.ok(actionsSource.includes('choose_page'));
+    assert.ok(actionsSource.includes('choosePageHref'));
   });
 
   it('Facebook setup requirements use facebookRedirectUri not APP_URL', () => {
