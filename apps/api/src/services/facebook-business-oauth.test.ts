@@ -13,10 +13,6 @@ const here = dirname(fileURLToPath(import.meta.url));
 const serviceSource = readFileSync(join(here, 'facebook-business.service.ts'), 'utf8');
 const routeSource = readFileSync(join(here, '../routes/facebook-business.ts'), 'utf8');
 const socialServiceSource = readFileSync(join(here, 'social-connection.service.ts'), 'utf8');
-const sectionSource = readFileSync(
-  join(here, '../../../web/src/features/integrations/SocialConnectionsSection.tsx'),
-  'utf8',
-);
 
 describe('Facebook Business OAuth hygiene and Page selection (J-6.7F)', () => {
   it('resolveFacebookAppConfig prefers META_REDIRECT_URI over APP_URL', () => {
