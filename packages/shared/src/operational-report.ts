@@ -125,19 +125,96 @@ export function isOperationalReportKind(value: string): value is OperationalRepo
 /** Strip internal-only fields for client-safe exports. */
 export function toClientSafeJobContext(ctx: OperationalJobReportContext): OperationalJobReportContext {
   return {
-    ...ctx,
+    reportReference: ctx.reportReference,
+    jobNumber: ctx.jobNumber,
+    jobTitle: ctx.jobTitle,
+    jobType: ctx.jobType,
+    jobStatus: ctx.jobStatus,
+    priority: ctx.priority,
+    scheduledAt: ctx.scheduledAt,
+    completedAt: ctx.completedAt,
+    customerName: ctx.customerName,
+    customerContact: ctx.customerContact,
+    customerEmail: ctx.customerEmail,
+    customerPhone: ctx.customerPhone,
+    propertyName: ctx.propertyName,
+    siteAddress: ctx.siteAddress,
+    addressLines: ctx.addressLines,
+    mapPlaceUrl: ctx.mapPlaceUrl,
+    mapNote: ctx.mapNote,
+    technicianName: ctx.technicianName,
+    jobDescription: ctx.jobDescription,
+    diagnosis: ctx.diagnosis,
+    workCompleted: ctx.workCompleted,
     internalNotes: null,
-    materials: ctx.materials.map((m) => ({ ...m, status: m.status })),
+    materials: ctx.materials.map((m) => ({
+      description: m.description,
+      quantity: m.quantity,
+      unit: m.unit,
+      status: m.status,
+    })),
+    photosBefore: ctx.photosBefore,
+    photosDuring: ctx.photosDuring,
+    photosAfter: ctx.photosAfter,
+    supportingPhotos: ctx.supportingPhotos,
+    attachments: ctx.attachments.map((a) => ({ title: a.title, mimeType: a.mimeType })),
+    signatures: ctx.signatures,
+    recommendedMaintenance: ctx.recommendedMaintenance,
+    warrantyNotes: ctx.warrantyNotes,
+    cocState: ctx.cocState,
+    cocReference: ctx.cocReference,
+    completionStatus: ctx.completionStatus,
+    quoteLabel: ctx.quoteLabel,
+    invoiceLabel: ctx.invoiceLabel,
   };
 }
 
 /** Technician view excludes costs/profit paths — materials list kept descriptive only. */
 export function toTechnicianSafeJobContext(ctx: OperationalJobReportContext): OperationalJobReportContext {
+  const clientSafe = toClientSafeJobContext(ctx);
   return {
-    ...toClientSafeJobContext(ctx),
+    ...clientSafe,
     invoiceLabel: null,
     quoteLabel: null,
+    materials: clientSafe.materials.map((m) => ({
+      description: m.description,
+      quantity: m.quantity,
+      unit: m.unit,
+      status: m.status,
+    })),
   };
+}
+
+export function toClientSafeMaintenanceContext(ctx: MaintenanceReportContext): MaintenanceReportContext {
+  return {
+    reportReference: ctx.reportReference,
+    planName: ctx.planName,
+    planStatus: ctx.planStatus,
+    visitDate: ctx.visitDate,
+    runStatus: ctx.runStatus,
+    customerName: ctx.customerName,
+    propertyAddress: ctx.propertyAddress,
+    technicianName: ctx.technicianName,
+    tasksCompleted: ctx.tasksCompleted,
+    tasksNotCompleted: ctx.tasksNotCompleted,
+    findings: ctx.findings,
+    materials: ctx.materials.map((m) => ({
+      description: m.description,
+      quantity: m.quantity,
+      unit: m.unit,
+      status: m.status,
+    })),
+    photos: ctx.photos,
+    riskItems: ctx.riskItems,
+    recommendedNext: ctx.recommendedNext,
+    nextDueAt: ctx.nextDueAt,
+    notes: null,
+    signatures: ctx.signatures,
+  };
+}
+
+export function toTechnicianSafeMaintenanceContext(ctx: MaintenanceReportContext): MaintenanceReportContext {
+  return toClientSafeMaintenanceContext(ctx);
 }
 
 export function resolveJobContextForAudience(
@@ -146,5 +223,14 @@ export function resolveJobContextForAudience(
 ): OperationalJobReportContext {
   if (audience === 'client') return toClientSafeJobContext(ctx);
   if (audience === 'technician') return toTechnicianSafeJobContext(ctx);
+  return ctx;
+}
+
+export function resolveMaintenanceContextForAudience(
+  ctx: MaintenanceReportContext,
+  audience: OperationalReportAudience,
+): MaintenanceReportContext {
+  if (audience === 'client') return toClientSafeMaintenanceContext(ctx);
+  if (audience === 'technician') return toTechnicianSafeMaintenanceContext(ctx);
   return ctx;
 }

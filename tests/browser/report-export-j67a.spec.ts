@@ -76,5 +76,17 @@ test.describe('Report export UI contracts (J-6.7A)', () => {
     expect(routeSource).toMatch(/\/completion\/:reportId\/pdf/);
     expect(routeSource).toMatch(/\/maintenance\/runs\/:runId\/pdf/);
     expect(routeSource).toMatch(/requireAuth/);
+    expect(routeSource).toMatch(/createPortalReportExportRouter/);
+    expect(routeSource).not.toMatch(/denyTechnician/);
+  });
+
+  test('canonical report audience resolver is server-side authority', async () => {
+    const audienceSource = readFileSync(
+      join(repoRoot, 'packages/shared/src/report-audience.ts'),
+      'utf8',
+    );
+    expect(audienceSource).toMatch(/resolveStaffReportAudience/);
+    expect(audienceSource).toMatch(/resolvePortalReportAudience/);
+    expect(audienceSource).toMatch(/audienceEscalationAttempt/);
   });
 });

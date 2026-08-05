@@ -32,6 +32,7 @@ import {
 } from '../../lib/mobile-offline-queue';
 import { SignaturePad } from '../../features/jobs/SignaturePad';
 import { useAuth } from '../../lib/auth-context';
+import { ReportExportActions } from '../../features/reports/ReportExportActions';
 
 async function fileToBase64(file: File): Promise<string> {
   const buffer = await file.arrayBuffer();
@@ -680,6 +681,19 @@ export function MobileJobDetailPage() {
               <li key={item}>{item.replace(/_/g, ' ')}</li>
             ))}
           </ul>
+        </Panel>
+      ) : null}
+
+      {accessToken && jobId ? (
+        <Panel title="Job report">
+          <ReportExportActions
+            accessToken={accessToken}
+            kind="job"
+            resourceId={jobId}
+            label="Assigned job report"
+            reportNumber={workspace.jobNumber}
+            disabled={busy}
+          />
         </Panel>
       ) : null}
 

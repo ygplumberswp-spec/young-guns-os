@@ -10,37 +10,45 @@ function readSource(relativePath: string): string {
   return readFileSync(join(webRoot, relativePath), 'utf8');
 }
 
-test('report export API client targets authenticated report-exports routes', () => {
+test('report export API exposes staff and portal routes without trusting client audience', () => {
   const source = readSource('src/lib/report-export-api.ts');
   assert.match(source, /\/report-exports\/jobs\//);
-  assert.match(source, /\/report-exports\/completion\//);
-  assert.match(source, /\/report-exports\/maintenance\/runs\//);
-  assert.match(source, /requestBlob/);
-  assert.match(source, /application\/pdf/);
+  assert.match(source, /\/portal\/report-exports\/jobs\//);
+  assert.match(source, /channel === 'portal'/);
+  assert.match(source, /portalReportExportPath\(kind, id\)/);
+  assert.match(source, /staffReportExportPath\(kind, id, options\.audience\)/);
+  assert.match(source, /\? portalReportExportPath\(kind, id\)/);
 });
 
-test('ReportExportActions exposes preview and download without client-side PDF generation', () => {
+test('ReportExportActions does not expose audience selector UI', () => {
   const source = readSource('src/features/reports/ReportExportActions.tsx');
+  assert.doesNotMatch(source, /audience.*select|<select/i);
   assert.match(source, /Preview Report/);
-  assert.match(source, /Download PDF/);
-  assert.match(source, /FinanceDocumentPreviewModal/);
-  assert.doesNotMatch(source, /html2canvas|jspdf|window\.print/);
 });
 
-test('job detail page wires job and service report export actions', () => {
-  const source = readSource('src/pages/jobs/JobDetailPage.tsx');
+test('mobile job detail wires technician report export without audience prop', () => {
+  const source = readSource('src/pages/mobile/MobileJobDetailPage.tsx');
   assert.match(source, /ReportExportActions/);
   assert.match(source, /kind="job"/);
-  assert.match(source, /kind="service"/);
+  assert.doesNotMatch(source, /audience=/);
 });
 
-test('completion report detail page wires completion PDF export', () => {
-  const source = readSource('src/pages/documents/CompletionReportDetailPage.tsx');
-  assert.match(source, /ReportExportActions/);
-  assert.match(source, /kind="completion"/);
+test('portal job detail uses portal report export channel', () => {
+  const source = readSource('src/pages/portal/PortalJobDetailPage.tsx');
+  assert.match(source, /channel="portal"/);
 });
 
-test('recurring maintenance history wires maintenance report export', () => {
-  const source = readSource('src/pages/recurring-maintenance/RecurringMaintenancePage.tsx');
-  assert.match(source, /kind="maintenance"/);
+test('staff report export utils derive mode from role not query param', () => {
+  const source = readSource('src/features/reports/report-export-utils.ts');
+  assert.match(source, /isTechnicianRole/);
+  assert.match(source, /resolveStaffReportExportMode/);
+});
+
+test('report export routes register portal auth and remove denyTechnician guard', () => {
+  const repoRoot = join(webRoot, '../..');
+  const routeSource = readFileSync(join(repoRoot, 'apps/api/src/routes/report-exports.ts'), 'utf8');
+  assert.match(routeSource, /createPortalReportExportRouter/);
+  assert.match(routeSource, /requirePortalAuth/);
+  assert.doesNotMatch(routeSource, /denyTechnician/);
+  assert.match(routeSource, /parseAudienceQuery/);
 });

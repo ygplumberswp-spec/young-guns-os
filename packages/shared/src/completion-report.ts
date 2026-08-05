@@ -8,6 +8,7 @@
 
 import { buildGoogleMapsPlaceUrl } from './google-maps.js';
 import { buildYoungGunsReportShellHtml } from './young-guns-report-shell.js';
+import type { OperationalReportAudience } from './operational-report.js';
 
 export const COMPLETION_REPORT_SECTION_IDS = [
   'customer_details',
@@ -150,6 +151,66 @@ export type CompletionReportSectionPayload = {
     dataUrl?: string | null;
   };
 };
+
+function stripPhotoRef(photo: CompletionReportPhotoRef): CompletionReportPhotoRef {
+  return {
+    id: '',
+    title: photo.title,
+    evidencePhase: photo.evidencePhase,
+    downloadPath: null,
+    dataUrl: photo.dataUrl,
+  };
+}
+
+/** Client/technician-safe completion payload projection. */
+export function projectCompletionPayloadForAudience(
+  payload: CompletionReportSectionPayload,
+  audience: OperationalReportAudience,
+): CompletionReportSectionPayload {
+  if (audience === 'internal') return payload;
+
+  const technician = payload.technician
+    ? { name: payload.technician.name, completedByUserId: null }
+    : payload.technician;
+
+  const customerSignature = payload.customerSignature
+    ? {
+        present: payload.customerSignature.present,
+        signatureDocId: null,
+        customerRepName: payload.customerSignature.customerRepName,
+        unavailableReason: payload.customerSignature.unavailableReason,
+        dataUrl: payload.customerSignature.dataUrl,
+      }
+    : payload.customerSignature;
+
+  return {
+    customer: payload.customer,
+    property: payload.property,
+    map: payload.map,
+    job: payload.job,
+    diagnosis: payload.diagnosis,
+    workCompleted: payload.workCompleted,
+    materials: payload.materials?.map((m) => ({
+      description: m.description,
+      quantity: m.quantity,
+      unit: m.unit,
+      status: m.status,
+    })),
+    technician,
+    photosBefore: payload.photosBefore?.map(stripPhotoRef),
+    photosDuring: payload.photosDuring?.map(stripPhotoRef),
+    photosAfter: payload.photosAfter?.map(stripPhotoRef),
+    quote: payload.quote ? { id: '', label: payload.quote.label } : payload.quote,
+    boq: payload.boq ? { id: '', label: payload.boq.label } : payload.boq,
+    invoice: payload.invoice ? { id: '', label: payload.invoice.label } : payload.invoice,
+    paymentReceipt: payload.paymentReceipt
+      ? { id: '', label: payload.paymentReceipt.label }
+      : payload.paymentReceipt,
+    coc: payload.coc?.map((d) => ({ id: '', title: d.title, source: d.source })),
+    warranty: payload.warranty?.map((d) => ({ id: '', title: d.title, source: d.source })),
+    customerSignature,
+  };
+}
 
 export type CompletionReportPreview = {
   jobId: string;

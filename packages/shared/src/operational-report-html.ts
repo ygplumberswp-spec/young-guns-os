@@ -7,7 +7,7 @@ import type {
   OperationalReportPhoto,
   OperationalReportSignature,
 } from './operational-report.js';
-import { operationalReportKindLabel, resolveJobContextForAudience } from './operational-report.js';
+import { operationalReportKindLabel, resolveJobContextForAudience, resolveMaintenanceContextForAudience } from './operational-report.js';
 
 function escapeHtml(value: string): string {
   return value
@@ -250,7 +250,13 @@ export function buildServiceReportHtml(input: {
 
   const allPhotos = [...ctx.photosBefore, ...ctx.photosDuring, ...ctx.photosAfter, ...ctx.supportingPhotos];
   sections.push(section('Photos', renderPhotos(allPhotos, 'No photos attached.')));
-  sections.push(section('Outstanding concerns', renderParagraph(ctx.internalNotes, 'No outstanding concerns recorded.')));
+  if (input.audience === 'internal' && input.ctx.internalNotes) {
+    sections.push(
+      section('Outstanding concerns', renderParagraph(input.ctx.internalNotes, 'No outstanding concerns recorded.')),
+    );
+  } else if (input.audience !== 'internal') {
+    sections.push(section('Outstanding concerns', renderParagraph(null, 'No outstanding concerns recorded.')));
+  }
   sections.push(section('Recommended maintenance', renderParagraph(ctx.recommendedMaintenance, 'No recommendations recorded.')));
   sections.push(section('Warranty notes', renderParagraph(ctx.warrantyNotes, 'No warranty notes recorded.')));
   sections.push(section('Signatures', renderSignatures(ctx.signatures)));
@@ -265,9 +271,11 @@ export function buildServiceReportHtml(input: {
 
 export function buildMaintenanceReportHtml(input: {
   ctx: MaintenanceReportContext;
+  audience?: OperationalReportAudience;
   generatedAt: string;
 }): string {
-  const ctx = input.ctx;
+  const audience = input.audience ?? 'internal';
+  const ctx = resolveMaintenanceContextForAudience(input.ctx, audience);
   const sections = [
     section(
       'Maintenance summary',
@@ -312,8 +320,8 @@ export function buildMaintenanceReportHtml(input: {
       ),
     ),
   );
-  if (ctx.notes) {
-    sections.push(section('Notes', renderParagraph(ctx.notes, '')));
+  if (audience === 'internal' && input.ctx.notes) {
+    sections.push(section('Notes', renderParagraph(input.ctx.notes, '')));
   }
   sections.push(section('Signatures', renderSignatures(ctx.signatures)));
 

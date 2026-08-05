@@ -77,7 +77,7 @@ Boolean columns use **YES** / **NO** / **—** (not applicable).
 
 ## Requirements register
 
-**Total requirement rows:** 207
+**Total requirement rows:** 219
 
 | ID | Area | Requirement | Status | Built locally | Tests passed | Real DB/provider connected | RBAC tested | Tenant isolation tested | Deployed to staging | Authenticated E2E passed | Desktop verified | Tablet verified | Mobile verified | Claude verified | Gemini verified | Owner verified | Production ready | Evidence | Commit | Migration/provider dependency | Blocker | Next action |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -211,6 +211,16 @@ Boolean columns use **YES** / **NO** / **—** (not applicable).
 | J67A-010 | reports | Phase J-6.7A: Multi-page Puppeteer operational report proof | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | operational-report-multipage-pdf.test.ts; test-results/j67a/*.pdf | J-6.7A | Chromium | NOT VISUALLY VERIFIED | Local artifacts gitignored |
 | J67A-011 | reports | Phase J-6.7A: UI entry points (Preview/Download on job, completion, maintenance) | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | ReportExportActions; JobDetailPage; CompletionReportDetailPage; RecurringMaintenancePage | J-6.7A |  | NOT VISUALLY VERIFIED | Playwright layout contracts |
 | J67A-012 | repo | Phase J-6.7A: Authoritative checklist update (this document) | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | docs/TITAN_MASTER_COMPLETION_CHECKLIST.md | J-6.7A |  |  | 207 requirement rows after J-6.7A |
+| J67B-001 | reports | Phase J-6.7B: Canonical server-derived report audience resolver | TESTED LOCALLY | YES | YES | NO | YES | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | packages/shared/src/report-audience.ts | J-6.7B |  |  | Query audience not security authority |
+| J67B-002 | reports | Phase J-6.7B: Technician internal-report escalation blocked | TESTED LOCALLY | YES | YES | NO | YES | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | report-audience.test.ts; assigned tech ?audience=internal clamped | J-6.7B |  |  | Closes J-6.7A jobs:read internal gap |
+| J67B-003 | reports | Phase J-6.7B: Technician assignment enforcement (job/crew/run) | TESTED LOCALLY | YES | YES | NO | YES | YES | NO | NO | NO | NO | NO | YES | YES | NO | NO | userHasJobAccess; report-export.service.ts | J-6.7B |  |  |  |
+| J67B-004 | reports | Phase J-6.7B: Client Portal customer relationship enforcement | TESTED LOCALLY | YES | YES | NO | YES | YES | NO | NO | NO | NO | NO | YES | YES | NO | NO | /api/v1/portal/report-exports; resolvePortalReportAudience | J-6.7B |  | NOT VISUALLY VERIFIED |  |
+| J67B-005 | reports | Phase J-6.7B: Query-parameter escalation prevention + audit | TESTED LOCALLY | YES | YES | NO | YES | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | parseRequestedReportAudience; security audit log on clamp | J-6.7B |  |  |  |
+| J67B-006 | reports | Phase J-6.7B: Audience-safe typed projections (job/completion/maintenance) | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | toClientSafe*; projectCompletionPayloadForAudience | J-6.7B |  |  |  |
+| J67B-007 | reports | Phase J-6.7B: HTML/PDF sensitive-field leak tests | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | assertReportHtmlFreeOfSensitiveFields | J-6.7B |  |  |  |
+| J67B-008 | reports | Phase J-6.7B: UI role behaviour (no audience selector; portal/mobile/staff) | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | ReportExportActions; MobileJobDetailPage; PortalJobDetailPage | J-6.7B |  | NOT VISUALLY VERIFIED |  |
+| J67B-009 | reports | Phase J-6.7B: RBAC matrix tests all four report families | TESTED LOCALLY | YES | YES | NO | YES | YES | NO | NO | NO | NO | NO | YES | YES | NO | NO | report-export-audience.test.ts; report-audience.test.ts | J-6.7B |  |  |  |
+| J67B-010 | repo | Phase J-6.7B: Authoritative checklist update (this document) | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | docs/TITAN_MASTER_COMPLETION_CHECKLIST.md | J-6.7B |  |  | 219 requirement rows after J-6.7B |
 | XERO-001 | Xero | OAuth connect + tenant isolation | DEPLOYED TO STAGING | YES | NO | YES | NO | NO | YES | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_FRZ018_XERO_STAGING_REPORT.md | f8cc0c4 |  |  |  |
 | XERO-002 | Xero | Background historical import (contacts/invoices/payments) | PARTIALLY IMPLEMENTED | YES | NO | YES | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 | Xero OAuth | Import job running; last_sync_at null |  |
 | XERO-003 | Xero | Xero as sole official quote/invoice numbering authority | BUILT LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | finance-document-preview.test.ts | f8cc0c4 |  |  |  |
@@ -424,6 +434,25 @@ Items **J67A-001 … J67A-012** in the register above were completed in **Phase 
 **Remaining report families (not in J-6.7A):** technician productivity, finance aggregate, customer history, fleet, compliance/COC standalone exports.
 
 **Still NOT VISUALLY VERIFIED:** authenticated staging report journeys; Owner acceptance of client-safe report shapes.
+
+---
+
+## Phase J-6.7B scope (completed locally)
+
+Items **J67B-001 … J67B-010** close the report-audience security gap before additional report families.
+
+| ID | Deliverable | J-6.7B outcome |
+|----|-------------|----------------|
+| J67B-001 | Audience resolver | Server derives effective audience; query param is hint only |
+| J67B-002 | Technician internal block | Technicians never receive internal output; escalation clamped/audited |
+| J67B-003 | Assignment enforcement | userHasJobAccess + run creator for maintenance |
+| J67B-004 | Portal isolation | Portal routes + customerId match on resources |
+| J67B-005 | Escalation prevention | Invalid audience 400; privileged attempts audited |
+| J67B-006 | Typed projections | Allow-list client/technician models for all four families |
+| J67B-007 | Leak tests | assertReportHtmlFreeOfSensitiveFields on generated HTML |
+| J67B-008 | UI alignment | No audience selector; portal/mobile/staff entry points |
+| J67B-009 | RBAC matrix tests | Owner/office/tech/client/portal scenarios |
+| J67B-010 | Checklist | 219 requirement rows |
 
 ---
 

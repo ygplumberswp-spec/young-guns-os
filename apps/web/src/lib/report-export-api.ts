@@ -8,20 +8,36 @@ export type ReportPdfPreview = {
   filename: string;
 };
 
-function reportExportPath(
+export type ReportExportChannel = 'staff' | 'portal';
+
+function staffReportExportPath(
   kind: ReportExportKind,
   id: string,
-  audience: OperationalReportAudience,
+  audience?: OperationalReportAudience,
 ): string {
+  const base =
+    kind === 'job'
+      ? `/report-exports/jobs/${encodeURIComponent(id)}/pdf`
+      : kind === 'service'
+        ? `/report-exports/jobs/${encodeURIComponent(id)}/service/pdf`
+        : kind === 'completion'
+          ? `/report-exports/completion/${encodeURIComponent(id)}/pdf`
+          : `/report-exports/maintenance/runs/${encodeURIComponent(id)}/pdf`;
+
+  if (!audience) return base;
+  return `${base}?audience=${encodeURIComponent(audience)}`;
+}
+
+function portalReportExportPath(kind: ReportExportKind, id: string): string | null {
   switch (kind) {
     case 'job':
-      return `/report-exports/jobs/${encodeURIComponent(id)}/pdf?audience=${audience}`;
+      return `/portal/report-exports/jobs/${encodeURIComponent(id)}/pdf`;
     case 'service':
-      return `/report-exports/jobs/${encodeURIComponent(id)}/service/pdf?audience=${audience}`;
+      return `/portal/report-exports/jobs/${encodeURIComponent(id)}/service/pdf`;
     case 'completion':
-      return `/report-exports/completion/${encodeURIComponent(id)}/pdf?audience=${audience}`;
+      return `/portal/report-exports/completion/${encodeURIComponent(id)}/pdf`;
     case 'maintenance':
-      return `/report-exports/maintenance/runs/${encodeURIComponent(id)}/pdf`;
+      return null;
   }
 }
 
@@ -29,9 +45,22 @@ export async function fetchReportExportPdf(
   accessToken: string,
   kind: ReportExportKind,
   id: string,
-  audience: OperationalReportAudience = 'internal',
+  options: {
+    channel?: ReportExportChannel;
+    audience?: OperationalReportAudience;
+  } = {},
 ): Promise<ReportPdfPreview> {
-  const blob = await requestBlob(reportExportPath(kind, id, audience), {
+  const channel = options.channel ?? 'staff';
+  const path =
+    channel === 'portal'
+      ? portalReportExportPath(kind, id)
+      : staffReportExportPath(kind, id, options.audience);
+
+  if (!path) {
+    throw new Error('This report type is not available in the client portal');
+  }
+
+  const blob = await requestBlob(path, {
     method: 'GET',
     accessToken,
     timeoutMs: 60_000,

@@ -4,6 +4,7 @@ import type { OperationalReportAudience } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import {
   fetchReportExportPdf,
+  type ReportExportChannel,
   type ReportExportKind,
   type ReportPdfPreview,
 } from '../../lib/report-export-api';
@@ -13,7 +14,9 @@ type ReportExportActionsProps = {
   accessToken: string;
   kind: ReportExportKind;
   resourceId: string;
+  /** Staff-only hint — omitted for portal and technician flows; server derives effective audience. */
   audience?: OperationalReportAudience;
+  channel?: ReportExportChannel;
   label?: string;
   reportNumber?: string | null;
   disabled?: boolean;
@@ -23,7 +26,8 @@ export function ReportExportActions({
   accessToken,
   kind,
   resourceId,
-  audience = 'internal',
+  audience,
+  channel = 'staff',
   label,
   reportNumber,
   disabled,
@@ -48,14 +52,17 @@ export function ReportExportActions({
     setIsLoading(true);
     setError(null);
     try {
-      const result = await fetchReportExportPdf(accessToken, kind, resourceId, audience);
+      const result = await fetchReportExportPdf(accessToken, kind, resourceId, {
+        channel,
+        audience: channel === 'portal' ? undefined : audience,
+      });
       return result;
     } catch (err) {
       if (err instanceof ApiClientError) {
         if (err.status === 403) {
           setError('You do not have permission to export this report.');
         } else if (err.status === 404) {
-          setError('Report unavailable — job or report data was not found.');
+          setError('Report unavailable.');
         } else if (err.status === 503) {
           setError('PDF renderer is unavailable. Try again later.');
         } else {
@@ -68,7 +75,7 @@ export function ReportExportActions({
     } finally {
       setIsLoading(false);
     }
-  }, [accessToken, audience, kind, resourceId]);
+  }, [accessToken, audience, channel, kind, resourceId]);
 
   useEffect(() => {
     if (!preview?.blob) {

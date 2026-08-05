@@ -68,7 +68,7 @@ import { createBoqRouter } from './routes/boq.js';
 import { createDraftsRouter } from './routes/drafts.js';
 import { createJobDocumentPackRouter } from './routes/job-document-packs.js';
 import { createCompletionReportRouter } from './routes/completion-reports.js';
-import { createReportExportRouter } from './routes/report-exports.js';
+import { createReportExportRouter, createPortalReportExportRouter } from './routes/report-exports.js';
 import { BoqService } from './services/boq.service.js';
 import { DraftAutosaveService } from './services/draft-autosave.service.js';
 import { InventoryService } from './services/inventory.service.js';
@@ -3097,6 +3097,14 @@ app.use(
   }),
 );
 
+app.use(
+  '/api/v1/portal/report-exports',
+  createPortalReportExportRouter({
+    reportExportService,
+    jwtSecret: env.JWT_SECRET,
+    portalAuthService,
+  }),
+);
 app.use(
   '/api/v1/portal',
   createPortalRouter({

@@ -7,6 +7,7 @@ import { PortalApiClientError, fetchPortalJob } from '../../lib/portal-api-clien
 import { usePortalAuth } from '../../lib/portal-auth-context';
 import { toPortalNestedHref } from '../../lib/portal-routing';
 import { formatPortalWhen } from '../../lib/portal-datetime';
+import { ReportExportActions } from '../../features/reports/ReportExportActions';
 
 export function PortalJobDetailPage() {
   const params = useParams<{ jobId: string }>();
@@ -142,6 +143,19 @@ export function PortalJobDetailPage() {
                 ))}
               </ul>
             )}
+          </Panel>
+
+          <Panel title="Reports">
+            {accessToken && jobId ? (
+              <ReportExportActions
+                accessToken={accessToken}
+                kind="job"
+                resourceId={jobId}
+                channel="portal"
+                label="Job report"
+                reportNumber={detail.job.jobNumber}
+              />
+            ) : null}
           </Panel>
         </>
       ) : null}
