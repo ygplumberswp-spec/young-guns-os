@@ -11,7 +11,7 @@ import { rowMatchesYoungGunsPageName } from './facebook-page-discovery.js';
  * requested on direct Page-object lookups.
  */
 
-export const YOUNG_GUNS_FACEBOOK_PAGE_ID = '394603137072407';
+export const YOUNG_GUNS_FACEBOOK_PAGE_ID = '61564442420962';
 export const YOUNG_GUNS_FACEBOOK_PAGE_NAME = 'Young Guns Plumbing – Cape Town';
 
 /** Stage 1 — confirm Page object identity only. */

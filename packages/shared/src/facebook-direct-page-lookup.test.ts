@@ -56,6 +56,12 @@ function tokenProbe(overrides: Partial<Parameters<typeof buildFacebookDirectPage
 }
 
 describe('facebook direct page lookup (J-6.7F3)', () => {
+  it('uses verified Young Guns Facebook Page id constant', () => {
+    assert.equal(YOUNG_GUNS_FACEBOOK_PAGE_ID, '61564442420962');
+    assert.notEqual(YOUNG_GUNS_FACEBOOK_PAGE_ID, '394603137072407');
+    assert.notEqual(YOUNG_GUNS_FACEBOOK_PAGE_ID, '615644424209628');
+  });
+
   it('uses id,name for identity probe and id,name,access_token for token probe', () => {
     assert.equal(FACEBOOK_DIRECT_PAGE_IDENTITY_FIELDS, 'id,name');
     assert.equal(FACEBOOK_DIRECT_PAGE_TOKEN_FIELDS, 'id,name,access_token');

@@ -82,7 +82,7 @@ describe('Facebook direct page validation fallback (J-6.7F2 / J-6.7F3)', () => {
   });
 
   it('known Young Guns Page id is server constant not browser input', () => {
-    assert.equal(YOUNG_GUNS_FACEBOOK_PAGE_ID, '394603137072407');
+    assert.equal(YOUNG_GUNS_FACEBOOK_PAGE_ID, '61564442420962');
     assert.ok(serviceSource.includes('resolvePendingPageCandidate'));
   });
 
