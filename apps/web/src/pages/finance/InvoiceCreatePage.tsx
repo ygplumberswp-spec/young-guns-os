@@ -136,7 +136,6 @@ export function InvoiceCreatePage() {
   });
 
   const { notify } = useTitanNotify();
-  const { openPreview, previewModal } = useFinanceDocumentPreview({ accessToken });
 
   useEffect(() => {
     if (user && !canWrite) navigate('/finance/invoices');

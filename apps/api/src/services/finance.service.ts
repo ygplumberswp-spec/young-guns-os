@@ -908,14 +908,6 @@ export class FinanceService {
     return this.documentSections.listCocEvidence(companyId, jobId);
   }
 
-  /** Read-only preview — maps live form values through the document engine without persisting. */
-  previewDocument(
-    _actor: { companyId: string; userId: string },
-    input: FinanceDocumentPreviewInput,
-  ): FinanceDocumentPreviewModel {
-    return buildFinanceDocumentPreviewModel(input);
-  }
-
   async buildAuraContext(companyId: string): Promise<AuraFinanceContext> {
     const stats = await this.getStats(companyId);
 
