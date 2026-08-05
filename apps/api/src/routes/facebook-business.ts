@@ -113,6 +113,12 @@ const STATUS_BY_CODE: Record<string, number> = {
   IMMUTABLE: 409,
   INVALID_TRANSITION: 409,
   ALREADY_IMPORTED: 409,
+  PAGE_NOT_AVAILABLE: 409,
+  META_PAGE_LIST_EMPTY: 409,
+  META_PAGE_LIST_FAILED: 502,
+  META_PAGE_ROW_INCOMPLETE: 409,
+  META_PAGE_TOKEN_UNAVAILABLE: 409,
+  META_TOKEN_SCOPE_MISMATCH: 403,
 };
 
 function handleError(res: import('express').Response, error: unknown): boolean {
@@ -251,14 +257,20 @@ export function createFacebookBusinessRouter({
 
   router.get('/pages', (req, res, next) =>
     wrap(res, next, async () => {
-      const pages = await facebookBusinessService.listPages(toActor(req));
-      // Page access tokens never leave the API.
-      return pages.map((page) => ({
-        id: page.id,
-        name: page.name,
-        category: page.category,
-        tasks: page.tasks,
-      }));
+      const discovery = await facebookBusinessService.discoverPagesForSelection(toActor(req));
+      return {
+        ...discovery,
+        pages: discovery.pages.map((page) => ({
+          id: page.id,
+          name: page.name,
+          category: page.category,
+          tasks: page.tasks,
+          selectable: page.selectable,
+          status: page.status,
+          statusDetail: page.statusDetail,
+          diagnostics: page.diagnostics,
+        })),
+      };
     }),
   );
 

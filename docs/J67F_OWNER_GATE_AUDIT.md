@@ -146,6 +146,16 @@ Do **not** list WhatsApp Business or Google Business Profile as Social Connectio
 
 ---
 
+## 9. Facebook Page discovery empty result (2026-08-05)
+
+**Symptom:** After successful OAuth (`partial`, credentials stored, `pages_show_list` granted), Choose Page showed “This Facebook account does not administer any Pages.”
+
+**Classification:** **C + inaccurate empty messaging** — TITAN filtered `/me/accounts` rows missing `access_token`; empty mapped list was treated as “no Pages administered.” Meta may also return genuinely empty lists for business-linked Pages without `business_management` (not added to OAuth in this fix).
+
+**Local correction:** Sanitized provider diagnosis on `/facebook-business/pages`; honest status codes; retain and display incomplete rows; pagination; no secret leakage.
+
+---
+
 ## 6. Explicitly not done
 
 - No push/redeploy until Owner approves OAuth scope correction locally

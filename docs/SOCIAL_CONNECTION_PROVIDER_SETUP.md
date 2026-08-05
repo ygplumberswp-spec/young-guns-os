@@ -116,6 +116,21 @@ Owner full access; Admin/Office view-only; Technician/Client hidden.
 
 **Outstanding (not changed in this fix):** Instagram and TikTok OAuth runtime callbacks in `social-connection.service.ts` still derive from `APP_URL` — separate fix when those providers go live on split-host staging.
 
+## Facebook Page discovery diagnosis (2026-08-05)
+
+**Live staging evidence:** OAuth succeeded with `pages_show_list`; Meta Business Integrations shows Young Guns Plumbing – Cape Town selected; TITAN reported “does not administer any Pages”.
+
+**Root cause (code audit):** `listPages` silently dropped any `/me/accounts` row missing `access_token` via `.filter((page) => page.id && page.name && page.access_token)`, mapping a non-empty Meta response with incomplete rows to an empty UI list.
+
+**Local correction:**
+
+| Area | Fix |
+|------|-----|
+| Graph client | `discoverPages` with pagination; no silent row discard; optional `tryResolvePageAccessToken` |
+| API `/pages` | Returns sanitized diagnosis + per-row status (`META_PAGE_LIST_EMPTY`, `META_PAGE_TOKEN_UNAVAILABLE`, etc.) |
+| UI | Honest messages; lists non-selectable Pages; expandable sanitized diagnosis for Owner |
+| Scopes | `pages_show_list` only at initial OAuth — unchanged; `business_management` documented as likely Meta requirement for business-linked Pages but not auto-requested |
+
 ## Local test mode
 
 ```bash

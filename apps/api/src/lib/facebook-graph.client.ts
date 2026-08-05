@@ -3,7 +3,10 @@ import {
   FACEBOOK_GRAPH_BASE_URL,
   FACEBOOK_OAUTH_BASIC_SCOPES,
   FACEBOOK_OAUTH_DIALOG_URL,
+  FACEBOOK_PAGE_LIST_ENDPOINT,
+  FACEBOOK_PAGE_LIST_FIELDS,
   type FacebookPermission,
+  type RawFacebookAccountRow,
 } from '@titan/shared';
 
 /**
@@ -234,6 +237,55 @@ export class FacebookGraphClient {
     return parsed as T;
   }
 
+  private async fetchGraphJson<T>(absoluteUrl: string): Promise<{ body: T; httpStatus: number }> {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 20_000);
+    try {
+      const response = await this.fetchImpl(absoluteUrl, {
+        method: 'GET',
+        signal: controller.signal,
+      });
+      const text = await response.text();
+      let parsed: unknown;
+      try {
+        parsed = text ? JSON.parse(text) : {};
+      } catch {
+        parsed = {};
+      }
+
+      if (!response.ok) {
+        const graphError = (parsed as { error?: { message?: string; code?: number; error_subcode?: number; type?: string } })
+          .error;
+        const code = typeof graphError?.code === 'number' ? graphError.code : null;
+        throw new FacebookGraphError(
+          classifyGraphError(code, response.status),
+          graphError?.message ?? `Facebook returned HTTP ${response.status}.`,
+          code,
+          typeof graphError?.error_subcode === 'number' ? graphError.error_subcode : null,
+          response.status,
+          true,
+        );
+      }
+
+      return { body: parsed as T, httpStatus: response.status };
+    } catch (error) {
+      if (error instanceof FacebookGraphError) throw error;
+      const aborted = error instanceof Error && error.name === 'AbortError';
+      throw new FacebookGraphError(
+        'provider_unavailable',
+        aborted
+          ? 'Facebook did not respond within the timeout.'
+          : `Could not reach Facebook: ${error instanceof Error ? error.message : 'network error'}`,
+        null,
+        null,
+        null,
+        aborted,
+      );
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
   /** Exchanges the OAuth code for a short-lived user token. */
   async exchangeCodeForUserToken(code: string): Promise<{ accessToken: string; expiresIn: number | null }> {
     const url = new URL(`${FACEBOOK_GRAPH_BASE_URL}/oauth/access_token`);
@@ -308,29 +360,175 @@ export class FacebookGraphClient {
       .map((entry) => entry.permission as string);
   }
 
-  async listPages(userAccessToken: string): Promise<FacebookPageSummary[]> {
-    const body = await this.request<{
-      data?: Array<{
-        id?: string;
-        name?: string;
-        category?: string;
-        access_token?: string;
-        tasks?: string[];
-      }>;
-    }>('/me/accounts', {
-      accessToken: userAccessToken,
-      searchParams: { fields: 'id,name,category,access_token,tasks', limit: 100 },
-    });
+  /** Sanitized token inspection — never returns the token itself. */
+  async inspectAccessToken(userAccessToken: string): Promise<{
+    isValid: boolean;
+    appId: string | null;
+    userIdPresent: boolean;
+    expiresAt: number | null;
+    scopes: string[];
+  }> {
+    const appAccessToken = `${this.config.appId}|${this.config.appSecret}`;
+    const url = new URL(`${FACEBOOK_GRAPH_BASE_URL}/debug_token`);
+    url.searchParams.set('input_token', userAccessToken);
+    url.searchParams.set('access_token', appAccessToken);
 
-    return (body.data ?? [])
-      .filter((page) => page.id && page.name && page.access_token)
-      .map((page) => ({
-        id: page.id as string,
-        name: page.name as string,
+    const response = await this.fetchImpl(url, { method: 'GET' });
+    const body = (await response.json().catch(() => ({}))) as {
+      data?: {
+        is_valid?: boolean;
+        app_id?: string;
+        user_id?: string;
+        expires_at?: number;
+        scopes?: string[];
+      };
+      error?: { message?: string; code?: number };
+    };
+
+    if (!response.ok || !body.data) {
+      return {
+        isValid: false,
+        appId: null,
+        userIdPresent: false,
+        expiresAt: null,
+        scopes: [],
+      };
+    }
+
+    return {
+      isValid: Boolean(body.data.is_valid),
+      appId: body.data.app_id ?? null,
+      userIdPresent: Boolean(body.data.user_id),
+      expiresAt: typeof body.data.expires_at === 'number' ? body.data.expires_at : null,
+      scopes: body.data.scopes ?? [],
+    };
+  }
+
+  /**
+   * Fetches managed Pages from Meta, following pagination. Returns every provider
+   * row — callers must not treat an empty mapped list as "no Pages" without
+   * checking rawRowCount and provider errors.
+   */
+  async discoverPages(userAccessToken: string): Promise<{
+    rows: RawFacebookAccountRow[];
+    httpStatus: number;
+    pagingPageCount: number;
+    hasPaging: boolean;
+    providerError: {
+      code: number | null;
+      subcode: number | null;
+      type: string | null;
+      message: string;
+    } | null;
+  }> {
+    const rows: RawFacebookAccountRow[] = [];
+    let pagingPageCount = 0;
+    let hasPaging = false;
+    let httpStatus = 200;
+    let providerError: {
+      code: number | null;
+      subcode: number | null;
+      type: string | null;
+      message: string;
+    } | null = null;
+
+    let absoluteNextUrl: string | null = null;
+
+    while (true) {
+      pagingPageCount += 1;
+      let body: {
+        data?: RawFacebookAccountRow[];
+        paging?: { next?: string };
+      };
+
+      try {
+        if (absoluteNextUrl) {
+          const fetched = await this.fetchGraphJson<typeof body>(absoluteNextUrl);
+          body = fetched.body;
+          httpStatus = fetched.httpStatus;
+        } else {
+          body = await this.request<typeof body>(FACEBOOK_PAGE_LIST_ENDPOINT, {
+            accessToken: userAccessToken,
+            searchParams: {
+              fields: FACEBOOK_PAGE_LIST_FIELDS,
+              limit: 100,
+            },
+          });
+          httpStatus = 200;
+        }
+      } catch (error) {
+        if (error instanceof FacebookGraphError) {
+          providerError = {
+            code: error.graphCode,
+            subcode: error.graphSubcode,
+            type: error.kind,
+            message: error.message,
+          };
+          httpStatus = error.httpStatus ?? 502;
+        } else {
+          providerError = {
+            code: null,
+            subcode: null,
+            type: 'unknown',
+            message: error instanceof Error ? error.message : 'Unknown Facebook error.',
+          };
+          httpStatus = 502;
+        }
+        break;
+      }
+
+      rows.push(...(body.data ?? []));
+
+      if (body.paging?.next) {
+        hasPaging = true;
+        absoluteNextUrl = body.paging.next;
+        continue;
+      }
+
+      break;
+    }
+
+    return { rows, httpStatus, pagingPageCount, hasPaging, providerError };
+  }
+
+  /** Best-effort Page token lookup when /me/accounts omits access_token. */
+  async tryResolvePageAccessToken(
+    pageId: string,
+    userAccessToken: string,
+  ): Promise<string | null> {
+    try {
+      const body = await this.request<{ access_token?: string }>(`/${pageId}`, {
+        accessToken: userAccessToken,
+        searchParams: { fields: 'access_token' },
+      });
+      return body.access_token ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  /** Returns only Pages with usable tokens — used for server-side selection validation. */
+  async listPages(userAccessToken: string): Promise<FacebookPageSummary[]> {
+    const discovery = await this.discoverPages(userAccessToken);
+    const summaries: FacebookPageSummary[] = [];
+
+    for (const page of discovery.rows) {
+      if (!page.id || !page.name) continue;
+      let token = page.access_token ?? null;
+      if (!token) {
+        token = await this.tryResolvePageAccessToken(page.id, userAccessToken);
+      }
+      if (!token) continue;
+      summaries.push({
+        id: page.id,
+        name: page.name,
         category: page.category ?? null,
-        accessToken: page.access_token as string,
+        accessToken: token,
         tasks: page.tasks ?? [],
-      }));
+      });
+    }
+
+    return summaries;
   }
 
   /** The real request that proves the connection works. */

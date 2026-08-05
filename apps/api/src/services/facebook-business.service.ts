@@ -30,6 +30,10 @@ import {
   resolveFacebookConnectionState,
   resolveFacebookOAuthBrowserReturnPath,
   resolveFacebookMessengerAvailability,
+  buildFacebookPageDiscoveryDiagnosis,
+  mapRawFacebookAccountRow,
+  resolveFacebookPageDiscoveryStatus,
+  type FacebookPageDiscoveryResult,
   shouldSendFacebookNotification,
   validateFacebookMedia,
   validateFacebookSchedule,
@@ -492,7 +496,78 @@ export class FacebookBusinessService {
     return { redirectUrl: `${this.appUrl.replace(/\/$/, '')}${returnPath}?facebook=select-page` };
   }
 
-  /** Lists the Pages the authorising user administers. */
+  /** Lists the Pages the authorising user administers with sanitized provider diagnosis. */
+  async discoverPagesForSelection(actor: FacebookActor): Promise<FacebookPageDiscoveryResult> {
+    this.assertManageConnection(actor);
+    const config = this.requireAppConfig();
+    const row = await this.loadConnection(actor.companyId);
+    const credentials = this.decryptCredentials(row);
+    const userToken = credentials?.userAccessToken;
+
+    if (!userToken) {
+      throw new FacebookBusinessError(
+        'NOT_AUTHORISED',
+        'No Facebook authorisation is stored. Connect Facebook before selecting a Page.',
+      );
+    }
+
+    const graph = this.graphClientFactory(config);
+    const [fetchResult, grantedPermissions, tokenInfo] = await Promise.all([
+      graph.discoverPages(userToken),
+      graph.getGrantedPermissions(userToken),
+      graph.inspectAccessToken(userToken),
+    ]);
+
+    const mappedPages = [];
+    for (const raw of fetchResult.rows) {
+      let resolvedToken = raw.access_token ?? null;
+      if (raw.id && raw.name && !resolvedToken) {
+        resolvedToken = await graph.tryResolvePageAccessToken(raw.id, userToken);
+      }
+      const mapped = mapRawFacebookAccountRow(raw, resolvedToken);
+      if (mapped) mappedPages.push(mapped);
+    }
+
+    const appliedFilters = [
+      'retain_all_provider_rows_for_diagnosis',
+      'selectable_only_when_id_name_and_page_access_token_present',
+      'optional_tryResolvePageAccessToken_when_me_accounts_omits_token',
+      'tasks_not_required_including_PROFILE_PLUS_variants',
+    ];
+
+    const status = resolveFacebookPageDiscoveryStatus({
+      rawRows: fetchResult.rows,
+      mappedPages,
+      grantedScopes: grantedPermissions,
+      providerFailed: Boolean(fetchResult.providerError),
+      providerErrorMessage: fetchResult.providerError?.message ?? null,
+    });
+
+    return {
+      status: status.status,
+      detail: status.detail,
+      pages: mappedPages,
+      diagnosis: buildFacebookPageDiscoveryDiagnosis({
+        httpStatus: fetchResult.httpStatus,
+        providerErrorCode: fetchResult.providerError?.code ?? null,
+        providerErrorSubcode: fetchResult.providerError?.subcode ?? null,
+        providerErrorType: fetchResult.providerError?.type ?? null,
+        rawRows: fetchResult.rows,
+        mappedPages,
+        grantedScopes: grantedPermissions,
+        configuredAppId: config.appId,
+        tokenAppId: tokenInfo.appId,
+        tokenValid: tokenInfo.isValid,
+        tokenExpiresAt: tokenInfo.expiresAt,
+        tokenUserIdPresent: tokenInfo.userIdPresent,
+        hasPaging: fetchResult.hasPaging,
+        pagingPageCount: fetchResult.pagingPageCount,
+        appliedFilters,
+      }),
+    };
+  }
+
+  /** Lists selectable Pages with tokens for server-side validation only. */
   async listPages(actor: FacebookActor): Promise<FacebookPageSummary[]> {
     this.assertManageConnection(actor);
     const config = this.requireAppConfig();
@@ -533,6 +608,11 @@ export class FacebookBusinessService {
     const pages = await graph.listPages(userToken);
     const page = pages.find((entry) => entry.id === pageId);
     if (!page) {
+      const discovery = await this.discoverPagesForSelection(actor);
+      const listed = discovery.pages.find((entry) => entry.id === pageId);
+      if (listed && !listed.selectable) {
+        throw new FacebookBusinessError(listed.status, listed.statusDetail);
+      }
       throw new FacebookBusinessError(
         'PAGE_NOT_AVAILABLE',
         'That Page is not among the Pages this Facebook account administers.',

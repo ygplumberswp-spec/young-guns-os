@@ -372,3 +372,14 @@
 | **Correction** | OAuth state hygiene; `/facebook-business?facebook=select-page` return; **Choose Page** on Integrations; setup callback from API host |
 | **Status after fix** | **COMPLETE_LOCAL_ONLY** — Owner staging retest pending (no push/deploy) |
 | **Instagram/TikTok** | Unchanged |
+
+## Addendum — J-6.7F Facebook Page discovery diagnosis (local, 2026-08-05)
+
+| Field | Value |
+|-------|-------|
+| **Affected** | J67F-003, J67F-004, `/facebook-business/pages` discovery |
+| **Live failure** | Empty Choose Page list despite Meta Business Integrations Page selection |
+| **Root cause** | Silent filter requiring `access_token` on every `/me/accounts` row |
+| **Correction** | Sanitized diagnosis, honest status codes, pagination, no silent discard |
+| **Scopes** | `pages_show_list` only — no advanced permissions added |
+| **Status after fix** | **COMPLETE_LOCAL_ONLY** — Owner staging retest pending (no push/deploy) |

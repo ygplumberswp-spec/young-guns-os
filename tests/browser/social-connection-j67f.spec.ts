@@ -132,6 +132,21 @@ test.describe('Social connection foundation (J-6.7F)', () => {
     expect(integrationsSource).toMatch(/FACEBOOK_PAGE_SELECTION_WORKSPACE_PATH/);
   });
 
+  test('Facebook page discovery exposes honest status codes', async () => {
+    const graphSource = readFileSync(
+      join(repoRoot, 'apps/api/src/lib/facebook-graph.client.ts'),
+      'utf8',
+    );
+    const pageSource = readFileSync(
+      join(repoRoot, 'apps/web/src/pages/facebook-business/FacebookBusinessPage.tsx'),
+      'utf8',
+    );
+    expect(graphSource).toMatch(/discoverPages/);
+    expect(graphSource).not.toMatch(/filter\(\(page\) => page\.id && page\.name && page\.access_token\)/);
+    expect(pageSource).toMatch(/META_PAGE_LIST_EMPTY/);
+    expect(pageSource).not.toMatch(/does not administer any Pages/);
+  });
+
   test('Facebook setup requirements use API callback not web APP_URL', async () => {
     const serviceSource = readFileSync(
       join(repoRoot, 'apps/api/src/services/social-connection.service.ts'),

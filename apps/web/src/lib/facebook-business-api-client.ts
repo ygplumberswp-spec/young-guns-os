@@ -8,6 +8,9 @@ import type {
   FacebookDashboardCard,
   FacebookInsightCoverage,
   FacebookMessengerAvailability,
+  FacebookPageDiscoveryDiagnosis,
+  FacebookPageDiscoveryResult,
+  FacebookPageDiscoveryRow,
   FacebookPermission,
 } from '@titan/shared';
 import { request, ApiClientError } from './api-client';
@@ -60,11 +63,11 @@ export type FacebookConnectionView = {
   hasStoredCredentials: boolean;
 };
 
-export type FacebookPageOption = {
-  id: string;
-  name: string;
-  category: string | null;
-  tasks: string[];
+export type FacebookPageOption = FacebookPageDiscoveryRow;
+
+export type FacebookPagesDiscoveryResponse = FacebookPageDiscoveryResult & {
+  pages: FacebookPageDiscoveryRow[];
+  diagnosis: FacebookPageDiscoveryDiagnosis;
 };
 
 export type FacebookContentMediaView = {
@@ -185,7 +188,7 @@ export function startFacebookOAuth(accessToken: string, returnPath?: string) {
 }
 
 export function fetchFacebookPages(accessToken: string) {
-  return request<FacebookPageOption[]>(`${BASE}/pages`, { accessToken });
+  return request<FacebookPagesDiscoveryResponse>(`${BASE}/pages`, { accessToken });
 }
 
 export function selectFacebookPage(accessToken: string, pageId: string) {

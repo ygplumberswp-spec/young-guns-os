@@ -7,9 +7,11 @@ import {
   canAccessFacebookBusiness,
   canWriteFacebookBusiness,
   FACEBOOK_CONTENT_STATUS_LABELS,
+  FACEBOOK_PAGE_DISCOVERY_STATUS_LABELS,
   formatFacebookScheduleForOwner,
   YOUNG_GUNS_BRAND,
   type FacebookContentStatus,
+  type FacebookPageDiscoveryStatusCode,
 } from '@titan/shared';
 import { PageHeader } from '../../components/ux';
 import { useAuth } from '../../lib/auth-context';
@@ -45,7 +47,7 @@ import {
   type FacebookInsightsView,
   type FacebookLeadView,
   type FacebookNotificationView,
-  type FacebookPageOption,
+  type FacebookPagesDiscoveryResponse,
   type FacebookSyncRunView,
 } from '../../lib/facebook-business-api-client';
 
@@ -70,7 +72,7 @@ export function FacebookBusinessPage() {
   const [tab, setTab] = useState<Tab>('connection');
 
   const [connection, setConnection] = useState<FacebookConnectionView | null>(null);
-  const [pages, setPages] = useState<FacebookPageOption[] | null>(null);
+  const [pageDiscovery, setPageDiscovery] = useState<FacebookPagesDiscoveryResponse | null>(null);
   const [content, setContent] = useState<FacebookContentView[]>([]);
   const [comments, setComments] = useState<FacebookCommentView[]>([]);
   const [leads, setLeads] = useState<FacebookLeadView[]>([]);
@@ -202,7 +204,7 @@ export function FacebookBusinessPage() {
   async function handleLoadPages() {
     if (!accessToken || !canManage) return;
     await withAction(async () => {
-      setPages(await fetchFacebookPages(accessToken));
+      setPageDiscovery(await fetchFacebookPages(accessToken));
     });
   }
 
@@ -210,7 +212,7 @@ export function FacebookBusinessPage() {
     if (!accessToken || !canManage) return;
     await withAction(async () => {
       const next = await selectFacebookPage(accessToken, pageId);
-      setPages(null);
+      setPageDiscovery(null);
       setSuccess(
         next.state === 'connected'
           ? `Connected and verified against Facebook as "${next.pageName}".`
@@ -231,7 +233,7 @@ export function FacebookBusinessPage() {
     if (!accessToken || !canManage) return;
     await withAction(async () => {
       await disconnectFacebook(accessToken);
-      setPages(null);
+      setPageDiscovery(null);
       setSuccess('Facebook disconnected. Stored credentials were cleared.');
     });
   }
@@ -446,7 +448,7 @@ export function FacebookBusinessPage() {
           {tab === 'connection' ? (
             <ConnectionTab
               connection={connection}
-              pages={pages}
+              pageDiscovery={pageDiscovery}
               canManage={canManage}
               isBusy={isBusy}
               onConnect={handleConnect}
@@ -529,9 +531,48 @@ export function FacebookBusinessPage() {
 
 // ─── Connection ──────────────────────────────────────────────────────────────
 
+function emptyPageDiscoveryMessage(status: FacebookPageDiscoveryStatusCode): string {
+  switch (status) {
+    case 'META_PAGE_LIST_EMPTY':
+      return 'Meta returned no managed Pages for this token. Confirm Young Guns Plumbing – Cape Town is granted under Meta Business Integrations for this app.';
+    case 'META_PAGE_LIST_FAILED':
+      return 'Meta did not return a successful Page list. Retry after confirming Business Integrations access.';
+    case 'META_PAGE_TOKEN_UNAVAILABLE':
+      return 'Meta listed Pages but did not expose a usable Page access token for any of them.';
+    case 'META_TOKEN_SCOPE_MISMATCH':
+      return 'The stored token is missing pages_show_list, so Meta will not return managed Pages.';
+    default:
+      return 'No selectable Pages are available yet.';
+  }
+}
+
+function formatPageDiscoveryDiagnosis(discovery: FacebookPagesDiscoveryResponse): string {
+  const d = discovery.diagnosis;
+  return [
+    `Graph version: ${d.graphVersion}`,
+    `Endpoint: ${d.endpoint}`,
+    `Fields: ${d.fields}`,
+    `HTTP status: ${d.httpStatus}`,
+    `Provider error code: ${d.providerErrorCode ?? 'none'}`,
+    `Raw rows: ${d.rawRowCount}`,
+    `Retained rows: ${d.retainedRowCount}`,
+    `Selectable rows: ${d.selectableRowCount}`,
+    `Paging: ${d.hasPaging ? `yes (${d.pagingPageCount} page(s))` : 'no'}`,
+    `Granted scopes: ${d.grantedScopes.join(', ') || 'none'}`,
+    `pages_show_list: ${d.hasPagesShowList}`,
+    `business_management: ${d.hasBusinessManagement}`,
+    `App ID matches token: ${d.appIdMatches}`,
+    `Token valid: ${d.tokenValid}`,
+    `Token expired: ${d.tokenExpired}`,
+    `Authenticated user present: ${d.authenticatedUserIdPresent}`,
+    `Young Guns Page seen in raw response: ${d.youngGunsPageSeenInRawResponse}`,
+    `Applied filters: ${d.appliedFilters.join('; ')}`,
+  ].join('\n');
+}
+
 function ConnectionTab({
   connection,
-  pages,
+  pageDiscovery,
   canManage,
   isBusy,
   onConnect,
@@ -541,7 +582,7 @@ function ConnectionTab({
   onDisconnect,
 }: {
   connection: FacebookConnectionView | null;
-  pages: FacebookPageOption[] | null;
+  pageDiscovery: FacebookPagesDiscoveryResponse | null;
   canManage: boolean;
   isBusy: boolean;
   onConnect: () => void;
@@ -652,24 +693,39 @@ function ConnectionTab({
             </Button>
           </div>
 
-          {pages ? (
-            pages.length === 0 ? (
-              <p>
-                This Facebook account does not administer any Pages, so there is nothing to connect.
+          {pageDiscovery ? (
+            <div className="space-y-3">
+              <p className="page-muted">
+                {FACEBOOK_PAGE_DISCOVERY_STATUS_LABELS[pageDiscovery.status]}: {pageDiscovery.detail}
               </p>
-            ) : (
-              <ul>
-                {pages.map((page) => (
-                  <li key={page.id}>
-                    <strong>{page.name}</strong>
-                    {page.category ? ` · ${page.category}` : ''}{' '}
-                    <Button onClick={() => onSelectPage(page.id)} disabled={isBusy}>
-                      Use this Page
-                    </Button>
-                  </li>
-                ))}
-              </ul>
-            )
+              {pageDiscovery.pages.length === 0 ? (
+                <p>{emptyPageDiscoveryMessage(pageDiscovery.status)}</p>
+              ) : (
+                <ul>
+                  {pageDiscovery.pages.map((page) => (
+                    <li key={page.id || page.name}>
+                      <strong>{page.name}</strong>
+                      {page.category ? ` · ${page.category}` : ''}
+                      {page.tasks.length > 0 ? ` · tasks: ${page.tasks.join(', ')}` : null}
+                      <p className="page-muted">{page.statusDetail}</p>
+                      {page.selectable ? (
+                        <Button onClick={() => onSelectPage(page.id)} disabled={isBusy}>
+                          Use this Page
+                        </Button>
+                      ) : null}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {canManage ? (
+                <details>
+                  <summary className="page-muted">Sanitized provider diagnosis</summary>
+                  <pre className="social-connection-card__setup">
+                    {formatPageDiscoveryDiagnosis(pageDiscovery)}
+                  </pre>
+                </details>
+              ) : null}
+            </div>
           ) : null}
         </Panel>
       ) : (

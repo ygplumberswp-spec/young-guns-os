@@ -88,6 +88,13 @@ describe('Facebook Business OAuth hygiene and Page selection (J-6.7F)', () => {
     assert.ok(socialServiceSource.includes('facebookCallbackUrl'));
   });
 
+  it('page discovery returns sanitized diagnosis and does not silently filter rows', () => {
+    assert.ok(serviceSource.includes('discoverPagesForSelection'));
+    assert.ok(serviceSource.includes('mapRawFacebookAccountRow'));
+    assert.ok(serviceSource.includes('buildFacebookPageDiscoveryDiagnosis'));
+    assert.ok(serviceSource.includes('tryResolvePageAccessToken'));
+  });
+
   it('Instagram/TikTok runtime callback still uses APP_URL (outstanding item)', () => {
     assert.ok(socialServiceSource.includes('oauthCallbackUrl(provider: SocialConnectionProvider)'));
     assert.match(
