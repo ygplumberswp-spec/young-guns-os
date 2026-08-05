@@ -14,6 +14,7 @@ export type FacebookConnectionUiStatus =
 export type FacebookConnectionUiAction =
   | 'connect'
   | 'choose_page'
+  | 'grant_business_portfolio'
   | 'check_health'
   | 'reconnect'
   | 'disconnect'
@@ -28,6 +29,7 @@ export type FacebookConnectionActionPlan = {
 export const FACEBOOK_CONNECTION_ACTION_LABELS: Record<FacebookConnectionUiAction, string> = {
   connect: 'Connect',
   choose_page: 'Choose Page',
+  grant_business_portfolio: 'Grant Business Portfolio access',
   check_health: 'Check health',
   reconnect: 'Reconnect',
   disconnect: 'Disconnect',
@@ -76,15 +78,24 @@ export function normalizeFacebookConnectionUiStatus(input: {
   }
 }
 
+export type FacebookConnectionActionPlanContext = {
+  /** When true, partial state shows Grant Business Portfolio access instead of Choose Page. */
+  needsBusinessPortfolioAccess?: boolean;
+};
+
 /**
  * Exactly one primary action per state; secondary/tertiary actions never duplicate primary.
  * Used by Integrations Social Connections card and Facebook Business workspace.
  */
 export function resolveFacebookConnectionActionPlan(
   status: FacebookConnectionUiStatus,
+  context: FacebookConnectionActionPlanContext = {},
 ): FacebookConnectionActionPlan {
   switch (status) {
     case 'partial':
+      if (context.needsBusinessPortfolioAccess) {
+        return { primary: 'grant_business_portfolio', secondary: ['disconnect'], tertiary: [] };
+      }
       return { primary: 'choose_page', secondary: ['disconnect'], tertiary: [] };
     case 'connected':
       return { primary: 'check_health', secondary: ['reconnect', 'disconnect'], tertiary: [] };

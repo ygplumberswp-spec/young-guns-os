@@ -2,13 +2,20 @@ import { createHmac, timingSafeEqual } from 'node:crypto';
 import {
   FACEBOOK_GRAPH_BASE_URL,
   FACEBOOK_OAUTH_BASIC_SCOPES,
+  FACEBOOK_OAUTH_BUSINESS_PORTFOLIO_SCOPES,
   FACEBOOK_OAUTH_DIALOG_URL,
   FACEBOOK_PAGE_LIST_ENDPOINT,
   FACEBOOK_PAGE_LIST_FIELDS,
   FACEBOOK_DIRECT_PAGE_IDENTITY_FIELDS,
   FACEBOOK_DIRECT_PAGE_TOKEN_FIELDS,
+  FACEBOOK_BUSINESS_PORTFOLIO_LIST_ENDPOINT,
+  FACEBOOK_BUSINESS_PORTFOLIO_LIST_FIELDS,
+  FACEBOOK_BUSINESS_OWNED_PAGES_FIELDS,
+  FACEBOOK_BUSINESS_CLIENT_PAGES_FIELDS,
   type FacebookPermission,
   type RawFacebookAccountRow,
+  type RawFacebookBusinessPortfolioRow,
+  type RawFacebookBusinessPageRow,
   type FacebookDirectPageLookupRaw,
 } from '@titan/shared';
 
@@ -151,6 +158,7 @@ export class FacebookGraphClient {
    *
    * - With `loginConfigId`: Facebook Login for Business (config_id only, no scope).
    * - Without: least-privilege scope flow (pages_show_list only at initial connect).
+   * - Business portfolio tier: pages_show_list + business_management only.
    */
   buildAuthorizeUrl(
     state: string,
@@ -492,6 +500,154 @@ export class FacebookGraphClient {
     }
 
     return { rows, httpStatus, pagingPageCount, hasPaging, providerError };
+  }
+
+  /** Builds OAuth URL for business-owned Page discovery (J-6.7F5). */
+  buildBusinessPortfolioAuthorizeUrl(state: string): string {
+    return this.buildAuthorizeUrl(state, [...FACEBOOK_OAUTH_BUSINESS_PORTFOLIO_SCOPES]);
+  }
+
+  /**
+   * Lists Business Portfolios accessible to the authenticated user.
+   * GET /me/businesses?fields=id,name
+   */
+  async listAccessibleBusinessPortfolios(userAccessToken: string): Promise<{
+    portfolios: RawFacebookBusinessPortfolioRow[];
+    httpStatus: number;
+    providerError: {
+      code: number | null;
+      subcode: number | null;
+      type: string | null;
+      message: string;
+    } | null;
+  }> {
+    try {
+      const body = await this.request<{ data?: RawFacebookBusinessPortfolioRow[] }>(
+        FACEBOOK_BUSINESS_PORTFOLIO_LIST_ENDPOINT,
+        {
+          accessToken: userAccessToken,
+          searchParams: {
+            fields: FACEBOOK_BUSINESS_PORTFOLIO_LIST_FIELDS,
+            limit: 100,
+          },
+        },
+      );
+      return { portfolios: body.data ?? [], httpStatus: 200, providerError: null };
+    } catch (error) {
+      if (error instanceof FacebookGraphError) {
+        return {
+          portfolios: [],
+          httpStatus: error.httpStatus ?? 502,
+          providerError: {
+            code: error.graphCode,
+            subcode: error.graphSubcode,
+            type: error.kind,
+            message: error.message,
+          },
+        };
+      }
+      return {
+        portfolios: [],
+        httpStatus: 502,
+        providerError: {
+          code: null,
+          subcode: null,
+          type: 'unknown',
+          message: error instanceof Error ? error.message : 'Unknown Facebook error.',
+        },
+      };
+    }
+  }
+
+  private async listBusinessPortfolioPages(
+    businessId: string,
+    userAccessToken: string,
+    endpoint: 'owned_pages' | 'client_pages',
+    fields: string,
+  ): Promise<RawFacebookBusinessPageRow[]> {
+    try {
+      const body = await this.request<{ data?: RawFacebookBusinessPageRow[] }>(
+        `/${businessId}/${endpoint}`,
+        {
+          accessToken: userAccessToken,
+          searchParams: { fields, limit: 100 },
+        },
+      );
+      return body.data ?? [];
+    } catch {
+      return [];
+    }
+  }
+
+  /**
+   * Discovers Pages through accessible Business Portfolios (owned + assigned).
+   */
+  async discoverBusinessPortfolioPages(userAccessToken: string): Promise<{
+    portfolios: Array<{ id: string; name: string }>;
+    pages: Array<{
+      raw: RawFacebookBusinessPageRow;
+      businessPortfolioId: string;
+      businessPortfolioName: string;
+      source: 'owned' | 'assigned';
+    }>;
+    httpStatus: number;
+    providerError: {
+      code: number | null;
+      subcode: number | null;
+      type: string | null;
+      message: string;
+    } | null;
+  }> {
+    const portfolioResult = await this.listAccessibleBusinessPortfolios(userAccessToken);
+    const portfolios: Array<{ id: string; name: string }> = [];
+    const pages: Array<{
+      raw: RawFacebookBusinessPageRow;
+      businessPortfolioId: string;
+      businessPortfolioName: string;
+      source: 'owned' | 'assigned';
+    }> = [];
+
+    for (const row of portfolioResult.portfolios) {
+      if (!row.id || !row.name) continue;
+      portfolios.push({ id: row.id, name: row.name });
+
+      const owned = await this.listBusinessPortfolioPages(
+        row.id,
+        userAccessToken,
+        'owned_pages',
+        FACEBOOK_BUSINESS_OWNED_PAGES_FIELDS,
+      );
+      for (const page of owned) {
+        pages.push({
+          raw: page,
+          businessPortfolioId: row.id,
+          businessPortfolioName: row.name,
+          source: 'owned',
+        });
+      }
+
+      const assigned = await this.listBusinessPortfolioPages(
+        row.id,
+        userAccessToken,
+        'client_pages',
+        FACEBOOK_BUSINESS_CLIENT_PAGES_FIELDS,
+      );
+      for (const page of assigned) {
+        pages.push({
+          raw: page,
+          businessPortfolioId: row.id,
+          businessPortfolioName: row.name,
+          source: 'assigned',
+        });
+      }
+    }
+
+    return {
+      portfolios,
+      pages,
+      httpStatus: portfolioResult.httpStatus,
+      providerError: portfolioResult.providerError,
+    };
   }
 
   /** Best-effort Page token lookup when /me/accounts omits access_token. */

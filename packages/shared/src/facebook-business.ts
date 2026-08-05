@@ -111,6 +111,15 @@ export const FACEBOOK_PERMISSIONS: FacebookPermission[] = [
 export const FACEBOOK_OAUTH_BASIC_SCOPES: FacebookPermission[] = ['pages_show_list'];
 
 /**
+ * Business-owned Page discovery (J-6.7F5) — requested only via explicit
+ * "Grant Business Portfolio access" re-authorisation, never at initial connect.
+ */
+export const FACEBOOK_OAUTH_BUSINESS_PORTFOLIO_SCOPES: FacebookPermission[] = [
+  'pages_show_list',
+  'business_management',
+];
+
+/**
  * Tier 2 — publishing (requested only via re-authorisation when Meta use case
  * supports it; never bundled into initial connect).
  */
@@ -545,6 +554,56 @@ export function usesFacebookLoginForBusinessConfig(authorizeUrl: string): boolea
   } catch {
     return false;
   }
+}
+
+/** Validates business-portfolio OAuth URL uses controlled scopes only. */
+export function assertFacebookBusinessPortfolioOAuthUrl(authorizeUrl: string): {
+  ok: boolean;
+  violations: string[];
+} {
+  const violations: string[] = [];
+  if (usesFacebookLoginForBusinessConfig(authorizeUrl)) {
+    violations.push('business portfolio flow must not use config_id');
+    return { ok: false, violations };
+  }
+
+  const scopes = parseFacebookOAuthScopesFromAuthorizeUrl(authorizeUrl);
+  const forbiddenAdvanced = [
+    'pages_manage_posts',
+    'pages_read_engagement',
+    'pages_manage_engagement',
+    'pages_manage_metadata',
+    'pages_messaging',
+    'leads_retrieval',
+    'pages_read_user_content',
+    'read_insights',
+    'ads_read',
+    'ads_management',
+  ] as const;
+
+  for (const forbidden of forbiddenAdvanced) {
+    if (scopes.includes(forbidden)) {
+      violations.push(`forbidden business portfolio OAuth scope: ${forbidden}`);
+    }
+  }
+  for (const forbidden of FACEBOOK_FORBIDDEN_INSTAGRAM_OAUTH_SCOPES) {
+    if (scopes.includes(forbidden)) {
+      violations.push(`instagram scope on facebook URL: ${forbidden}`);
+    }
+  }
+  for (const required of FACEBOOK_OAUTH_BUSINESS_PORTFOLIO_SCOPES) {
+    if (!scopes.includes(required)) {
+      violations.push(`missing required business portfolio scope: ${required}`);
+    }
+  }
+  if (scopes.length !== FACEBOOK_OAUTH_BUSINESS_PORTFOLIO_SCOPES.length) {
+    for (const scope of scopes) {
+      if (!FACEBOOK_OAUTH_BUSINESS_PORTFOLIO_SCOPES.includes(scope as FacebookPermission)) {
+        violations.push(`unexpected business portfolio scope: ${scope}`);
+      }
+    }
+  }
+  return { ok: violations.length === 0, violations };
 }
 
 /** Validates initial OAuth URL uses least-privilege scopes only. */
@@ -1748,6 +1807,7 @@ export type FacebookAuditAction =
   | 'connection.owner_approval'
   | 'connection.oauth_started'
   | 'connection.oauth_completed'
+  | 'connection.business_portfolio_discovery'
   | 'connection.direct_page_lookup'
   | 'connection.page_selected'
   | 'connection.verified'

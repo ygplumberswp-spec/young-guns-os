@@ -127,8 +127,19 @@ const STATUS_BY_CODE: Record<string, number> = {
   DIRECT_PAGE_PERMISSION_DENIED: 403,
   DIRECT_PAGE_NOT_FOUND: 404,
   DIRECT_PAGE_INVALID_FIELD: 400,
+  FACEBOOK_PAGE_OBJECT_INACCESSIBLE: 403,
   DIRECT_PAGE_LOOKUP_FAILED: 502,
   PAGE_IDENTITY_MISMATCH: 409,
+  BUSINESS_PERMISSION_REQUIRED: 403,
+  BUSINESS_AUTHORIZATION_READY: 409,
+  BUSINESS_PORTFOLIO_NOT_FOUND: 404,
+  BUSINESS_PORTFOLIO_FOUND: 409,
+  BUSINESS_PAGE_NOT_ASSIGNED: 404,
+  BUSINESS_PAGE_DISCOVERED: 409,
+  BUSINESS_PAGE_TOKEN_UNAVAILABLE: 409,
+  BUSINESS_PAGE_CONNECTED: 409,
+  META_APP_REVIEW_REQUIRED: 403,
+  META_PROVIDER_FAILED: 502,
 };
 
 function handleError(res: import('express').Response, error: unknown): boolean {
@@ -265,6 +276,20 @@ export function createFacebookBusinessRouter({
     );
   });
 
+  router.post('/oauth/start-business-portfolio', (req, res, next) => {
+    const parsed = startOAuthSchema.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      res.status(400).json({ error: { code: 'INVALID_REQUEST', message: 'Invalid payload.' } });
+      return;
+    }
+    wrap(res, next, () =>
+      facebookBusinessService.startBusinessPortfolioOAuth(
+        toActor(req),
+        parsed.data.returnPath ?? null,
+      ),
+    );
+  });
+
   router.get('/pages', (req, res, next) =>
     wrap(res, next, async () => {
       const discovery = await facebookBusinessService.discoverPagesForSelection(toActor(req));
@@ -272,6 +297,8 @@ export function createFacebookBusinessRouter({
         ...discovery,
         pendingPageCandidate: discovery.pendingPageCandidate,
         directLookup: discovery.directLookup,
+        businessPortfolio: discovery.businessPortfolio,
+        needsBusinessPortfolioAccess: discovery.needsBusinessPortfolioAccess,
         pages: discovery.pages.map((page) => ({
           id: page.id,
           name: page.name,

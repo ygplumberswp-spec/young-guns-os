@@ -19,8 +19,10 @@ export type FacebookConnectionActionsProps = {
   confirmDisconnect: boolean;
   choosePageHref?: string | null;
   showViewSetup?: boolean;
+  needsBusinessPortfolioAccess?: boolean;
   onConnect: () => void;
   onChoosePage: () => void;
+  onGrantBusinessPortfolio?: () => void;
   onCheckHealth: () => void;
   onReconnect: () => void;
   onDisconnect: () => void;
@@ -92,6 +94,7 @@ function renderActionButton(
   const handlers: Record<FacebookConnectionUiAction, () => void> = {
     connect: props.onConnect,
     choose_page: props.onChoosePage,
+    grant_business_portfolio: props.onGrantBusinessPortfolio ?? props.onChoosePage,
     check_health: props.onCheckHealth,
     reconnect: props.onReconnect,
     disconnect: props.onRequestDisconnect,
@@ -116,7 +119,9 @@ export function FacebookConnectionActions(props: FacebookConnectionActionsProps)
     foundationStatus: props.foundationStatus,
     connectionState: props.connectionState,
   });
-  const plan = resolveFacebookConnectionActionPlan(uiStatus);
+  const plan = resolveFacebookConnectionActionPlan(uiStatus, {
+    needsBusinessPortfolioAccess: props.needsBusinessPortfolioAccess,
+  });
 
   const actions: FacebookConnectionUiAction[] = [];
   if (plan.primary) actions.push(plan.primary);

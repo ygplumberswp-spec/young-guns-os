@@ -9,6 +9,8 @@ import {
   FACEBOOK_CONTENT_STATUS_LABELS,
   FACEBOOK_PAGE_DISCOVERY_STATUS_LABELS,
   FACEBOOK_DIRECT_PAGE_LOOKUP_STATUS_LABELS,
+  FACEBOOK_BUSINESS_PORTFOLIO_STATUS_LABELS,
+  FACEBOOK_BUSINESS_PORTFOLIO_OAUTH_EXPLANATION,
   formatFacebookScheduleForOwner,
   YOUNG_GUNS_BRAND,
   type FacebookContentStatus,
@@ -42,6 +44,7 @@ import {
   runFacebookSync,
   selectFacebookPage,
   startFacebookOAuth,
+  startFacebookBusinessPortfolioOAuth,
   transitionFacebookContent,
   type FacebookCommentView,
   type FacebookConnectionView,
@@ -226,6 +229,27 @@ export function FacebookBusinessPage() {
       setIsBusy(false);
     }
   }
+
+  async function handleGrantBusinessPortfolio() {
+    if (!accessToken || !canManage) return;
+    await withAction(async () => {
+      const result = await startFacebookBusinessPortfolioOAuth(accessToken, '/facebook-business');
+      window.location.assign(result.authorizationUrl);
+    });
+  }
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (
+      params.get('facebook') === 'select-page' &&
+      params.get('business') === 'portfolio' &&
+      accessToken &&
+      canManage &&
+      !pageDiscovery
+    ) {
+      void handleLoadPages();
+    }
+  }, [accessToken, canManage, pageDiscovery]);
 
   async function handleSelectPage(pageId: string) {
     if (!accessToken || !canManage) return;
@@ -472,6 +496,7 @@ export function FacebookBusinessPage() {
               isBusy={isBusy}
               onConnect={handleConnect}
               onLoadPages={handleLoadPages}
+              onGrantBusinessPortfolio={handleGrantBusinessPortfolio}
               onSelectPage={handleSelectPage}
               onCheck={handleCheck}
               onDisconnect={handleDisconnect}
@@ -592,6 +617,34 @@ function formatDirectPageLookupDiagnosis(directLookup: NonNullable<FacebookPages
   ].join('\n');
 }
 
+function formatBusinessPortfolioDiagnosis(
+  discovery: NonNullable<FacebookPagesDiscoveryResponse['businessPortfolio']>,
+): string {
+  const d = discovery.diagnosis;
+  return [
+    `Graph version: ${d.graphVersion}`,
+    `Portfolio list endpoint: ${d.portfolioListEndpoint}`,
+    `Portfolio list fields: ${d.portfolioListFields}`,
+    `Owned Pages fields: ${d.ownedPagesFields}`,
+    `Client Pages fields: ${d.clientPagesFields}`,
+    `HTTP status: ${d.httpStatus}`,
+    `Provider error code: ${d.providerErrorCode ?? 'none'}`,
+    `Provider error subcode: ${d.providerErrorSubcode ?? 'none'}`,
+    `Provider error type: ${d.providerErrorType ?? 'none'}`,
+    `Portfolio count: ${d.portfolioCount}`,
+    `Raw Page count: ${d.rawPageCount}`,
+    `Selectable Page count: ${d.selectablePageCount}`,
+    `Granted scopes: ${d.grantedScopes.join(', ') || 'none'}`,
+    `pages_show_list: ${d.hasPagesShowList}`,
+    `business_management: ${d.hasBusinessManagement}`,
+    `Verified Page id: ${d.verifiedPageId ?? 'none'}`,
+    `Verified Page name: ${d.verifiedPageName ?? 'none'}`,
+    `Verified Page found: ${d.verifiedPageFound}`,
+    `Verified Page id matches: ${d.verifiedPageIdMatches}`,
+    `Verified Page name matches: ${d.verifiedPageNameMatches}`,
+  ].join('\n');
+}
+
 function formatPageDiscoveryDiagnosis(discovery: FacebookPagesDiscoveryResponse): string {
   const d = discovery.diagnosis;
   return [
@@ -623,6 +676,7 @@ function ConnectionTab({
   isBusy,
   onConnect,
   onLoadPages,
+  onGrantBusinessPortfolio,
   onSelectPage,
   onCheck,
   onDisconnect,
@@ -634,6 +688,7 @@ function ConnectionTab({
   isBusy: boolean;
   onConnect: () => void;
   onLoadPages: () => void;
+  onGrantBusinessPortfolio: () => void;
   onSelectPage: (pageId: string) => void;
   onCheck: () => void;
   onDisconnect: () => Promise<void>;
@@ -651,6 +706,11 @@ function ConnectionTab({
   }
 
   const needsConfiguration = connection.state === 'configuration_required';
+  const needsBusinessPortfolioAccess =
+    pageDiscovery?.needsBusinessPortfolioAccess ??
+    (connection.state === 'partial' &&
+      connection.hasStoredCredentials &&
+      !connection.grantedPermissions.includes('business_management'));
 
   return (
     <div className="space-y-4">
@@ -729,20 +789,68 @@ function ConnectionTab({
 
       {canManage ? (
         <Panel title="Manage the connection">
+          {pageDiscovery?.needsBusinessPortfolioAccess ? (
+            <p className="page-muted">{FACEBOOK_BUSINESS_PORTFOLIO_OAUTH_EXPLANATION}</p>
+          ) : null}
           <FacebookConnectionActions
             connectionState={connection.state}
             busy={isBusy}
             canManage={canManage}
             needsConfiguration={needsConfiguration}
+            needsBusinessPortfolioAccess={needsBusinessPortfolioAccess}
             confirmDisconnect={confirmDisconnect}
             onConnect={onConnect}
             onChoosePage={onLoadPages}
+            onGrantBusinessPortfolio={onGrantBusinessPortfolio}
             onCheckHealth={onCheck}
             onReconnect={onReconnect}
             onDisconnect={() => void handleDisconnectConfirmed()}
             onRequestDisconnect={() => setConfirmDisconnect(true)}
             onCancelDisconnect={() => setConfirmDisconnect(false)}
           />
+
+          {pageDiscovery?.businessPortfolio ? (
+            <div className="space-y-3">
+              <p className="page-muted">
+                {FACEBOOK_BUSINESS_PORTFOLIO_STATUS_LABELS[pageDiscovery.businessPortfolio.status]}:{' '}
+                {pageDiscovery.businessPortfolio.detail}
+              </p>
+              {pageDiscovery.businessPortfolio.portfolios.length > 0 ? (
+                <ul>
+                  {pageDiscovery.businessPortfolio.portfolios.map((portfolio) => (
+                    <li key={portfolio.id}>
+                      <strong>{portfolio.name}</strong>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+              {pageDiscovery.businessPortfolio.pages.length > 0 ? (
+                <ul>
+                  {pageDiscovery.businessPortfolio.pages.map((page) => (
+                    <li key={`${page.businessPortfolioId}-${page.id}`}>
+                      <strong>{page.name}</strong>
+                      {` · ${page.businessPortfolioName}`}
+                      {page.source === 'assigned' ? ' · assigned' : ' · owned'}
+                      <p className="page-muted">{page.statusDetail}</p>
+                      {page.selectable ? (
+                        <Button onClick={() => onSelectPage(page.id)} disabled={isBusy}>
+                          Use this Page
+                        </Button>
+                      ) : null}
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+              {canManage ? (
+                <details>
+                  <summary className="page-muted">Sanitized Business Portfolio diagnosis</summary>
+                  <pre className="social-connection-card__setup">
+                    {formatBusinessPortfolioDiagnosis(pageDiscovery.businessPortfolio)}
+                  </pre>
+                </details>
+              ) : null}
+            </div>
+          ) : null}
 
           {pageDiscovery ? (
             <div className="space-y-3">

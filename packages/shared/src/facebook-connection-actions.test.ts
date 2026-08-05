@@ -7,6 +7,15 @@ import {
 } from './facebook-connection-actions.js';
 
 describe('facebook connection action plan (J-6.7F)', () => {
+  it('partial state exposes Grant Business Portfolio access when business permission required', () => {
+    const plan = resolveFacebookConnectionActionPlan('partial', {
+      needsBusinessPortfolioAccess: true,
+    });
+    assert.equal(plan.primary, 'grant_business_portfolio');
+    assert.deepEqual(plan.secondary, ['disconnect']);
+    assert.equal(facebookConnectionActionAllowed(plan, 'choose_page'), false);
+  });
+
   it('partial state exposes Choose Page primary and Disconnect secondary only', () => {
     const plan = resolveFacebookConnectionActionPlan('partial');
     assert.equal(plan.primary, 'choose_page');

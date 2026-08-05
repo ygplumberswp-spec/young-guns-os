@@ -9,10 +9,11 @@ import type {
   FacebookInsightCoverage,
   FacebookMessengerAvailability,
   FacebookPageDiscoveryDiagnosis,
-  FacebookPageDiscoveryResult,
+  FacebookCombinedPageDiscoveryResult,
   FacebookPageDiscoveryRow,
   FacebookDirectPageLookupSanitized,
   FacebookPendingPageCandidate,
+  FacebookBusinessPortfolioDiscoveryResult,
   FacebookPermission,
 } from '@titan/shared';
 import { request, ApiClientError } from './api-client';
@@ -67,11 +68,13 @@ export type FacebookConnectionView = {
 
 export type FacebookPageOption = FacebookPageDiscoveryRow;
 
-export type FacebookPagesDiscoveryResponse = FacebookPageDiscoveryResult & {
+export type FacebookPagesDiscoveryResponse = FacebookCombinedPageDiscoveryResult & {
   pages: FacebookPageDiscoveryRow[];
   diagnosis: FacebookPageDiscoveryDiagnosis;
   pendingPageCandidate: FacebookPendingPageCandidate | null;
   directLookup: FacebookDirectPageLookupSanitized | null;
+  businessPortfolio: FacebookBusinessPortfolioDiscoveryResult | null;
+  needsBusinessPortfolioAccess: boolean;
 };
 
 export type FacebookContentMediaView = {
@@ -185,6 +188,14 @@ export function fetchFacebookCapabilities(accessToken: string) {
 
 export function startFacebookOAuth(accessToken: string, returnPath?: string) {
   return request<{ authorizationUrl: string }>(`${BASE}/oauth/start`, {
+    method: 'POST',
+    accessToken,
+    body: { returnPath },
+  });
+}
+
+export function startFacebookBusinessPortfolioOAuth(accessToken: string, returnPath?: string) {
+  return request<{ authorizationUrl: string }>(`${BASE}/oauth/start-business-portfolio`, {
     method: 'POST',
     accessToken,
     body: { returnPath },

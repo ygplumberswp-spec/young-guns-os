@@ -31,6 +31,7 @@ export type FacebookDirectPageLookupStatusCode =
   | 'DIRECT_PAGE_PERMISSION_DENIED'
   | 'DIRECT_PAGE_NOT_FOUND'
   | 'DIRECT_PAGE_INVALID_FIELD'
+  | 'FACEBOOK_PAGE_OBJECT_INACCESSIBLE'
   | 'DIRECT_PAGE_LOOKUP_FAILED'
   | 'PAGE_IDENTITY_MISMATCH';
 
@@ -39,7 +40,11 @@ export type FacebookDirectPageProviderMessageClassification =
   | 'invalid_field'
   | 'missing_permission_or_feature'
   | 'object_not_found_or_inaccessible'
+  | 'object_inaccessible'
   | 'unknown_invalid_request';
+
+/** Meta Graph error subcode when a Page object exists but is inaccessible to the user token. */
+export const FACEBOOK_PAGE_OBJECT_INACCESSIBLE_SUBCODE = 33;
 
 export type FacebookPendingPageCandidate = {
   pageId: string;
@@ -162,15 +167,31 @@ export function assertClientPageIdMatchesPendingCandidate(input: {
   return { allowed: true };
 }
 
+export function isFacebookPageObjectInaccessibleError(input: {
+  providerErrorCode: number | null;
+  providerErrorSubcode: number | null;
+}): boolean {
+  return (
+    input.providerErrorCode === 100 &&
+    input.providerErrorSubcode === FACEBOOK_PAGE_OBJECT_INACCESSIBLE_SUBCODE
+  );
+}
+
 export function classifyFacebookDirectPageProviderMessage(input: {
   httpStatus: number;
   providerErrorCode: number | null;
+  providerErrorSubcode?: number | null;
   providerErrorType: string | null;
   providerErrorMessage?: string | null;
   probe: 'identity' | 'token';
 }): FacebookDirectPageProviderMessageClassification {
   const message = (input.providerErrorMessage ?? '').toLowerCase();
   const code = input.providerErrorCode;
+  const subcode = input.providerErrorSubcode ?? null;
+
+  if (isFacebookPageObjectInaccessibleError({ providerErrorCode: code, providerErrorSubcode: subcode })) {
+    return 'object_inaccessible';
+  }
 
   if (code === 803 || input.httpStatus === 404) {
     return 'object_not_found_or_inaccessible';
@@ -218,13 +239,37 @@ function resolveProbeFailureStatus(input: {
   const classification = input.probe.providerMessageClassification;
   const code = input.probe.providerErrorCode;
 
-  if (classification === 'invalid_field' || code === 100) {
+  if (
+    classification === 'object_inaccessible' ||
+    isFacebookPageObjectInaccessibleError({
+      providerErrorCode: code,
+      providerErrorSubcode: input.probe.providerErrorSubcode,
+    })
+  ) {
+    return {
+      status: 'FACEBOOK_PAGE_OBJECT_INACCESSIBLE',
+      detail:
+        'Meta could not load this Page using the current user token. The Page may belong to a Business Portfolio that has not been granted to TITAN.',
+      selectable: false,
+    };
+  }
+
+  if (classification === 'invalid_field') {
     return {
       status: 'DIRECT_PAGE_INVALID_FIELD',
       detail:
         input.stage === 'identity'
           ? 'Meta rejected a field on the identity probe (id,name). This is not proof that business_management is required, that the user does not administer the Page, or that the Page does not exist.'
           : 'Meta rejected a field on the Page-token probe (id,name,access_token). The access_token field may require additional Meta approval — this is separate from an invalid Page id.',
+      selectable: false,
+    };
+  }
+
+  if (code === 100) {
+    return {
+      status: 'DIRECT_PAGE_LOOKUP_FAILED',
+      detail:
+        'Meta returned an invalid request for this Page lookup. Retry after confirming Business Integrations access.',
       selectable: false,
     };
   }
@@ -366,6 +411,7 @@ function enrichProbe(
         ? classifyFacebookDirectPageProviderMessage({
             httpStatus: probe.httpStatus,
             providerErrorCode: probe.providerErrorCode,
+            providerErrorSubcode: probe.providerErrorSubcode,
             providerErrorType: probe.providerErrorType,
             probe: stage,
           })
@@ -533,6 +579,7 @@ export function mapFacebookGraphDirectLookupToProbes(input: {
         ? classifyFacebookDirectPageProviderMessage({
             httpStatus: probe.httpStatus,
             providerErrorCode: probe.providerError?.code ?? null,
+            providerErrorSubcode: probe.providerError?.subcode ?? null,
             providerErrorType: probe.providerError?.type ?? null,
             providerErrorMessage: probe.providerError?.message ?? null,
             probe: stage,
@@ -573,6 +620,7 @@ export const FACEBOOK_DIRECT_PAGE_LOOKUP_STATUS_LABELS: Record<
   DIRECT_PAGE_PERMISSION_DENIED: 'Direct Page permission denied',
   DIRECT_PAGE_NOT_FOUND: 'Direct Page not found',
   DIRECT_PAGE_INVALID_FIELD: 'Direct Page invalid field',
+  FACEBOOK_PAGE_OBJECT_INACCESSIBLE: 'Page object inaccessible',
   DIRECT_PAGE_LOOKUP_FAILED: 'Direct Page lookup failed',
   PAGE_IDENTITY_MISMATCH: 'Page identity mismatch',
 };

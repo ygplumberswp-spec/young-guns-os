@@ -35,7 +35,7 @@ describe('Facebook direct page validation fallback (J-6.7F2 / J-6.7F3)', () => {
   });
 
   it('selectPage rejects arbitrary client Page id', () => {
-    assert.ok(serviceSource.includes('assertClientPageIdMatchesPendingCandidate'));
+    assert.ok(serviceSource.includes('assertClientPageIdMatchesBusinessDiscovery'));
     assert.ok(serviceSource.includes("'PAGE_NOT_AUTHORISED'"));
   });
 
@@ -57,7 +57,7 @@ describe('Facebook direct page validation fallback (J-6.7F2 / J-6.7F3)', () => {
 
   it('routes expose directLookup in pages response and map new error codes', () => {
     assert.ok(routeSource.includes('directLookup: discovery.directLookup'));
-    assert.ok(routeSource.includes('DIRECT_PAGE_PERMISSION_DENIED'));
+    assert.ok(routeSource.includes('FACEBOOK_PAGE_OBJECT_INACCESSIBLE'));
     assert.ok(routeSource.includes('DIRECT_PAGE_INVALID_FIELD'));
     assert.ok(routeSource.includes('DIRECT_PAGE_IDENTITY_AVAILABLE'));
     assert.ok(routeSource.includes('PAGE_NOT_AUTHORISED'));

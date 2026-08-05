@@ -33,11 +33,19 @@ import {
   buildFacebookPageDiscoveryDiagnosis,
   mapRawFacebookAccountRow,
   resolveFacebookPageDiscoveryStatus,
-  assertClientPageIdMatchesPendingCandidate,
+  assertClientPageIdMatchesBusinessDiscovery,
   buildFacebookDirectPageLookupSanitized,
+  buildFacebookBusinessPortfolioDiscoveryDiagnosis,
+  decodeFacebookOAuthReturnPath,
+  encodeFacebookBusinessPortfolioOAuthReturnPath,
+  mapRawBusinessPortfolioPageRow,
   mapFacebookGraphDirectLookupToProbes,
+  needsFacebookBusinessPortfolioAccess,
+  resolveFacebookBusinessPortfolioDiscoveryStatus,
   resolveFacebookPendingPageCandidate,
-  type FacebookPageDiscoveryResult,
+  type FacebookCombinedPageDiscoveryResult,
+  type FacebookBusinessPortfolioDiscoveryResult,
+  type FacebookBusinessPortfolioPageRow,
   type FacebookPendingPageCandidate,
   type FacebookPageDiscoveryRow,
   isYoungGunsFinanceTenant,
@@ -410,6 +418,44 @@ export class FacebookBusinessService {
     return { authorizationUrl: this.graph().buildAuthorizeUrl(state) };
   }
 
+  /** Re-authorises with business_management for business-owned Page discovery (J-6.7F5). */
+  async startBusinessPortfolioOAuth(
+    actor: FacebookActor,
+    returnPath?: string | null,
+  ): Promise<{ authorizationUrl: string }> {
+    this.assertManageConnection(actor);
+    this.requireAppConfig();
+    this.requireEncryptionKey();
+
+    const row = await this.loadConnection(actor.companyId);
+    const credentials = this.decryptCredentials(row);
+    if (!row || !credentials?.userAccessToken) {
+      throw new FacebookBusinessError(
+        'NOT_AUTHORISED',
+        'Complete initial Facebook authorisation before granting Business Portfolio access.',
+      );
+    }
+
+    const state = randomBytes(32).toString('base64url');
+    const sanitisedPath = sanitiseReturnPath(returnPath);
+    await this.db.insert(fbOauthStates).values({
+      companyId: actor.companyId,
+      userId: actor.userId,
+      stateHash: hashOAuthState(state),
+      returnPath: encodeFacebookBusinessPortfolioOAuthReturnPath(sanitisedPath),
+      initiatorRoleName: actor.roleName,
+      expiresAt: new Date(Date.now() + OAUTH_STATE_TTL_MS),
+    });
+
+    await this.audit(actor, 'connection.oauth_started', row.id, {
+      oauthFlow: 'business_portfolio_scopes',
+      requestedOAuthTier: 'business_portfolio',
+      requestedScopes: ['pages_show_list', 'business_management'],
+    });
+
+    return { authorizationUrl: this.graph().buildBusinessPortfolioAuthorizeUrl(state) };
+  }
+
   /**
    * Completes the OAuth handshake and lists Pages. It deliberately does not
    * store credentials or mark anything connected — the Owner still has to pick
@@ -462,12 +508,35 @@ export class FacebookBusinessService {
       ? new Date(Date.now() + longLived.expiresIn * 1000)
       : null;
 
+    const returnPathDecoded = decodeFacebookOAuthReturnPath(stateRow.returnPath);
+    const browserReturnPath = resolveFacebookOAuthBrowserReturnPath(returnPathDecoded.returnPath);
+    const oauthTier = returnPathDecoded.oauthTier;
+    const isBusinessPortfolioOAuth = oauthTier === 'business_portfolio';
+    const businessManagementGranted = grantedPermissions.includes('business_management');
+
     const existing = await this.loadConnection(stateRow.companyId);
     const stateBefore = existing?.state ?? null;
     const pendingPageCandidate = await this.resolvePendingPageCandidateForCompany({
       companyId: stateRow.companyId,
       connectionMetadata: existing?.metadata as Record<string, unknown> | null,
     });
+
+    if (isBusinessPortfolioOAuth && !businessManagementGranted && existing) {
+      await this.recordConnectionEvent({
+        companyId: stateRow.companyId,
+        connectionId: existing.id,
+        eventType: 'oauth_business_portfolio_denied',
+        stateBefore,
+        stateAfter: existing.state,
+        message:
+          'Business Portfolio authorisation did not grant business_management. The existing partial Facebook connection was preserved.',
+        actorUserId: stateRow.userId,
+        metadata: { grantedPermissions },
+      });
+      return {
+        redirectUrl: `${this.appUrl.replace(/\/$/, '')}${browserReturnPath}?facebook=error&reason=${encodeURIComponent('BUSINESS_PERMISSION_REQUIRED')}`,
+      };
+    }
 
     // The user token is parked so `/pages` can list Pages and a later disconnect
     // can revoke the grant. No Page token exists until a Page is chosen.
@@ -493,6 +562,7 @@ export class FacebookBusinessService {
       connectedAt: null,
       metadata: {
         pendingPageSelection: true,
+        oauthTier: isBusinessPortfolioOAuth ? 'business_portfolio' : 'basic',
         ...(pendingPageCandidate
           ? {
               pendingPageCandidate: {
@@ -531,17 +601,23 @@ export class FacebookBusinessService {
       eventType: 'oauth_completed',
       stateBefore,
       stateAfter: 'partial',
-      message: `Facebook authorisation completed. Meta granted ${grantedPermissions.length} permission(s). Page selection is still outstanding.`,
+      message: isBusinessPortfolioOAuth
+        ? `Business Portfolio authorisation completed. Meta granted ${grantedPermissions.length} permission(s). Select a Page to finish the connection.`
+        : `Facebook authorisation completed. Meta granted ${grantedPermissions.length} permission(s). Page selection is still outstanding.`,
       actorUserId: stateRow.userId,
-      metadata: { grantedPermissions, missingPermissions: missingFacebookPermissions(grantedPermissions) },
+      metadata: {
+        grantedPermissions,
+        missingPermissions: missingFacebookPermissions(grantedPermissions),
+        oauthTier,
+      },
     });
 
-    const returnPath = resolveFacebookOAuthBrowserReturnPath(stateRow.returnPath);
-    return { redirectUrl: `${this.appUrl.replace(/\/$/, '')}${returnPath}?facebook=select-page` };
+    const query = isBusinessPortfolioOAuth ? 'facebook=select-page&business=portfolio' : 'facebook=select-page';
+    return { redirectUrl: `${this.appUrl.replace(/\/$/, '')}${browserReturnPath}?${query}` };
   }
 
   /** Lists the Pages the authorising user administers with sanitized provider diagnosis. */
-  async discoverPagesForSelection(actor: FacebookActor): Promise<FacebookPageDiscoveryResult> {
+  async discoverPagesForSelection(actor: FacebookActor): Promise<FacebookCombinedPageDiscoveryResult> {
     this.assertManageConnection(actor);
     const config = this.requireAppConfig();
     const row = await this.loadConnection(actor.companyId);
@@ -640,14 +716,58 @@ export class FacebookBusinessService {
       });
     }
 
+    const needsBusinessPortfolioAccessFlag = needsFacebookBusinessPortfolioAccess({
+      grantedScopes: grantedPermissions,
+      meAccountsEmpty: fetchResult.rows.length === 0,
+      directLookupStatus: directLookup?.status ?? null,
+    });
+
+    let businessPortfolio: FacebookBusinessPortfolioDiscoveryResult | null = null;
+    if (
+      grantedPermissions.includes('business_management') &&
+      (fetchResult.rows.length === 0 || mappedPages.every((page) => !page.selectable))
+    ) {
+      businessPortfolio = await this.discoverBusinessPortfolioPages(actor, {
+        graph,
+        userToken,
+        grantedPermissions,
+        pendingPageCandidate,
+        connectionId: row?.id ?? null,
+      });
+
+      for (const businessPage of businessPortfolio.pages.filter((entry) => entry.selectable)) {
+        if (mappedPages.some((page) => page.id === businessPage.id)) continue;
+        mappedPages.push({
+          id: businessPage.id,
+          name: businessPage.name,
+          category: null,
+          tasks: [],
+          selectable: true,
+          status: 'PAGE_SELECTION_READY' as const,
+          statusDetail: `Accessible through Business Portfolio ${businessPage.businessPortfolioName}.`,
+          diagnostics: {
+            hasId: true,
+            hasName: true,
+            hasAccessToken: Boolean(businessPage.accessToken),
+            hasTasks: false,
+            taskCount: 0,
+            filteredOutByTitan: false,
+            filterReason: null,
+          },
+        });
+      }
+    }
+
     const resolvedStatus =
       mappedPages.some((page) => page.selectable) && status.status !== 'META_PAGE_LIST_FAILED'
         ? {
             status: 'PAGE_SELECTION_READY' as const,
             detail:
-              directLookup?.selectable === true
-                ? 'Meta confirmed Young Guns Plumbing – Cape Town via direct Page lookup. Confirm this Page to finish the connection.'
-                : 'Select the Young Guns Plumbing Page to finish the connection.',
+              businessPortfolio?.status === 'BUSINESS_PAGE_DISCOVERED'
+                ? businessPortfolio.detail
+                : directLookup?.selectable === true
+                  ? 'Meta confirmed Young Guns Plumbing – Cape Town via direct Page lookup. Confirm this Page to finish the connection.'
+                  : 'Select the Young Guns Plumbing Page to finish the connection.',
           }
         : status;
 
@@ -674,6 +794,73 @@ export class FacebookBusinessService {
       }),
       pendingPageCandidate,
       directLookup,
+      businessPortfolio,
+      needsBusinessPortfolioAccess: needsBusinessPortfolioAccessFlag,
+    };
+  }
+
+  private async discoverBusinessPortfolioPages(
+    actor: FacebookActor,
+    input: {
+      graph: FacebookGraphClient;
+      userToken: string;
+      grantedPermissions: string[];
+      pendingPageCandidate: FacebookPendingPageCandidate | null;
+      connectionId: string | null;
+    },
+  ): Promise<FacebookBusinessPortfolioDiscoveryResult> {
+    const fetchResult = await input.graph.discoverBusinessPortfolioPages(input.userToken);
+    const mappedPages: FacebookBusinessPortfolioPageRow[] = [];
+
+    for (const entry of fetchResult.pages) {
+      let resolvedToken = entry.raw.access_token ?? null;
+      if (entry.raw.id && entry.raw.name && !resolvedToken) {
+        resolvedToken = await input.graph.tryResolvePageAccessToken(entry.raw.id, input.userToken);
+        if (resolvedToken) {
+          entry.raw = { ...entry.raw, access_token: resolvedToken };
+        }
+      }
+      const mapped = mapRawBusinessPortfolioPageRow({
+        raw: entry.raw,
+        businessPortfolioId: entry.businessPortfolioId,
+        businessPortfolioName: entry.businessPortfolioName,
+        source: entry.source,
+      });
+      if (mapped) mappedPages.push(mapped);
+    }
+
+    const resolved = resolveFacebookBusinessPortfolioDiscoveryStatus({
+      grantedScopes: input.grantedPermissions,
+      portfolios: fetchResult.portfolios,
+      pages: mappedPages,
+      candidate: input.pendingPageCandidate,
+      providerFailed: Boolean(fetchResult.providerError),
+      providerErrorMessage: fetchResult.providerError?.message ?? null,
+    });
+
+    await this.audit(actor, 'connection.business_portfolio_discovery', input.connectionId, {
+      status: resolved.status,
+      portfolioCount: fetchResult.portfolios.length,
+      pageCount: mappedPages.length,
+      selectablePageCount: mappedPages.filter((page) => page.selectable).length,
+    });
+
+    return {
+      status: resolved.status,
+      detail: resolved.detail,
+      portfolios: fetchResult.portfolios,
+      pages: mappedPages,
+      diagnosis: buildFacebookBusinessPortfolioDiscoveryDiagnosis({
+        httpStatus: fetchResult.httpStatus,
+        providerErrorCode: fetchResult.providerError?.code ?? null,
+        providerErrorSubcode: fetchResult.providerError?.subcode ?? null,
+        providerErrorType: fetchResult.providerError?.type ?? null,
+        portfolios: fetchResult.portfolios,
+        pages: mappedPages,
+        grantedScopes: input.grantedPermissions,
+        candidate: input.pendingPageCandidate,
+      }),
+      pendingPageCandidate: input.pendingPageCandidate,
     };
   }
 
@@ -715,15 +902,15 @@ export class FacebookBusinessService {
     }
 
     const graph = this.graphClientFactory(config);
+    const discovery = await this.discoverPagesForSelection(actor);
     const pages = await graph.listPages(userToken);
-    const pendingPageCandidate = await this.resolvePendingPageCandidateForCompany({
-      companyId: actor.companyId,
-      connectionMetadata: row.metadata as Record<string, unknown> | null,
-    });
+    const pendingPageCandidate = discovery.pendingPageCandidate;
+    const businessPages = discovery.businessPortfolio?.pages ?? [];
 
-    const pageIdCheck = assertClientPageIdMatchesPendingCandidate({
+    const pageIdCheck = assertClientPageIdMatchesBusinessDiscovery({
       clientPageId: pageId,
       candidate: pendingPageCandidate,
+      businessPages,
       listedPageIds: pages.map((entry) => entry.id),
     });
     if (!pageIdCheck.allowed) {
@@ -731,6 +918,19 @@ export class FacebookBusinessService {
     }
 
     let page = pages.find((entry) => entry.id === pageId) ?? null;
+
+    if (!page) {
+      const businessPage = businessPages.find((entry) => entry.id === pageId && entry.selectable);
+      if (businessPage?.accessToken) {
+        page = {
+          id: businessPage.id,
+          name: businessPage.name,
+          category: null,
+          accessToken: businessPage.accessToken,
+          tasks: [],
+        };
+      }
+    }
 
     if (!page && pendingPageCandidate && pageId === pendingPageCandidate.pageId) {
       const directResult = await graph.lookupPageDirect(pendingPageCandidate.pageId, userToken);
@@ -764,17 +964,21 @@ export class FacebookBusinessService {
     }
 
     if (!page) {
-      const discovery = await this.discoverPagesForSelection(actor);
       const listed = discovery.pages.find((entry) => entry.id === pageId);
       if (listed && !listed.selectable) {
         throw new FacebookBusinessError(listed.status, listed.statusDetail);
+      }
+      const businessListed = businessPages.find((entry) => entry.id === pageId);
+      if (businessListed && !businessListed.selectable) {
+        throw new FacebookBusinessError(businessListed.status, businessListed.statusDetail);
       }
       if (discovery.directLookup && pageId === discovery.directLookup.candidatePageId) {
         throw new FacebookBusinessError(discovery.directLookup.status, discovery.directLookup.detail);
       }
       throw new FacebookBusinessError(
         'PAGE_NOT_AVAILABLE',
-        discovery.directLookup?.detail ??
+        discovery.businessPortfolio?.detail ??
+          discovery.directLookup?.detail ??
           'That Page could not be validated against Meta for this Facebook account.',
       );
     }

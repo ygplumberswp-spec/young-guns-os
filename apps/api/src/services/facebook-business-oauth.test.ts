@@ -98,7 +98,7 @@ describe('Facebook Business OAuth hygiene and Page selection (J-6.7F)', () => {
   });
 
   it('direct Page lookup rejects arbitrary browser Page ids (J-6.7F2)', () => {
-    assert.ok(serviceSource.includes('assertClientPageIdMatchesPendingCandidate'));
+    assert.ok(serviceSource.includes('assertClientPageIdMatchesBusinessDiscovery'));
     assert.ok(serviceSource.includes("'PAGE_NOT_AUTHORISED'"));
     assert.ok(serviceSource.includes('resolvePendingPageCandidateForCompany'));
   });

@@ -55,7 +55,7 @@ function tokenProbe(overrides: Partial<Parameters<typeof buildFacebookDirectPage
   };
 }
 
-describe('facebook direct page lookup (J-6.7F3)', () => {
+describe('facebook direct page lookup (J-6.7F3 / J-6.7F5)', () => {
   it('uses verified Young Guns Facebook Page id constant', () => {
     assert.equal(YOUNG_GUNS_FACEBOOK_PAGE_ID, '61564442420962');
     assert.notEqual(YOUNG_GUNS_FACEBOOK_PAGE_ID, '394603137072407');
@@ -131,6 +131,29 @@ describe('facebook direct page lookup (J-6.7F3)', () => {
     assert.equal(sanitized.hasName, true);
     assert.equal(sanitized.idMatches, true);
     assert.equal(sanitized.nameMatches, true);
+  });
+
+  it('classifies code 100 subcode 33 as Page object inaccessible, not invalid field', () => {
+    const sanitized = buildFacebookDirectPageLookupSanitized({
+      candidate: CANDIDATE,
+      identityProbe: identityProbe({
+        httpStatus: 400,
+        providerErrorCode: 100,
+        providerErrorSubcode: 33,
+        providerErrorType: 'invalid_request',
+        providerFailed: true,
+        providerMessageClassification: 'object_inaccessible',
+        raw: null,
+      }),
+      tokenProbe: tokenProbe({ skipped: true, httpStatus: 0, raw: null }),
+    });
+    assert.equal(sanitized.status, 'FACEBOOK_PAGE_OBJECT_INACCESSIBLE');
+    assert.equal(sanitized.providerErrorCode, 100);
+    assert.equal(sanitized.providerErrorSubcode, 33);
+    assert.equal(sanitized.providerErrorType, 'invalid_request');
+    assert.match(sanitized.detail, /Business Portfolio that has not been granted to TITAN/i);
+    assert.doesNotMatch(sanitized.detail, /invalid field/i);
+    assert.doesNotMatch(sanitized.detail, /does not exist/i);
   });
 
   it('classifies invalid-field code 100 honestly without assuming business_management', () => {
