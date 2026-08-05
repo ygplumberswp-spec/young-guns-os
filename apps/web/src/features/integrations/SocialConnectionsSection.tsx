@@ -11,6 +11,7 @@ import {
   checkFacebookConnection,
   disconnectFacebook,
   startFacebookOAuth,
+  startFacebookPageReadOAuth,
 } from '../../lib/facebook-business-api-client';
 import {
   checkSocialConnectionHealth,
@@ -97,6 +98,19 @@ function SocialConnectionCard({
       window.location.assign(authorizationUrl);
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : 'Reconnect failed.');
+      setBusy(false);
+    }
+  }
+
+  async function handleGrantPageRead() {
+    setBusy(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const result = await startFacebookPageReadOAuth(accessToken, '/integrations');
+      window.location.assign(result.authorizationUrl);
+    } catch (err) {
+      setError(err instanceof ApiClientError ? err.message : 'Could not start Page read authorisation.');
       setBusy(false);
     }
   }
@@ -222,6 +236,7 @@ function SocialConnectionCard({
         card.delegatedTo === 'facebook_business' ? (
           <FacebookConnectionActions
             foundationStatus={card.foundationStatus}
+            connectionState={card.facebookConnectionState}
             busy={busy}
             canManage={canManage}
             confirmDisconnect={confirmDisconnect}
@@ -229,6 +244,7 @@ function SocialConnectionCard({
             showViewSetup={card.canViewSetupRequirements}
             onConnect={() => void handleConnect()}
             onChoosePage={() => void handleConnect()}
+            onGrantPageRead={() => void handleGrantPageRead()}
             onCheckHealth={() => void handleHealth()}
             onReconnect={() => void handleReconnect()}
             onDisconnect={() => void handleDisconnect()}

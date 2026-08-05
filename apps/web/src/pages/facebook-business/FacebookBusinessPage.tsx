@@ -11,6 +11,10 @@ import {
   FACEBOOK_DIRECT_PAGE_LOOKUP_STATUS_LABELS,
   FACEBOOK_BUSINESS_PORTFOLIO_STATUS_LABELS,
   FACEBOOK_BUSINESS_PORTFOLIO_OAUTH_EXPLANATION,
+  FACEBOOK_PAGE_READ_OAUTH_EXPLANATION,
+  FACEBOOK_SYNC_INACTIVE_UNTIL_READ_PERMISSION,
+  hasFacebookPageReadEngagement,
+  resolveFacebookFeatureMetricAvailability,
   formatFacebookScheduleForOwner,
   YOUNG_GUNS_BRAND,
   type FacebookContentStatus,
@@ -45,6 +49,7 @@ import {
   selectFacebookPage,
   startFacebookOAuth,
   startFacebookBusinessPortfolioOAuth,
+  startFacebookPageReadOAuth,
   transitionFacebookContent,
   type FacebookCommentView,
   type FacebookConnectionView,
@@ -67,7 +72,7 @@ const TABS: Array<{ id: Tab; label: string }> = [
   { id: 'activity', label: 'Sync & Alerts' },
 ];
 
-/** Only `connected` is styled as healthy; every other state reads as a problem. */
+/** Only `connected` is styled as healthy; limited and other states read as a problem. */
 function stateClass(state: FacebookConnectionView['state']): string {
   return state === 'connected' ? 'titan-panel--success' : 'titan-panel--warning';
 }
@@ -174,10 +179,20 @@ export function FacebookBusinessPage() {
     if (outcome === 'select-page') {
       setSuccess('Facebook authorisation completed. Select the Young Guns Plumbing Page to finish.');
       setTab('connection');
+    } else if (outcome === 'page-read-granted') {
+      setSuccess('Page read access granted. TITAN can now verify and read Page content from Meta.');
+      setTab('connection');
     } else if (outcome === 'error') {
-      setError(
-        `Facebook authorisation did not complete (${params.get('reason') ?? 'unknown reason'}). Nothing was connected.`,
-      );
+      const reason = params.get('reason');
+      if (reason === 'PAGE_READ_PERMISSION_REQUIRED') {
+        setError(
+          'Page read access was not granted. Your selected Page and stored credentials were preserved.',
+        );
+      } else {
+        setError(
+          `Facebook authorisation did not complete (${reason ?? 'unknown reason'}). Nothing was connected.`,
+        );
+      }
     }
   }, []);
 
@@ -228,6 +243,14 @@ export function FacebookBusinessPage() {
     } finally {
       setIsBusy(false);
     }
+  }
+
+  async function handleGrantPageRead() {
+    if (!accessToken || !canManage) return;
+    await withAction(async () => {
+      const result = await startFacebookPageReadOAuth(accessToken, '/facebook-business');
+      window.location.assign(result.authorizationUrl);
+    });
   }
 
   async function handleGrantBusinessPortfolio() {
@@ -442,6 +465,19 @@ export function FacebookBusinessPage() {
   const awaitingApproval = content.filter((item) => item.status === 'in_review');
   const unanswered = comments.filter((item) => !item.answered);
   const newLeads = leads.filter((item) => item.stage === 'imported');
+  const readPermissionGranted = hasFacebookPageReadEngagement(connection?.grantedPermissions ?? []);
+  const newLeadsMetric = resolveFacebookFeatureMetricAvailability({
+    grantedPermissions: connection?.grantedPermissions ?? [],
+    requiredPermission: 'pages_read_engagement',
+    numericValue: readPermissionGranted ? newLeads.length : null,
+    label: 'New leads',
+  });
+  const unansweredCommentsMetric = resolveFacebookFeatureMetricAvailability({
+    grantedPermissions: connection?.grantedPermissions ?? [],
+    requiredPermission: 'pages_read_engagement',
+    numericValue: readPermissionGranted ? unanswered.length : null,
+    label: 'Unanswered comments',
+  });
 
   return (
     <div className="space-y-6">
@@ -472,8 +508,8 @@ export function FacebookBusinessPage() {
               hint={connection?.requiredAction ?? undefined}
             />
             <StatCard label="Awaiting approval" value={String(awaitingApproval.length)} />
-            <StatCard label="New leads" value={String(newLeads.length)} />
-            <StatCard label="Unanswered comments" value={String(unanswered.length)} />
+            <StatCard label="New leads" value={newLeadsMetric.displayValue} />
+            <StatCard label="Unanswered comments" value={unansweredCommentsMetric.displayValue} />
           </div>
 
           <nav className="flex flex-wrap gap-2">
@@ -497,6 +533,7 @@ export function FacebookBusinessPage() {
               onConnect={handleConnect}
               onLoadPages={handleLoadPages}
               onGrantBusinessPortfolio={handleGrantBusinessPortfolio}
+              onGrantPageRead={handleGrantPageRead}
               onSelectPage={handleSelectPage}
               onCheck={handleCheck}
               onDisconnect={handleDisconnect}
@@ -677,6 +714,7 @@ function ConnectionTab({
   onConnect,
   onLoadPages,
   onGrantBusinessPortfolio,
+  onGrantPageRead,
   onSelectPage,
   onCheck,
   onDisconnect,
@@ -689,6 +727,7 @@ function ConnectionTab({
   onConnect: () => void;
   onLoadPages: () => void;
   onGrantBusinessPortfolio: () => void;
+  onGrantPageRead: () => void;
   onSelectPage: (pageId: string) => void;
   onCheck: () => void;
   onDisconnect: () => Promise<void>;
@@ -706,11 +745,13 @@ function ConnectionTab({
   }
 
   const needsConfiguration = connection.state === 'configuration_required';
+  const isConnectedLimited = connection.state === 'connected_limited';
   const needsBusinessPortfolioAccess =
-    pageDiscovery?.needsBusinessPortfolioAccess ??
-    (connection.state === 'partial' &&
-      connection.hasStoredCredentials &&
-      !connection.grantedPermissions.includes('business_management'));
+    !isConnectedLimited &&
+    (pageDiscovery?.needsBusinessPortfolioAccess ??
+      (connection.state === 'partial' &&
+        connection.hasStoredCredentials &&
+        !connection.grantedPermissions.includes('business_management')));
 
   return (
     <div className="space-y-4">
@@ -730,15 +771,24 @@ function ConnectionTab({
           </p>
         ) : null}
         <dl>
-          <dt>Last verified against Facebook</dt>
-          <dd>{connection.lastVerifiedAt ?? 'Never'}</dd>
+          <dt>Last connection attempt</dt>
+          <dd>{connection.lastConnectionAttemptAt ?? 'Never'}</dd>
+          <dt>Last successful verification</dt>
+          <dd>{connection.lastSuccessfulVerificationAt ?? 'Never'}</dd>
+          <dt>Last failed verification</dt>
+          <dd>{connection.lastFailedVerificationAt ?? 'None recorded'}</dd>
           <dt>Last sync</dt>
           <dd>{connection.lastSyncedAt ?? 'Never'}</dd>
           <dt>Webhooks</dt>
           <dd>
-            {connection.webhookSubscribedAt
-              ? `Subscribed ${connection.webhookSubscribedAt}`
-              : `Not subscribed — polling every ${connection.syncPolicy.pollingBackfillMinutes} minutes instead.`}
+            {connection.state === 'connected_limited' ||
+            connection.syncPolicy.pollingBackfillMinutes === 0 ? (
+              FACEBOOK_SYNC_INACTIVE_UNTIL_READ_PERMISSION
+            ) : connection.webhookSubscribedAt ? (
+              `Subscribed ${connection.webhookSubscribedAt}`
+            ) : (
+              `Not subscribed — polling every ${connection.syncPolicy.pollingBackfillMinutes} minutes instead.`
+            )}
           </dd>
         </dl>
       </Panel>
@@ -789,8 +839,13 @@ function ConnectionTab({
 
       {canManage ? (
         <Panel title="Manage the connection">
-          {pageDiscovery?.needsBusinessPortfolioAccess ? (
+          {pageDiscovery?.needsBusinessPortfolioAccess && !isConnectedLimited ? (
             <p className="page-muted">{FACEBOOK_BUSINESS_PORTFOLIO_OAUTH_EXPLANATION}</p>
+          ) : null}
+          {isConnectedLimited ? (
+            <p className="page-muted">
+              {connection.pageReadOAuthExplanation ?? FACEBOOK_PAGE_READ_OAUTH_EXPLANATION}
+            </p>
           ) : null}
           <FacebookConnectionActions
             connectionState={connection.state}
@@ -802,6 +857,7 @@ function ConnectionTab({
             onConnect={onConnect}
             onChoosePage={onLoadPages}
             onGrantBusinessPortfolio={onGrantBusinessPortfolio}
+            onGrantPageRead={onGrantPageRead}
             onCheckHealth={onCheck}
             onReconnect={onReconnect}
             onDisconnect={() => void handleDisconnectConfirmed()}
@@ -809,7 +865,7 @@ function ConnectionTab({
             onCancelDisconnect={() => setConfirmDisconnect(false)}
           />
 
-          {pageDiscovery?.businessPortfolio ? (
+          {!isConnectedLimited && pageDiscovery?.businessPortfolio ? (
             <div className="space-y-3">
               <p className="page-muted">
                 {FACEBOOK_BUSINESS_PORTFOLIO_STATUS_LABELS[pageDiscovery.businessPortfolio.status]}:{' '}
@@ -852,7 +908,7 @@ function ConnectionTab({
             </div>
           ) : null}
 
-          {pageDiscovery ? (
+          {!isConnectedLimited && pageDiscovery ? (
             <div className="space-y-3">
               <p className="page-muted">
                 {FACEBOOK_PAGE_DISCOVERY_STATUS_LABELS[pageDiscovery.status]}: {pageDiscovery.detail}
@@ -1329,6 +1385,14 @@ function InsightsTab({
   const canRead =
     connection?.capabilities.find((entry) => entry.capability === 'read_insights')?.available ?? false;
 
+  const canReadEngagement = hasFacebookPageReadEngagement(connection?.grantedPermissions ?? []);
+  const performanceAvailability = resolveFacebookFeatureMetricAvailability({
+    grantedPermissions: connection?.grantedPermissions ?? [],
+    requiredPermission: 'pages_read_engagement',
+    numericValue: null,
+    label: 'Performance',
+  });
+
   return (
     <div className="space-y-4">
       <Panel title="Post performance">
@@ -1336,20 +1400,26 @@ function InsightsTab({
           Figures come from the Facebook Graph API only. When Facebook returns nothing for a range,
           nothing is shown — no zero-filled charts.
         </p>
-        {insights ? <p>{insights.coverage.note}</p> : null}
-        {!canRead ? (
-          <p>
-            {connection?.capabilities.find((entry) => entry.capability === 'read_insights')
-              ?.blockedReason ?? 'Insights require the read_insights permission.'}
-          </p>
+        {!canReadEngagement ? (
+          <p>{performanceAvailability.displayValue}</p>
         ) : (
-          <Button onClick={onRefresh} disabled={isBusy}>
-            Refresh from Facebook
-          </Button>
+          <>
+            {insights ? <p>{insights.coverage.note}</p> : null}
+            {!canRead ? (
+              <p>
+                {connection?.capabilities.find((entry) => entry.capability === 'read_insights')
+                  ?.blockedReason ?? 'Insights require the read_insights permission.'}
+              </p>
+            ) : (
+              <Button onClick={onRefresh} disabled={isBusy}>
+                Refresh from Facebook
+              </Button>
+            )}
+          </>
         )}
       </Panel>
 
-      {!insights || insights.metrics.length === 0 ? (
+      {!canReadEngagement ? null : !insights || insights.metrics.length === 0 ? (
         <EmptyState
           title="No performance data"
           description="Insights appear once posts are published and Facebook returns figures for them."
@@ -1388,7 +1458,15 @@ function ActivityTab({
     <div className="space-y-4">
       <Panel title="Sync">
         <p>{connection?.syncPolicy.note ?? ''}</p>
-        <Button onClick={onSync} disabled={isBusy || !connection?.usable}>
+        <Button
+          onClick={onSync}
+          disabled={
+            isBusy ||
+            !connection?.usable ||
+            connection?.state === 'connected_limited' ||
+            connection?.syncPolicy.pollingBackfillMinutes === 0
+          }
+        >
           Sync now
         </Button>
       </Panel>

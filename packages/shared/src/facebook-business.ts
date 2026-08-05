@@ -18,6 +18,12 @@
  */
 
 import {
+  buildFacebookConnectedLimitedDetail,
+  FACEBOOK_PAGE_READ_FEATURE_PERMISSION,
+  hasFacebookBasicDiscoveryPermissions,
+  hasFacebookPageReadEngagement,
+} from './facebook-connection-health.js';
+import {
   canAccessMarketingAgent,
   canApproveMarketingAgentPublish,
   canWriteMarketingAgent,
@@ -316,6 +322,7 @@ export type FacebookConnectionState =
   | 'configuration_required'
   | 'disconnected'
   | 'connected'
+  | 'connected_limited'
   | 'partial'
   | 'missing_permission'
   | 'reauthorisation_required'
@@ -326,6 +333,7 @@ export const FACEBOOK_CONNECTION_STATES: FacebookConnectionState[] = [
   'configuration_required',
   'disconnected',
   'connected',
+  'connected_limited',
   'partial',
   'missing_permission',
   'reauthorisation_required',
@@ -337,6 +345,7 @@ export const FACEBOOK_CONNECTION_STATE_LABELS: Record<FacebookConnectionState, s
   configuration_required: 'Configuration required',
   disconnected: 'Disconnected',
   connected: 'Connected',
+  connected_limited: 'Connected — limited permissions',
   partial: 'Account selection required',
   missing_permission: 'Missing permission',
   reauthorisation_required: 'Reauthorisation required',
@@ -357,6 +366,8 @@ export type FacebookConnectionStateInput = {
   hasStoredToken: boolean;
   /** A Page has been selected and its id persisted. */
   pageSelected: boolean;
+  /** Selected Page display name for Owner-facing limited-state detail. */
+  pageName?: string | null;
   /** Token expiry, when Meta returned one. Null means long-lived/never-expiring Page token. */
   tokenExpiresAt: Date | null;
   /** Permissions Meta reported as granted on the token (`/me/permissions`). */
@@ -421,6 +432,20 @@ export function resolveFacebookConnectionState(
     missingPermissions,
   });
 
+  const basicPageLinked =
+    input.pageSelected &&
+    input.hasStoredToken &&
+    hasFacebookBasicDiscoveryPermissions(input.grantedPermissions);
+
+  const missingPageRead = !hasFacebookPageReadEngagement(input.grantedPermissions);
+
+  const connectedLimited = (): FacebookConnectionStateResult =>
+    build(
+      'connected_limited',
+      buildFacebookConnectedLimitedDetail(input.pageName),
+      'Grant Page read access so TITAN can verify Page details and read comments, leads and performance data.',
+    );
+
   if (!input.appConfigured) {
     return build(
       'configuration_required',
@@ -479,7 +504,14 @@ export function resolveFacebookConnectionState(
     );
   }
 
+  if (basicPageLinked && missingPageRead) {
+    return connectedLimited();
+  }
+
   if (!input.lastVerification) {
+    if (basicPageLinked) {
+      return connectedLimited();
+    }
     return build(
       'partial',
       'Credentials and a Page are stored, but no successful Facebook request has been recorded yet.',
@@ -488,12 +520,18 @@ export function resolveFacebookConnectionState(
   }
 
   if (!input.lastVerification.ok) {
+    if (input.lastVerification.permissionError && basicPageLinked) {
+      return connectedLimited();
+    }
     if (input.lastVerification.permissionError) {
       return build(
         'missing_permission',
         `Facebook refused the last request for permission reasons: ${input.lastVerification.message}`,
         'Reconnect and grant the missing permissions, or complete Meta App Review for them.',
       );
+    }
+    if (basicPageLinked && missingPageRead) {
+      return connectedLimited();
     }
     return build(
       'partial',
@@ -512,6 +550,10 @@ export function resolveFacebookConnectionState(
       `Facebook authorisation succeeded but Meta has not granted ${missingCore.join(', ')}, which TITAN needs to list and select your Page.`,
       'Reconnect and grant Page list access, or complete Meta App Review if the permission is not yet approved for this app.',
     );
+  }
+
+  if (missingPageRead) {
+    return connectedLimited();
   }
 
   if (missingPermissions.length > 0) {
@@ -601,6 +643,47 @@ export function assertFacebookBusinessPortfolioOAuthUrl(authorizeUrl: string): {
       if (!FACEBOOK_OAUTH_BUSINESS_PORTFOLIO_SCOPES.includes(scope as FacebookPermission)) {
         violations.push(`unexpected business portfolio scope: ${scope}`);
       }
+    }
+  }
+  return { ok: violations.length === 0, violations };
+}
+
+/** Validates page-read OAuth URL uses controlled discovery + read scopes only. */
+export function assertFacebookPageReadOAuthUrl(authorizeUrl: string): {
+  ok: boolean;
+  violations: string[];
+} {
+  const violations: string[] = [];
+  if (usesFacebookLoginForBusinessConfig(authorizeUrl)) {
+    violations.push('page read flow must not use config_id');
+    return { ok: false, violations };
+  }
+
+  const scopes = parseFacebookOAuthScopesFromAuthorizeUrl(authorizeUrl);
+  const forbiddenAdvanced = [
+    'pages_manage_posts',
+    'pages_manage_engagement',
+    'pages_manage_metadata',
+    'pages_messaging',
+    'leads_retrieval',
+    'pages_read_user_content',
+    'read_insights',
+    'ads_read',
+    'ads_management',
+  ] as const;
+
+  for (const forbidden of forbiddenAdvanced) {
+    if (scopes.includes(forbidden)) {
+      violations.push(`forbidden page read OAuth scope: ${forbidden}`);
+    }
+  }
+  for (const required of [
+    'pages_show_list',
+    'business_management',
+    FACEBOOK_PAGE_READ_FEATURE_PERMISSION,
+  ]) {
+    if (!scopes.includes(required)) {
+      violations.push(`missing required page read scope: ${required}`);
     }
   }
   return { ok: violations.length === 0, violations };

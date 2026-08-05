@@ -186,9 +186,8 @@ test.describe('Social connection foundation (J-6.7F)', () => {
     expect(serviceSource).toMatch(/assertClientPageIdMatchesBusinessDiscovery/);
     expect(serviceSource).toMatch(/resolvePendingPageCandidateForCompany/);
     expect(serviceSource).toMatch(/startBusinessPortfolioOAuth/);
-    expect(businessSource).toMatch(
-      /export const FACEBOOK_OAUTH_BASIC_SCOPES: FacebookPermission\[\] = \['pages_show_list'\]/,
-    );
+    expect(serviceSource).toMatch(/startPageReadOAuth/);
+    expect(businessSource).toMatch(/connected_limited/);
   });
 
   test('Facebook setup requirements use API callback not web APP_URL', async () => {

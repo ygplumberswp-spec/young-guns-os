@@ -3,6 +3,7 @@ import {
   FACEBOOK_GRAPH_BASE_URL,
   FACEBOOK_OAUTH_BASIC_SCOPES,
   FACEBOOK_OAUTH_BUSINESS_PORTFOLIO_SCOPES,
+  FACEBOOK_OAUTH_PAGE_READ_SCOPES,
   FACEBOOK_OAUTH_DIALOG_URL,
   FACEBOOK_PAGE_LIST_ENDPOINT,
   FACEBOOK_PAGE_LIST_FIELDS,
@@ -505,6 +506,11 @@ export class FacebookGraphClient {
   /** Builds OAuth URL for business-owned Page discovery (J-6.7F5). */
   buildBusinessPortfolioAuthorizeUrl(state: string): string {
     return this.buildAuthorizeUrl(state, [...FACEBOOK_OAUTH_BUSINESS_PORTFOLIO_SCOPES]);
+  }
+
+  /** Builds OAuth URL for Page read access after selection (J-6.7F6). */
+  buildPageReadAuthorizeUrl(state: string): string {
+    return this.buildAuthorizeUrl(state, [...FACEBOOK_OAUTH_PAGE_READ_SCOPES]);
   }
 
   /**

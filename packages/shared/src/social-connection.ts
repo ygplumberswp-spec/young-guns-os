@@ -190,6 +190,8 @@ export type SocialConnectionProviderCard = {
   provider: SocialPublishingProvider;
   label: string;
   foundationStatus: SocialConnectionFoundationStatus;
+  /** Resolved Facebook Business state when delegated to facebook_business. */
+  facebookConnectionState?: import('./facebook-business.js').FacebookConnectionState;
   statusLabel: string;
   selectedAccountLabel: string | null;
   oauthAppConfigured: boolean;
@@ -329,6 +331,7 @@ export function mapFacebookStateToFoundationStatus(
 ): SocialConnectionFoundationStatus {
   switch (state) {
     case 'connected':
+    case 'connected_limited':
       return 'CONNECTED';
     case 'partial':
       return 'ACCOUNT_SELECTION_REQUIRED';

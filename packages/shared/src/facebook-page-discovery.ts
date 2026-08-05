@@ -1,4 +1,5 @@
 import { FACEBOOK_GRAPH_VERSION } from './facebook-business.js';
+import { resolveFacebookTokenExpiryDiagnosis } from './facebook-connection-health.js';
 import type {
   FacebookDirectPageLookupSanitized,
   FacebookPendingPageCandidate,
@@ -256,7 +257,11 @@ export function buildFacebookPageDiscoveryDiagnosis(input: {
   pagingPageCount: number;
   appliedFilters: string[];
 }): FacebookPageDiscoveryDiagnosis {
-  const nowSeconds = Math.floor(Date.now() / 1000);
+  const expiry = resolveFacebookTokenExpiryDiagnosis({
+    tokenValid: input.tokenValid,
+    expiresAtUnix: input.tokenExpiresAt,
+  });
+
   return {
     graphVersion: FACEBOOK_GRAPH_VERSION,
     endpoint: FACEBOOK_PAGE_LIST_ENDPOINT,
@@ -275,9 +280,8 @@ export function buildFacebookPageDiscoveryDiagnosis(input: {
     hasBusinessManagement: input.grantedScopes.includes('business_management'),
     appIdMatches:
       input.tokenAppId !== null && input.tokenAppId === input.configuredAppId,
-    tokenValid: input.tokenValid,
-    tokenExpired:
-      input.tokenExpiresAt !== null ? input.tokenExpiresAt <= nowSeconds : null,
+    tokenValid: expiry.tokenValid,
+    tokenExpired: expiry.tokenExpired,
     authenticatedUserIdPresent: input.tokenUserIdPresent,
     youngGunsPageSeenInRawResponse: input.rawRows.some((row) =>
       rowMatchesYoungGunsPageName(row.name),

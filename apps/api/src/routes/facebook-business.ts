@@ -276,6 +276,17 @@ export function createFacebookBusinessRouter({
     );
   });
 
+  router.post('/oauth/start-page-read', (req, res, next) => {
+    const parsed = startOAuthSchema.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      res.status(400).json({ error: { code: 'INVALID_REQUEST', message: 'Invalid payload.' } });
+      return;
+    }
+    wrap(res, next, () =>
+      facebookBusinessService.startPageReadOAuth(toActor(req), parsed.data.returnPath ?? null),
+    );
+  });
+
   router.post('/oauth/start-business-portfolio', (req, res, next) => {
     const parsed = startOAuthSchema.safeParse(req.body ?? {});
     if (!parsed.success) {

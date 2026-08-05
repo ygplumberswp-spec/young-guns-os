@@ -23,6 +23,7 @@ export type FacebookConnectionActionsProps = {
   onConnect: () => void;
   onChoosePage: () => void;
   onGrantBusinessPortfolio?: () => void;
+  onGrantPageRead?: () => void;
   onCheckHealth: () => void;
   onReconnect: () => void;
   onDisconnect: () => void;
@@ -95,6 +96,7 @@ function renderActionButton(
     connect: props.onConnect,
     choose_page: props.onChoosePage,
     grant_business_portfolio: props.onGrantBusinessPortfolio ?? props.onChoosePage,
+    grant_page_read: props.onGrantPageRead ?? props.onConnect,
     check_health: props.onCheckHealth,
     reconnect: props.onReconnect,
     disconnect: props.onRequestDisconnect,

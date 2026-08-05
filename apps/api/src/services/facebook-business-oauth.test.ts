@@ -50,6 +50,7 @@ describe('Facebook Business OAuth hygiene and Page selection (J-6.7F)', () => {
   });
 
   it('selectPage validates Page against authenticated eligible list', () => {
+    assert.ok(serviceSource.includes('discoverPagesForSelection(actor)'));
     assert.ok(serviceSource.includes('graph.listPages(userToken)'));
     assert.ok(serviceSource.includes('pages.find((entry) => entry.id === pageId)'));
     assert.ok(serviceSource.includes("'PAGE_NOT_AVAILABLE'"));
@@ -57,7 +58,8 @@ describe('Facebook Business OAuth hygiene and Page selection (J-6.7F)', () => {
 
   it('connected state only after server verification probe', () => {
     assert.ok(serviceSource.includes('graph.verifyPage(page.id, page.accessToken)'));
-    assert.ok(serviceSource.includes('...this.verificationColumns(verification.outcome)'));
+    assert.ok(serviceSource.includes('verificationColumns('));
+    assert.ok(serviceSource.includes('persistFacebookConnectionState'));
   });
 
   it('Owner-only connect/select/disconnect enforced', () => {

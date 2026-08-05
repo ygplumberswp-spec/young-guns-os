@@ -36,8 +36,15 @@ import {
   assertClientPageIdMatchesBusinessDiscovery,
   buildFacebookDirectPageLookupSanitized,
   buildFacebookBusinessPortfolioDiscoveryDiagnosis,
-  decodeFacebookOAuthReturnPath,
+  buildFacebookVerificationTimestamps,
+  decodeFacebookOAuthTierFromReturnPath,
   encodeFacebookBusinessPortfolioOAuthReturnPath,
+  encodeFacebookPageReadOAuthReturnPath,
+  FACEBOOK_PAGE_READ_OAUTH_EXPLANATION,
+  FACEBOOK_SYNC_INACTIVE_UNTIL_READ_PERMISSION,
+  hasFacebookPageReadEngagement,
+  mergeFacebookVerificationMetadata,
+  persistFacebookConnectionState,
   mapRawBusinessPortfolioPageRow,
   mapFacebookGraphDirectLookupToProbes,
   needsFacebookBusinessPortfolioAccess,
@@ -329,15 +336,35 @@ export class FacebookBusinessService {
    * `connected` badge can never come from anywhere but a verified probe.
    */
   private resolveState(row: ConnectionRow | null): FacebookConnectionStateResult {
-    const verification: FacebookVerificationOutcome | null =
-      row?.lastVerifiedAt && row.lastVerificationOk !== null
+    const timestamps = buildFacebookVerificationTimestamps({
+      metadata: row?.metadata as Record<string, unknown> | null,
+      lastVerifiedAt: row?.lastVerifiedAt ?? null,
+      lastVerificationOk: row?.lastVerificationOk ?? null,
+      lastSyncedAt: row?.lastSyncedAt ?? null,
+    });
+
+    const verification: FacebookVerificationOutcome | null = timestamps.lastSuccessfulVerificationAt
+      ? {
+          ok: true,
+          authError: false,
+          permissionError: false,
+          providerUnavailable: false,
+          checkedAt: new Date(timestamps.lastSuccessfulVerificationAt),
+          message: row?.lastVerificationMessage ?? 'Facebook responded successfully.',
+        }
+      : timestamps.lastFailedVerificationAt
         ? {
-            ok: row.lastVerificationOk,
-            authError: row.lastVerificationAuthError,
-            permissionError: row.lastVerificationPermissionError,
-            providerUnavailable: row.lastVerificationProviderUnavailable,
-            checkedAt: row.lastVerifiedAt,
-            message: row.lastVerificationMessage ?? '',
+            ok: false,
+            authError: row?.lastVerificationAuthError ?? false,
+            permissionError: row?.lastVerificationPermissionError ?? false,
+            providerUnavailable: row?.lastVerificationProviderUnavailable ?? false,
+            checkedAt: new Date(timestamps.lastFailedVerificationAt),
+            message:
+              ((row?.metadata as Record<string, unknown> | undefined)?.verification as
+                | { lastFailedVerificationMessage?: string }
+                | undefined)?.lastFailedVerificationMessage ??
+              row?.lastVerificationMessage ??
+              '',
           }
         : null;
 
@@ -345,6 +372,7 @@ export class FacebookBusinessService {
       appConfigured: this.isAppConfigured(),
       hasStoredToken: Boolean(row?.credentialsEncrypted),
       pageSelected: Boolean(row?.pageId),
+      pageName: row?.pageName ?? null,
       tokenExpiresAt: row?.tokenExpiresAt ?? null,
       grantedPermissions: row?.grantedPermissions ?? [],
       lastVerification: verification,
@@ -357,6 +385,14 @@ export class FacebookBusinessService {
     this.assertRead(actor);
     const row = await this.loadConnection(actor.companyId);
     const state = this.resolveState(row);
+
+    const timestamps = buildFacebookVerificationTimestamps({
+      metadata: row?.metadata as Record<string, unknown> | null,
+      lastVerifiedAt: row?.lastVerifiedAt ?? null,
+      lastVerificationOk: row?.lastVerificationOk ?? null,
+      lastSyncedAt: row?.lastSyncedAt ?? null,
+    });
+    const syncInactive = !hasFacebookPageReadEngagement(row?.grantedPermissions ?? []);
 
     return {
       pageId: row?.pageId ?? null,
@@ -374,13 +410,23 @@ export class FacebookBusinessService {
       messenger: resolveFacebookMessengerAvailability(row?.grantedPermissions ?? []),
       appConfigured: this.isAppConfigured(),
       encryptionConfigured: Boolean(this.encryptionKey),
-      lastVerifiedAt: row?.lastVerifiedAt?.toISOString() ?? null,
+      lastVerifiedAt: timestamps.lastSuccessfulVerificationAt,
+      lastConnectionAttemptAt: timestamps.lastConnectionAttemptAt,
+      lastSuccessfulVerificationAt: timestamps.lastSuccessfulVerificationAt,
+      lastFailedVerificationAt: timestamps.lastFailedVerificationAt,
       lastVerificationMessage: row?.lastVerificationMessage ?? null,
-      lastSyncedAt: row?.lastSyncedAt?.toISOString() ?? null,
+      lastSyncedAt: timestamps.lastSuccessfulSyncAt,
       connectedAt: row?.connectedAt?.toISOString() ?? null,
       disconnectedAt: row?.disconnectedAt?.toISOString() ?? null,
       webhookSubscribedAt: row?.webhookSubscribedAt?.toISOString() ?? null,
-      syncPolicy: FACEBOOK_SYNC_POLICY,
+      syncPolicy: syncInactive
+        ? {
+            ...FACEBOOK_SYNC_POLICY,
+            pollingBackfillMinutes: 0,
+            note: FACEBOOK_SYNC_INACTIVE_UNTIL_READ_PERMISSION,
+          }
+        : FACEBOOK_SYNC_POLICY,
+      pageReadOAuthExplanation: FACEBOOK_PAGE_READ_OAUTH_EXPLANATION,
       brand: YOUNG_GUNS_BRAND,
       // Tokens are never included in any response shape.
       hasStoredCredentials: Boolean(row?.credentialsEncrypted),
@@ -456,6 +502,45 @@ export class FacebookBusinessService {
     return { authorizationUrl: this.graph().buildBusinessPortfolioAuthorizeUrl(state) };
   }
 
+  /** Re-authorises with pages_read_engagement after Page selection (J-6.7F6). */
+  async startPageReadOAuth(
+    actor: FacebookActor,
+    returnPath?: string | null,
+  ): Promise<{ authorizationUrl: string }> {
+    this.assertManageConnection(actor);
+    this.requireAppConfig();
+    this.requireEncryptionKey();
+
+    const row = await this.loadConnection(actor.companyId);
+    const credentials = this.decryptCredentials(row);
+    if (!row?.pageId || !credentials?.userAccessToken) {
+      throw new FacebookBusinessError(
+        'NOT_AUTHORISED',
+        'Select a Facebook Page before granting Page read access.',
+      );
+    }
+
+    const state = randomBytes(32).toString('base64url');
+    const sanitisedPath = sanitiseReturnPath(returnPath);
+    await this.db.insert(fbOauthStates).values({
+      companyId: actor.companyId,
+      userId: actor.userId,
+      stateHash: hashOAuthState(state),
+      returnPath: encodeFacebookPageReadOAuthReturnPath(sanitisedPath),
+      initiatorRoleName: actor.roleName,
+      expiresAt: new Date(Date.now() + OAUTH_STATE_TTL_MS),
+    });
+
+    await this.audit(actor, 'connection.oauth_started', row.id, {
+      oauthFlow: 'page_read_scopes',
+      requestedOAuthTier: 'page_read',
+      requestedScopes: ['pages_show_list', 'business_management', 'pages_read_engagement'],
+      pageId: row.pageId,
+    });
+
+    return { authorizationUrl: this.graph().buildPageReadAuthorizeUrl(state) };
+  }
+
   /**
    * Completes the OAuth handshake and lists Pages. It deliberately does not
    * store credentials or mark anything connected — the Owner still has to pick
@@ -508,14 +593,117 @@ export class FacebookBusinessService {
       ? new Date(Date.now() + longLived.expiresIn * 1000)
       : null;
 
-    const returnPathDecoded = decodeFacebookOAuthReturnPath(stateRow.returnPath);
-    const browserReturnPath = resolveFacebookOAuthBrowserReturnPath(returnPathDecoded.returnPath);
-    const oauthTier = returnPathDecoded.oauthTier;
-    const isBusinessPortfolioOAuth = oauthTier === 'business_portfolio';
-    const businessManagementGranted = grantedPermissions.includes('business_management');
+    const tierDecoded = decodeFacebookOAuthTierFromReturnPath(stateRow.returnPath);
+    const browserReturnPath = resolveFacebookOAuthBrowserReturnPath(tierDecoded.returnPath);
+    const oauthTier = tierDecoded.oauthTier;
 
     const existing = await this.loadConnection(stateRow.companyId);
     const stateBefore = existing?.state ?? null;
+
+    if (oauthTier === 'page_read') {
+      if (!existing?.pageId || !existing.credentialsEncrypted) {
+        throw new FacebookBusinessError(
+          'NOT_AUTHORISED',
+          'Page read authorisation requires an existing Page selection. Select a Page first.',
+        );
+      }
+
+      const pageReadGranted = grantedPermissions.includes('pages_read_engagement');
+      if (!pageReadGranted) {
+        await this.recordConnectionEvent({
+          companyId: stateRow.companyId,
+          connectionId: existing.id,
+          eventType: 'oauth_page_read_denied',
+          stateBefore,
+          stateAfter: existing.state,
+          message:
+            'Page read authorisation did not grant pages_read_engagement. The selected Page and stored credentials were preserved.',
+          actorUserId: stateRow.userId,
+          metadata: { grantedPermissions },
+        });
+        return {
+          redirectUrl: `${this.appUrl.replace(/\/$/, '')}${browserReturnPath}?facebook=error&reason=${encodeURIComponent('PAGE_READ_PERMISSION_REQUIRED')}`,
+        };
+      }
+
+      const existingCredentials = decryptFacebookCredentials(
+        existing.credentialsEncrypted!,
+        encryptionKey,
+      );
+      const mergedCredentials: FacebookStoredCredentials = {
+        version: 1,
+        pageAccessToken: existingCredentials.pageAccessToken,
+        userAccessToken: longLived.accessToken,
+        expiresAt: expiresAt?.toISOString() ?? existingCredentials.expiresAt,
+        grantedScopes: grantedPermissions,
+      };
+
+      await this.db
+        .update(fbConnections)
+        .set({
+          grantedPermissions,
+          tokenExpiresAt: expiresAt,
+          credentialsEncrypted: encryptFacebookCredentials(mergedCredentials, encryptionKey),
+          updatedAt: new Date(),
+        })
+        .where(eq(fbConnections.id, existing.id));
+
+      const graph = this.graphClientFactory(config);
+      const verification = await this.probe(() =>
+        graph.verifyPage(existing.pageId as string, mergedCredentials.pageAccessToken),
+      );
+
+      await this.db
+        .update(fbConnections)
+        .set({
+          ...this.verificationColumns(
+            verification.outcome,
+            existing.metadata as Record<string, unknown> | null,
+          ),
+          pageName: verification.value?.name ?? existing.pageName,
+          updatedAt: new Date(),
+        })
+        .where(eq(fbConnections.id, existing.id));
+
+      const refreshed = await this.loadConnection(stateRow.companyId);
+      const resolved = this.resolveState(refreshed);
+      await this.db
+        .update(fbConnections)
+        .set({ state: persistFacebookConnectionState(resolved.state) })
+        .where(eq(fbConnections.id, existing.id));
+
+      await this.recordConnectionEvent({
+        companyId: stateRow.companyId,
+        connectionId: existing.id,
+        eventType: 'oauth_page_read_completed',
+        stateBefore,
+        stateAfter: persistFacebookConnectionState(resolved.state),
+        message: verification.outcome.ok
+          ? 'Page read access granted and verified against Facebook.'
+          : `Page read access granted but verification reported: ${verification.outcome.message}`,
+        actorUserId: stateRow.userId,
+        metadata: { grantedPermissions, verified: verification.outcome.ok },
+      });
+
+      await this.audit(
+        {
+          companyId: stateRow.companyId,
+          userId: stateRow.userId,
+          roleName: stateRow.initiatorRoleName ?? 'Company Owner',
+          permissions: [],
+        },
+        'connection.oauth_completed',
+        existing.id,
+        { oauthTier: 'page_read', verified: verification.outcome.ok },
+      );
+
+      const query = verification.outcome.ok ? 'facebook=page-read-granted' : 'facebook=page-read-pending';
+      return { redirectUrl: `${this.appUrl.replace(/\/$/, '')}${browserReturnPath}?${query}` };
+    }
+
+    const isBusinessPortfolioOAuth = oauthTier === 'business_portfolio';
+    const businessManagementGranted = grantedPermissions.includes('business_management');
+
     const pendingPageCandidate = await this.resolvePendingPageCandidateForCompany({
       companyId: stateRow.companyId,
       connectionMetadata: existing?.metadata as Record<string, unknown> | null,
@@ -984,6 +1172,10 @@ export class FacebookBusinessService {
     }
 
     const verification = await this.probe(() => graph.verifyPage(page.id, page.accessToken));
+    const verificationUpdate = this.verificationColumns(
+      verification.outcome,
+      row.metadata as Record<string, unknown> | null,
+    );
 
     await this.db
       .update(fbConnections)
@@ -1002,12 +1194,11 @@ export class FacebookBusinessService {
           },
           encryptionKey,
         ),
-        connectedAt: verification.outcome.ok ? new Date() : row.connectedAt,
+        connectedAt: row.connectedAt ?? new Date(),
         connectedByUserId: actor.userId,
         disconnectedAt: null,
-        metadata: {},
         updatedAt: new Date(),
-        ...this.verificationColumns(verification.outcome),
+        ...verificationUpdate,
       })
       .where(eq(fbConnections.id, row.id));
 
@@ -1016,7 +1207,7 @@ export class FacebookBusinessService {
 
     await this.db
       .update(fbConnections)
-      .set({ state: state.state })
+      .set({ state: persistFacebookConnectionState(state.state) })
       .where(eq(fbConnections.id, row.id));
 
     await this.recordConnectionEvent({
@@ -1024,7 +1215,7 @@ export class FacebookBusinessService {
       connectionId: row.id,
       eventType: 'page_selected',
       stateBefore: row.state,
-      stateAfter: state.state,
+      stateAfter: persistFacebookConnectionState(state.state),
       message: `Page "${page.name}" selected. ${state.detail}`,
       actorUserId: actor.userId,
       metadata: { pageId: page.id, pageName: page.name, verified: verification.outcome.ok },
@@ -1054,8 +1245,8 @@ export class FacebookBusinessService {
           companyId: actor.companyId,
           connectionId: row.id,
           eventType: 'webhook_subscribe_failed',
-          stateBefore: state.state,
-          stateAfter: state.state,
+          stateBefore: persistFacebookConnectionState(state.state),
+          stateAfter: persistFacebookConnectionState(state.state),
           message: `Page connected, but webhook subscription failed: ${describeGraphError(error)}. Polling every ${FACEBOOK_SYNC_POLICY.pollingBackfillMinutes} minutes will be used instead.`,
           actorUserId: actor.userId,
         });
@@ -1087,7 +1278,10 @@ export class FacebookBusinessService {
     await this.db
       .update(fbConnections)
       .set({
-        ...this.verificationColumns(verification.outcome),
+        ...this.verificationColumns(
+          verification.outcome,
+          row.metadata as Record<string, unknown> | null,
+        ),
         pageName: verification.value?.name ?? row.pageName,
         updatedAt: new Date(),
       })
@@ -1097,10 +1291,15 @@ export class FacebookBusinessService {
     const state = this.resolveState(refreshed);
     await this.db
       .update(fbConnections)
-      .set({ state: state.state })
+      .set({ state: persistFacebookConnectionState(state.state) })
       .where(eq(fbConnections.id, row.id));
 
-    if (state.state !== 'connected') {
+    if (
+      state.state === 'missing_permission' ||
+      state.state === 'reauthorisation_required' ||
+      state.state === 'expired' ||
+      state.state === 'provider_unavailable'
+    ) {
       await this.raiseNotification({
         companyId: actor.companyId,
         kind: state.state === 'missing_permission' ? 'permission_missing' : 'connection_broken',
@@ -1108,7 +1307,7 @@ export class FacebookBusinessService {
         title: `Facebook connection: ${state.label}`,
         body: state.detail,
       });
-    } else {
+    } else if (state.state === 'connected') {
       await this.resolveNotification(actor.companyId, 'connection_broken', null);
       await this.resolveNotification(actor.companyId, 'permission_missing', null);
     }
@@ -1168,15 +1367,30 @@ export class FacebookBusinessService {
     return this.getConnection(actor);
   }
 
-  private verificationColumns(outcome: FacebookVerificationOutcome) {
-    return {
-      lastVerifiedAt: outcome.checkedAt,
+  private verificationColumns(
+    outcome: FacebookVerificationOutcome,
+    existingMetadata?: Record<string, unknown> | null,
+  ) {
+    const metadata = mergeFacebookVerificationMetadata({
+      existing: existingMetadata,
+      attemptAt: outcome.checkedAt,
+      outcome: { ok: outcome.ok, message: outcome.message },
+    });
+
+    const base = {
       lastVerificationOk: outcome.ok,
       lastVerificationAuthError: outcome.authError,
       lastVerificationPermissionError: outcome.permissionError,
       lastVerificationProviderUnavailable: outcome.providerUnavailable,
       lastVerificationMessage: outcome.message,
+      metadata,
     };
+
+    if (outcome.ok) {
+      return { ...base, lastVerifiedAt: outcome.checkedAt };
+    }
+
+    return base;
   }
 
   /** Wraps a Graph call so its failure kind becomes a recorded verification outcome. */

@@ -43,6 +43,9 @@ export type FacebookConnectionView = {
   appConfigured: boolean;
   encryptionConfigured: boolean;
   lastVerifiedAt: string | null;
+  lastConnectionAttemptAt: string | null;
+  lastSuccessfulVerificationAt: string | null;
+  lastFailedVerificationAt: string | null;
   lastVerificationMessage: string | null;
   lastSyncedAt: string | null;
   connectedAt: string | null;
@@ -64,6 +67,7 @@ export type FacebookConnectionView = {
     logoNote: string;
   };
   hasStoredCredentials: boolean;
+  pageReadOAuthExplanation: string;
 };
 
 export type FacebookPageOption = FacebookPageDiscoveryRow;
@@ -196,6 +200,14 @@ export function startFacebookOAuth(accessToken: string, returnPath?: string) {
 
 export function startFacebookBusinessPortfolioOAuth(accessToken: string, returnPath?: string) {
   return request<{ authorizationUrl: string }>(`${BASE}/oauth/start-business-portfolio`, {
+    method: 'POST',
+    accessToken,
+    body: { returnPath },
+  });
+}
+
+export function startFacebookPageReadOAuth(accessToken: string, returnPath?: string) {
+  return request<{ authorizationUrl: string }>(`${BASE}/oauth/start-page-read`, {
     method: 'POST',
     accessToken,
     body: { returnPath },

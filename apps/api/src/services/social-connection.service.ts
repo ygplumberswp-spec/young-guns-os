@@ -17,6 +17,8 @@ import {
   socialConnectionMapsToSocialMediaPlatform,
   FACEBOOK_PAGE_SELECTION_WORKSPACE_PATH,
   FACEBOOK_PENDING_PAGE_SELECTION_DETAIL,
+  buildFacebookVerificationTimestamps,
+  resolveFacebookConnectionState,
   type SelectSocialConnectionAccountRequest,
   type SocialAccountSelection,
   type SocialConnectionHealthResult,
@@ -259,11 +261,54 @@ export class SocialConnectionService {
     actor: SocialConnectionActor | null,
   ): Promise<SocialConnectionProviderCard> {
     const row = companyId ? await this.loadFacebookRow(companyId) : null;
-    const foundationStatus = mapFacebookStateToFoundationStatus(row?.state ?? 'configuration_required');
+    const timestamps = buildFacebookVerificationTimestamps({
+      metadata: row?.metadata as Record<string, unknown> | null,
+      lastVerifiedAt: row?.lastVerifiedAt ?? null,
+      lastVerificationOk: row?.lastVerificationOk ?? null,
+      lastSyncedAt: row?.lastSyncedAt ?? null,
+    });
+    const lastVerification =
+      timestamps.lastSuccessfulVerificationAt
+        ? {
+            ok: true as const,
+            authError: false,
+            permissionError: false,
+            providerUnavailable: false,
+            checkedAt: new Date(timestamps.lastSuccessfulVerificationAt),
+            message: row?.lastVerificationMessage ?? 'Facebook responded successfully.',
+          }
+        : timestamps.lastFailedVerificationAt
+          ? {
+              ok: false as const,
+              authError: row?.lastVerificationAuthError ?? false,
+              permissionError: row?.lastVerificationPermissionError ?? false,
+              providerUnavailable: row?.lastVerificationProviderUnavailable ?? false,
+              checkedAt: new Date(timestamps.lastFailedVerificationAt),
+              message:
+                ((row?.metadata as Record<string, unknown> | undefined)?.verification as
+                  | { lastFailedVerificationMessage?: string }
+                  | undefined)?.lastFailedVerificationMessage ??
+                row?.lastVerificationMessage ??
+                '',
+            }
+          : null;
+    const resolved = resolveFacebookConnectionState({
+      appConfigured: oauthConfigured.facebook,
+      hasStoredToken: Boolean(row?.credentialsEncrypted),
+      pageSelected: Boolean(row?.pageId),
+      pageName: row?.pageName ?? null,
+      tokenExpiresAt: row?.tokenExpiresAt ?? null,
+      grantedPermissions: row?.grantedPermissions ?? [],
+      lastVerification,
+      disconnectedAt: row?.disconnectedAt ?? null,
+      now: new Date(),
+    });
+    const foundationStatus = mapFacebookStateToFoundationStatus(resolved.state);
     const canManage = actor ? canManageSocialConnections(actor) : false;
-    const pendingPageSelection = foundationStatus === 'ACCOUNT_SELECTION_REQUIRED';
+    const pendingPageSelection = resolved.state === 'partial';
+    const connectedLimited = resolved.state === 'connected_limited';
     const safeErrorMessage =
-      pendingPageSelection || foundationStatus === 'DISCONNECTED'
+      pendingPageSelection || foundationStatus === 'DISCONNECTED' || connectedLimited
         ? null
         : row?.lastVerificationMessage ?? null;
 
@@ -271,16 +316,23 @@ export class SocialConnectionService {
       provider: 'facebook',
       label: SOCIAL_CONNECTION_PROVIDER_LABELS.facebook,
       foundationStatus,
-      statusLabel: formatSocialConnectionFoundationStatus(foundationStatus),
+      facebookConnectionState: resolved.state,
+      statusLabel: connectedLimited
+        ? resolved.label
+        : formatSocialConnectionFoundationStatus(foundationStatus),
       selectedAccountLabel: row?.pageName ?? row?.pageId ?? null,
       oauthAppConfigured: oauthConfigured.facebook,
       authorizeUrlAvailable: oauthConfigured.facebook,
       hasCredentials: Boolean(row?.credentialsEncrypted),
-      liveProviderVerified: row?.state === 'connected' && Boolean(row?.lastVerificationOk),
-      lastHealthCheckAt: row?.lastVerifiedAt?.toISOString() ?? null,
+      liveProviderVerified: resolved.state === 'connected' && Boolean(row?.lastVerificationOk),
+      lastHealthCheckAt: timestamps.lastSuccessfulVerificationAt,
       lastError: safeErrorMessage,
       safeErrorMessage,
-      statusDetail: pendingPageSelection ? FACEBOOK_PENDING_PAGE_SELECTION_DETAIL : null,
+      statusDetail: pendingPageSelection
+        ? FACEBOOK_PENDING_PAGE_SELECTION_DETAIL
+        : connectedLimited
+          ? resolved.detail
+          : null,
       accountSelectionPath:
         pendingPageSelection && canManage ? FACEBOOK_PAGE_SELECTION_WORKSPACE_PATH : null,
       setupRequirementCategory:
@@ -291,15 +343,14 @@ export class SocialConnectionService {
           foundationStatus === 'READY_TO_CONNECT' ||
           foundationStatus === 'DISCONNECTED' ||
           foundationStatus === 'ERROR'),
-      canCompleteAccountSelection:
-        canManage && foundationStatus === 'ACCOUNT_SELECTION_REQUIRED',
+      canCompleteAccountSelection: canManage && pendingPageSelection,
       canReconnect:
         canManage &&
         (foundationStatus === 'RECONNECT_REQUIRED' || foundationStatus === 'ERROR'),
       canDisconnect:
         canManage &&
         (foundationStatus === 'CONNECTED' ||
-          foundationStatus === 'ACCOUNT_SELECTION_REQUIRED' ||
+          pendingPageSelection ||
           foundationStatus === 'RECONNECT_REQUIRED' ||
           foundationStatus === 'ERROR'),
       canViewSetupRequirements: Boolean(actor && canViewSocialConnections(actor)),

@@ -7,6 +7,7 @@ export type FacebookConnectionUiStatus =
   | 'ready_to_connect'
   | 'disconnected'
   | 'partial'
+  | 'connected_limited'
   | 'connected'
   | 'reconnect_required'
   | 'error';
@@ -15,6 +16,7 @@ export type FacebookConnectionUiAction =
   | 'connect'
   | 'choose_page'
   | 'grant_business_portfolio'
+  | 'grant_page_read'
   | 'check_health'
   | 'reconnect'
   | 'disconnect'
@@ -30,6 +32,7 @@ export const FACEBOOK_CONNECTION_ACTION_LABELS: Record<FacebookConnectionUiActio
   connect: 'Connect',
   choose_page: 'Choose Page',
   grant_business_portfolio: 'Grant Business Portfolio access',
+  grant_page_read: 'Grant Page read access',
   check_health: 'Check health',
   reconnect: 'Reconnect',
   disconnect: 'Disconnect',
@@ -48,6 +51,8 @@ export function normalizeFacebookConnectionUiStatus(input: {
         return 'disconnected';
       case 'partial':
         return 'partial';
+      case 'connected_limited':
+        return 'connected_limited';
       case 'connected':
         return 'connected';
       case 'reauthorisation_required':
@@ -97,6 +102,8 @@ export function resolveFacebookConnectionActionPlan(
         return { primary: 'grant_business_portfolio', secondary: ['disconnect'], tertiary: [] };
       }
       return { primary: 'choose_page', secondary: ['disconnect'], tertiary: [] };
+    case 'connected_limited':
+      return { primary: 'grant_page_read', secondary: ['disconnect'], tertiary: [] };
     case 'connected':
       return { primary: 'check_health', secondary: ['reconnect', 'disconnect'], tertiary: [] };
     case 'disconnected':

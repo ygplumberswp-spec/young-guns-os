@@ -16,6 +16,21 @@ describe('facebook connection action plan (J-6.7F)', () => {
     assert.equal(facebookConnectionActionAllowed(plan, 'choose_page'), false);
   });
 
+  it('connected_limited exposes Grant Page read access primary and hides Choose Page', () => {
+    const plan = resolveFacebookConnectionActionPlan('connected_limited');
+    assert.equal(plan.primary, 'grant_page_read');
+    assert.deepEqual(plan.secondary, ['disconnect']);
+    assert.equal(facebookConnectionActionAllowed(plan, 'choose_page'), false);
+    assert.equal(facebookConnectionActionAllowed(plan, 'check_health'), false);
+  });
+
+  it('maps connected_limited connection state consistently', () => {
+    assert.equal(
+      normalizeFacebookConnectionUiStatus({ connectionState: 'connected_limited' }),
+      'connected_limited',
+    );
+  });
+
   it('partial state exposes Choose Page primary and Disconnect secondary only', () => {
     const plan = resolveFacebookConnectionActionPlan('partial');
     assert.equal(plan.primary, 'choose_page');

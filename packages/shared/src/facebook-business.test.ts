@@ -156,10 +156,27 @@ describe('facebook connection honesty (Phase C)', () => {
     assert.ok(result.missingPermissions.includes('pages_manage_posts'));
   });
 
-  it('stays connected with basic scope only and lists optional permissions Meta withheld', () => {
+  it('reports connected_limited when Page is linked but pages_read_engagement is missing', () => {
     const result = resolveFacebookConnectionState(
       connectionInput({
-        grantedPermissions: ['pages_show_list'],
+        grantedPermissions: ['pages_show_list', 'business_management'],
+        pageName: 'Young Guns Plumbing – Cape Town',
+        lastVerification: verification({
+          ok: false,
+          permissionError: true,
+          message: 'pages_read_engagement required',
+        }),
+      }),
+    );
+    assert.equal(result.state, 'connected_limited');
+    assert.equal(result.usable, false);
+    assert.match(result.detail, /Young Guns Plumbing – Cape Town is connected/);
+  });
+
+  it('stays connected when read permission is granted and optional capabilities remain unavailable', () => {
+    const result = resolveFacebookConnectionState(
+      connectionInput({
+        grantedPermissions: ['pages_show_list', 'business_management', 'pages_read_engagement'],
       }),
     );
     assert.equal(result.state, 'connected');
