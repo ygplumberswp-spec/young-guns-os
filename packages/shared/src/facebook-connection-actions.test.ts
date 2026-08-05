@@ -41,6 +41,18 @@ describe('facebook connection action plan (J-6.7F)', () => {
     assert.equal(facebookConnectionActionAllowed(plan, 'check_health'), false);
   });
 
+  it('partial mismatch exposes Choose correct Page primary and hides Grant Page read access', () => {
+    const plan = resolveFacebookConnectionActionPlan('partial', {
+      pageSelectionMismatch: true,
+    });
+    assert.equal(plan.primary, 'choose_correct_page');
+    assert.deepEqual(plan.secondary, ['disconnect']);
+    assert.equal(facebookConnectionActionAllowed(plan, 'grant_page_read'), false);
+    assert.equal(facebookConnectionActionAllowed(plan, 'check_health'), false);
+    assert.equal(facebookConnectionActionAllowed(plan, 'reconnect'), false);
+    assert.equal(facebookConnectionActionAllowed(plan, 'grant_business_portfolio'), false);
+  });
+
   it('connected state exposes Check health primary with Reconnect and Disconnect secondary', () => {
     const plan = resolveFacebookConnectionActionPlan('connected');
     assert.equal(plan.primary, 'check_health');

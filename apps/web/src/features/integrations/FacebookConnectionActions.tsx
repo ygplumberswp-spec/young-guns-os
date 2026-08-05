@@ -20,6 +20,7 @@ export type FacebookConnectionActionsProps = {
   choosePageHref?: string | null;
   showViewSetup?: boolean;
   needsBusinessPortfolioAccess?: boolean;
+  pageSelectionMismatch?: boolean;
   onConnect: () => void;
   onChoosePage: () => void;
   onGrantBusinessPortfolio?: () => void;
@@ -92,9 +93,20 @@ function renderActionButton(
     );
   }
 
+  if (action === 'choose_correct_page' && choosePageHref) {
+    return (
+      <Link key="choose-correct-page" href={choosePageHref}>
+        <Button size="sm" variant={variant} disabled={disabled}>
+          {label}
+        </Button>
+      </Link>
+    );
+  }
+
   const handlers: Record<FacebookConnectionUiAction, () => void> = {
     connect: props.onConnect,
     choose_page: props.onChoosePage,
+    choose_correct_page: props.onChoosePage,
     grant_business_portfolio: props.onGrantBusinessPortfolio ?? props.onChoosePage,
     grant_page_read: props.onGrantPageRead ?? props.onConnect,
     check_health: props.onCheckHealth,
@@ -123,6 +135,7 @@ export function FacebookConnectionActions(props: FacebookConnectionActionsProps)
   });
   const plan = resolveFacebookConnectionActionPlan(uiStatus, {
     needsBusinessPortfolioAccess: props.needsBusinessPortfolioAccess,
+    pageSelectionMismatch: props.pageSelectionMismatch,
   });
 
   const actions: FacebookConnectionUiAction[] = [];

@@ -218,6 +218,10 @@ export type SocialConnectionProviderCard = {
   statusDetail?: string | null;
   /** Primary path to complete account/Page selection when required. */
   accountSelectionPath?: string | null;
+  /** Stored Page id differs from the verified tenant Page (J-6.7F7). */
+  pageSelectionMismatch?: boolean;
+  /** Sanitized stored vs expected Page identity for mismatch UI. */
+  facebookPageIdentity?: import('./facebook-page-identity.js').FacebookPageIdentityDisplay | null;
 };
 
 export type SocialConnectionsDashboard = {

@@ -15,6 +15,7 @@ export type FacebookConnectionUiStatus =
 export type FacebookConnectionUiAction =
   | 'connect'
   | 'choose_page'
+  | 'choose_correct_page'
   | 'grant_business_portfolio'
   | 'grant_page_read'
   | 'check_health'
@@ -31,6 +32,7 @@ export type FacebookConnectionActionPlan = {
 export const FACEBOOK_CONNECTION_ACTION_LABELS: Record<FacebookConnectionUiAction, string> = {
   connect: 'Connect',
   choose_page: 'Choose Page',
+  choose_correct_page: 'Choose correct Page',
   grant_business_portfolio: 'Grant Business Portfolio access',
   grant_page_read: 'Grant Page read access',
   check_health: 'Check health',
@@ -86,6 +88,8 @@ export function normalizeFacebookConnectionUiStatus(input: {
 export type FacebookConnectionActionPlanContext = {
   /** When true, partial state shows Grant Business Portfolio access instead of Choose Page. */
   needsBusinessPortfolioAccess?: boolean;
+  /** When true, stored Page id does not match the verified tenant Page. */
+  pageSelectionMismatch?: boolean;
 };
 
 /**
@@ -98,6 +102,9 @@ export function resolveFacebookConnectionActionPlan(
 ): FacebookConnectionActionPlan {
   switch (status) {
     case 'partial':
+      if (context.pageSelectionMismatch) {
+        return { primary: 'choose_correct_page', secondary: ['disconnect'], tertiary: [] };
+      }
       if (context.needsBusinessPortfolioAccess) {
         return { primary: 'grant_business_portfolio', secondary: ['disconnect'], tertiary: [] };
       }

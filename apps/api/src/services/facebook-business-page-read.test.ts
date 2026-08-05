@@ -34,3 +34,27 @@ describe('facebook page read OAuth wiring (J-6.7F6)', () => {
     assert.match(serviceSource, /capable\('read_comments'\)/);
   });
 });
+
+describe('facebook page identity binding (J-6.7F7)', () => {
+  it('service blocks page-read OAuth and background work during Page mismatch', () => {
+    assert.ok(serviceSource.includes('facebookPageIdentityAllowsPageReadOAuth'));
+    assert.ok(serviceSource.includes('FACEBOOK_PAGE_SELECTION_REQUIRED'));
+    assert.ok(serviceSource.includes('FACEBOOK_SELECTED_PAGE_MISMATCH_MESSAGE'));
+    assert.ok(serviceSource.includes('assertPageIdMatchesVerifiedCandidate'));
+    assert.ok(serviceSource.includes('assertProviderPageRowMatchesSelection'));
+    assert.ok(serviceSource.includes('pageIdentityVerified: true'));
+    assert.ok(serviceSource.includes('await this.resolveState(row)'));
+  });
+
+  it('route maps FACEBOOK_PAGE_SELECTION_REQUIRED to conflict response', () => {
+    const routeSource = readFileSync(join(here, '../routes/facebook-business.ts'), 'utf8');
+    assert.ok(routeSource.includes('FACEBOOK_PAGE_SELECTION_REQUIRED: 409'));
+  });
+
+  it('social connection card resolves Page identity before state', () => {
+    const socialSource = readFileSync(join(here, 'social-connection.service.ts'), 'utf8');
+    assert.ok(socialSource.includes('buildFacebookPageIdentity'));
+    assert.ok(socialSource.includes('pageSelectionMismatch'));
+    assert.ok(socialSource.includes('resolveFacebookPageIdentity'));
+  });
+});

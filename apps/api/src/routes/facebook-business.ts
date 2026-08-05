@@ -140,6 +140,7 @@ const STATUS_BY_CODE: Record<string, number> = {
   BUSINESS_PAGE_CONNECTED: 409,
   META_APP_REVIEW_REQUIRED: 403,
   META_PROVIDER_FAILED: 502,
+  FACEBOOK_PAGE_SELECTION_REQUIRED: 409,
 };
 
 function handleError(res: import('express').Response, error: unknown): boolean {

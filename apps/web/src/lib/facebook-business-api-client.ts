@@ -14,6 +14,7 @@ import type {
   FacebookDirectPageLookupSanitized,
   FacebookPendingPageCandidate,
   FacebookBusinessPortfolioDiscoveryResult,
+  FacebookPageIdentityDisplay,
   FacebookPermission,
 } from '@titan/shared';
 import { request, ApiClientError } from './api-client';
@@ -36,6 +37,8 @@ export type FacebookConnectionView = {
   usable: boolean;
   detail: string;
   requiredAction: string | null;
+  mismatchReason: string | null;
+  pageIdentity: FacebookPageIdentityDisplay | null;
   capabilities: FacebookCapabilityState[];
   grantedPermissions: string[];
   missingPermissions: FacebookPermission[];

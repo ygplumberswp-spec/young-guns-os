@@ -746,8 +746,10 @@ function ConnectionTab({
 
   const needsConfiguration = connection.state === 'configuration_required';
   const isConnectedLimited = connection.state === 'connected_limited';
+  const pageSelectionMismatch = Boolean(connection.pageIdentity);
   const needsBusinessPortfolioAccess =
     !isConnectedLimited &&
+    !pageSelectionMismatch &&
     (pageDiscovery?.needsBusinessPortfolioAccess ??
       (connection.state === 'partial' &&
         connection.hasStoredCredentials &&
@@ -763,6 +765,24 @@ function ConnectionTab({
           <strong>{connection.stateLabel}</strong> — {connection.detail}
         </p>
         {connection.requiredAction ? <p>Next step: {connection.requiredAction}</p> : null}
+        {connection.pageIdentity ? (
+          <dl className="facebook-page-identity-mismatch">
+            <dt>Currently stored</dt>
+            <dd>
+              {connection.pageIdentity.storedPageName ?? 'Unknown Page'}
+              {connection.pageIdentity.storedPageIdMasked
+                ? ` · Page ID ending ${connection.pageIdentity.storedPageIdMasked.replace(/^···/, '')}`
+                : null}
+            </dd>
+            <dt>Expected</dt>
+            <dd>
+              {connection.pageIdentity.expectedPageName ?? 'Verified Page'}
+              {connection.pageIdentity.expectedPageIdMasked
+                ? ` · Page ID ending ${connection.pageIdentity.expectedPageIdMasked.replace(/^···/, '')}`
+                : null}
+            </dd>
+          </dl>
+        ) : null}
         {connection.pageUrl ? (
           <p>
             <a href={connection.pageUrl} target="_blank" rel="noreferrer">
@@ -839,7 +859,7 @@ function ConnectionTab({
 
       {canManage ? (
         <Panel title="Manage the connection">
-          {pageDiscovery?.needsBusinessPortfolioAccess && !isConnectedLimited ? (
+          {pageDiscovery?.needsBusinessPortfolioAccess && !isConnectedLimited && !pageSelectionMismatch ? (
             <p className="page-muted">{FACEBOOK_BUSINESS_PORTFOLIO_OAUTH_EXPLANATION}</p>
           ) : null}
           {isConnectedLimited ? (
@@ -853,7 +873,9 @@ function ConnectionTab({
             canManage={canManage}
             needsConfiguration={needsConfiguration}
             needsBusinessPortfolioAccess={needsBusinessPortfolioAccess}
+            pageSelectionMismatch={pageSelectionMismatch}
             confirmDisconnect={confirmDisconnect}
+            choosePageHref="/facebook-business"
             onConnect={onConnect}
             onChoosePage={onLoadPages}
             onGrantBusinessPortfolio={onGrantBusinessPortfolio}

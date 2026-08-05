@@ -165,6 +165,7 @@ export * from './facebook-business.js';
 export * from './facebook-page-discovery.js';
 export * from './facebook-direct-page-lookup.js';
 export * from './facebook-connection-health.js';
+export * from './facebook-page-identity.js';
 export * from './facebook-connection-actions.js';
 export * from './facebook-business-portfolio-discovery.js';
 export * from './content-reputation-intelligence.js';

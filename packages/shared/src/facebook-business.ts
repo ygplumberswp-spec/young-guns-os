@@ -24,6 +24,11 @@ import {
   hasFacebookPageReadEngagement,
 } from './facebook-connection-health.js';
 import {
+  FACEBOOK_SELECTED_PAGE_MISMATCH_MESSAGE,
+  facebookPageIdentityAllowsConnectedLimited,
+  type FacebookPageIdentityDiagnosis,
+} from './facebook-page-identity.js';
+import {
   canAccessMarketingAgent,
   canApproveMarketingAgentPublish,
   canWriteMarketingAgent,
@@ -376,6 +381,8 @@ export type FacebookConnectionStateInput = {
   lastVerification: FacebookVerificationOutcome | null;
   /** Owner explicitly disconnected. */
   disconnectedAt: Date | null;
+  /** Sanitized Page identity binding diagnosis (J-6.7F7). */
+  pageIdentity?: FacebookPageIdentityDiagnosis | null;
   now: Date;
 };
 
@@ -401,6 +408,8 @@ export type FacebookConnectionStateResult = {
   detail: string;
   /** Concrete next step, or null when nothing is required. */
   requiredAction: string | null;
+  /** Set when stored Page id does not match the verified tenant Page. */
+  mismatchReason: string | null;
   capabilities: FacebookCapabilityState[];
   missingPermissions: FacebookPermission[];
 };
@@ -422,17 +431,25 @@ export function resolveFacebookConnectionState(
     state: FacebookConnectionState,
     detail: string,
     requiredAction: string | null,
+    mismatchReason: string | null = null,
   ): FacebookConnectionStateResult => ({
     state,
     label: FACEBOOK_CONNECTION_STATE_LABELS[state],
     usable: state === 'connected',
     detail,
     requiredAction,
+    mismatchReason,
     capabilities,
     missingPermissions,
   });
 
+  const pageIdentity = input.pageIdentity ?? null;
+  const identityBound = pageIdentity
+    ? facebookPageIdentityAllowsConnectedLimited(pageIdentity)
+    : input.pageSelected && input.hasStoredToken;
+
   const basicPageLinked =
+    identityBound &&
     input.pageSelected &&
     input.hasStoredToken &&
     hasFacebookBasicDiscoveryPermissions(input.grantedPermissions);
@@ -501,6 +518,15 @@ export function resolveFacebookConnectionState(
       'partial',
       'Facebook authorisation succeeded but no Page has been selected, so TITAN cannot read or publish anything.',
       'Select the Young Guns Plumbing Page to finish the connection.',
+    );
+  }
+
+  if (pageIdentity?.mismatch) {
+    return build(
+      'partial',
+      FACEBOOK_SELECTED_PAGE_MISMATCH_MESSAGE,
+      'Choose the correct Young Guns Plumbing Page to finish the connection.',
+      pageIdentity.mismatchReason,
     );
   }
 

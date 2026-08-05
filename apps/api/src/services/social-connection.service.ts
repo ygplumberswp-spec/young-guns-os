@@ -17,8 +17,12 @@ import {
   socialConnectionMapsToSocialMediaPlatform,
   FACEBOOK_PAGE_SELECTION_WORKSPACE_PATH,
   FACEBOOK_PENDING_PAGE_SELECTION_DETAIL,
+  buildFacebookPageIdentityDisplay,
   buildFacebookVerificationTimestamps,
+  isYoungGunsFinanceTenant,
   resolveFacebookConnectionState,
+  resolveFacebookPageIdentity,
+  resolveFacebookPendingPageCandidate,
   type SelectSocialConnectionAccountRequest,
   type SocialAccountSelection,
   type SocialConnectionHealthResult,
@@ -32,6 +36,7 @@ import {
 } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
 import {
+  companies,
   fbConnections,
   securityAuditLogs,
   socialMediaConnectionEvents,
@@ -39,6 +44,7 @@ import {
   socialOauthStates,
 } from '@titan/db';
 import {
+  decryptFacebookCredentials,
   decryptSocialMediaCredentials,
   encryptSocialMediaCredentials,
   hashOAuthState,
@@ -255,12 +261,49 @@ export class SocialConnectionService {
     return row ?? null;
   }
 
+  private async buildFacebookPageIdentity(
+    companyId: string,
+    row: Awaited<ReturnType<typeof this.loadFacebookRow>>,
+  ) {
+    if (!row) return null;
+    const [company] = await this.db
+      .select({ slug: companies.slug, name: companies.name })
+      .from(companies)
+      .where(eq(companies.id, companyId))
+      .limit(1);
+    const candidate = resolveFacebookPendingPageCandidate({
+      companyId,
+      connectionMetadata: row.metadata as Record<string, unknown> | null,
+      isYoungGunsTenant: isYoungGunsFinanceTenant(companyId, company ?? null),
+    });
+    let pageAccessToken: string | null = null;
+    if (row.credentialsEncrypted && this.encryptionKey) {
+      try {
+        pageAccessToken =
+          decryptFacebookCredentials(row.credentialsEncrypted, this.encryptionKey).pageAccessToken ??
+          null;
+      } catch {
+        pageAccessToken = null;
+      }
+    }
+    return resolveFacebookPageIdentity({
+      storedPageId: row.pageId,
+      storedPageName: row.pageName,
+      verifiedCandidate: candidate,
+      hasStoredCredentials: Boolean(row.credentialsEncrypted),
+      pageAccessToken,
+    });
+  }
+
   private async buildFacebookProviderCard(
     companyId: string,
     oauthConfigured: Record<SocialConnectionProvider, boolean>,
     actor: SocialConnectionActor | null,
   ): Promise<SocialConnectionProviderCard> {
     const row = companyId ? await this.loadFacebookRow(companyId) : null;
+    const pageIdentity = companyId && row ? await this.buildFacebookPageIdentity(companyId, row) : null;
+    const pageSelectionMismatch = Boolean(pageIdentity?.mismatch);
+    const pageIdentityDisplay = pageIdentity ? buildFacebookPageIdentityDisplay(pageIdentity) : null;
     const timestamps = buildFacebookVerificationTimestamps({
       metadata: row?.metadata as Record<string, unknown> | null,
       lastVerifiedAt: row?.lastVerifiedAt ?? null,
@@ -301,6 +344,7 @@ export class SocialConnectionService {
       grantedPermissions: row?.grantedPermissions ?? [],
       lastVerification,
       disconnectedAt: row?.disconnectedAt ?? null,
+      pageIdentity,
       now: new Date(),
     });
     const foundationStatus = mapFacebookStateToFoundationStatus(resolved.state);
@@ -317,9 +361,10 @@ export class SocialConnectionService {
       label: SOCIAL_CONNECTION_PROVIDER_LABELS.facebook,
       foundationStatus,
       facebookConnectionState: resolved.state,
-      statusLabel: connectedLimited
-        ? resolved.label
-        : formatSocialConnectionFoundationStatus(foundationStatus),
+      statusLabel:
+        connectedLimited || pageSelectionMismatch
+          ? resolved.label
+          : formatSocialConnectionFoundationStatus(foundationStatus),
       selectedAccountLabel: row?.pageName ?? row?.pageId ?? null,
       oauthAppConfigured: oauthConfigured.facebook,
       authorizeUrlAvailable: oauthConfigured.facebook,
@@ -328,13 +373,17 @@ export class SocialConnectionService {
       lastHealthCheckAt: timestamps.lastSuccessfulVerificationAt,
       lastError: safeErrorMessage,
       safeErrorMessage,
-      statusDetail: pendingPageSelection
-        ? FACEBOOK_PENDING_PAGE_SELECTION_DETAIL
-        : connectedLimited
-          ? resolved.detail
-          : null,
+      statusDetail: pageSelectionMismatch
+        ? resolved.detail
+        : pendingPageSelection
+          ? FACEBOOK_PENDING_PAGE_SELECTION_DETAIL
+          : connectedLimited
+            ? resolved.detail
+            : null,
       accountSelectionPath:
         pendingPageSelection && canManage ? FACEBOOK_PAGE_SELECTION_WORKSPACE_PATH : null,
+      pageSelectionMismatch,
+      facebookPageIdentity: pageIdentityDisplay,
       setupRequirementCategory:
         foundationStatus === 'NOT_CONFIGURED' ? 'missing_oauth_app' : null,
       canConnect:

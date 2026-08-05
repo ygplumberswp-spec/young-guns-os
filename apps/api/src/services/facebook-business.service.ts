@@ -34,17 +34,23 @@ import {
   mapRawFacebookAccountRow,
   resolveFacebookPageDiscoveryStatus,
   assertClientPageIdMatchesBusinessDiscovery,
+  assertPageIdMatchesVerifiedCandidate,
+  assertProviderPageRowMatchesSelection,
   buildFacebookDirectPageLookupSanitized,
+  buildFacebookPageIdentityDisplay,
   buildFacebookBusinessPortfolioDiscoveryDiagnosis,
   buildFacebookVerificationTimestamps,
   decodeFacebookOAuthTierFromReturnPath,
   encodeFacebookBusinessPortfolioOAuthReturnPath,
   encodeFacebookPageReadOAuthReturnPath,
   FACEBOOK_PAGE_READ_OAUTH_EXPLANATION,
+  FACEBOOK_SELECTED_PAGE_MISMATCH_MESSAGE,
   FACEBOOK_SYNC_INACTIVE_UNTIL_READ_PERMISSION,
+  facebookPageIdentityAllowsPageReadOAuth,
   hasFacebookPageReadEngagement,
   mergeFacebookVerificationMetadata,
   persistFacebookConnectionState,
+  resolveFacebookPageIdentity,
   mapRawBusinessPortfolioPageRow,
   mapFacebookGraphDirectLookupToProbes,
   needsFacebookBusinessPortfolioAccess,
@@ -67,6 +73,7 @@ import {
   type FacebookContentStatus,
   type FacebookContentType,
   type FacebookNotificationKind,
+  type FacebookPageIdentityDiagnosis,
   type FacebookVerificationOutcome,
 } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
@@ -331,11 +338,27 @@ export class FacebookBusinessService {
     }
   }
 
+  private async buildPageIdentity(row: ConnectionRow): Promise<FacebookPageIdentityDiagnosis> {
+    const credentials = this.decryptCredentials(row);
+    const candidate = await this.resolvePendingPageCandidateForCompany({
+      companyId: row.companyId,
+      connectionMetadata: row.metadata as Record<string, unknown> | null,
+    });
+    return resolveFacebookPageIdentity({
+      storedPageId: row.pageId,
+      storedPageName: row.pageName,
+      verifiedCandidate: candidate,
+      hasStoredCredentials: Boolean(row.credentialsEncrypted),
+      pageAccessToken: credentials?.pageAccessToken ?? null,
+    });
+  }
+
   /**
    * The one place connection state is derived. Everything else reads this so a
    * `connected` badge can never come from anywhere but a verified probe.
    */
-  private resolveState(row: ConnectionRow | null): FacebookConnectionStateResult {
+  private async resolveState(row: ConnectionRow | null): Promise<FacebookConnectionStateResult> {
+    const pageIdentity = row ? await this.buildPageIdentity(row) : null;
     const timestamps = buildFacebookVerificationTimestamps({
       metadata: row?.metadata as Record<string, unknown> | null,
       lastVerifiedAt: row?.lastVerifiedAt ?? null,
@@ -377,6 +400,7 @@ export class FacebookBusinessService {
       grantedPermissions: row?.grantedPermissions ?? [],
       lastVerification: verification,
       disconnectedAt: row?.disconnectedAt ?? null,
+      pageIdentity,
       now: new Date(),
     });
   }
@@ -384,7 +408,8 @@ export class FacebookBusinessService {
   async getConnection(actor: FacebookActor) {
     this.assertRead(actor);
     const row = await this.loadConnection(actor.companyId);
-    const state = this.resolveState(row);
+    const pageIdentity = row ? await this.buildPageIdentity(row) : null;
+    const state = await this.resolveState(row);
 
     const timestamps = buildFacebookVerificationTimestamps({
       metadata: row?.metadata as Record<string, unknown> | null,
@@ -404,6 +429,8 @@ export class FacebookBusinessService {
       usable: state.usable,
       detail: state.detail,
       requiredAction: state.requiredAction,
+      mismatchReason: state.mismatchReason,
+      pageIdentity: pageIdentity ? buildFacebookPageIdentityDisplay(pageIdentity) : null,
       capabilities: state.capabilities,
       grantedPermissions: row?.grantedPermissions ?? [],
       missingPermissions: state.missingPermissions,
@@ -513,10 +540,19 @@ export class FacebookBusinessService {
 
     const row = await this.loadConnection(actor.companyId);
     const credentials = this.decryptCredentials(row);
+    const pageIdentity = row ? await this.buildPageIdentity(row) : null;
     if (!row?.pageId || !credentials?.userAccessToken) {
       throw new FacebookBusinessError(
         'NOT_AUTHORISED',
         'Select a Facebook Page before granting Page read access.',
+      );
+    }
+    if (!pageIdentity || !facebookPageIdentityAllowsPageReadOAuth(pageIdentity)) {
+      throw new FacebookBusinessError(
+        'FACEBOOK_PAGE_SELECTION_REQUIRED',
+        pageIdentity?.mismatch
+          ? FACEBOOK_SELECTED_PAGE_MISMATCH_MESSAGE
+          : 'Select and verify the correct Facebook Page before granting Page read access.',
       );
     }
 
@@ -666,7 +702,7 @@ export class FacebookBusinessService {
         .where(eq(fbConnections.id, existing.id));
 
       const refreshed = await this.loadConnection(stateRow.companyId);
-      const resolved = this.resolveState(refreshed);
+      const resolved = await this.resolveState(refreshed);
       await this.db
         .update(fbConnections)
         .set({ state: persistFacebookConnectionState(resolved.state) })
@@ -1095,6 +1131,14 @@ export class FacebookBusinessService {
     const pendingPageCandidate = discovery.pendingPageCandidate;
     const businessPages = discovery.businessPortfolio?.pages ?? [];
 
+    const verifiedPageCheck = assertPageIdMatchesVerifiedCandidate({
+      pageId,
+      candidate: pendingPageCandidate,
+    });
+    if (!verifiedPageCheck.ok) {
+      throw new FacebookBusinessError('PAGE_NOT_AUTHORISED', verifiedPageCheck.reason);
+    }
+
     const pageIdCheck = assertClientPageIdMatchesBusinessDiscovery({
       clientPageId: pageId,
       candidate: pendingPageCandidate,
@@ -1171,39 +1215,93 @@ export class FacebookBusinessService {
       );
     }
 
+    const providerRowCheck = assertProviderPageRowMatchesSelection({
+      requestedPageId: pageId,
+      providerPageId: page.id,
+      providerPageName: page.name,
+      providerAccessToken: page.accessToken,
+    });
+    if (!providerRowCheck.ok) {
+      throw new FacebookBusinessError('META_PAGE_ROW_INCOMPLETE', providerRowCheck.reason);
+    }
+    page = {
+      id: providerRowCheck.pageId,
+      name: providerRowCheck.pageName,
+      category: page.category,
+      accessToken: providerRowCheck.accessToken,
+      tasks: page.tasks,
+    };
+
     const verification = await this.probe(() => graph.verifyPage(page.id, page.accessToken));
+    const priorMetadata = row.metadata as Record<string, unknown> | null;
     const verificationUpdate = this.verificationColumns(
       verification.outcome,
-      row.metadata as Record<string, unknown> | null,
+      priorMetadata,
     );
+    const pageSelectedAt = new Date().toISOString();
+    const nextMetadata = {
+      ...(verificationUpdate.metadata ?? priorMetadata ?? {}),
+      pageSelectedAt,
+      pageIdentityVerified: true,
+    };
 
-    await this.db
-      .update(fbConnections)
-      .set({
-        pageId: page.id,
-        pageName: verification.value?.name || page.name,
-        pageUrl: verification.value?.link ?? null,
-        pageCategory: verification.value?.category ?? page.category,
-        credentialsEncrypted: encryptFacebookCredentials(
-          {
-            version: 1,
-            pageAccessToken: page.accessToken,
-            userAccessToken: userToken,
-            expiresAt: credentials?.expiresAt,
-            grantedScopes: row.grantedPermissions,
-          },
-          encryptionKey,
-        ),
-        connectedAt: row.connectedAt ?? new Date(),
-        connectedByUserId: actor.userId,
-        disconnectedAt: null,
-        updatedAt: new Date(),
-        ...verificationUpdate,
-      })
-      .where(eq(fbConnections.id, row.id));
+    await this.db.transaction(async (tx) => {
+      await tx
+        .update(fbConnections)
+        .set({
+          pageId: page.id,
+          pageName: verification.value?.name || page.name,
+          pageUrl: verification.value?.link ?? null,
+          pageCategory: verification.value?.category ?? page.category,
+          credentialsEncrypted: encryptFacebookCredentials(
+            {
+              version: 1,
+              pageAccessToken: page.accessToken,
+              userAccessToken: userToken,
+              expiresAt: credentials?.expiresAt,
+              grantedScopes: row.grantedPermissions,
+            },
+            encryptionKey,
+          ),
+          connectedAt: row.connectedAt ?? new Date(),
+          connectedByUserId: actor.userId,
+          disconnectedAt: null,
+          updatedAt: new Date(),
+          ...verificationUpdate,
+          metadata: nextMetadata,
+        })
+        .where(eq(fbConnections.id, row.id));
+
+      const identityAfterWrite = resolveFacebookPageIdentity({
+        storedPageId: page.id,
+        storedPageName: verification.value?.name || page.name,
+        verifiedCandidate: pendingPageCandidate,
+        hasStoredCredentials: true,
+        pageAccessToken: page.accessToken,
+      });
+      if (identityAfterWrite.mismatch) {
+        throw new FacebookBusinessError(
+          'PAGE_IDENTITY_MISMATCH',
+          'Page selection did not produce a verified Page identity binding.',
+        );
+      }
+
+      const refreshedInTx = await tx
+        .select()
+        .from(fbConnections)
+        .where(eq(fbConnections.id, row.id))
+        .limit(1);
+      const refreshedRow = refreshedInTx[0];
+      if (!refreshedRow || refreshedRow.pageId !== page.id) {
+        throw new FacebookBusinessError(
+          'PAGE_IDENTITY_MISMATCH',
+          'Page selection write validation failed before completing the connection.',
+        );
+      }
+    });
 
     const refreshed = await this.loadConnection(actor.companyId);
-    const state = this.resolveState(refreshed);
+    const state = await this.resolveState(refreshed);
 
     await this.db
       .update(fbConnections)
@@ -1288,7 +1386,7 @@ export class FacebookBusinessService {
       .where(eq(fbConnections.id, row.id));
 
     const refreshed = await this.loadConnection(actor.companyId);
-    const state = this.resolveState(refreshed);
+    const state = await this.resolveState(refreshed);
     await this.db
       .update(fbConnections)
       .set({ state: persistFacebookConnectionState(state.state) })
@@ -1433,9 +1531,16 @@ export class FacebookBusinessService {
     state: FacebookConnectionStateResult;
   }> {
     const row = await this.loadConnection(companyId);
-    const state = this.resolveState(row);
+    const state = await this.resolveState(row);
     const credentials = this.decryptCredentials(row);
+    const pageIdentity = row ? await this.buildPageIdentity(row) : null;
 
+    if (pageIdentity?.mismatch) {
+      throw new FacebookBusinessError(
+        'FACEBOOK_PAGE_SELECTION_REQUIRED',
+        FACEBOOK_SELECTED_PAGE_MISMATCH_MESSAGE,
+      );
+    }
     if (!row || !credentials?.pageAccessToken || credentials.pageAccessToken.startsWith('pending:')) {
       throw new FacebookBusinessError('CONNECTION_NOT_USABLE', state.detail);
     }
@@ -3172,7 +3277,7 @@ export class FacebookBusinessService {
   async getDashboardCard(actor: FacebookActor) {
     this.assertRead(actor);
     const row = await this.loadConnection(actor.companyId);
-    const state = this.resolveState(row);
+    const state = await this.resolveState(row);
 
     const [awaiting] = await this.db
       .select({ count: sql<number>`count(*)::int` })

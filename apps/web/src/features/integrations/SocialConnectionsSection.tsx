@@ -226,6 +226,24 @@ function SocialConnectionCard({
         <p className="page-muted">Setup: {card.setupRequirementCategory.replace(/_/g, ' ')}</p>
       ) : null}
       {card.statusDetail ? <p className="page-muted">{card.statusDetail}</p> : null}
+      {card.facebookPageIdentity ? (
+        <dl className="facebook-page-identity-mismatch">
+          <dt>Currently stored</dt>
+          <dd>
+            {card.facebookPageIdentity.storedPageName ?? 'Unknown Page'}
+            {card.facebookPageIdentity.storedPageIdMasked
+              ? ` · Page ID ending ${card.facebookPageIdentity.storedPageIdMasked.replace(/^···/, '')}`
+              : null}
+          </dd>
+          <dt>Expected</dt>
+          <dd>
+            {card.facebookPageIdentity.expectedPageName ?? 'Verified Page'}
+            {card.facebookPageIdentity.expectedPageIdMasked
+              ? ` · Page ID ending ${card.facebookPageIdentity.expectedPageIdMasked.replace(/^···/, '')}`
+              : null}
+          </dd>
+        </dl>
+      ) : null}
       {success ? <p className="form-success">{success}</p> : null}
       {card.safeErrorMessage ? <p className="form-error">{card.safeErrorMessage}</p> : null}
       {error ? <p className="form-error">{error}</p> : null}
@@ -241,6 +259,7 @@ function SocialConnectionCard({
             canManage={canManage}
             confirmDisconnect={confirmDisconnect}
             choosePageHref={card.accountSelectionPath}
+            pageSelectionMismatch={card.pageSelectionMismatch}
             showViewSetup={card.canViewSetupRequirements}
             onConnect={() => void handleConnect()}
             onChoosePage={() => void handleConnect()}
