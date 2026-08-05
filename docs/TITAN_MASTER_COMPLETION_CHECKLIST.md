@@ -261,6 +261,20 @@ Boolean columns use **YES** / **NO** / **—** (not applicable).
 | J67E-012 | reports | Phase J-6.7E: UI entry points (job, fleet, compliance, portal) | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | ExtendedReportExportActions; JobDetailPage; FleetIntelligencePage; ComplianceIntelligencePage | J-6.7E |  | NOT VISUALLY VERIFIED |  |
 | J67E-013 | reports | Phase J-6.7E: Client-safe inspection/compliance-support portal exports | TESTED LOCALLY | YES | YES | NO | YES | YES | NO | NO | NO | NO | NO | YES | YES | NO | NO | PortalJobDetailPage; portal report-exports routes | J-6.7E |  |  |  |
 | J67E-014 | repo | Phase J-6.7E: Authoritative checklist update (this document) | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | docs/TITAN_MASTER_COMPLETION_CHECKLIST.md | J-6.7E |  |  | 257 requirement rows after J-6.7E |
+| J67F-001 | integrations | Phase J-6.7F: Social connection foundation types + foundation status model | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | packages/shared/src/social-connection.ts | J-6.7F |  |  | 5 providers |
+| J67F-002 | integrations | Phase J-6.7F: OAuth state storage (social_oauth_states migration 0179) | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | packages/db/drizzle/0179_social_connection_foundation.sql | J-6.7F |  |  | Migration file only — not applied |
+| J67F-003 | integrations | Phase J-6.7F: Server-controlled OAuth start/callback + state replay rejection | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | social-connection.service.ts; POST /oauth/start; GET /oauth/callback | J-6.7F |  |  | Mock OAuth for local tests |
+| J67F-004 | integrations | Phase J-6.7F: Account discovery + server-validated account selection | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | GET /accounts/:provider; POST /accounts/select | J-6.7F |  |  | Invalid selection rejected |
+| J67F-005 | integrations | Phase J-6.7F: Encrypted credential storage + no token exposure in API | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | encryptSocialMediaCredentials; redactSocialConnectionForApi | J-6.7F |  |  |  |
+| J67F-006 | integrations | Phase J-6.7F: Connection health check (tenant-scoped, no publish) | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | POST /social-connections/health | J-6.7F |  |  |  |
+| J67F-007 | integrations | Phase J-6.7F: Reconnect + disconnect credential revocation | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | POST /reconnect; POST /disconnect | J-6.7F |  |  |  |
+| J67F-008 | integrations | Phase J-6.7F: RBAC — Owner manage; Admin boundaries; tech/client denied | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | canAccessSocialConnections; canManageSocialConnections | J-6.7F |  |  | Cross-tenant denial |
+| J67F-009 | integrations | Phase J-6.7F: Provider cards UI in Integrations (5 providers) | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | SocialConnectionsSection; IntegrationsDashboardPage | J-6.7F |  | NOT VISUALLY VERIFIED | Mobile 390px |
+| J67F-010 | integrations | Phase J-6.7F: TikTok PROVIDER_REVIEW_REQUIRED — no fake Connected | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | social-connection-provider.adapter.ts | J-6.7F |  |  | TIKTOK_LIVE_OAUTH_ENABLED gate |
+| J67F-011 | integrations | Phase J-6.7F: WhatsApp Business bridge (whatsapp_connections) | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | social-connection.service.ts whatsapp_business branch | J-6.7F |  |  | Does not overwrite operational WhatsApp |
+| J67F-012 | integrations | Phase J-6.7F: Audit events for connect/callback/select/reconnect/disconnect/failure | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | securityAuditLogs; socialMediaConnectionEvents | J-6.7F |  |  |  |
+| J67F-013 | integrations | Phase J-6.7F: Provider setup documentation (no secrets) | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | docs/SOCIAL_CONNECTION_PROVIDER_SETUP.md | J-6.7F |  |  |  |
+| J67F-014 | repo | Phase J-6.7F: Authoritative checklist update (this document) | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | docs/TITAN_MASTER_COMPLETION_CHECKLIST.md | J-6.7F |  |  | 271 requirement rows after J-6.7F |
 | XERO-001 | Xero | OAuth connect + tenant isolation | DEPLOYED TO STAGING | YES | NO | YES | NO | NO | YES | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_FRZ018_XERO_STAGING_REPORT.md | f8cc0c4 |  |  |  |
 | XERO-002 | Xero | Background historical import (contacts/invoices/payments) | PARTIALLY IMPLEMENTED | YES | NO | YES | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 | Xero OAuth | Import job running; last_sync_at null |  |
 | XERO-003 | Xero | Xero as sole official quote/invoice numbering authority | BUILT LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | finance-document-preview.test.ts | f8cc0c4 |  |  |  |
@@ -566,6 +580,31 @@ Items **J67E-001 … J67E-014** add inspection, fleet vehicle activity, fleet op
 | J67E-014 | Checklist | 257 requirement rows |
 
 **Deferred improvements (append-only):** Live authenticated extended report E2E on staging; Chromium staging PDF verification; per-vehicle fleet export selector on all utilization rows; plumber registration entity when available.
+
+---
+
+## Phase J-6.7F scope (completed locally)
+
+Items **J67F-001 … J67F-014** add secure social-account connection foundation for Facebook, Instagram, Google Business Profile, WhatsApp Business and TikTok readiness.
+
+| ID | Deliverable | J-6.7F outcome |
+|----|-------------|----------------|
+| J67F-001 | Foundation types | 5 providers; foundation status model; account selection types |
+| J67F-002 | OAuth state schema | social_oauth_states (migration 0179 file — not applied) |
+| J67F-003 | OAuth flow | Server start/callback; state hash; replay rejection |
+| J67F-004 | Account selection | Discovery + server validation; invalid selection rejected |
+| J67F-005 | Credential security | AES-256-GCM; no token exposure in API responses |
+| J67F-006 | Health check | Tenant-scoped; updates status; no publish side effects |
+| J67F-007 | Reconnect/disconnect | Credential revocation; audit events |
+| J67F-008 | RBAC | Owner manage; Admin boundaries; tech/client/cross-tenant denied |
+| J67F-009 | UI | SocialConnectionsSection on /integrations; 5 provider cards |
+| J67F-010 | TikTok honesty | PROVIDER_REVIEW_REQUIRED; no fake Connected |
+| J67F-011 | WhatsApp bridge | whatsapp_connections; does not overwrite operational hub |
+| J67F-012 | Audit | securityAuditLogs + socialMediaConnectionEvents |
+| J67F-013 | Documentation | docs/SOCIAL_CONNECTION_PROVIDER_SETUP.md |
+| J67F-014 | Checklist | 271 requirement rows |
+
+**Explicitly NOT complete in J-6.7F:** live provider authorization on staging/production; provider application review; production callback verification; publishing; scheduling; analytics; automatic marketing campaigns.
 
 ---
 

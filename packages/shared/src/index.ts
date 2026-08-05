@@ -159,6 +159,7 @@ export * from './aura-agent-network.js';
 export * from './aura-evolution.js';
 export * from './marketing-agent.js';
 export * from './social-media-integrations.js';
+export * from './social-connection.js';
 export * from './facebook-business.js';
 export * from './content-reputation-intelligence.js';
 export * from './finance-aura-agent.js';

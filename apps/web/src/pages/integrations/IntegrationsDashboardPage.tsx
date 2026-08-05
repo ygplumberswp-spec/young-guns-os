@@ -17,6 +17,7 @@ import { useAuth } from '../../lib/auth-context';
 import { useStaffCachedQuery, useStaffCacheScope } from '../../lib/use-scoped-cached-query';
 import { useCachedQuery } from '../../lib/use-cached-query';
 import { SimpleAdvancedToggle } from '../../components/SimpleAdvancedToggle';
+import { SocialConnectionsSection } from '../../features/integrations/SocialConnectionsSection';
 import { canAccessIntegrations, canManageIntegrations } from '../../features/integrations/utils';
 import {
   capabilityStateToPillModifier,
@@ -33,6 +34,8 @@ const PROVIDER_GROUPS: Array<{ id: string; label: string; providers: string[] }>
   { id: 'automation', label: 'Automation', providers: ['n8n'] },
   { id: 'marketing', label: 'Marketing & Social', providers: ['facebook'] },
 ];
+
+/** J-6.7F social providers are rendered in SocialConnectionsSection — not the hub API list. */
 
 /**
  * Decision 4 / UX-G — status pill and action are always derived from the
@@ -383,6 +386,8 @@ export function IntegrationsDashboardPage() {
           ) : null}
         </>
       ) : null}
+
+      <SocialConnectionsSection />
 
       {viewMode === 'advanced' ? (
         <section className="integrations-advanced">

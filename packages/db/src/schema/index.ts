@@ -120,6 +120,7 @@ export * from './aura-agent-network';
 export * from './aura-evolution';
 export * from './marketing-agent';
 export * from './social-media-integrations';
+export * from './social-connection';
 export * from './content-reputation-intelligence';
 export * from './finance-aura-agent';
 export * from './sales-intelligence-agent';

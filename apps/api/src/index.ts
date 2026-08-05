@@ -276,6 +276,7 @@ import { AuraAgentNetworkService } from './services/aura-agent-network.service.j
 import { AuraEvolutionService } from './services/aura-evolution.service.js';
 import { MarketingAgentService } from './services/marketing-agent.service.js';
 import { SocialMediaIntegrationsService } from './services/social-media-integrations.service.js';
+import { SocialConnectionService } from './services/social-connection.service.js';
 import { ContentReputationIntelligenceService } from './services/content-reputation-intelligence.service.js';
 import { FinanceAuraAgentService } from './services/finance-aura-agent.service.js';
 import { SalesIntelligenceAgentService } from './services/sales-intelligence-agent.service.js';
@@ -332,6 +333,7 @@ import { createAuraAgentNetworkRouter } from './routes/aura-agent-network.js';
 import { createAuraEvolutionRouter } from './routes/aura-evolution.js';
 import { createMarketingAgentRouter } from './routes/marketing-agent.js';
 import { createSocialMediaIntegrationsRouter } from './routes/social-media-integrations.js';
+import { createSocialConnectionsRouter } from './routes/social-connections.js';
 import { createFacebookBusinessRouter } from './routes/facebook-business.js';
 import { FacebookBusinessService } from './services/facebook-business.service.js';
 import { createContentReputationIntelligenceRouter } from './routes/content-reputation-intelligence.js';
@@ -980,6 +982,11 @@ const socialMediaIntegrationsService = new SocialMediaIntegrationsService(
   db,
   env.INTEGRATIONS_ENCRYPTION_KEY,
 );
+const socialConnectionService = new SocialConnectionService({
+  db,
+  encryptionKey: env.INTEGRATIONS_ENCRYPTION_KEY,
+  appUrl: env.APP_URL,
+});
 const facebookAppConfig = resolveFacebookAppConfig(env, apiPublicUrl);
 const facebookBusinessService = new FacebookBusinessService({
   db,
@@ -2955,6 +2962,15 @@ app.use(
   '/api/v1/social-media-integrations',
   createSocialMediaIntegrationsRouter({
     socialMediaIntegrationsService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/social-connections',
+  createSocialConnectionsRouter({
+    socialConnectionService,
     teamService,
     jwtSecret: env.JWT_SECRET,
     authService,
