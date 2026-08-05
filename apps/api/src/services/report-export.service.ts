@@ -53,6 +53,21 @@ import {
   type ReportAudienceDecision,
   type WorkforceReportPeriod,
   type FinanceReportPeriod,
+  buildInspectionReportHtml,
+  buildFleetVehicleActivityReportHtml,
+  buildFleetOperationsReportHtml,
+  buildComplianceSupportReportHtml,
+  buildComplianceCocRegisterReportHtml,
+  assertExtendedReportAccess,
+  assertExtendedReportHtmlSafe,
+  ExtendedReportAccessError,
+  ExtendedReportPeriodError,
+  extendedReportFilename,
+  projectInspectionForAudience,
+  projectComplianceSupportForAudience,
+  resolveExtendedReportPeriod,
+  type ExtendedReportKind,
+  type ExtendedReportPeriod,
 } from '@titan/shared';
 import type { CompletionReportService } from './completion-report.service.js';
 import { ChromiumPdfError, renderHtmlToPdf } from './chromium-pdf.service.js';
@@ -65,6 +80,7 @@ import { userHasJobAccess } from './job-execution.service.js';
 import { recordAuthorizationFailure } from '../middleware/authorization-guards.js';
 import { WorkforceReportDataService } from './workforce-report-data.service.js';
 import { FinanceReportDataService } from './finance-report-data.service.js';
+import { ExtendedReportDataService, ExtendedReportDataError } from './extended-report-data.service.js';
 
 export class ReportExportError extends Error {
   constructor(
@@ -105,6 +121,7 @@ export type ReportExportPrincipal =
 export class ReportExportService {
   private readonly workforceData: WorkforceReportDataService;
   private readonly financeData: FinanceReportDataService;
+  private readonly extendedData: ExtendedReportDataService;
 
   constructor(
     private readonly db: DatabaseClient,
@@ -113,6 +130,7 @@ export class ReportExportService {
   ) {
     this.workforceData = new WorkforceReportDataService(db);
     this.financeData = new FinanceReportDataService(db);
+    this.extendedData = new ExtendedReportDataService(db);
   }
 
   async exportJobReportPdf(
@@ -890,5 +908,184 @@ export class ReportExportService {
     const ctx = projectCustomerHistoryForClient(raw);
     const html = buildCustomerPropertyHistoryReportHtml(ctx);
     return this.renderFinance('customer_property_history', ctx.reportReference, html, 'client');
+  }
+
+  private assertExtendedAccess(
+    principal: ReportExportPrincipal,
+    reportKind: ExtendedReportKind,
+  ): void {
+    try {
+      assertExtendedReportAccess({
+        actorUserId:
+          principal.kind === 'staff' ? principal.actor.userId : principal.actor.portalUserId,
+        actorRoleName: principal.kind === 'staff' ? principal.actor.roleName : 'Client',
+        permissions: principal.actor.permissions,
+        reportKind,
+        isPortal: principal.kind === 'portal',
+      });
+    } catch (error) {
+      if (error instanceof ExtendedReportAccessError) {
+        throw new ReportExportError(error.code, error.message);
+      }
+      throw error;
+    }
+  }
+
+  private parseExtendedPeriod(
+    reportKind: ExtendedReportKind,
+    periodStart: unknown,
+    periodEnd: unknown,
+  ): ExtendedReportPeriod {
+    try {
+      return resolveExtendedReportPeriod({ reportKind, periodStart, periodEnd });
+    } catch (error) {
+      if (error instanceof ExtendedReportPeriodError) {
+        throw new ReportExportError(error.code, error.message);
+      }
+      throw error;
+    }
+  }
+
+  private async renderExtended(
+    kind: ExtendedReportKind,
+    reference: string,
+    html: string,
+    audience: 'internal' | 'technician' | 'client',
+  ): Promise<ReportPdfResult> {
+    assertExtendedReportHtmlSafe(html, audience);
+    try {
+      const buffer = await renderHtmlToPdf(html);
+      return {
+        buffer,
+        filename: extendedReportFilename(kind, reference),
+        contentType: 'application/pdf',
+      };
+    } catch (error) {
+      if (error instanceof ChromiumPdfError && error.code === 'CHROMIUM_UNAVAILABLE') {
+        throw new ReportExportError('CHROMIUM_UNAVAILABLE', error.message);
+      }
+      throw error;
+    }
+  }
+
+  async exportInspectionReportPdf(
+    principal: ReportExportPrincipal,
+    jobId: string,
+    requestedAudience: unknown,
+  ): Promise<ReportPdfResult> {
+    this.assertExtendedAccess(principal, 'inspection');
+
+    const job = await this.db.query.jobs.findFirst({
+      where: and(eq(jobs.id, jobId), eq(jobs.companyId, this.tenantId(principal))),
+    });
+    if (!job) throw new ReportExportError('NOT_FOUND', 'Job not found');
+
+    const decision = await this.resolveAudience(principal, requestedAudience, {
+      jobId,
+      jobAssignedUserId: job.assignedUserId ?? null,
+      jobCustomerId: job.customerId ?? null,
+    });
+
+    const raw = await this.extendedData.buildInspectionReport(
+      this.tenantId(principal),
+      jobId,
+      decision.effectiveAudience,
+    ).catch((error) => {
+      if (error instanceof ExtendedReportDataError) {
+        throw new ReportExportError(error.code, error.message);
+      }
+      throw error;
+    });
+    const ctx = projectInspectionForAudience(raw, decision.effectiveAudience);
+    const html = buildInspectionReportHtml(ctx);
+    return this.renderExtended('inspection', ctx.reportReference, html, decision.effectiveAudience);
+  }
+
+  async exportComplianceSupportReportPdf(
+    principal: ReportExportPrincipal,
+    jobId: string,
+    requestedAudience: unknown,
+  ): Promise<ReportPdfResult> {
+    this.assertExtendedAccess(principal, 'compliance_coc_support');
+
+    const job = await this.db.query.jobs.findFirst({
+      where: and(eq(jobs.id, jobId), eq(jobs.companyId, this.tenantId(principal))),
+    });
+    if (!job) throw new ReportExportError('NOT_FOUND', 'Job not found');
+
+    const decision = await this.resolveAudience(principal, requestedAudience, {
+      jobId,
+      jobAssignedUserId: job.assignedUserId ?? null,
+      jobCustomerId: job.customerId ?? null,
+    });
+
+    const raw = await this.extendedData.buildComplianceSupportReport(
+      this.tenantId(principal),
+      jobId,
+      decision.effectiveAudience,
+    ).catch((error) => {
+      if (error instanceof ExtendedReportDataError) {
+        throw new ReportExportError(error.code, error.message);
+      }
+      throw error;
+    });
+    const ctx = projectComplianceSupportForAudience(raw, decision.effectiveAudience);
+    const html = buildComplianceSupportReportHtml(ctx);
+    return this.renderExtended('compliance_coc_support', ctx.reportReference, html, decision.effectiveAudience);
+  }
+
+  async exportFleetVehicleActivityPdf(
+    principal: ReportExportPrincipal,
+    vehicleId: string,
+    periodStart: unknown,
+    periodEnd: unknown,
+  ): Promise<ReportPdfResult> {
+    if (principal.kind === 'portal') {
+      throw new ReportExportError('FORBIDDEN', 'Fleet reports are not available on the client portal.');
+    }
+    this.assertExtendedAccess(principal, 'fleet_vehicle_activity');
+    const period = this.parseExtendedPeriod('fleet_vehicle_activity', periodStart, periodEnd);
+    const ctx = await this.extendedData.buildFleetVehicleActivityReport(
+      this.tenantId(principal),
+      vehicleId,
+      period,
+    );
+    const html = buildFleetVehicleActivityReportHtml(ctx);
+    return this.renderExtended('fleet_vehicle_activity', ctx.reportReference, html, 'internal');
+  }
+
+  async exportFleetOperationsPdf(
+    principal: ReportExportPrincipal,
+    periodStart: unknown,
+    periodEnd: unknown,
+  ): Promise<ReportPdfResult> {
+    if (principal.kind === 'portal') {
+      throw new ReportExportError('FORBIDDEN', 'Fleet reports are not available on the client portal.');
+    }
+    this.assertExtendedAccess(principal, 'fleet_operations');
+    const period = this.parseExtendedPeriod('fleet_operations', periodStart, periodEnd);
+    const ctx = await this.extendedData.buildFleetOperationsReport(this.tenantId(principal), period);
+    const html = buildFleetOperationsReportHtml(ctx);
+    return this.renderExtended('fleet_operations', ctx.reportReference, html, 'internal');
+  }
+
+  async exportComplianceCocRegisterPdf(
+    principal: ReportExportPrincipal,
+    periodStart: unknown,
+    periodEnd: unknown,
+    statusFilter?: unknown,
+  ): Promise<ReportPdfResult> {
+    if (principal.kind === 'portal') {
+      throw new ReportExportError('FORBIDDEN', 'Compliance register is not available on the client portal.');
+    }
+    this.assertExtendedAccess(principal, 'compliance_coc_register');
+    const period = this.parseExtendedPeriod('compliance_coc_register', periodStart, periodEnd);
+    const ctx = await this.extendedData.buildComplianceCocRegisterReport(
+      this.tenantId(principal),
+      period,
+      typeof statusFilter === 'string' ? statusFilter : null,
+    );
+    const html = buildComplianceCocRegisterReportHtml(ctx);
+    return this.renderExtended('compliance_coc_register', ctx.reportReference, html, 'internal');
   }
 }

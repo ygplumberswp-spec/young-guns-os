@@ -77,7 +77,7 @@ Boolean columns use **YES** / **NO** / **—** (not applicable).
 
 ## Requirements register
 
-**Total requirement rows:** 219
+**Total requirement rows:** 257
 
 | ID | Area | Requirement | Status | Built locally | Tests passed | Real DB/provider connected | RBAC tested | Tenant isolation tested | Deployed to staging | Authenticated E2E passed | Desktop verified | Tablet verified | Mobile verified | Claude verified | Gemini verified | Owner verified | Production ready | Evidence | Commit | Migration/provider dependency | Blocker | Next action |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -247,6 +247,20 @@ Boolean columns use **YES** / **NO** / **—** (not applicable).
 | J67D-012 | reports | Phase J-6.7D: UI entry points (finance pages, CRM, portal) | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | FinanceReportExportActions; FinanceReportingForecastPage; PortalFinancePage | J-6.7D |  | NOT VISUALLY VERIFIED |  |
 | J67D-013 | reports | Phase J-6.7D: HTML/PDF sensitive-field leak tests | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | assertFinanceReportHtmlSafe | J-6.7D |  |  |  |
 | J67D-014 | repo | Phase J-6.7D: Authoritative checklist update (this document) | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | docs/TITAN_MASTER_COMPLETION_CHECKLIST.md | J-6.7D |  |  | 243 requirement rows after J-6.7D |
+| J67E-001 | reports | Phase J-6.7E: Extended report kinds (inspection/fleet/compliance) | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | packages/shared/src/extended-report.ts | J-6.7E |  |  |  |
+| J67E-002 | reports | Phase J-6.7E: Inspection Report PDF (eligible job evidence only) | TESTED LOCALLY | YES | YES | NO | YES | YES | NO | NO | NO | NO | NO | YES | YES | NO | NO | extended-report-data.service.ts; GET /jobs/:id/inspection/pdf | J-6.7E |  | NOT VISUALLY VERIFIED | isJobInspectionEligible gate |
+| J67E-003 | reports | Phase J-6.7E: Fleet Vehicle Activity Report (stored GPS segmentation) | TESTED LOCALLY | YES | YES | NO | YES | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | GET /fleet/vehicles/:id/activity/pdf | J-6.7E |  |  | No live Cartrack calls |
+| J67E-004 | reports | Phase J-6.7E: Fleet Operations Summary PDF | TESTED LOCALLY | YES | YES | NO | YES | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | GET /fleet/operations/pdf | J-6.7E |  |  |  |
+| J67E-005 | reports | Phase J-6.7E: Compliance and COC Support Report (legal notice) | TESTED LOCALLY | YES | YES | NO | YES | YES | NO | NO | NO | NO | NO | YES | YES | NO | NO | resolveCocAttachmentState; GET /jobs/:id/compliance-support/pdf | J-6.7E |  |  | No fake COC |
+| J67E-006 | reports | Phase J-6.7E: Compliance and COC Register Report (internal) | TESTED LOCALLY | YES | YES | NO | YES | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | GET /compliance/coc-register/pdf | J-6.7E |  |  | Technician/portal denied |
+| J67E-007 | reports | Phase J-6.7E: Extended report period validation (93d fleet / 366d register) | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | extended-report-period.ts | J-6.7E |  |  |  |
+| J67E-008 | reports | Phase J-6.7E: Extended RBAC + fleet/compliance denial matrix | TESTED LOCALLY | YES | YES | NO | YES | YES | NO | NO | NO | NO | NO | YES | YES | NO | NO | extended-report-access.ts | J-6.7E |  |  | Job reports use report-audience |
+| J67E-009 | reports | Phase J-6.7E: Fleet freshness + honest COC attachment states | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | extended-report-source-policy.ts | J-6.7E |  |  |  |
+| J67E-010 | reports | Phase J-6.7E: Coordinate/payroll/provider-ID leak prevention | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | assertExtendedReportHtmlSafe | J-6.7E |  |  |  |
+| J67E-011 | reports | Phase J-6.7E: Multi-page Puppeteer extended PDF proof | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | extended-report-multipage-pdf.test.ts; test-results/j67e/*.pdf | J-6.7E | Chromium | NOT VISUALLY VERIFIED | 5 PDF scenarios |
+| J67E-012 | reports | Phase J-6.7E: UI entry points (job, fleet, compliance, portal) | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | ExtendedReportExportActions; JobDetailPage; FleetIntelligencePage; ComplianceIntelligencePage | J-6.7E |  | NOT VISUALLY VERIFIED |  |
+| J67E-013 | reports | Phase J-6.7E: Client-safe inspection/compliance-support portal exports | TESTED LOCALLY | YES | YES | NO | YES | YES | NO | NO | NO | NO | NO | YES | YES | NO | NO | PortalJobDetailPage; portal report-exports routes | J-6.7E |  |  |  |
+| J67E-014 | repo | Phase J-6.7E: Authoritative checklist update (this document) | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | docs/TITAN_MASTER_COMPLETION_CHECKLIST.md | J-6.7E |  |  | 257 requirement rows after J-6.7E |
 | XERO-001 | Xero | OAuth connect + tenant isolation | DEPLOYED TO STAGING | YES | NO | YES | NO | NO | YES | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_FRZ018_XERO_STAGING_REPORT.md | f8cc0c4 |  |  |  |
 | XERO-002 | Xero | Background historical import (contacts/invoices/payments) | PARTIALLY IMPLEMENTED | YES | NO | YES | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 | Xero OAuth | Import job running; last_sync_at null |  |
 | XERO-003 | Xero | Xero as sole official quote/invoice numbering authority | BUILT LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | finance-document-preview.test.ts | f8cc0c4 |  |  |  |
@@ -526,9 +540,32 @@ Items **J67D-001 … J67D-014** add finance aggregate, cash-flow/collections, ac
 | J67D-013 | Leak tests | assertFinanceReportHtmlSafe — tokens, costs, provider IDs |
 | J67D-014 | Checklist | 243 requirement rows |
 
-**Remaining report families (not in J-6.7D):** inspection, fleet, compliance/COC standalone exports.
+**Remaining report families (not in J-6.7D):** ~~inspection, fleet, compliance/COC standalone exports.~~ Completed in J-6.7E.
 
-**Deferred improvements (append-only):** Live authenticated finance report E2E on staging; Chromium staging PDF verification; P&amp;L-linked profit section when canonical accounting P&amp;L import exists; credit-note allocation display on AR lines when xero_credit_note_allocations populated.
+---
+
+## Phase J-6.7E scope (completed locally)
+
+Items **J67E-001 … J67E-014** add inspection, fleet vehicle activity, fleet operations summary, compliance/COC support, and compliance/COC register PDF exports.
+
+| ID | Deliverable | J-6.7E outcome |
+|----|-------------|----------------|
+| J67E-001 | Extended report kinds | inspection, fleet_vehicle_activity, fleet_operations, compliance_coc_support, compliance_coc_register |
+| J67E-002 | Inspection report | Eligible jobs only; sd_inspection/mobile form/titan doc; audience projection |
+| J67E-003 | Fleet vehicle activity | Stored GPS trip segmentation; behaviour events; no coordinates in HTML |
+| J67E-004 | Fleet operations | Tenant vehicle rollup; freshness/stale counts |
+| J67E-005 | Compliance support | Legal notice; honest COC attachment from linked records |
+| J67E-006 | COC register | Internal workflow register; status filter; no fabricated COC |
+| J67E-007 | Period validation | 93d fleet; 366d register; Africa/Johannesburg |
+| J67E-008 | RBAC | Fleet/compliance register denied for technicians and portal |
+| J67E-009 | Source policy | Fleet stored-data note; COC attachment resolution |
+| J67E-010 | Leak tests | assertExtendedReportHtmlSafe — lat/long, payroll, provider IDs |
+| J67E-011 | Multi-page PDF | Puppeteer proof under test-results/j67e/ (5 scenarios) |
+| J67E-012 | UI entry points | JobDetailPage, FleetIntelligencePage, ComplianceIntelligencePage |
+| J67E-013 | Portal exports | Client-safe inspection and compliance-support on portal job detail |
+| J67E-014 | Checklist | 257 requirement rows |
+
+**Deferred improvements (append-only):** Live authenticated extended report E2E on staging; Chromium staging PDF verification; per-vehicle fleet export selector on all utilization rows; plumber registration entity when available.
 
 ---
 

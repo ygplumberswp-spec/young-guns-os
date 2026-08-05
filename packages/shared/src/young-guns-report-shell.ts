@@ -13,6 +13,7 @@ import {
 import { operationalReportKindLabel, type OperationalReportKind } from './operational-report.js';
 import { workforceReportKindLabel, type WorkforceReportKind } from './workforce-report.js';
 import { financeReportKindLabel, type FinanceReportKind } from './finance-report.js';
+import { extendedReportKindLabel, type ExtendedReportKind } from './extended-report.js';
 import { YOUNG_GUNS_SLOGAN } from './young-guns-theme.js';
 
 export type YoungGunsReportShellInput = {
@@ -24,6 +25,8 @@ export type YoungGunsReportShellInput = {
   workforceKind?: WorkforceReportKind;
   /** Finance PDF export kind — aggregate, cashflow, receivables, customer history. */
   financeKind?: FinanceReportKind;
+  /** Extended operational PDF export kind — inspection, fleet, compliance/COC. */
+  extendedKind?: ExtendedReportKind;
   reportTitle?: string | null;
   periodLabel?: string | null;
   generatedAt?: string | null;
@@ -39,7 +42,7 @@ export const REPORT_EXPORT_STATUS: Record<string, 'implemented' | 'not_yet_imple
   completion: 'implemented',
   service: 'implemented',
   maintenance: 'implemented',
-  inspection: 'not_yet_implemented',
+  inspection: 'implemented',
   technician_activity: 'implemented',
   technician_timesheet: 'implemented',
   technician_productivity: 'implemented',
@@ -51,8 +54,12 @@ export const REPORT_EXPORT_STATUS: Record<string, 'implemented' | 'not_yet_imple
   customer_property_history: 'implemented',
   finance: 'implemented',
   customer: 'implemented',
-  fleet: 'not_yet_implemented',
-  compliance_coc: 'not_yet_implemented',
+  fleet_vehicle_activity: 'implemented',
+  fleet_operations: 'implemented',
+  compliance_coc_support: 'implemented',
+  compliance_coc_register: 'implemented',
+  fleet: 'implemented',
+  compliance_coc: 'implemented',
 };
 
 function escapeHtml(value: string): string {
@@ -89,9 +96,11 @@ export function buildYoungGunsReportShellCss(): string {
 
 /** Branded HTML shell wrapping report body content for print/PDF pipelines. */
 export function buildYoungGunsReportShellHtml(input: YoungGunsReportShellInput): string {
-  const variant = input.financeKind
-    ? financeReportKindLabel(input.financeKind)
-    : input.workforceKind
+  const variant = input.extendedKind
+    ? extendedReportKindLabel(input.extendedKind)
+    : input.financeKind
+      ? financeReportKindLabel(input.financeKind)
+      : input.workforceKind
       ? workforceReportKindLabel(input.workforceKind)
       : input.operationalKind
         ? operationalReportKindLabel(input.operationalKind)

@@ -396,6 +396,101 @@ export function createReportExportRouter({
     },
   );
 
+  router.get(
+    '/jobs/:jobId/inspection/pdf',
+    requireAnyPermission('documents:read', 'jobs:read', 'jobs:write', 'mobile:read'),
+    async (req, res) => {
+      const auth = getAuth(req);
+      const jobId = routeParam(req.params.jobId);
+      try {
+        const result = await reportExportService.exportInspectionReportPdf(
+          staffPrincipal(auth),
+          jobId,
+          parseAudienceQuery(req),
+        );
+        sendPdf(res, result);
+      } catch (error) {
+        handleError(res, error);
+      }
+    },
+  );
+
+  router.get(
+    '/jobs/:jobId/compliance-support/pdf',
+    requireAnyPermission('documents:read', 'jobs:read', 'legal_compliance:read', 'mobile:read'),
+    async (req, res) => {
+      const auth = getAuth(req);
+      const jobId = routeParam(req.params.jobId);
+      try {
+        const result = await reportExportService.exportComplianceSupportReportPdf(
+          staffPrincipal(auth),
+          jobId,
+          parseAudienceQuery(req),
+        );
+        sendPdf(res, result);
+      } catch (error) {
+        handleError(res, error);
+      }
+    },
+  );
+
+  router.get(
+    '/fleet/vehicles/:vehicleId/activity/pdf',
+    requireAnyPermission('fleet_intelligence:read', 'fleet:read', 'ops:read', 'documents:read'),
+    async (req, res) => {
+      const auth = getAuth(req);
+      const vehicleId = routeParam(req.params.vehicleId);
+      try {
+        const result = await reportExportService.exportFleetVehicleActivityPdf(
+          staffPrincipal(auth),
+          vehicleId,
+          req.query.periodStart,
+          req.query.periodEnd,
+        );
+        sendPdf(res, result);
+      } catch (error) {
+        handleError(res, error);
+      }
+    },
+  );
+
+  router.get(
+    '/fleet/operations/pdf',
+    requireAnyPermission('fleet_intelligence:read', 'ops:read', 'analytics:read', 'documents:read'),
+    async (req, res) => {
+      const auth = getAuth(req);
+      try {
+        const result = await reportExportService.exportFleetOperationsPdf(
+          staffPrincipal(auth),
+          req.query.periodStart,
+          req.query.periodEnd,
+        );
+        sendPdf(res, result);
+      } catch (error) {
+        handleError(res, error);
+      }
+    },
+  );
+
+  router.get(
+    '/compliance/coc-register/pdf',
+    requireAnyPermission('legal_compliance:read', 'documents:read'),
+    async (req, res) => {
+      const auth = getAuth(req);
+      try {
+        const result = await reportExportService.exportComplianceCocRegisterPdf(
+          staffPrincipal(auth),
+          req.query.periodStart,
+          req.query.periodEnd,
+          req.query.status,
+        );
+        sendPdf(res, result);
+      } catch (error) {
+        handleError(res, error);
+      }
+    },
+  );
+
   return router;
 }
 
@@ -477,6 +572,44 @@ export function createPortalReportExportRouter({
           portalPrincipal(portalAuth),
           req.query.periodStart,
           req.query.periodEnd,
+        );
+        sendPdf(res, result);
+      } catch (error) {
+        handleError(res, error);
+      }
+    },
+  );
+
+  router.get(
+    '/jobs/:jobId/inspection/pdf',
+    requirePortalPermission('portal.jobs:read'),
+    async (req, res) => {
+      const portalAuth = (req as PortalAuthenticatedRequest).portalAuth;
+      const jobId = routeParam(req.params.jobId);
+      try {
+        const result = await reportExportService.exportInspectionReportPdf(
+          portalPrincipal(portalAuth),
+          jobId,
+          parseAudienceQuery(req),
+        );
+        sendPdf(res, result);
+      } catch (error) {
+        handleError(res, error);
+      }
+    },
+  );
+
+  router.get(
+    '/jobs/:jobId/compliance-support/pdf',
+    requirePortalPermission('portal.jobs:read'),
+    async (req, res) => {
+      const portalAuth = (req as PortalAuthenticatedRequest).portalAuth;
+      const jobId = routeParam(req.params.jobId);
+      try {
+        const result = await reportExportService.exportComplianceSupportReportPdf(
+          portalPrincipal(portalAuth),
+          jobId,
+          parseAudienceQuery(req),
         );
         sendPdf(res, result);
       } catch (error) {

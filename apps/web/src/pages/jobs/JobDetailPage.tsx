@@ -37,6 +37,7 @@ import { JobCompletionFinancePanel } from '../../features/finance/JobCompletionF
 import { JobCompletionReportPanel } from '../../features/jobs/JobCompletionReportPanel';
 import { JobDocumentPackPanel } from '../../features/jobs/JobDocumentPackPanel';
 import { ReportExportActions } from '../../features/reports/ReportExportActions';
+import { ExtendedReportExportActions } from '../../features/reports/ExtendedReportExportActions';
 import { canAccessDocuments, canManageDocuments } from '../../features/documents/utils';
 import { canAccessProcurement, materialLineStatusPillClass } from '../../features/procurement/utils';
 import { JobSchedulePanel } from '../../features/scheduling/JobSchedulePanel';
@@ -1117,6 +1118,16 @@ export function JobDetailPage() {
                     resourceId={job.id}
                     audience="internal"
                     reportNumber={job.jobNumber}
+                  />
+                  <ExtendedReportExportActions
+                    accessToken={accessToken}
+                    kind="inspection"
+                    target={{ scope: 'job', jobId: job.id }}
+                  />
+                  <ExtendedReportExportActions
+                    accessToken={accessToken}
+                    kind="compliance_coc_support"
+                    target={{ scope: 'job', jobId: job.id }}
                   />
                 </Panel>
                 <JobCompletionReportPanel

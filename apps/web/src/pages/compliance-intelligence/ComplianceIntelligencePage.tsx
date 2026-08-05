@@ -25,6 +25,7 @@ import {
   upsertCmiCocWorkflow,
   upsertCmiSansStandard,
 } from '../../lib/compliance-intelligence-api-client';
+import { ExtendedReportExportActions } from '../../features/reports/ExtendedReportExportActions';
 
 type Tab =
   | 'dashboard'
@@ -435,6 +436,16 @@ export function ComplianceIntelligencePage() {
                   </ul>
                 )}
               </Panel>
+              {accessToken && canView ? (
+                <Panel title="Compliance and COC Register PDF">
+                  <ExtendedReportExportActions
+                    accessToken={accessToken}
+                    kind="compliance_coc_register"
+                    target={{ scope: 'tenant' }}
+                    showStatusFilter
+                  />
+                </Panel>
+              ) : null}
             </div>
           ) : null}
 

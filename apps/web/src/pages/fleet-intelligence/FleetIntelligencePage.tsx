@@ -30,6 +30,7 @@ import {
   FleetOverviewVehicleRow,
   buildPositionCardModel,
 } from '../../features/fleet/FleetVehicleCards';
+import { ExtendedReportExportActions } from '../../features/reports/ExtendedReportExportActions';
 
 type FleetTab =
   | 'dashboard'
@@ -455,6 +456,22 @@ export function FleetIntelligencePage() {
               </ul>
             )}
           </Panel>
+          {accessToken && canView ? (
+            <Panel title="Fleet PDF exports">
+              <ExtendedReportExportActions
+                accessToken={accessToken}
+                kind="fleet_operations"
+                target={{ scope: 'tenant' }}
+              />
+              {utilization[0]?.vehicleId ? (
+                <ExtendedReportExportActions
+                  accessToken={accessToken}
+                  kind="fleet_vehicle_activity"
+                  target={{ scope: 'vehicle', vehicleId: utilization[0].vehicleId }}
+                />
+              ) : null}
+            </Panel>
+          ) : null}
         </div>
       ) : null}
 

@@ -8,6 +8,7 @@ import { usePortalAuth } from '../../lib/portal-auth-context';
 import { toPortalNestedHref } from '../../lib/portal-routing';
 import { formatPortalWhen } from '../../lib/portal-datetime';
 import { ReportExportActions } from '../../features/reports/ReportExportActions';
+import { ExtendedReportExportActions } from '../../features/reports/ExtendedReportExportActions';
 
 export function PortalJobDetailPage() {
   const params = useParams<{ jobId: string }>();
@@ -147,14 +148,28 @@ export function PortalJobDetailPage() {
 
           <Panel title="Reports">
             {accessToken && jobId ? (
-              <ReportExportActions
-                accessToken={accessToken}
-                kind="job"
-                resourceId={jobId}
-                channel="portal"
-                label="Job report"
-                reportNumber={detail.job.jobNumber}
-              />
+              <>
+                <ReportExportActions
+                  accessToken={accessToken}
+                  kind="job"
+                  resourceId={jobId}
+                  channel="portal"
+                  label="Job report"
+                  reportNumber={detail.job.jobNumber}
+                />
+                <ExtendedReportExportActions
+                  accessToken={accessToken}
+                  kind="inspection"
+                  target={{ scope: 'job', jobId }}
+                  channel="portal"
+                />
+                <ExtendedReportExportActions
+                  accessToken={accessToken}
+                  kind="compliance_coc_support"
+                  target={{ scope: 'job', jobId }}
+                  channel="portal"
+                />
+              </>
             ) : null}
           </Panel>
         </>
