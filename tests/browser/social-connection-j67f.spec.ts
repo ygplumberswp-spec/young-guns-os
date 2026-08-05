@@ -45,22 +45,21 @@ test.describe('Social connection foundation (J-6.7F)', () => {
     expect(pageSource).toMatch(/SocialConnectionsSection/);
   });
 
-  test('Owner viewing all social provider cards — five providers', async ({ page }) => {
+  test('Owner viewing all social provider cards — three providers', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.setContent(`
       <section class="social-connections-section">
         <div class="social-connections-grid">
           <article class="social-connection-card" data-provider="facebook"><strong>Facebook</strong></article>
           <article class="social-connection-card" data-provider="instagram"><strong>Instagram</strong></article>
-          <article class="social-connection-card" data-provider="google_business"><strong>Google Business Profile</strong></article>
-          <article class="social-connection-card" data-provider="whatsapp_business"><strong>WhatsApp Business</strong></article>
           <article class="social-connection-card" data-provider="tiktok"><strong>TikTok</strong></article>
         </div>
       </section>
     `);
     await expect(page.locator('[data-provider="facebook"]')).toBeVisible();
+    await expect(page.locator('[data-provider="instagram"]')).toBeVisible();
     await expect(page.locator('[data-provider="tiktok"]')).toBeVisible();
-    await expect(page.locator('.social-connection-card')).toHaveCount(5);
+    await expect(page.locator('.social-connection-card')).toHaveCount(3);
   });
 
   test('Technician unable to access social connection controls', async () => {

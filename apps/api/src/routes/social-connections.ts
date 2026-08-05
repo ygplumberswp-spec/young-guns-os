@@ -9,13 +9,7 @@ import type { TeamService } from '../services/team.service.js';
 import { createAuthMiddleware, type AuthenticatedRequest } from '../middleware/auth.js';
 import { requireAnyPermission } from '../middleware/rbac.js';
 
-const providerSchema = z.enum([
-  'facebook',
-  'instagram',
-  'google_business',
-  'whatsapp_business',
-  'tiktok',
-]);
+const providerSchema = z.enum(['facebook', 'instagram', 'tiktok']);
 
 const startOAuthSchema = z.object({
   provider: providerSchema,

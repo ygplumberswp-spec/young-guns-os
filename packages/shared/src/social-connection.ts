@@ -1,8 +1,10 @@
 /**
  * Social Connection Foundation (J-6.7F)
  *
- * Secure account connection layer for Facebook Pages, Instagram Business,
- * Google Business Profile, WhatsApp Business and TikTok readiness.
+ * Secure account connection layer for Facebook, Instagram and TikTok.
+ *
+ * Google Business Profile is a separate Business Profile integration.
+ * WhatsApp Business is a separate Communications integration.
  *
  * Connection, authentication, account discovery/selection, health and
  * disconnect/reconnect only — no publishing, scheduling, analytics or campaigns.
@@ -47,23 +49,6 @@ export const SOCIAL_CONNECTION_CANONICAL_SOURCES = {
     ui: '/integrations',
     note: 'Instagram Business via social-connections OAuth only.',
   },
-  google_business: {
-    table: 'social_media_connections',
-    platform: 'google_business',
-    oauthStates: 'social_oauth_states',
-    api: '/api/v1/social-connections',
-    ui: '/integrations',
-    note: 'Google Business Profile location selection via social-connections.',
-  },
-  whatsapp_business: {
-    table: 'whatsapp_connections',
-    oauthStates: 'social_oauth_states',
-    api: '/api/v1/social-connections',
-    operationalApi: '/api/v1/whatsapp',
-    ui: '/integrations',
-    operationalUi: '/integrations/whatsapp',
-    note: 'Social foundation bridges whatsapp_connections; operational messaging uses WhatsApp settings.',
-  },
   tiktok: {
     table: 'social_media_connections',
     platform: 'tiktok',
@@ -74,21 +59,52 @@ export const SOCIAL_CONNECTION_CANONICAL_SOURCES = {
   },
 } as const;
 
-/** J-6.7F social connection providers (distinct from legacy social_media linkedin). */
-export type SocialConnectionProvider =
-  | 'facebook'
-  | 'instagram'
-  | 'google_business'
-  | 'whatsapp_business'
-  | 'tiktok';
+/** Separate Business Profile integration — not part of Social Connections publishing scope. */
+export const BUSINESS_PROFILE_INTEGRATION_SOURCE = {
+  google_business: {
+    table: 'social_media_connections',
+    platform: 'google_business',
+    api: '/api/v1/social-media-integrations',
+    ui: '/social-media-integrations',
+    note: 'Google Business Profile is managed outside Social Connections.',
+  },
+} as const;
 
-export const SOCIAL_CONNECTION_PROVIDERS: SocialConnectionProvider[] = [
+/** Separate Communications integration — not part of Social Connections publishing scope. */
+export const COMMUNICATIONS_WHATSAPP_INTEGRATION_SOURCE = {
+  whatsapp_business: {
+    table: 'whatsapp_connections',
+    operationalApi: '/api/v1/whatsapp',
+    ui: '/integrations/whatsapp',
+    note: 'WhatsApp Business messaging uses the Communications hub — not Social Connections.',
+  },
+} as const;
+
+/** Active Social Connections / social publishing providers (UI and dashboard registry). */
+export type SocialPublishingProvider = 'facebook' | 'instagram' | 'tiktok';
+
+/** Internal provider ids retained for DB enum and adapter compatibility — excluded from Social Connections UI. */
+export type SocialConnectionExtendedProvider = 'google_business' | 'whatsapp_business';
+
+/** @deprecated Use SocialPublishingProvider for Social Connections module APIs. */
+export type SocialConnectionProvider = SocialPublishingProvider | SocialConnectionExtendedProvider;
+
+export const SOCIAL_PUBLISHING_PROVIDERS: SocialPublishingProvider[] = [
   'facebook',
   'instagram',
-  'google_business',
-  'whatsapp_business',
   'tiktok',
 ];
+
+/** Active registry for Social Connections UI, dashboard and OAuth routes. */
+export const SOCIAL_CONNECTION_PROVIDERS: SocialPublishingProvider[] = [
+  ...SOCIAL_PUBLISHING_PROVIDERS,
+];
+
+export function isSocialPublishingProvider(
+  provider: SocialConnectionProvider,
+): provider is SocialPublishingProvider {
+  return (SOCIAL_PUBLISHING_PROVIDERS as readonly string[]).includes(provider);
+}
 
 /** Owner-facing foundation status — computed server-side, never faked. */
 export type SocialConnectionFoundationStatus =
@@ -171,7 +187,7 @@ export type SocialConnectionSafeMetadata = {
 };
 
 export type SocialConnectionProviderCard = {
-  provider: SocialConnectionProvider;
+  provider: SocialPublishingProvider;
   label: string;
   foundationStatus: SocialConnectionFoundationStatus;
   statusLabel: string;
@@ -212,17 +228,17 @@ export type SocialConnectionsDashboard = {
 };
 
 export type StartSocialConnectionOAuthRequest = {
-  provider: SocialConnectionProvider;
+  provider: SocialPublishingProvider;
   returnPath?: string;
 };
 
 export type SelectSocialConnectionAccountRequest = {
-  provider: SocialConnectionProvider;
+  provider: SocialPublishingProvider;
   selection: SocialAccountSelection;
 };
 
 export type SocialConnectionHealthResult = {
-  provider: SocialConnectionProvider;
+  provider: SocialPublishingProvider;
   foundationStatus: SocialConnectionFoundationStatus;
   healthy: boolean;
   message: string;
@@ -231,7 +247,7 @@ export type SocialConnectionHealthResult = {
 };
 
 export type SocialConnectionSetupRequirements = {
-  provider: SocialConnectionProvider;
+  provider: SocialPublishingProvider;
   label: string;
   foundationStatus: SocialConnectionFoundationStatus;
   envVariables: string[];
@@ -253,7 +269,7 @@ export const SOCIAL_CONNECTION_PROVIDER_LABELS: Record<SocialConnectionProvider,
 
 export const SOCIAL_CONNECTION_PRODUCT_COPY = {
   summary:
-    'Connect business social accounts securely. This foundation covers authentication, account selection, health and disconnect only — publishing, scheduling, analytics and campaigns remain a later approved phase.',
+    'Connect Facebook, Instagram and TikTok business accounts securely. Authentication, account selection, health and disconnect only — publishing, scheduling, analytics and campaigns remain a later approved phase.',
   honesty:
     'Connected means encrypted credentials and a server-validated account selection exist. Live provider authorization requires Owner-configured OAuth apps and is not triggered automatically by TITAN.',
 } as const;
@@ -473,7 +489,7 @@ export function resolveSocialConnectionFoundationStatus(input: {
 }
 
 export function buildSocialConnectionSetupRequirements(
-  provider: SocialConnectionProvider,
+  provider: SocialPublishingProvider,
   callbackBaseUrl: string,
 ): SocialConnectionSetupRequirements {
   const callbackUrlPattern = `${callbackBaseUrl}/api/v1/social-connections/oauth/callback?provider=${provider}`;
@@ -491,7 +507,7 @@ export function buildSocialConnectionSetupRequirements(
         label: SOCIAL_CONNECTION_PROVIDER_LABELS.facebook,
         foundationStatus: 'NOT_CONFIGURED',
         envVariables: ['META_APP_ID', 'META_APP_SECRET', 'INTEGRATIONS_ENCRYPTION_KEY'],
-        callbackUrlPattern,
+        callbackUrlPattern: `${callbackBaseUrl}/api/v1/facebook-business/oauth/callback`,
         configurationCategories: ['Meta Developer App', 'Facebook Login product', 'Pages permissions'],
         accountSelectionExpectations: [
           'Owner authenticates with Meta',
@@ -526,54 +542,6 @@ export function buildSocialConnectionSetupRequirements(
         ownerPortalSteps: [
           'Ensure Instagram account is Business/Creator and linked to a Facebook Page',
           'Configure Meta app with Instagram permissions',
-        ],
-        neverCommit: commonNeverCommit,
-      };
-    case 'google_business':
-      return {
-        provider,
-        label: SOCIAL_CONNECTION_PROVIDER_LABELS.google_business,
-        foundationStatus: 'NOT_CONFIGURED',
-        envVariables: [
-          'GOOGLE_BUSINESS_CLIENT_ID',
-          'GOOGLE_BUSINESS_CLIENT_SECRET',
-          'INTEGRATIONS_ENCRYPTION_KEY',
-        ],
-        callbackUrlPattern,
-        configurationCategories: ['Google Cloud project', 'Business Profile API', 'OAuth consent'],
-        accountSelectionExpectations: [
-          'List accessible business accounts and locations',
-          'Owner selects validated location (e.g. Young Guns Plumbing Cape Town)',
-        ],
-        reviewBlockers: ['Google OAuth verification for sensitive scopes'],
-        ownerPortalSteps: [
-          'Enable Business Profile API in Google Cloud Console',
-          'Configure OAuth client and redirect URI',
-        ],
-        neverCommit: commonNeverCommit,
-      };
-    case 'whatsapp_business':
-      return {
-        provider,
-        label: SOCIAL_CONNECTION_PROVIDER_LABELS.whatsapp_business,
-        foundationStatus: 'NOT_CONFIGURED',
-        envVariables: [
-          'META_APP_ID',
-          'META_APP_SECRET',
-          'WHATSAPP_BUSINESS_ACCOUNT_ID',
-          'INTEGRATIONS_ENCRYPTION_KEY',
-        ],
-        callbackUrlPattern,
-        configurationCategories: ['Meta Cloud API', 'WhatsApp Business Account', 'Phone number'],
-        accountSelectionExpectations: [
-          'List WhatsApp Business Accounts and phone numbers when supported',
-          'Store selected WABA and phone-number identifier after validation',
-          'Operational WhatsApp messaging uses existing whatsapp_connections — not overwritten here',
-        ],
-        reviewBlockers: ['Meta business verification for production messaging'],
-        ownerPortalSteps: [
-          'Configure Meta Cloud API app and WhatsApp Business Account in Meta Business Suite',
-          'Complete OAuth or token setup per TITAN WhatsApp settings where applicable',
         ],
         neverCommit: commonNeverCommit,
       };

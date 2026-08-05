@@ -34,7 +34,46 @@ const PROVIDER_GROUPS: Array<{ id: string; label: string; providers: string[] }>
   { id: 'automation', label: 'Automation', providers: ['n8n'] },
 ];
 
-/** Social providers (Facebook, Instagram, GBP, WhatsApp Business, TikTok) render in SocialConnectionsSection only. */
+/** Social publishing providers (Facebook, Instagram, TikTok) render in SocialConnectionsSection only. */
+
+function IntegrationCategoryLinks() {
+  return (
+    <>
+      <Panel className="integrations-category-section" title="Business Profile integrations">
+        <p className="page-muted">
+          Google Business Profile location and reputation monitoring — separate from social publishing
+          connections.
+        </p>
+        <div className="panel-actions">
+          <Link href="/social-media-integrations">
+            <Button size="sm" variant="secondary">
+              Open Business Profile integrations
+            </Button>
+          </Link>
+        </div>
+      </Panel>
+
+      <Panel className="integrations-category-section" title="Communications integrations">
+        <p className="page-muted">
+          WhatsApp Business customer messaging, email and Gmail — operational communications, not social
+          publishing.
+        </p>
+        <div className="panel-actions">
+          <Link href="/integrations/whatsapp">
+            <Button size="sm" variant="secondary">
+              Open WhatsApp Business settings
+            </Button>
+          </Link>
+          <Link href="/integrations/email">
+            <Button size="sm" variant="secondary">
+              Email integrations
+            </Button>
+          </Link>
+        </div>
+      </Panel>
+    </>
+  );
+}
 
 /**
  * Decision 4 / UX-G — status pill and action are always derived from the
@@ -387,6 +426,8 @@ export function IntegrationsDashboardPage() {
       ) : null}
 
       <SocialConnectionsSection />
+
+      <IntegrationCategoryLinks />
 
       {viewMode === 'advanced' ? (
         <section className="integrations-advanced">

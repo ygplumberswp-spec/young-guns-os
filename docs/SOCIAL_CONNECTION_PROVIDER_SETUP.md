@@ -1,47 +1,57 @@
 # Social Connection Provider Setup (J-6.7F)
 
-This document records **configuration categories** for the TITAN Social Connection foundation.
+This document records **configuration categories** for the TITAN **Social Connections** module (Facebook, Instagram, TikTok only).
 It does **not** contain secrets, tokens or live credentials.
 
 ## Scope
 
-Connection, authentication, account discovery/selection, health and disconnect/reconnect only.
+**Social Connections** covers Facebook, Instagram and TikTok — connection, authentication, account discovery/selection, health and disconnect/reconnect only.
+
+**Not in Social Connections:**
+- **Google Business Profile** — separate Business Profile integration (`/social-media-integrations`)
+- **WhatsApp Business** — separate Communications integration (`/integrations/whatsapp`)
+
 **Not in scope:** publishing, scheduling posts, analytics dashboards, automated marketing campaigns.
 
-## Providers
+## Social publishing providers
 
 | Provider | Env variables | Callback pattern |
 |----------|---------------|------------------|
-| Facebook Pages | `META_APP_ID`, `META_APP_SECRET`, `INTEGRATIONS_ENCRYPTION_KEY` | `{APP_URL}/api/v1/social-connections/oauth/callback?provider=facebook` |
-| Instagram Business | Same Meta app as Facebook | `{APP_URL}/api/v1/social-connections/oauth/callback?provider=instagram` |
-| Google Business Profile | `GOOGLE_BUSINESS_CLIENT_ID`, `GOOGLE_BUSINESS_CLIENT_SECRET`, `INTEGRATIONS_ENCRYPTION_KEY` | `{APP_URL}/api/v1/social-connections/oauth/callback?provider=google_business` |
-| WhatsApp Business | `META_APP_ID`, `META_APP_SECRET`, `WHATSAPP_BUSINESS_ACCOUNT_ID`, `INTEGRATIONS_ENCRYPTION_KEY` | `{APP_URL}/api/v1/social-connections/oauth/callback?provider=whatsapp_business` |
-| TikTok | `TIKTOK_CLIENT_KEY`, `TIKTOK_CLIENT_SECRET`, `INTEGRATIONS_ENCRYPTION_KEY` | `{APP_URL}/api/v1/social-connections/oauth/callback?provider=tiktok` |
+| Facebook Page | `META_APP_ID`, `META_APP_SECRET`, `INTEGRATIONS_ENCRYPTION_KEY` | `{API_PUBLIC_URL}/api/v1/facebook-business/oauth/callback` |
+| Instagram Business | Same Meta app as Facebook | `{API_PUBLIC_URL}/api/v1/social-connections/oauth/callback?provider=instagram` |
+| TikTok | `TIKTOK_CLIENT_KEY`, `TIKTOK_CLIENT_SECRET`, `INTEGRATIONS_ENCRYPTION_KEY` | `{API_PUBLIC_URL}/api/v1/social-connections/oauth/callback?provider=tiktok` |
 
-Alternate env aliases accepted where documented in code (`FACEBOOK_APP_ID`, `GBP_CLIENT_ID`, etc.).
+Alternate env aliases accepted where documented in code (`FACEBOOK_APP_ID`, `META_OAUTH_CLIENT_ID`, etc.).
 
 ## Account selection expectations
 
-- **Facebook:** Owner selects a Page returned by Meta for the authenticated account.
+- **Facebook:** Owner selects a Page returned by Meta for the authenticated account (canonical path: Facebook Business API).
 - **Instagram:** Instagram **Business** accounts linked to an available Facebook Page only — personal accounts are invalid.
-- **Google Business Profile:** Owner selects a validated location (e.g. Young Guns Plumbing Cape Town).
-- **WhatsApp Business:** WABA and phone-number identifier validated against discovery results. Operational messaging continues to use `whatsapp_connections` — this layer does not replace it.
 - **TikTok:** Readiness structure only until `TIKTOK_LIVE_OAUTH_ENABLED=1` and provider review complete. TITAN reports `PROVIDER_REVIEW_REQUIRED` — never a fake Connected state.
 
 ## Provider review / approval blockers
 
 | Provider | Blocker |
 |----------|---------|
-| Meta (FB/IG/WABA) | App review for advanced permissions in production |
-| Google | OAuth consent verification for sensitive scopes |
+| Meta (FB/IG) | App review for advanced permissions in production |
 | TikTok | Developer application review; set `TIKTOK_LIVE_OAUTH_ENABLED=1` only after approval |
+
+## Staging callback URLs (Owner Meta/TikTok portal)
+
+Use the staging API host exactly:
+
+- Facebook: `https://young-guns-os-staging.up.railway.app/api/v1/facebook-business/oauth/callback`
+- Instagram: `https://young-guns-os-staging.up.railway.app/api/v1/social-connections/oauth/callback?provider=instagram`
+- TikTok: `https://young-guns-os-staging.up.railway.app/api/v1/social-connections/oauth/callback?provider=tiktok`
+
+Do **not** register WhatsApp Business or Google Business Profile callbacks under Social Connections — those modules document their own requirements.
 
 ## Staging setup (Owner actions)
 
 1. Configure env vars on the TITAN API host — **never commit values to Git**.
-2. Register OAuth redirect URIs in each provider developer portal (Owner login required).
+2. Register OAuth redirect URIs in Meta and TikTok developer portals (Owner login required).
 3. Ensure `INTEGRATIONS_ENCRYPTION_KEY` is set before any connect attempt.
-4. Apply migration `0179_social_connection_foundation.sql` only through the Owner-approved staging migration gate.
+4. Migrations `0179` and `0180` are applied on staging — do not rewrite or rerun.
 5. Use mock OAuth locally with `SOCIAL_CONNECTION_MOCK_OAUTH=1` for deterministic tests — not for production.
 
 ## Production setup (Owner actions)
@@ -59,13 +69,15 @@ Live provider authorization is **not** marked complete in the master checklist u
 
 ## Owner portal steps (external login required)
 
-- **Meta:** [developers.facebook.com](https://developers.facebook.com) — create app, Facebook Login, WhatsApp product
-- **Google:** [console.cloud.google.com](https://console.cloud.google.com) — OAuth client, Business Profile API
+- **Meta:** [developers.facebook.com](https://developers.facebook.com) — create app, Facebook Login, Instagram permissions
 - **TikTok:** [developers.tiktok.com](https://developers.tiktok.com) — register app, submit for review
 
 ## TITAN UI entry point
 
-`/integrations` → **Social Connections** section (Owner full access; Technician/Client hidden).
+`/integrations` → **Social Connections** section — exactly three cards (Facebook, Instagram, TikTok).
+Owner full access; Admin/Office view-only; Technician/Client hidden.
+
+**Business Profile integrations** and **Communications integrations** are linked separately on the same page.
 
 ## Local test mode
 

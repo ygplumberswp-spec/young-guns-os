@@ -8,6 +8,7 @@ import {
   formatSocialConnectionFoundationStatus,
   hasCompleteAccountSelection,
   isCompanyOwnerRole,
+  isSocialPublishingProvider,
   mapFacebookStateToFoundationStatus,
   resolveSocialConnectionFoundationStatus,
   SOCIAL_CONNECTION_PRODUCT_COPY,
@@ -22,6 +23,7 @@ import {
   type SocialConnectionSafeMetadata,
   type SocialConnectionsDashboard,
   type SocialDiscoveredAccount,
+  type SocialPublishingProvider,
   type StartSocialConnectionOAuthRequest,
 } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
@@ -31,7 +33,6 @@ import {
   socialMediaConnectionEvents,
   socialMediaConnections,
   socialOauthStates,
-  whatsappConnections,
 } from '@titan/db';
 import {
   decryptSocialMediaCredentials,
@@ -115,6 +116,19 @@ export class SocialConnectionService {
       throw new SocialConnectionError(
         'DELEGATED_TO_FACEBOOK_BUSINESS',
         'Facebook Page connection is managed through Facebook Business (/api/v1/facebook-business). Use that canonical path to connect, select a Page, reconnect or disconnect.',
+      );
+    }
+  }
+
+  private assertSocialPublishingProvider(
+    provider: SocialConnectionProvider,
+  ): asserts provider is SocialPublishingProvider {
+    if (!isSocialPublishingProvider(provider)) {
+      throw new SocialConnectionError(
+        'NOT_SOCIAL_PUBLISHING_PROVIDER',
+        provider === 'google_business'
+          ? 'Google Business Profile is a separate Business Profile integration — use /social-media-integrations.'
+          : 'WhatsApp Business is a separate Communications integration — use /integrations/whatsapp.',
       );
     }
   }
@@ -213,15 +227,6 @@ export class SocialConnectionService {
     return row ?? null;
   }
 
-  private async loadWhatsappRow(companyId: string) {
-    const [row] = await this.db
-      .select()
-      .from(whatsappConnections)
-      .where(eq(whatsappConnections.companyId, companyId))
-      .limit(1);
-    return row ?? null;
-  }
-
   private decryptCredentials(
     encrypted: string | null | undefined,
   ): SocialMediaStoredCredentials | null {
@@ -294,7 +299,7 @@ export class SocialConnectionService {
   }
 
   private async buildProviderCardForCompany(
-    provider: SocialConnectionProvider,
+    provider: SocialPublishingProvider,
     oauthConfigured: Record<SocialConnectionProvider, boolean>,
     companyId: string,
     actor: SocialConnectionActor | null,
@@ -316,36 +321,19 @@ export class SocialConnectionService {
     let liveProviderVerified = false;
 
     if (companyId) {
-      if (provider === 'whatsapp_business') {
-        const waRow = await this.loadWhatsappRow(companyId);
-        hasCredentials = Boolean(waRow?.credentialsEncrypted);
-        connectionId = waRow?.id ?? null;
-        updatedAt = waRow?.updatedAt?.toISOString() ?? null;
-        lastError = waRow?.lastError ?? null;
-        storedStatus = waRow?.status ?? null;
-        metadata = {
-          selectedWhatsappBusinessAccountId: waRow?.businessAccountId ?? null,
-          selectedWhatsappPhoneNumberId: waRow?.phoneNumberId ?? null,
-          selectedWhatsappDisplayPhoneNumber: waRow?.displayPhoneNumber ?? null,
-        };
-        if (waRow?.connectedAt) {
-          lastHealthCheckAt = waRow.connectedAt.toISOString();
-        }
-      } else {
-        const row = await this.loadSocialMediaRow(companyId, provider);
-        hasCredentials = Boolean(row?.credentialsEncrypted);
-        connectionId = row?.id ?? null;
-        metadata = parseMetadata(row?.metadata as Record<string, unknown>);
-        lastError = row?.lastError ?? metadata.lastErrorCode ?? null;
-        lastHealthCheckAt = row?.lastHealthCheckAt?.toISOString() ?? null;
-        updatedAt = row?.updatedAt?.toISOString() ?? null;
-        disconnectedAt = row?.disconnectedAt?.toISOString() ?? null;
-        storedStatus = row?.status ?? null;
-        if (row?.credentialsEncrypted) {
-          const creds = this.decryptCredentials(row.credentialsEncrypted);
-          liveProviderVerified =
-            process.env.SOCIAL_CONNECTION_MOCK_OAUTH === '1' && Boolean(creds?.accessToken);
-        }
+      const row = await this.loadSocialMediaRow(companyId, provider);
+      hasCredentials = Boolean(row?.credentialsEncrypted);
+      connectionId = row?.id ?? null;
+      metadata = parseMetadata(row?.metadata as Record<string, unknown>);
+      lastError = row?.lastError ?? metadata.lastErrorCode ?? null;
+      lastHealthCheckAt = row?.lastHealthCheckAt?.toISOString() ?? null;
+      updatedAt = row?.updatedAt?.toISOString() ?? null;
+      disconnectedAt = row?.disconnectedAt?.toISOString() ?? null;
+      storedStatus = row?.status ?? null;
+      if (row?.credentialsEncrypted) {
+        const creds = this.decryptCredentials(row.credentialsEncrypted);
+        liveProviderVerified =
+          process.env.SOCIAL_CONNECTION_MOCK_OAUTH === '1' && Boolean(creds?.accessToken);
       }
     }
 
@@ -410,7 +398,7 @@ export class SocialConnectionService {
       disconnectedAt,
       delegatedTo: null,
       canonicalSource: provider,
-      managementPath: provider === 'whatsapp_business' ? '/integrations/whatsapp' : '/integrations',
+      managementPath: '/integrations',
     };
   }
 
@@ -437,6 +425,7 @@ export class SocialConnectionService {
   }
 
   getSetupRequirements(provider: SocialConnectionProvider) {
+    this.assertSocialPublishingProvider(provider);
     return buildSocialConnectionSetupRequirements(provider, this.appUrl.replace(/\/$/, ''));
   }
 
@@ -447,6 +436,7 @@ export class SocialConnectionService {
     this.assertManage(actor);
     this.assertOwnerOAuthInitiator(actor.roleName);
     const provider = input.provider;
+    this.assertSocialPublishingProvider(provider);
     this.assertFacebookDelegated(provider);
     const adapter = this.getAdapter(provider);
 
@@ -545,6 +535,7 @@ export class SocialConnectionService {
     errorDescription?: string;
   }): Promise<string> {
     const provider = input.provider;
+    this.assertSocialPublishingProvider(provider);
     const adapter = this.getAdapter(provider);
 
     if (input.error) {
@@ -612,11 +603,7 @@ export class SocialConnectionService {
       permissions: ['*'],
     };
 
-    if (provider === 'whatsapp_business') {
-      await this.upsertWhatsappPending(actor, credentials, metadata, encryptionKey);
-    } else {
-      await this.upsertSocialMediaPending(actor, provider, credentials, metadata, encryptionKey, discovered);
-    }
+    await this.upsertSocialMediaPending(actor, provider, credentials, metadata, encryptionKey, discovered);
 
     await this.recordAudit(actor, 'oauth.callback', provider, {
       provider,
@@ -695,53 +682,14 @@ export class SocialConnectionService {
     }
   }
 
-  private async upsertWhatsappPending(
-    actor: SocialConnectionActor,
-    credentials: SocialMediaStoredCredentials,
-    metadata: SocialConnectionSafeMetadata,
-    encryptionKey: string,
-  ) {
-    const encrypted = encryptSocialMediaCredentials(credentials, encryptionKey);
-    const existing = await this.loadWhatsappRow(actor.companyId);
-    if (existing) {
-      await this.db
-        .update(whatsappConnections)
-        .set({
-          credentialsEncrypted: encrypted,
-          status: 'pending',
-          lastError: null,
-          updatedAt: new Date(),
-        })
-        .where(eq(whatsappConnections.id, existing.id));
-    } else {
-      await this.db.insert(whatsappConnections).values({
-        companyId: actor.companyId,
-        credentialsEncrypted: encrypted,
-        status: 'pending',
-      });
-    }
-    void metadata;
-  }
-
   async listDiscoveredAccounts(
     actor: SocialConnectionActor,
     provider: SocialConnectionProvider,
   ): Promise<SocialDiscoveredAccount[]> {
     this.assertManage(actor);
+    this.assertSocialPublishingProvider(provider);
     this.assertFacebookDelegated(provider);
     const adapter = this.getAdapter(provider);
-
-    if (provider === 'whatsapp_business') {
-      const waRow = await this.loadWhatsappRow(actor.companyId);
-      const creds = this.decryptCredentials(waRow?.credentialsEncrypted);
-      if (!creds) {
-        throw new SocialConnectionError(
-          'NOT_AUTHORISED',
-          'Complete OAuth before listing WhatsApp Business accounts.',
-        );
-      }
-      return adapter.discoverAccounts(creds);
-    }
 
     const row = await this.loadSocialMediaRow(actor.companyId, provider);
     if (!row?.credentialsEncrypted) {
@@ -774,6 +722,7 @@ export class SocialConnectionService {
   ): Promise<SocialConnectionProviderCard> {
     this.assertManage(actor);
     this.assertOwnerOAuthInitiator(actor.roleName);
+    this.assertSocialPublishingProvider(input.provider);
     this.assertFacebookDelegated(input.provider);
     const { provider, selection } = input;
     const discovered = await this.listDiscoveredAccounts(actor, provider);
@@ -781,11 +730,7 @@ export class SocialConnectionService {
 
     const encryptionKey = this.requireEncryptionKey();
 
-    if (provider === 'whatsapp_business') {
-      await this.applyWhatsappSelection(actor, selection, discovered);
-    } else {
-      await this.applySocialMediaSelection(actor, provider, selection, discovered, encryptionKey);
-    }
+    await this.applySocialMediaSelection(actor, provider, selection, discovered, encryptionKey);
 
     await this.recordAudit(actor, 'account.selected', provider, {
       provider,
@@ -823,7 +768,7 @@ export class SocialConnectionService {
   }
 
   private validateSelection(
-    provider: SocialConnectionProvider,
+    provider: SocialPublishingProvider,
     selection: SocialAccountSelection,
     discovered: SocialDiscoveredAccount[],
   ): void {
@@ -845,14 +790,6 @@ export class SocialConnectionService {
       case 'instagram':
         assertInDiscovery(selection.instagramBusinessAccountId, 'Instagram Business account');
         break;
-      case 'google_business':
-        assertInDiscovery(selection.googleBusinessAccountId, 'Google Business account');
-        assertInDiscovery(selection.googleBusinessLocationId, 'Google Business location');
-        break;
-      case 'whatsapp_business':
-        assertInDiscovery(selection.whatsappBusinessAccountId, 'WhatsApp Business Account');
-        assertInDiscovery(selection.whatsappPhoneNumberId, 'WhatsApp phone number');
-        break;
       case 'tiktok':
         assertInDiscovery(selection.tiktokAccountId, 'TikTok account');
         break;
@@ -863,37 +800,9 @@ export class SocialConnectionService {
     return discovered.find((a) => a.id === id)?.displayName ?? id;
   }
 
-  private async applyWhatsappSelection(
-    actor: SocialConnectionActor,
-    selection: SocialAccountSelection,
-    discovered: SocialDiscoveredAccount[],
-  ) {
-    const waRow = await this.loadWhatsappRow(actor.companyId);
-    if (!waRow) {
-      throw new SocialConnectionError('NOT_FOUND', 'WhatsApp connection row not found.');
-    }
-    await this.db
-      .update(whatsappConnections)
-      .set({
-        businessAccountId: selection.whatsappBusinessAccountId ?? null,
-        phoneNumberId: selection.whatsappPhoneNumberId ?? null,
-        displayPhoneNumber: this.labelForId(selection.whatsappPhoneNumberId!, discovered),
-        status: 'connected',
-        connectedAt: new Date(),
-        lastError: null,
-        updatedAt: new Date(),
-      })
-      .where(
-        and(
-          eq(whatsappConnections.id, waRow.id),
-          eq(whatsappConnections.companyId, actor.companyId),
-        ),
-      );
-  }
-
   private async applySocialMediaSelection(
     actor: SocialConnectionActor,
-    provider: SocialConnectionProvider,
+    provider: SocialPublishingProvider,
     selection: SocialAccountSelection,
     discovered: SocialDiscoveredAccount[],
     encryptionKey: string,
@@ -920,14 +829,6 @@ export class SocialConnectionService {
         metadata.selectedInstagramBusinessAccountId = selection.instagramBusinessAccountId ?? null;
         metadata.selectedInstagramBusinessAccountName = this.labelForId(
           selection.instagramBusinessAccountId!,
-          discovered,
-        );
-        break;
-      case 'google_business':
-        metadata.selectedGoogleBusinessAccountId = selection.googleBusinessAccountId ?? null;
-        metadata.selectedGoogleBusinessLocationId = selection.googleBusinessLocationId ?? null;
-        metadata.selectedGoogleBusinessLocationName = this.labelForId(
-          selection.googleBusinessLocationId!,
           discovered,
         );
         break;
@@ -975,54 +876,10 @@ export class SocialConnectionService {
     provider: SocialConnectionProvider,
   ): Promise<SocialConnectionHealthResult> {
     this.assertManage(actor);
+    this.assertSocialPublishingProvider(provider);
     this.assertFacebookDelegated(provider);
     const adapter = this.getAdapter(provider);
     const now = new Date().toISOString();
-
-    if (provider === 'whatsapp_business') {
-      const waRow = await this.loadWhatsappRow(actor.companyId);
-      const metadata: SocialConnectionSafeMetadata = {
-        selectedWhatsappBusinessAccountId: waRow?.businessAccountId ?? null,
-        selectedWhatsappPhoneNumberId: waRow?.phoneNumberId ?? null,
-      };
-      const creds = this.decryptCredentials(waRow?.credentialsEncrypted);
-      const probe = creds
-        ? await adapter.probeHealth(creds, metadata)
-        : { ok: false, message: 'No credentials stored.', liveProviderVerified: false };
-
-      if (waRow) {
-        await this.db
-          .update(whatsappConnections)
-          .set({
-            lastError: probe.ok ? null : probe.message,
-            updatedAt: new Date(),
-          })
-          .where(
-            and(
-              eq(whatsappConnections.id, waRow.id),
-              eq(whatsappConnections.companyId, actor.companyId),
-            ),
-          );
-      }
-
-      const foundationStatus = resolveSocialConnectionFoundationStatus({
-        provider,
-        oauthAppConfigured: adapter.isConfigured(),
-        encryptionKeyConfigured: Boolean(this.encryptionKey),
-        hasCredentials: Boolean(creds),
-        hasAccountSelection: hasCompleteAccountSelection(provider, metadata),
-        lastError: probe.ok ? null : probe.message,
-      });
-
-      return {
-        provider,
-        foundationStatus,
-        healthy: probe.ok,
-        message: probe.message,
-        lastHealthCheckAt: now,
-        liveProviderVerified: probe.liveProviderVerified,
-      };
-    }
 
     const row = await this.loadSocialMediaRow(actor.companyId, provider);
     const metadata = parseMetadata(row?.metadata as Record<string, unknown>);
@@ -1089,6 +946,7 @@ export class SocialConnectionService {
   ): Promise<{ authorizationUrl: string }> {
     this.assertManage(actor);
     this.assertOwnerOAuthInitiator(actor.roleName);
+    this.assertSocialPublishingProvider(provider);
     this.assertFacebookDelegated(provider);
     await this.recordEvent(actor, null, provider, 'reconnect_requested', null, 'CONNECTING', 'Reconnect requested');
     return this.startOAuth(actor, { provider, returnPath: '/integrations' });
@@ -1097,50 +955,27 @@ export class SocialConnectionService {
   async disconnect(actor: SocialConnectionActor, provider: SocialConnectionProvider) {
     this.assertManage(actor);
     this.assertOwnerOAuthInitiator(actor.roleName);
+    this.assertSocialPublishingProvider(provider);
     this.assertFacebookDelegated(provider);
 
-    if (provider === 'whatsapp_business') {
-      const waRow = await this.loadWhatsappRow(actor.companyId);
-      if (waRow) {
-        await this.db
-          .update(whatsappConnections)
-          .set({
-            credentialsEncrypted: null,
-            phoneNumberId: null,
-            businessAccountId: null,
-            displayPhoneNumber: null,
-            status: 'disconnected',
-            connectedAt: null,
-            lastError: null,
-            updatedAt: new Date(),
-          })
-          .where(
-            and(
-              eq(whatsappConnections.id, waRow.id),
-              eq(whatsappConnections.companyId, actor.companyId),
-            ),
-          );
-      }
-    } else {
-      const row = await this.loadSocialMediaRow(actor.companyId, provider);
-      if (row) {
-        await this.db
-          .update(socialMediaConnections)
-          .set({
-            credentialsEncrypted: null,
-            status: 'disconnected',
-            disconnectedAt: new Date(),
-            lastError: null,
-            metadata: {},
-            updatedAt: new Date(),
-          })
-          .where(
-            and(
-              eq(socialMediaConnections.id, row.id),
-              eq(socialMediaConnections.companyId, actor.companyId),
-            ),
-          );
-      }
+    const row = await this.loadSocialMediaRow(actor.companyId, provider);
+    if (row) {
+      await this.db
+        .update(socialMediaConnections)
+        .set({
+          credentialsEncrypted: null,
+          status: 'disconnected',
+          disconnectedAt: new Date(),
+          lastError: null,
+          metadata: {},
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(socialMediaConnections.id, row.id),
+            eq(socialMediaConnections.companyId, actor.companyId),
+          ),
+        );
     }
 
     await this.recordAudit(actor, 'disconnect', provider, { provider });

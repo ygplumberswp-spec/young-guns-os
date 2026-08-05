@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'wouter';
 import { Button, LoadingState, Panel } from '@titan/ui';
-import type { SocialConnectionProvider, SocialConnectionProviderCard } from '@titan/shared';
+import type { SocialConnectionProviderCard, SocialPublishingProvider } from '@titan/shared';
 import {
   canManageSocialConnections,
   canViewSocialConnections,
@@ -162,7 +162,7 @@ function SocialConnectionCard({
         setError('No accounts available from provider discovery.');
         return;
       }
-      const selection = buildSelection(card.provider, first.id, accounts);
+      const selection = buildSelection(card.provider, first.id);
       await selectSocialConnectionAccount(accessToken, {
         provider: card.provider,
         selection,
@@ -262,32 +262,12 @@ function SocialConnectionCard({
   );
 }
 
-function buildSelection(
-  provider: SocialConnectionProvider,
-  primaryId: string,
-  accounts: { id: string; kind: string; parentAccountId?: string | null }[],
-) {
+function buildSelection(provider: SocialPublishingProvider, primaryId: string) {
   switch (provider) {
     case 'facebook':
       return { facebookPageId: primaryId };
     case 'instagram':
       return { instagramBusinessAccountId: primaryId };
-    case 'google_business': {
-      const location = accounts.find((a) => a.kind === 'google_business_location') ?? accounts[0];
-      const account = accounts.find((a) => a.kind === 'google_business_account');
-      return {
-        googleBusinessAccountId: account?.id ?? location.parentAccountId ?? primaryId,
-        googleBusinessLocationId: location.id,
-      };
-    }
-    case 'whatsapp_business': {
-      const phone = accounts.find((a) => a.kind === 'whatsapp_phone_number') ?? accounts[0];
-      const waba = accounts.find((a) => a.kind === 'whatsapp_business_account');
-      return {
-        whatsappBusinessAccountId: waba?.id ?? phone.parentAccountId ?? primaryId,
-        whatsappPhoneNumberId: phone.id,
-      };
-    }
     case 'tiktok':
       return { tiktokAccountId: primaryId };
     default:

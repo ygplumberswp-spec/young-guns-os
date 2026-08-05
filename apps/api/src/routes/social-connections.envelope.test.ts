@@ -57,7 +57,6 @@ describe('social connections API envelope & safety (J-6.7F)', () => {
 
   it('scopes disconnect and health by companyId', () => {
     assert.ok(serviceSource.includes('eq(socialMediaConnections.companyId, actor.companyId)'));
-    assert.ok(serviceSource.includes('eq(whatsappConnections.companyId, actor.companyId)'));
   });
 
   it('denies cross-tenant access', () => {
@@ -86,6 +85,20 @@ describe('social connections API envelope & safety (J-6.7F)', () => {
     assert.ok(serviceSource.includes('securityAuditLogs'));
     assert.ok(serviceSource.includes("'oauth.start'"));
     assert.ok(serviceSource.includes("'disconnect'"));
+  });
+
+  it('exposes exactly three social publishing providers in shared registry', () => {
+    assert.ok(sharedSource.includes("SOCIAL_PUBLISHING_PROVIDERS"));
+    assert.ok(sharedSource.includes("'facebook'"));
+    assert.ok(sharedSource.includes("'instagram'"));
+    assert.ok(sharedSource.includes("'tiktok'"));
+    assert.ok(sharedSource.includes('BUSINESS_PROFILE_INTEGRATION_SOURCE'));
+    assert.ok(sharedSource.includes('COMMUNICATIONS_WHATSAPP_INTEGRATION_SOURCE'));
+  });
+
+  it('rejects non-social providers at service layer', () => {
+    assert.ok(serviceSource.includes('assertSocialPublishingProvider'));
+    assert.ok(serviceSource.includes('NOT_SOCIAL_PUBLISHING_PROVIDER'));
   });
 
   it('TikTok provider review honesty', () => {

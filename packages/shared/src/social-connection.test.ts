@@ -6,6 +6,7 @@ import {
   isCompanyOwnerRole,
   mapFacebookStateToFoundationStatus,
   SOCIAL_CONNECTION_CANONICAL_SOURCES,
+  SOCIAL_CONNECTION_PROVIDERS,
 } from './social-connection.js';
 
 describe('social-connection owner-gate audit (J-6.7F)', () => {
@@ -44,9 +45,11 @@ describe('social-connection owner-gate audit (J-6.7F)', () => {
     assert.equal(canManageSocialConnections(client), false);
   });
 
-  it('Facebook canonical source is fb_connections not social_media_connections', () => {
+  it('social publishing registry contains exactly three providers', () => {
+    assert.deepEqual(SOCIAL_CONNECTION_PROVIDERS, ['facebook', 'instagram', 'tiktok']);
     assert.equal(SOCIAL_CONNECTION_CANONICAL_SOURCES.facebook.table, 'fb_connections');
     assert.equal(SOCIAL_CONNECTION_CANONICAL_SOURCES.instagram.table, 'social_media_connections');
+    assert.equal(SOCIAL_CONNECTION_CANONICAL_SOURCES.tiktok.table, 'social_media_connections');
   });
 
   it('maps Facebook partial state to account selection required', () => {

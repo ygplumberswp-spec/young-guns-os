@@ -1,10 +1,10 @@
 import type {
   SocialConnectionHealthResult,
-  SocialConnectionProvider,
   SocialConnectionProviderCard,
   SocialConnectionsDashboard,
   SocialConnectionSetupRequirements,
   SocialDiscoveredAccount,
+  SocialPublishingProvider,
   StartSocialConnectionOAuthRequest,
   SelectSocialConnectionAccountRequest,
 } from '@titan/shared';
@@ -25,7 +25,7 @@ export async function fetchSocialConnectionsDashboard(
 
 export async function fetchSocialConnectionSetup(
   accessToken: string,
-  provider: SocialConnectionProvider,
+  provider: SocialPublishingProvider,
   options?: { signal?: AbortSignal },
 ): Promise<SocialConnectionSetupRequirements> {
   const data = await request<{ requirements: SocialConnectionSetupRequirements }>(
@@ -48,7 +48,7 @@ export async function startSocialConnectionOAuth(
 
 export async function fetchSocialConnectionAccounts(
   accessToken: string,
-  provider: SocialConnectionProvider,
+  provider: SocialPublishingProvider,
 ): Promise<SocialDiscoveredAccount[]> {
   const data = await request<{ accounts: SocialDiscoveredAccount[] }>(
     `/social-connections/accounts/${provider}`,
@@ -74,7 +74,7 @@ export async function selectSocialConnectionAccount(
 
 export async function checkSocialConnectionHealth(
   accessToken: string,
-  provider: SocialConnectionProvider,
+  provider: SocialPublishingProvider,
 ): Promise<SocialConnectionHealthResult> {
   return request<SocialConnectionHealthResult>('/social-connections/health', {
     accessToken,
@@ -85,7 +85,7 @@ export async function checkSocialConnectionHealth(
 
 export async function reconnectSocialConnection(
   accessToken: string,
-  provider: SocialConnectionProvider,
+  provider: SocialPublishingProvider,
 ): Promise<{ authorizationUrl: string }> {
   return request<{ authorizationUrl: string }>('/social-connections/reconnect', {
     accessToken,
@@ -96,7 +96,7 @@ export async function reconnectSocialConnection(
 
 export async function disconnectSocialConnection(
   accessToken: string,
-  provider: SocialConnectionProvider,
+  provider: SocialPublishingProvider,
 ): Promise<SocialConnectionProviderCard> {
   const data = await request<{ provider: SocialConnectionProviderCard }>(
     '/social-connections/disconnect',
