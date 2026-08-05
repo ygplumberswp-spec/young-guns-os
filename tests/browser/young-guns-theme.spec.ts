@@ -41,10 +41,21 @@ test.describe('Young Guns global theme contracts', () => {
       <style>${tokensCss}${stylesCss}</style>
       <button class="titan-btn titan-btn--primary" type="button">Save Quote</button>
     `);
-    const color = await page.locator('.titan-btn--primary').evaluate((el) =>
-      getComputedStyle(el).backgroundImage,
+    const bg = await page.locator('.titan-btn--primary').evaluate((el) =>
+      getComputedStyle(el).backgroundColor,
     );
-    expect(color.length).toBeGreaterThan(0);
+    expect(bg).toMatch(/rgb\(31,\s*122,\s*236\)|#1f7aec/i);
+  });
+
+  test('skip-to-content link is focusable', async ({ page }) => {
+    const utilitiesCss = readFileSync(join(repoRoot, 'apps/web/src/styles/young-guns-utilities.css'), 'utf8');
+    await page.setContent(`
+      <style>${tokensCss}${utilitiesCss}</style>
+      <a href="#main-content" class="skip-to-content">Skip to main content</a>
+      <main id="main-content">Main</main>
+    `);
+    await page.keyboard.press('Tab');
+    await expect(page.locator('.skip-to-content')).toBeFocused();
   });
 });
 

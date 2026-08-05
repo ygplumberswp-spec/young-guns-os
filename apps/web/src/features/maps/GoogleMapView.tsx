@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { EmptyState } from '@titan/ui';
+import { YOUNG_GUNS_APP_COLORS } from '@titan/shared';
 import { Link } from 'wouter';
 import { useAuth } from '../../lib/auth-context';
 import { fetchGoogleMapsBrowserConfig } from '../../lib/google-maps-api';
@@ -150,9 +151,9 @@ function vehicleMarkerIcon(marker: MapMarker): unknown {
     path: hasHeading ? gmaps.SymbolPath.FORWARD_CLOSED_ARROW : gmaps.SymbolPath.CIRCLE,
     scale: hasHeading ? 5 : 6,
     rotation: hasHeading ? heading : 0,
-    fillColor: '#0ea5e9',
+    fillColor: YOUNG_GUNS_APP_COLORS.bluePrimary,
     fillOpacity: 1,
-    strokeColor: '#0c4a6e',
+    strokeColor: YOUNG_GUNS_APP_COLORS.bluePrimary,
     strokeWeight: 2,
   };
 }
@@ -349,7 +350,7 @@ export function GoogleMapView({
         trailPolylineRef.current = new gmaps.Polyline({
           map,
           path: trailPoints,
-          strokeColor: '#0ea5e9',
+          strokeColor: YOUNG_GUNS_APP_COLORS.bluePrimary,
           strokeOpacity: 0,
           strokeWeight: 3,
           icons: [

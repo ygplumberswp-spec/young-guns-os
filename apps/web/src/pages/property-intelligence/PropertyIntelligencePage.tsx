@@ -184,30 +184,30 @@ export function PropertyIntelligencePage() {
       />
 
       <div className="flex flex-wrap gap-3 text-sm">
-        <Link href="/crm" className="text-cyan-300 hover:underline">
+        <Link href="/crm" className="yg-link">
           CRM
         </Link>
-        <Link href="/customer-360-intelligence" className="text-cyan-300 hover:underline">
+        <Link href="/customer-360-intelligence" className="yg-link">
           Customer 360
         </Link>
-        <Link href="/jobs" className="text-cyan-300 hover:underline">
+        <Link href="/jobs" className="yg-link">
           Jobs
         </Link>
-        <Link href="/documents" className="text-cyan-300 hover:underline">
+        <Link href="/documents" className="yg-link">
           Documents
         </Link>
-        <Link href="/recurring-maintenance" className="text-cyan-300 hover:underline">
+        <Link href="/recurring-maintenance" className="yg-link">
           Recurring Maintenance
         </Link>
-        <Link href="/integrations/google-maps" className="text-cyan-300 hover:underline">
+        <Link href="/integrations/google-maps" className="yg-link">
           Google Maps
         </Link>
-        <Link href="/aura/command-centre" className="text-cyan-300 hover:underline">
+        <Link href="/aura/command-centre" className="yg-link">
           Command Centre
         </Link>
       </div>
 
-      <Panel title="Policy" className="border-cyan-500/40 bg-cyan-950/20 text-cyan-100">
+      <Panel title="Policy" className="yg-panel-accent">
         <p className="text-sm">
           No fake properties, customers, jobs, or maintenance. Maps pins use real stored coordinates
           only via authenticated Google Maps browser config. Insight drafts require Owner approval
@@ -221,7 +221,7 @@ export function PropertyIntelligencePage() {
         </Panel>
       ) : null}
       {success ? (
-        <Panel title="Saved" className="border-cyan-500/40 bg-cyan-950/20 text-cyan-100">
+        <Panel title="Saved" className="yg-panel-accent">
           <p className="text-sm">{success}</p>
         </Panel>
       ) : null}
@@ -234,7 +234,7 @@ export function PropertyIntelligencePage() {
             onClick={() => setTab(t.id)}
             className={`rounded-md px-3 py-1.5 text-sm ${
               tab === t.id
-                ? 'bg-cyan-700/40 text-cyan-100 ring-1 ring-cyan-500/50'
+                ? 'yg-tab-active'
                 : 'bg-slate-900 text-slate-300 ring-1 ring-slate-700'
             }`}
           >
@@ -315,7 +315,7 @@ export function PropertyIntelligencePage() {
                             className="w-full text-left"
                             onClick={() => setSelectedPropertyId(p.propertyId)}
                           >
-                            <div className="font-medium text-cyan-100">
+                            <div className="font-medium yg-text-accent-muted">
                               {p.propertyName}
                               {p.isPrimary ? ' · primary' : ''}
                             </div>
@@ -335,7 +335,7 @@ export function PropertyIntelligencePage() {
                               href={mapsUrl}
                               target="_blank"
                               rel="noreferrer"
-                              className="mt-1 inline-block text-xs text-cyan-300 hover:underline"
+                              className="mt-1 yg-link text-xs inline-block"
                             >
                               Open in Google Maps
                             </a>
@@ -374,7 +374,7 @@ export function PropertyIntelligencePage() {
                   <ul className="space-y-2 text-sm text-slate-300">
                     {dashboard.equipmentRows.map((row: PriEquipmentRow) => (
                       <li key={row.id} className="rounded border border-slate-800 px-3 py-2">
-                        <div className="font-medium text-cyan-100">
+                        <div className="font-medium yg-text-accent-muted">
                           {row.name}
                           {row.isGeyser ? ' · geyser' : ''}
                         </div>
@@ -400,7 +400,7 @@ export function PropertyIntelligencePage() {
                   <ul className="space-y-2 text-sm text-slate-300">
                     {dashboard.geyserRows.map((row: PriEquipmentRow) => (
                       <li key={row.id} className="rounded border border-slate-800 px-3 py-2">
-                        <div className="font-medium text-cyan-100">{row.name}</div>
+                        <div className="font-medium yg-text-accent-muted">{row.name}</div>
                         <div className="text-xs text-slate-500">
                           {row.plumbingKind ?? 'geyser'}
                           {row.propertyName ? ` · ${row.propertyName}` : ''}
@@ -426,7 +426,7 @@ export function PropertyIntelligencePage() {
                   <ul className="space-y-2 text-sm text-slate-300">
                     {dashboard.cocRows.map((row: PriCocRow) => (
                       <li key={row.id} className="rounded border border-slate-800 px-3 py-2">
-                        <div className="font-medium text-cyan-100">{row.title}</div>
+                        <div className="font-medium yg-text-accent-muted">{row.title}</div>
                         <div className="text-xs text-slate-500">
                           {row.source}
                           {row.propertyName ? ` · ${row.propertyName}` : ''}
@@ -449,7 +449,7 @@ export function PropertyIntelligencePage() {
                   <ul className="space-y-2 text-sm text-slate-300">
                     {dashboard.photoRows.map((row: PriPhotoRow) => (
                       <li key={row.id} className="rounded border border-slate-800 px-3 py-2">
-                        <div className="font-medium text-cyan-100">{row.label}</div>
+                        <div className="font-medium yg-text-accent-muted">{row.label}</div>
                         <div className="text-xs text-slate-500">
                           {row.source}
                           {row.propertyName ? ` · ${row.propertyName}` : ''}
@@ -477,7 +477,7 @@ export function PropertyIntelligencePage() {
                   <ul className="space-y-2 text-sm text-slate-300">
                     {dashboard.previousWork.map((row: PriPreviousWorkRow) => (
                       <li key={row.id} className="rounded border border-slate-800 px-3 py-2">
-                        <div className="font-medium text-cyan-100">
+                        <div className="font-medium yg-text-accent-muted">
                           {row.jobNumber ? `${row.jobNumber} · ` : ''}
                           {row.title}
                         </div>
@@ -502,7 +502,7 @@ export function PropertyIntelligencePage() {
                   <ul className="space-y-2 text-sm text-slate-300">
                     {dashboard.maintenanceHistory.map((row: PriMaintenanceHistoryRow) => (
                       <li key={row.id} className="rounded border border-slate-800 px-3 py-2">
-                        <div className="font-medium text-cyan-100">
+                        <div className="font-medium yg-text-accent-muted">
                           {row.planName} · {row.source}
                         </div>
                         <div className="text-xs text-slate-500">
@@ -561,7 +561,7 @@ export function PropertyIntelligencePage() {
                   <ul className="space-y-3 text-sm text-slate-300">
                     {dashboard.insightDrafts.map((draft: PriInsightDraftSummary) => (
                       <li key={draft.id} className="rounded border border-slate-800 px-3 py-2">
-                        <div className="font-medium text-cyan-100">
+                        <div className="font-medium yg-text-accent-muted">
                           {draft.title} · {draft.status}
                         </div>
                         <pre className="mt-1 whitespace-pre-wrap text-xs text-slate-400">
@@ -720,7 +720,7 @@ export function PropertyIntelligencePage() {
                 <ul className="space-y-2 text-sm text-slate-300">
                   {dashboard.auraConnections.map((c: PriAuraConnection) => (
                     <li key={c.target} className="rounded border border-slate-800 px-3 py-2">
-                      <Link href={c.href} className="font-medium text-cyan-100 hover:underline">
+                      <Link href={c.href} className="yg-link font-medium">
                         {c.label}
                       </Link>
                       <div className="text-xs text-slate-500">
@@ -796,7 +796,7 @@ export function PropertyIntelligencePage() {
                   <ul className="space-y-2 text-sm text-slate-300">
                     {dashboard.auraInsights.map((insight: PriAuraInsightSummary) => (
                       <li key={insight.id} className="rounded border border-slate-800 px-3 py-2">
-                        <div className="font-medium text-cyan-100">
+                        <div className="font-medium yg-text-accent-muted">
                           {insight.title} · {insight.status} · {insight.target}
                         </div>
                         <p className="mt-1 text-xs text-slate-400">{insight.insight}</p>

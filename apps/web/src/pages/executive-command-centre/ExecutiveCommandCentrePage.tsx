@@ -137,37 +137,37 @@ export function ExecutiveCommandCentrePage() {
   ];
 
   return (
-    <div className="space-y-6 text-slate-100">
+    <div className="command-centre-page">
       <PageHeader
         title="Executive Command Centre"
         description="Owner-only unified view of revenue, profit, cash, outstanding invoices, jobs, staff, fleet, marketing, sales, risks and opportunities"
       />
 
-      <div className="flex flex-wrap gap-3 text-sm">
-        <Link href="/aura/command-centre" className="text-cyan-300 hover:underline">
+      <div className="command-centre-page__nav">
+        <Link href="/aura/command-centre" className="yg-link">
           AURA Command Centre
         </Link>
-        <Link href="/finance-cashflow-profit" className="text-cyan-300 hover:underline">
+        <Link href="/finance-cashflow-profit" className="yg-link">
           Cashflow &amp; Profit
         </Link>
-        <Link href="/jobs" className="text-cyan-300 hover:underline">
+        <Link href="/jobs" className="yg-link">
           Jobs
         </Link>
-        <Link href="/team" className="text-cyan-300 hover:underline">
+        <Link href="/team" className="yg-link">
           Team
         </Link>
-        <Link href="/fleet" className="text-cyan-300 hover:underline">
+        <Link href="/fleet" className="yg-link">
           Fleet
         </Link>
-        <Link href="/marketing" className="text-cyan-300 hover:underline">
+        <Link href="/marketing" className="yg-link">
           Marketing
         </Link>
-        <Link href="/leads" className="text-cyan-300 hover:underline">
+        <Link href="/leads" className="yg-link">
           Sales
         </Link>
       </div>
 
-      <Panel title="Policy" className="border-cyan-500/40 bg-cyan-950/20 text-cyan-100">
+      <Panel title="Policy" className="yg-panel-accent">
         <p className="text-sm">
           Owner only. Real connected data only — a figure that is not available is shown as
           unavailable with the reason, and is never invented or estimated. AURA may summarise and
@@ -187,7 +187,7 @@ export function ExecutiveCommandCentrePage() {
         </Panel>
       ) : null}
 
-      <div className="flex flex-wrap gap-2">
+      <div className="command-centre-page__tabs">
         {tabs.map((t) => (
           <Button
             key={t.id}
@@ -344,7 +344,7 @@ export function ExecutiveCommandCentrePage() {
                 <ul className="space-y-2 text-sm text-slate-300">
                   {dashboard.connections.map((connection) => (
                     <li key={connection.module}>
-                      <Link href={connection.href} className="text-cyan-300 hover:underline">
+                      <Link href={connection.href} className="yg-link">
                         {connection.label}
                       </Link>{' '}
                       — {connection.note}

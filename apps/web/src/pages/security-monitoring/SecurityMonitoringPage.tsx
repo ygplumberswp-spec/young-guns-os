@@ -306,15 +306,15 @@ export function SecurityMonitoringPage() {
       <PageHeader title="Security Monitoring" />
 
       <div className="flex flex-wrap gap-3 text-sm">
-        <Link href="/security" className="text-cyan-300 hover:underline">
+        <Link href="/security" className="yg-link">
           Security settings
         </Link>
-        <Link href="/executive-command-centre" className="text-cyan-300 hover:underline">
+        <Link href="/executive-command-centre" className="yg-link">
           Executive Command Centre
         </Link>
       </div>
 
-      <Panel title="Policy" className="border-cyan-500/40 bg-cyan-950/20 text-cyan-100">
+      <Panel title="Policy" className="yg-panel-accent">
         <p className="text-sm">
           Real security records only. Every item says how many records back it, when they were
           recorded and how confident the reading is. A threat, a breach or an attacker is never

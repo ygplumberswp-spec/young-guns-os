@@ -184,21 +184,21 @@ export function HomeshieldExperiencePage() {
       />
 
       <div className="flex flex-wrap gap-3 text-sm">
-        <Link href="/recurring-maintenance" className="text-cyan-300 hover:underline">
+        <Link href="/recurring-maintenance" className="yg-link">
           Recurring Maintenance
         </Link>
-        <Link href="/customer-experience" className="text-cyan-300 hover:underline">
+        <Link href="/customer-experience" className="yg-link">
           Customer Experience
         </Link>
-        <Link href="/email-centre" className="text-cyan-300 hover:underline">
+        <Link href="/email-centre" className="yg-link">
           Email Centre
         </Link>
-        <Link href="/finance/invoices" className="text-cyan-300 hover:underline">
+        <Link href="/finance/invoices" className="yg-link">
           Billing
         </Link>
       </div>
 
-      <Panel title="Policy" className="border-cyan-500/40 bg-cyan-950/20 text-cyan-100">
+      <Panel title="Policy" className="yg-panel-accent">
         <p className="text-sm">
           No fake memberships. No automatic billing or charges. AURA renewal/maintenance/customer-value/retention drafts and outreach require. No automatic billing or charges. Renewal and outreach drafts require
           Owner approval. Customers see only their own membership in the portal. Maintenance history
@@ -277,7 +277,7 @@ export function HomeshieldExperiencePage() {
                 <ul className="space-y-2 text-sm">
                   {dashboard.connections.map((c) => (
                     <li key={c.key}>
-                      <Link href={c.href} className="text-cyan-300 hover:underline">
+                      <Link href={c.href} className="yg-link">
                         {c.label}
                       </Link>
                       <span className="ml-2 text-slate-400">{c.note}</span>

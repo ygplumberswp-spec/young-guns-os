@@ -179,30 +179,30 @@ export function FleetAiRecommendationsPage() {
       />
 
       <div className="flex flex-wrap gap-3 text-sm">
-        <Link href="/fleet" className="text-cyan-300 hover:underline">
+        <Link href="/fleet" className="yg-link">
           Fleet
         </Link>
-        <Link href="/fleet-intelligence" className="text-cyan-300 hover:underline">
+        <Link href="/fleet-intelligence" className="yg-link">
           Fleet Intelligence
         </Link>
-        <Link href="/vehicle-intelligence" className="text-cyan-300 hover:underline">
+        <Link href="/vehicle-intelligence" className="yg-link">
           Vehicle Intelligence
         </Link>
-        <Link href="/driver-intelligence" className="text-cyan-300 hover:underline">
+        <Link href="/driver-intelligence" className="yg-link">
           Driver Intelligence
         </Link>
-        <Link href="/integrations/cartrack" className="text-cyan-300 hover:underline">
+        <Link href="/integrations/cartrack" className="yg-link">
           Cartrack
         </Link>
-        <Link href="/jobs" className="text-cyan-300 hover:underline">
+        <Link href="/jobs" className="yg-link">
           Jobs
         </Link>
-        <Link href="/aura/command-centre" className="text-cyan-300 hover:underline">
+        <Link href="/aura/command-centre" className="yg-link">
           Command Centre
         </Link>
       </div>
 
-      <Panel title="Policy" className="border-cyan-500/40 bg-cyan-950/20 text-cyan-100">
+      <Panel title="Policy" className="yg-panel-accent">
         <p className="text-sm">
           Recommendations only. No automatic assign, sell, replace, or maintenance execute. GPS and
           costs are never invented — unavailable when Cartrack or records are missing. Owner/Admin
@@ -216,7 +216,7 @@ export function FleetAiRecommendationsPage() {
         </Panel>
       ) : null}
       {success ? (
-        <Panel title="Saved" className="border-cyan-500/40 bg-cyan-950/20 text-cyan-100">
+        <Panel title="Saved" className="yg-panel-accent">
           <p className="text-sm">{success}</p>
         </Panel>
       ) : null}
@@ -229,7 +229,7 @@ export function FleetAiRecommendationsPage() {
             onClick={() => setTab(t.id)}
             className={`rounded-md px-3 py-1.5 text-sm ${
               tab === t.id
-                ? 'bg-cyan-700/40 text-cyan-100 ring-1 ring-cyan-500/50'
+                ? 'yg-tab-active'
                 : 'bg-slate-900 text-slate-300 ring-1 ring-slate-700'
             }`}
           >
@@ -299,7 +299,7 @@ export function FleetAiRecommendationsPage() {
                   <ul className="space-y-2 text-sm text-slate-300">
                     {dashboard.vehicleSignals.map((v: FarVehicleSignal) => (
                       <li key={v.vehicleId} className="rounded border border-slate-800 px-3 py-2">
-                        <div className="font-medium text-cyan-100">
+                        <div className="font-medium yg-text-accent-muted">
                           {v.name} · {v.licensePlate}
                         </div>
                         <div className="text-xs text-slate-500">
@@ -325,7 +325,7 @@ export function FleetAiRecommendationsPage() {
                   <ul className="space-y-2 text-sm text-slate-300">
                     {dashboard.maintenanceSignals.map((row: FarMaintenanceSignal) => (
                       <li key={row.id} className="rounded border border-slate-800 px-3 py-2">
-                        <div className="font-medium text-cyan-100">
+                        <div className="font-medium yg-text-accent-muted">
                           {row.title} · {row.source}
                         </div>
                         <div className="text-xs text-slate-500">
@@ -349,7 +349,7 @@ export function FleetAiRecommendationsPage() {
                   <ul className="space-y-2 text-sm text-slate-300">
                     {dashboard.costSignals.slice(0, 30).map((row: FarCostSignal) => (
                       <li key={row.id} className="rounded border border-slate-800 px-3 py-2">
-                        <div className="font-medium text-cyan-100">
+                        <div className="font-medium yg-text-accent-muted">
                           {row.vehicleName ?? 'Unassigned'} · {row.costType} · {row.amountCents}¢
                         </div>
                         <div className="text-xs text-slate-500">{row.recordedAt}</div>
@@ -369,7 +369,7 @@ export function FleetAiRecommendationsPage() {
                   <ul className="space-y-2 text-sm text-slate-300">
                     {dashboard.usageSignals.slice(0, 30).map((row: FarUsageSignal) => (
                       <li key={row.id} className="rounded border border-slate-800 px-3 py-2">
-                        <div className="font-medium text-cyan-100">
+                        <div className="font-medium yg-text-accent-muted">
                           {row.vehicleName ?? 'Vehicle'} · {row.jobTitle ?? row.jobId}
                         </div>
                         <div className="text-xs text-slate-500">
@@ -434,7 +434,7 @@ export function FleetAiRecommendationsPage() {
                   <ul className="space-y-3 text-sm text-slate-300">
                     {dashboard.recommendationDrafts.map((draft: FarRecommendationDraftSummary) => (
                       <li key={draft.id} className="rounded border border-slate-800 px-3 py-2">
-                        <div className="font-medium text-cyan-100">
+                        <div className="font-medium yg-text-accent-muted">
                           {draft.title} · {draft.kind} · {draft.status}
                         </div>
                         <p className="mt-1 whitespace-pre-wrap text-xs text-slate-400">
@@ -581,7 +581,7 @@ export function FleetAiRecommendationsPage() {
                 <ul className="space-y-2 text-sm text-slate-300">
                   {dashboard.auraConnections.map((c: FarAuraConnection) => (
                     <li key={c.target}>
-                      <Link href={c.href} className="text-cyan-300 hover:underline">
+                      <Link href={c.href} className="yg-link">
                         {c.label}
                       </Link>
                       <span className="text-xs text-slate-500"> — {c.note}</span>
@@ -661,7 +661,7 @@ export function FleetAiRecommendationsPage() {
                   <ul className="space-y-3 text-sm text-slate-300">
                     {dashboard.auraInsights.map((insight: FarAuraInsightSummary) => (
                       <li key={insight.id} className="rounded border border-slate-800 px-3 py-2">
-                        <div className="font-medium text-cyan-100">
+                        <div className="font-medium yg-text-accent-muted">
                           {insight.title} · {insight.target} · {insight.status}
                         </div>
                         <p className="mt-1 whitespace-pre-wrap text-xs text-slate-400">

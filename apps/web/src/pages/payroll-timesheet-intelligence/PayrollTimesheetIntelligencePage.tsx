@@ -136,27 +136,27 @@ export function PayrollTimesheetIntelligencePage() {
       />
 
       <div className="flex flex-wrap gap-3 text-sm">
-        <Link href="/workforce-intelligence" className="text-cyan-300 hover:underline">
+        <Link href="/workforce-intelligence" className="yg-link">
           Workforce timesheets
         </Link>
-        <Link href="/hr-employee-intelligence" className="text-cyan-300 hover:underline">
+        <Link href="/hr-employee-intelligence" className="yg-link">
           Employee Intelligence
         </Link>
-        <Link href="/technician-intelligence" className="text-cyan-300 hover:underline">
+        <Link href="/technician-intelligence" className="yg-link">
           Technician Intelligence
         </Link>
-        <Link href="/scheduling" className="text-cyan-300 hover:underline">
+        <Link href="/scheduling" className="yg-link">
           Scheduling
         </Link>
-        <Link href="/jobs" className="text-cyan-300 hover:underline">
+        <Link href="/jobs" className="yg-link">
           Jobs
         </Link>
-        <Link href="/aura/command-centre" className="text-cyan-300 hover:underline">
+        <Link href="/aura/command-centre" className="yg-link">
           Command Centre
         </Link>
       </div>
 
-      <Panel title="Policy" className="border-cyan-500/40 bg-cyan-950/20 text-cyan-100">
+      <Panel title="Policy" className="yg-panel-accent">
         <p className="text-sm">
           No invented wages. No automatic payroll mutation. Sensitive payroll is Owner/Admin only.
           Labour cost stays unavailable without a stored hourly rate. Timesheet approve/correct
@@ -170,7 +170,7 @@ export function PayrollTimesheetIntelligencePage() {
         </Panel>
       ) : null}
       {success ? (
-        <Panel title="Saved" className="border-cyan-500/40 bg-cyan-950/20 text-cyan-100">
+        <Panel title="Saved" className="yg-panel-accent">
           <p className="text-sm">{success}</p>
         </Panel>
       ) : null}
@@ -183,7 +183,7 @@ export function PayrollTimesheetIntelligencePage() {
             onClick={() => setTab(t.id)}
             className={`rounded-md px-3 py-1.5 text-sm ${
               tab === t.id
-                ? 'bg-cyan-700/40 text-cyan-100 ring-1 ring-cyan-500/50'
+                ? 'yg-tab-active'
                 : 'bg-slate-900 text-slate-300 ring-1 ring-slate-700'
             }`}
           >
@@ -270,7 +270,7 @@ export function PayrollTimesheetIntelligencePage() {
                 <ul className="space-y-2 text-sm">
                   {dashboard.connections.map((c) => (
                     <li key={c.target} className="flex flex-wrap items-baseline gap-2">
-                      <Link href={c.href} className="text-cyan-300 hover:underline">
+                      <Link href={c.href} className="yg-link">
                         {c.label}
                       </Link>
                       <span className="text-slate-500">
@@ -327,7 +327,7 @@ export function PayrollTimesheetIntelligencePage() {
                   <ul className="space-y-2 text-sm text-slate-300">
                     {dashboard.attendance.map((a) => (
                       <li key={a.userId}>
-                        <span className="text-cyan-200">{a.userName ?? a.userId}</span> — in{' '}
+                        <span className="yg-text-accent-soft">{a.userName ?? a.userId}</span> — in{' '}
                         {a.clockInCount} / out {a.clockOutCount}; incomplete{' '}
                         {a.incompleteClockPairs}. {a.rationale}
                       </li>
@@ -422,7 +422,7 @@ export function PayrollTimesheetIntelligencePage() {
                       title={`${draft.kind} · ${draft.status}`}
                       className="border-slate-800 bg-slate-950/80"
                     >
-                      <p className="text-sm font-medium text-cyan-100">{draft.title}</p>
+                      <p className="text-sm font-medium yg-text-accent-muted">{draft.title}</p>
                       <pre className="mt-2 whitespace-pre-wrap text-xs text-slate-400">
                         {draft.body}
                       </pre>
@@ -635,7 +635,7 @@ export function PayrollTimesheetIntelligencePage() {
                   title={`${insight.target} · ${insight.status}`}
                   className="border-slate-800 bg-slate-950/80"
                 >
-                  <p className="text-sm font-medium text-cyan-100">{insight.title}</p>
+                  <p className="text-sm font-medium yg-text-accent-muted">{insight.title}</p>
                   <p className="mt-2 text-sm text-slate-400">{insight.insight}</p>
                   {insight.status === 'open' ? (
                     <div className="mt-3 flex gap-2">

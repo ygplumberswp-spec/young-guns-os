@@ -9,7 +9,7 @@ type AuraMarkProps = {
 };
 
 /**
- * AURA mark — teal-accent ring with compact wordmark (same palette as TITAN chrome accents).
+ * AURA mark — Young Guns blue accent ring with compact wordmark.
  */
 export function AuraMark({ size = 'md', className, title = AI_NAME }: AuraMarkProps) {
   const uid = useId().replace(/:/g, '');

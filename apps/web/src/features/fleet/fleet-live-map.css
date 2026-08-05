@@ -65,7 +65,7 @@
 }
 
 .fleet-overview-row--selected {
-  border-color: #0ea5e9;
+  border-color: var(--yg-map-marker-fill, var(--yg-blue-primary));
 }
 
 .fleet-overview-row__head {

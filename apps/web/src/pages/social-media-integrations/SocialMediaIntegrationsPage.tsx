@@ -239,19 +239,19 @@ export function SocialMediaIntegrationsPage() {
       />
 
       <p className="text-sm text-slate-400">
-        <Link href="/marketing-agent" className="text-cyan-300 hover:underline">
+        <Link href="/marketing-agent" className="yg-link">
           Marketing Agent
         </Link>
         {' · '}
-        <Link href="/marketing" className="text-cyan-300 hover:underline">
+        <Link href="/marketing" className="yg-link">
           Marketing
         </Link>
         {' · '}
-        <Link href="/marketing-intelligence" className="text-cyan-300 hover:underline">
+        <Link href="/marketing-intelligence" className="yg-link">
           Marketing Intelligence
         </Link>
         {' · '}
-        <Link href="/integrations" className="text-cyan-300 hover:underline">
+        <Link href="/integrations" className="yg-link">
           Integrations
         </Link>
       </p>
@@ -272,7 +272,7 @@ export function SocialMediaIntegrationsPage() {
             onClick={() => setTab(key)}
             className={`rounded-md px-3 py-1.5 text-sm ${
               tab === key
-                ? 'bg-cyan-500/20 text-cyan-200 ring-1 ring-cyan-500/40'
+                ? 'yg-tab-active'
                 : 'bg-zinc-900 text-slate-300 ring-1 ring-zinc-700 hover:bg-zinc-800'
             }`}
           >
@@ -287,7 +287,7 @@ export function SocialMediaIntegrationsPage() {
         </div>
       ) : null}
       {success ? (
-        <div className="rounded-md border border-cyan-500/40 bg-cyan-950/30 px-3 py-2 text-sm text-cyan-100">
+        <div className="rounded-md border yg-info-banner px-3 py-2 text-sm">
           {success}
         </div>
       ) : null}
@@ -321,9 +321,9 @@ export function SocialMediaIntegrationsPage() {
                 <StatCard label="Approval queue" value={String(dashboard.approvalQueue.length)} />
               </div>
               <Panel title="Marketing Agent" className="space-y-2 bg-zinc-950/80 p-4">
-                <h3 className="text-sm font-medium text-cyan-200">Marketing Agent link</h3>
+                <h3 className="text-sm font-medium yg-text-accent-soft">Marketing Agent link</h3>
                 <p className="text-sm text-slate-400">{dashboard.marketingAgentLink.note}</p>
-                <Link href={dashboard.marketingAgentLink.href} className="text-sm text-cyan-300 hover:underline">
+                <Link href={dashboard.marketingAgentLink.href} className="text-sm yg-link">
                   Open {dashboard.marketingAgentLink.label}
                 </Link>
               </Panel>
@@ -334,7 +334,7 @@ export function SocialMediaIntegrationsPage() {
             <div className="space-y-4">
               {canManage ? (
                 <Panel title="Connection settings" className="space-y-3 bg-zinc-950/80 p-4">
-                  <h3 className="text-sm font-medium text-cyan-200">Save connection settings</h3>
+                  <h3 className="text-sm font-medium yg-text-accent-soft">Save connection settings</h3>
                   <form className="grid gap-3 md:grid-cols-2" onSubmit={handleSaveConnection}>
                     <label className="space-y-1 text-sm text-slate-300">
                       <span>Platform</span>
@@ -396,7 +396,7 @@ export function SocialMediaIntegrationsPage() {
                         </h3>
                         <p className="text-xs text-slate-500">{connection.displayName}</p>
                       </div>
-                      <span className="rounded bg-zinc-800 px-2 py-0.5 text-xs text-cyan-200">
+                      <span className="rounded bg-zinc-800 px-2 py-0.5 text-xs yg-text-accent-soft">
                         {formatSocialConnectionStatus(connection.status)}
                       </span>
                     </div>
@@ -441,7 +441,7 @@ export function SocialMediaIntegrationsPage() {
               ) : (
                 dashboard.monitoredItems.map((item) => (
                   <Panel key={item.id} title={`${SOCIAL_PLATFORM_LABELS[item.platform]} · ${item.itemKind}`} className="space-y-1 bg-zinc-950/80 p-4">
-                    <p className="text-sm text-cyan-200">
+                    <p className="text-sm yg-text-accent-soft">
                       {SOCIAL_PLATFORM_LABELS[item.platform]} · {item.itemKind}
                     </p>
                     <p className="text-sm text-slate-200 whitespace-pre-wrap">{item.body}</p>
@@ -459,7 +459,7 @@ export function SocialMediaIntegrationsPage() {
             <div className="space-y-4">
               {canManage ? (
                 <Panel title="Create outbound draft" className="space-y-3 bg-zinc-950/80 p-4">
-                  <h3 className="text-sm font-medium text-cyan-200">
+                  <h3 className="text-sm font-medium yg-text-accent-soft">
                     Create outbound draft (publish workflow)
                   </h3>
                   <form className="grid gap-3" onSubmit={handleCreateDraft}>
@@ -497,7 +497,7 @@ export function SocialMediaIntegrationsPage() {
                   <Panel key={draft.id} title={draft.title} className="space-y-2 bg-zinc-950/80 p-4">
                     <div className="flex items-start justify-between gap-2">
                       <h3 className="text-sm font-medium text-slate-100">{draft.title}</h3>
-                      <span className="text-xs text-cyan-200">{draft.status}</span>
+                      <span className="text-xs yg-text-accent-soft">{draft.status}</span>
                     </div>
                     <p className="text-sm text-slate-300 whitespace-pre-wrap">{draft.body}</p>
                     <p className="text-xs text-slate-500">
@@ -545,7 +545,7 @@ export function SocialMediaIntegrationsPage() {
               ) : (
                 dashboard.recentActivity.map((event) => (
                   <Panel key={event.id} title={event.eventType} className="bg-zinc-950/80 p-3 text-sm">
-                    <p className="text-cyan-200">
+                    <p className="yg-text-accent-soft">
                       {event.eventType}
                       {event.platform ? ` · ${SOCIAL_PLATFORM_LABELS[event.platform]}` : ''}
                     </p>

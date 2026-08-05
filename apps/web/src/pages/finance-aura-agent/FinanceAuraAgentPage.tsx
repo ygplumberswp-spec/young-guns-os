@@ -289,23 +289,23 @@ export function FinanceAuraAgentPage() {
       />
 
       <p className="text-sm text-slate-400">
-        <Link href="/finance/invoices" className="text-cyan-300 hover:underline">
+        <Link href="/finance/invoices" className="yg-link">
           Invoices
         </Link>
         {' · '}
-        <Link href="/finance/payments" className="text-cyan-300 hover:underline">
+        <Link href="/finance/payments" className="yg-link">
           Payments
         </Link>
         {' · '}
-        <Link href="/integrations/xero" className="text-cyan-300 hover:underline">
+        <Link href="/integrations/xero" className="yg-link">
           Xero
         </Link>
         {' · '}
-        <Link href="/aura/command-centre" className="text-cyan-300 hover:underline">
+        <Link href="/aura/command-centre" className="yg-link">
           Command Centre
         </Link>
         {' · '}
-        <Link href="/financial-planning" className="text-cyan-300 hover:underline">
+        <Link href="/financial-planning" className="yg-link">
           Financial Planning
         </Link>
       </p>
@@ -327,7 +327,7 @@ export function FinanceAuraAgentPage() {
             onClick={() => setTab(key)}
             className={`rounded-md px-3 py-1.5 text-sm ${
               tab === key
-                ? 'bg-cyan-700/40 text-cyan-100 ring-1 ring-cyan-500/50'
+                ? 'yg-tab-active'
                 : 'bg-slate-900 text-slate-300 ring-1 ring-slate-700'
             }`}
           >
@@ -342,7 +342,7 @@ export function FinanceAuraAgentPage() {
         </Panel>
       ) : null}
       {success ? (
-        <Panel title="Status" className="border-cyan-500/40 bg-cyan-950/20 text-cyan-100">
+        <Panel title="Status" className="yg-panel-accent">
           {success}
         </Panel>
       ) : null}
@@ -367,7 +367,7 @@ export function FinanceAuraAgentPage() {
                     Registry: {dashboard.registry.commandCentreStatus} — {dashboard.registry.note}
                   </li>
                 </ul>
-                <p className="mt-2 text-xs text-cyan-300/80">
+                <p className="mt-2 yg-text-accent-subtle text-xs">
                   Auto-execute: off · Owner approval required · Technician/Client: denied · Fake data:
                   never
                 </p>
@@ -581,7 +581,7 @@ export function FinanceAuraAgentPage() {
               <Panel title="Agent identity" className="border-slate-800 bg-slate-950/80">
                 <p className="text-sm text-slate-300">{dashboard.identity.name}</p>
                 <p className="mt-2 text-xs text-slate-500">{dashboard.identity.description}</p>
-                <p className="mt-2 text-xs text-cyan-300/80">
+                <p className="mt-2 yg-text-accent-subtle text-xs">
                   Keys: Command Centre / Agent Network / Global ={' '}
                   {dashboard.identity.registry.commandCentreKey}
                 </p>
@@ -589,7 +589,7 @@ export function FinanceAuraAgentPage() {
               {dashboard.auraConnections.map((link) => (
                 <Panel key={link.target} title={link.label} className="border-slate-800 bg-slate-950/80">
                   <p className="text-sm text-slate-400">{link.note}</p>
-                  <Link href={link.href} className="mt-2 inline-block text-sm text-cyan-300 hover:underline">
+                  <Link href={link.href} className="mt-2 yg-link text-sm inline-block">
                     Open {link.href}
                   </Link>
                 </Panel>

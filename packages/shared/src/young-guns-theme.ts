@@ -40,6 +40,8 @@ export const YOUNG_GUNS_APP_COLORS = {
   danger: DOCUMENT_COLOR_TOKENS.danger,
   info: DOCUMENT_COLOR_TOKENS.labelBlue,
   reviewStar: '#FACC15',
+  mapMarkerFill: '#1f7aec',
+  mapMarkerStroke: '#1668d6',
 } as const;
 
 export type DocumentStatusTone =

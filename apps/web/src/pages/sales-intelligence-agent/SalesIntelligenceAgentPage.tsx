@@ -297,23 +297,23 @@ export function SalesIntelligenceAgentPage() {
       />
 
       <p className="text-sm text-zinc-400">
-        <Link href="/sales-intelligence" className="text-cyan-300 hover:underline">
+        <Link href="/sales-intelligence" className="yg-link">
           Sales Intelligence
         </Link>
         {' · '}
-        <Link href="/leads" className="text-cyan-300 hover:underline">
+        <Link href="/leads" className="yg-link">
           Leads
         </Link>
         {' · '}
-        <Link href="/sales" className="text-cyan-300 hover:underline">
+        <Link href="/sales" className="yg-link">
           Sales pipeline
         </Link>
         {' · '}
-        <Link href="/finance/quotes" className="text-cyan-300 hover:underline">
+        <Link href="/finance/quotes" className="yg-link">
           Quotes
         </Link>
         {' · '}
-        <Link href="/aura/command-centre" className="text-cyan-300 hover:underline">
+        <Link href="/aura/command-centre" className="yg-link">
           Command Centre
         </Link>
       </p>
@@ -337,7 +337,7 @@ export function SalesIntelligenceAgentPage() {
             onClick={() => setTab(key)}
             className={`rounded-md px-3 py-1.5 text-sm ${
               tab === key
-                ? 'bg-cyan-700/40 text-cyan-100 ring-1 ring-cyan-500/50'
+                ? 'yg-tab-active'
                 : 'bg-zinc-900 text-zinc-300 ring-1 ring-zinc-700'
             }`}
           >
@@ -352,7 +352,7 @@ export function SalesIntelligenceAgentPage() {
         </Panel>
       ) : null}
       {success ? (
-        <Panel title="Status" className="border-cyan-500/40 bg-cyan-950/20 text-cyan-100">
+        <Panel title="Status" className="yg-panel-accent">
           {success}
         </Panel>
       ) : null}
@@ -377,7 +377,7 @@ export function SalesIntelligenceAgentPage() {
                     Registry: {dashboard.registry.commandCentreStatus} — {dashboard.registry.note}
                   </li>
                 </ul>
-                <p className="mt-2 text-xs text-cyan-300/80">
+                <p className="mt-2 yg-text-accent-subtle text-xs">
                   Auto-outreach: off · Owner approval required · Technician/Client: denied · Spam:
                   prohibited · Fake data: never
                 </p>
@@ -626,7 +626,7 @@ export function SalesIntelligenceAgentPage() {
               <Panel title="Agent identity" className="border-zinc-800 bg-zinc-950/80">
                 <p className="text-sm text-zinc-300">{dashboard.identity.name}</p>
                 <p className="mt-2 text-xs text-zinc-500">{dashboard.identity.description}</p>
-                <p className="mt-2 text-xs text-cyan-300/80">
+                <p className="mt-2 yg-text-accent-subtle text-xs">
                   Keys: Command Centre / Agent Network / Global ={' '}
                   {dashboard.identity.registry.commandCentreKey} · Chat ={' '}
                   {dashboard.identity.registry.chatAgentKey}
@@ -635,7 +635,7 @@ export function SalesIntelligenceAgentPage() {
               {dashboard.auraConnections.map((link) => (
                 <Panel key={link.target} title={link.label} className="border-zinc-800 bg-zinc-950/80">
                   <p className="text-sm text-zinc-400">{link.note}</p>
-                  <Link href={link.href} className="mt-2 inline-block text-sm text-cyan-300 hover:underline">
+                  <Link href={link.href} className="mt-2 yg-link text-sm inline-block">
                     Open {link.href}
                   </Link>
                 </Panel>

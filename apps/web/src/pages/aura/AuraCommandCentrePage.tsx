@@ -154,14 +154,14 @@ export function AuraCommandCentrePage() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="command-centre-page">
       <PageHeader
         title="AURA Command Centre"
         description="Business health, approvals, memory, executive assistant mode, and agent coordination foundation — real tenant signals only."
       />
       <AuraSectionNav />
 
-      <div className="flex flex-wrap gap-2">
+      <div className="command-centre-page__tabs">
         {(
           [
             ['command', 'Command'],
@@ -175,11 +175,11 @@ export function AuraCommandCentrePage() {
             key={key}
             type="button"
             onClick={() => setTab(key)}
-            className={`rounded-md border px-3 py-1.5 text-sm transition ${
+            className={
               tab === key
-                ? 'border-cyan-500/50 bg-cyan-500/10 text-cyan-200'
-                : 'border-slate-700 bg-slate-950/60 text-slate-300 hover:border-slate-500'
-            }`}
+                ? 'command-centre-page__tab command-centre-page__tab--active'
+                : 'command-centre-page__tab'
+            }
           >
             {label}
           </button>
@@ -188,7 +188,7 @@ export function AuraCommandCentrePage() {
 
       {isLoading ? <p className="text-sm text-slate-400">Loading Command Centre…</p> : null}
       {error ? <p className="form-error">{error}</p> : null}
-      {success ? <p className="text-sm text-cyan-200">{success}</p> : null}
+      {success ? <p className="text-sm yg-text-accent-soft">{success}</p> : null}
 
       {dashboard ? (
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -215,7 +215,7 @@ export function AuraCommandCentrePage() {
               ))}
             </ul>
             <div className="mt-4 flex flex-wrap gap-2">
-              <Link href={dashboard.chatIntegration.auraChatHref} className="text-sm text-cyan-300">
+              <Link href={dashboard.chatIntegration.auraChatHref} className="text-sm yg-text-accent">
                 Open AURA Executive Chat →
               </Link>
               <span className="text-slate-600">·</span>
@@ -237,12 +237,12 @@ export function AuraCommandCentrePage() {
                   {dashboard.risks.map((item) => (
                     <li
                       key={item.id}
-                      className="rounded border border-cyan-500/20 bg-slate-950/70 p-3"
+                      className="yg-card-accent rounded p-3"
                     >
                       <p className="font-medium text-slate-100">{item.title}</p>
                       <p className="mt-1 text-sm text-slate-400">{item.detail}</p>
                       {item.href ? (
-                        <Link href={item.href} className="mt-2 inline-block text-sm text-cyan-300">
+                        <Link href={item.href} className="mt-2 inline-block text-sm yg-text-accent">
                           Open →
                         </Link>
                       ) : null}
@@ -283,7 +283,7 @@ export function AuraCommandCentrePage() {
                 >
                   <div className="flex items-center justify-between gap-2">
                     <p className="font-medium text-slate-100">{dept.label}</p>
-                    <span className="text-xs uppercase tracking-wide text-cyan-300/80">
+                    <span className="yg-label-accent">
                       {dept.availability.replaceAll('_', ' ')}
                     </span>
                   </div>
@@ -306,11 +306,11 @@ export function AuraCommandCentrePage() {
           <Panel title="Daily priorities">
             <ul className="space-y-3">
               {dashboard.executiveAssistant.dailyPriorities.map((item) => (
-                <li key={item.id} className="rounded border border-cyan-500/20 bg-slate-950/70 p-3">
+                <li key={item.id} className="yg-card-accent rounded p-3">
                   <p className="font-medium text-slate-100">{item.title}</p>
                   <p className="mt-1 text-sm text-slate-400">{item.detail}</p>
                   {item.href ? (
-                    <Link href={item.href} className="mt-2 inline-block text-sm text-cyan-300">
+                    <Link href={item.href} className="mt-2 inline-block text-sm yg-text-accent">
                       Open →
                     </Link>
                   ) : null}
@@ -403,7 +403,7 @@ export function AuraCommandCentrePage() {
             <ul className="mt-3 flex flex-wrap gap-3 text-sm">
               {dashboard.executiveAssistant.planningSupport.linkedSurfaces.map((surface) => (
                 <li key={surface.href}>
-                  <Link href={surface.href} className="text-cyan-300">
+                  <Link href={surface.href} className="yg-text-accent">
                     {surface.label} →
                   </Link>
                 </li>
@@ -477,11 +477,11 @@ export function AuraCommandCentrePage() {
                 {dashboard.recentMemory.map((entry) => (
                   <li
                     key={entry.id}
-                    className="rounded border border-cyan-500/20 bg-slate-950/70 p-3"
+                    className="yg-card-accent rounded p-3"
                   >
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <p className="font-medium text-slate-100">{entry.title}</p>
-                      <span className="text-xs uppercase text-cyan-300/80">
+                      <span className="yg-label-accent">
                         {entry.kind.replaceAll('_', ' ')}
                       </span>
                     </div>
@@ -526,7 +526,7 @@ export function AuraCommandCentrePage() {
                 >
                   <div className="flex items-center justify-between gap-2">
                     <p className="font-medium text-slate-100">{agent.label}</p>
-                    <span className="text-xs uppercase text-cyan-300/80">{agent.status}</span>
+                    <span className="yg-label-accent">{agent.status}</span>
                   </div>
                   <p className="mt-1 text-xs text-slate-500">
                     Maps to existing agent key: {agent.existingAgentKey ?? 'none'}
@@ -597,7 +597,7 @@ export function AuraCommandCentrePage() {
                       {handoff.fromAgentKey} → {handoff.toAgentKey}
                     </p>
                     <p className="mt-1 text-sm text-slate-400">{handoff.contextSummary}</p>
-                    <p className="mt-2 text-xs uppercase text-cyan-300/80">{handoff.status}</p>
+                    <p className="mt-2 yg-label-accent">{handoff.status}</p>
                   </li>
                 ))}
               </ul>
@@ -619,12 +619,12 @@ export function AuraCommandCentrePage() {
                 {dashboard.pendingApprovals.map((item) => (
                   <li
                     key={item.id}
-                    className="rounded border border-cyan-500/20 bg-slate-950/70 p-3"
+                    className="yg-card-accent rounded p-3"
                   >
                     <p className="font-medium text-slate-100">{item.title}</p>
                     <p className="mt-1 text-sm text-slate-400">{item.detail}</p>
                     {item.href ? (
-                      <Link href={item.href} className="mt-2 inline-block text-sm text-cyan-300">
+                      <Link href={item.href} className="mt-2 inline-block text-sm yg-text-accent">
                         Review →
                       </Link>
                     ) : null}
@@ -686,7 +686,7 @@ export function AuraCommandCentrePage() {
                   >
                     <p className="font-medium text-slate-100">{draft.title}</p>
                     <p className="mt-1 text-sm text-slate-400">{draft.description}</p>
-                    <p className="mt-2 text-xs uppercase text-cyan-300/80">{draft.status}</p>
+                    <p className="mt-2 yg-label-accent">{draft.status}</p>
                     {canDecide &&
                     (draft.status === 'pending_approval' || draft.status === 'draft') ? (
                       <div className="mt-3 flex flex-wrap gap-2">
@@ -744,7 +744,7 @@ export function AuraCommandCentrePage() {
                   .map((handoff) => (
                     <li
                       key={handoff.id}
-                      className="rounded border border-cyan-500/20 bg-slate-950/70 p-3"
+                      className="yg-card-accent rounded p-3"
                     >
                       <p className="font-medium text-slate-100">
                         {handoff.fromAgentKey} → {handoff.toAgentKey}

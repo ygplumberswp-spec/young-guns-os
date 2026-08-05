@@ -118,34 +118,34 @@ export function DriverIntelligencePage() {
   ];
 
   return (
-    <div className="space-y-6 bg-[radial-gradient(circle_at_top,_#164e63_0%,_#0b1220_42%,_#020617_100%)] p-1 text-slate-100">
+    <div className="command-centre-page space-y-6 p-1">
       <PageHeader
         title="Driver Intelligence"
         description="Real driver profiles, behaviour insights, route efficiency, trip analysis, and Owner/Admin-gated AURA drafts — no fake GPS, never auto-discipline"
       />
 
       <div className="flex flex-wrap gap-3 text-sm">
-        <Link href="/fleet" className="text-cyan-300 hover:underline">
+        <Link href="/fleet" className="yg-link">
           Fleet
         </Link>
-        <Link href="/fleet-intelligence" className="text-cyan-300 hover:underline">
+        <Link href="/fleet-intelligence" className="yg-link">
           Fleet Intelligence
         </Link>
-        <Link href="/vehicle-intelligence" className="text-cyan-300 hover:underline">
+        <Link href="/vehicle-intelligence" className="yg-link">
           Vehicle Intelligence
         </Link>
-        <Link href="/jobs" className="text-cyan-300 hover:underline">
+        <Link href="/jobs" className="yg-link">
           Jobs
         </Link>
-        <Link href="/hr-employee-intelligence" className="text-cyan-300 hover:underline">
+        <Link href="/hr-employee-intelligence" className="yg-link">
           Employee Intelligence
         </Link>
-        <Link href="/aura/command-centre" className="text-cyan-300 hover:underline">
+        <Link href="/aura/command-centre" className="yg-link">
           Command Centre
         </Link>
       </div>
 
-      <Panel title="Policy" className="border-cyan-500/40 bg-cyan-950/20 text-cyan-100">
+      <Panel title="Policy" className="yg-panel-accent">
         <p className="text-sm">
           Owner/Admin only. No fake GPS or invented behaviour. Recommendation drafts never
           auto-discipline, auto-sanction, or mutate HR. When Cartrack/trips/behaviour are missing,
@@ -159,7 +159,7 @@ export function DriverIntelligencePage() {
         </Panel>
       ) : null}
       {success ? (
-        <Panel title="Saved" className="border-cyan-500/40 bg-cyan-950/20 text-cyan-100">
+        <Panel title="Saved" className="yg-panel-accent">
           <p className="text-sm">{success}</p>
         </Panel>
       ) : null}
@@ -172,7 +172,7 @@ export function DriverIntelligencePage() {
             onClick={() => setTab(t.id)}
             className={`rounded-md px-3 py-1.5 text-sm ${
               tab === t.id
-                ? 'bg-cyan-700/40 text-cyan-100 ring-1 ring-cyan-500/50'
+                ? 'yg-tab-active'
                 : 'bg-slate-950 text-slate-300 ring-1 ring-slate-700'
             }`}
           >
@@ -242,7 +242,7 @@ export function DriverIntelligencePage() {
                       key={d.userId}
                       className="rounded-md border border-slate-800 bg-slate-950/60 px-3 py-2"
                     >
-                      <div className="font-medium text-cyan-100">{d.displayName}</div>
+                      <div className="font-medium yg-text-accent-muted">{d.displayName}</div>
                       <div className="text-xs text-slate-500">
                         {d.roleName} · {d.email} · {d.isActive ? 'active' : 'inactive'}
                       </div>
@@ -273,7 +273,7 @@ export function DriverIntelligencePage() {
                       key={row.id}
                       className="rounded-md border border-slate-800 bg-slate-950/60 px-3 py-2"
                     >
-                      <div className="font-medium text-cyan-100">
+                      <div className="font-medium yg-text-accent-muted">
                         {row.eventType} · severity {row.severity}
                       </div>
                       <div className="text-xs text-slate-400">
@@ -302,7 +302,7 @@ export function DriverIntelligencePage() {
                       key={`${row.vehicleId ?? 'v'}-${row.startedAt}-${idx}`}
                       className="rounded-md border border-slate-800 bg-slate-950/60 px-3 py-2"
                     >
-                      <div className="font-medium text-cyan-100">
+                      <div className="font-medium yg-text-accent-muted">
                         {row.vehicleName ?? 'Vehicle'} · {row.distanceKm.toFixed(1)} km
                       </div>
                       <div className="text-xs text-slate-400">
@@ -331,7 +331,7 @@ export function DriverIntelligencePage() {
                       key={`${row.driverUserId ?? 'd'}-${row.vehicleId ?? 'v'}-${idx}`}
                       className="rounded-md border border-slate-800 bg-slate-950/60 px-3 py-2"
                     >
-                      <div className="font-medium text-cyan-100">
+                      <div className="font-medium yg-text-accent-muted">
                         {row.driverName ?? 'Unassigned'} · {row.efficiencyLabel}
                       </div>
                       <div className="text-xs text-slate-400">
@@ -360,7 +360,7 @@ export function DriverIntelligencePage() {
                       key={row.vehicleId}
                       className="rounded-md border border-slate-800 bg-slate-950/60 px-3 py-2"
                     >
-                      <div className="font-medium text-cyan-100">
+                      <div className="font-medium yg-text-accent-muted">
                         {row.vehicleName} · {row.licensePlate}
                       </div>
                       <div className="text-xs text-slate-400">
@@ -407,7 +407,7 @@ export function DriverIntelligencePage() {
                         key={rec.id}
                         className="rounded-md border border-slate-800 bg-slate-950/60 px-3 py-2"
                       >
-                        <div className="font-medium text-cyan-100">{rec.title}</div>
+                        <div className="font-medium yg-text-accent-muted">{rec.title}</div>
                         <div className="text-xs text-slate-500">
                           {rec.kind} · {rec.status} · autoDiscipline={String(rec.autoDiscipline)} ·
                           inventedGps={String(rec.inventedGps)}
@@ -463,7 +463,7 @@ export function DriverIntelligencePage() {
                         key={insight.id}
                         className="rounded-md border border-slate-800 bg-slate-950/60 px-3 py-2"
                       >
-                        <div className="font-medium text-cyan-100">{insight.title}</div>
+                        <div className="font-medium yg-text-accent-muted">{insight.title}</div>
                         <div className="text-xs text-slate-500">
                           {insight.target} · {insight.status}
                         </div>
@@ -517,11 +517,11 @@ export function DriverIntelligencePage() {
                     className="rounded-md border border-slate-800 bg-slate-950/60 px-3 py-2"
                   >
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="font-medium text-cyan-100">{c.label}</span>
+                      <span className="font-medium yg-text-accent-muted">{c.label}</span>
                       <span className="text-xs text-slate-500">{c.status}</span>
                     </div>
                     <p className="mt-1 text-xs text-slate-400">{c.note}</p>
-                    <Link href={c.href} className="text-xs text-cyan-300 hover:underline">
+                    <Link href={c.href} className="text-xs yg-link">
                       Open {c.href}
                     </Link>
                   </li>

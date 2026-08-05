@@ -165,10 +165,10 @@ export function CallIntelligencePage() {
         description="Summaries, history lookup, approval-gated lead drafts, sentiment & insights from real calls"
       />
 
-      <Panel title="Honesty" className="border-cyan-500/20 bg-zinc-950/60">
+      <Panel title="Honesty" className="yg-panel-accent">
         <p className="text-sm text-slate-300">
           Extends{' '}
-          <Link href="/voice-ai-receptionist" className="text-cyan-300 hover:underline">
+          <Link href="/voice-ai-receptionist" className="yg-link">
             Voice AI Receptionist
           </Link>{' '}
           and core voice sessions. No fake calls or leads. Lead drafts require Owner approval. No
@@ -183,8 +183,8 @@ export function CallIntelligencePage() {
         </Panel>
       ) : null}
       {success ? (
-        <Panel title="Status" className="border-cyan-500/20 bg-slate-950/80">
-          <p className="text-sm text-cyan-200">{success}</p>
+        <Panel title="Status" className="yg-panel-muted">
+          <p className="text-sm yg-text-accent-soft">{success}</p>
         </Panel>
       ) : null}
 
@@ -196,7 +196,7 @@ export function CallIntelligencePage() {
             onClick={() => setTab(t.id)}
             className={`rounded-md px-3 py-1.5 text-sm ${
               tab === t.id
-                ? 'bg-cyan-700/40 text-cyan-100 ring-1 ring-cyan-500/50'
+                ? 'yg-tab-active'
                 : 'bg-slate-900 text-slate-300 ring-1 ring-slate-700'
             }`}
           >
@@ -238,7 +238,7 @@ export function CallIntelligencePage() {
                 <ul className="space-y-2 text-sm">
                   {dashboard.connections.map((c) => (
                     <li key={c.target} className="flex flex-wrap items-center gap-2">
-                      <Link href={c.href} className="text-cyan-300 hover:underline">
+                      <Link href={c.href} className="yg-link">
                         {c.label}
                       </Link>
                       <span className="text-xs text-slate-500">{c.status}</span>
@@ -310,7 +310,7 @@ export function CallIntelligencePage() {
                           </ul>
                         ) : null}
                         {s.customerRequests.length > 0 ? (
-                          <p className="mt-2 text-cyan-200">
+                          <p className="mt-2 yg-text-accent-soft">
                             Requests: {s.customerRequests.join('; ')}
                           </p>
                         ) : null}
@@ -578,7 +578,7 @@ export function CallIntelligencePage() {
                         key={label}
                         className="rounded-md border border-slate-800 bg-slate-900/60 p-3"
                       >
-                        <p className="text-sm font-medium text-cyan-100">{label}</p>
+                        <p className="text-sm font-medium yg-text-accent-muted">{label}</p>
                         {items.length === 0 ? (
                           <p className="mt-2 text-xs text-slate-500">No matches in real call text.</p>
                         ) : (

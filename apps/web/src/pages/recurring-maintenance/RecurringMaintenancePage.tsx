@@ -205,7 +205,7 @@ export function RecurringMaintenancePage() {
             onClick={() => setTab(key)}
             className={`rounded-md border px-3 py-1.5 text-sm transition ${
               tab === key
-                ? 'border-cyan-500/50 bg-cyan-500/10 text-cyan-200'
+                ? 'yg-tab-active'
                 : 'border-slate-700 bg-slate-950/60 text-slate-300 hover:border-slate-500'
             }`}
           >
@@ -216,7 +216,7 @@ export function RecurringMaintenancePage() {
 
       {isLoading ? <p className="text-sm text-slate-400">Loading recurring maintenance…</p> : null}
       {error ? <p className="form-error">{error}</p> : null}
-      {success ? <p className="text-sm text-cyan-200">{success}</p> : null}
+      {success ? <p className="text-sm yg-text-accent-soft">{success}</p> : null}
 
       {overview ? (
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -285,7 +285,7 @@ export function RecurringMaintenancePage() {
                   .map((item) => (
                     <li
                       key={item.id}
-                      className="rounded border border-cyan-500/20 bg-slate-950/70 p-3"
+                      className="yg-card-accent rounded p-3"
                     >
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <div>
@@ -429,7 +429,7 @@ export function RecurringMaintenancePage() {
                 {plans.map((plan) => (
                   <li
                     key={plan.id}
-                    className="rounded border border-cyan-500/20 bg-slate-950/70 p-3"
+                    className="yg-card-accent rounded p-3"
                   >
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div>
@@ -487,11 +487,11 @@ export function RecurringMaintenancePage() {
               {dueItems.map((item) => (
                 <li
                   key={item.planId}
-                  className="rounded border border-cyan-500/20 bg-slate-950/70 p-3"
+                  className="yg-card-accent rounded p-3"
                 >
                   <p className="font-medium text-slate-100">{item.planName}</p>
                   <p className="mt-1 text-sm text-slate-400">
-                    <span className="text-cyan-200">{item.bucket}</span>
+                    <span className="yg-text-accent-soft">{item.bucket}</span>
                     {' · '}
                     {kindLabel(item.plumbingKind)}
                     {' · '}
@@ -524,7 +524,7 @@ export function RecurringMaintenancePage() {
                   key={run.id}
                   className="rounded border border-slate-800 bg-slate-950/50 px-3 py-2 text-sm text-slate-300"
                 >
-                  <span className="text-cyan-200">{run.status}</span>
+                  <span className="yg-text-accent-soft">{run.status}</span>
                   {' · '}
                   {formatWhen(run.completedAt)}
                   {run.jobId ? ` · job ${run.jobId}` : ''}
@@ -604,7 +604,7 @@ export function RecurringMaintenancePage() {
                 {commRequests.map((item) => (
                   <li
                     key={item.id}
-                    className="rounded border border-cyan-500/20 bg-slate-950/70 p-3"
+                    className="yg-card-accent rounded p-3"
                   >
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div>
@@ -693,12 +693,12 @@ export function RecurringMaintenancePage() {
               {suggestions.map((item) => (
                 <li
                   key={item.id}
-                  className="rounded border border-cyan-500/20 bg-slate-950/70 p-3"
+                  className="yg-card-accent rounded p-3"
                 >
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
                       <p className="font-medium text-slate-100">
-                        <span className="text-cyan-200">{item.kind}</span> · {item.subject}
+                        <span className="yg-text-accent-soft">{item.kind}</span> · {item.subject}
                       </p>
                       <p className="mt-1 text-sm text-slate-400">{item.body}</p>
                       <p className="mt-1 text-xs text-slate-500">

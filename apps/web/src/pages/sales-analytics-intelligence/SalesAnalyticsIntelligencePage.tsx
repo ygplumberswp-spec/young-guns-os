@@ -151,39 +151,39 @@ export function SalesAnalyticsIntelligencePage() {
       />
 
       <div className="flex flex-wrap gap-3 text-sm">
-        <Link href="/crm" className="text-cyan-300 hover:underline">
+        <Link href="/crm" className="yg-link">
           CRM
         </Link>
-        <Link href="/leads" className="text-cyan-300 hover:underline">
+        <Link href="/leads" className="yg-link">
           Leads
         </Link>
-        <Link href="/quotes" className="text-cyan-300 hover:underline">
+        <Link href="/quotes" className="yg-link">
           Quotes
         </Link>
-        <Link href="/jobs" className="text-cyan-300 hover:underline">
+        <Link href="/jobs" className="yg-link">
           Jobs
         </Link>
-        <Link href="/finance-reporting-forecast" className="text-cyan-300 hover:underline">
+        <Link href="/finance-reporting-forecast" className="yg-link">
           Finance
         </Link>
-        <Link href="/sales-intelligence-agent" className="text-cyan-300 hover:underline">
+        <Link href="/sales-intelligence-agent" className="yg-link">
           Sales Agent
         </Link>
-        <Link href="/sales-followup-intelligence" className="text-cyan-300 hover:underline">
+        <Link href="/sales-followup-intelligence" className="yg-link">
           Sales Follow-up
         </Link>
-        <Link href="/sales-intelligence" className="text-cyan-300 hover:underline">
+        <Link href="/sales-intelligence" className="yg-link">
           Sales Intelligence
         </Link>
-        <Link href="/dashboard" className="text-cyan-300 hover:underline">
+        <Link href="/dashboard" className="yg-link">
           Executive Dashboard
         </Link>
-        <Link href="/aura/command-centre" className="text-cyan-300 hover:underline">
+        <Link href="/aura/command-centre" className="yg-link">
           Command Centre
         </Link>
       </div>
 
-      <Panel title="Policy" className="border-cyan-500/40 bg-cyan-950/20 text-cyan-100">
+      <Panel title="Policy" className="yg-panel-accent">
         <p className="text-sm">
           Real CRM/quotes/jobs/finance signals only. Conversion rates stay unavailable when sample
           size is insufficient — never invented. AURA insights are recommendations only; no
@@ -197,7 +197,7 @@ export function SalesAnalyticsIntelligencePage() {
         </Panel>
       ) : null}
       {success ? (
-        <Panel title="Saved" className="border-cyan-500/40 bg-cyan-950/20 text-cyan-100">
+        <Panel title="Saved" className="yg-panel-accent">
           <p className="text-sm">{success}</p>
         </Panel>
       ) : null}
@@ -210,7 +210,7 @@ export function SalesAnalyticsIntelligencePage() {
             onClick={() => setTab(t.id)}
             className={`rounded-md px-3 py-1.5 text-sm ${
               tab === t.id
-                ? 'bg-cyan-700/40 text-cyan-100 ring-1 ring-cyan-500/50'
+                ? 'yg-tab-active'
                 : 'bg-slate-900 text-slate-300 ring-1 ring-slate-700'
             }`}
           >
@@ -311,7 +311,7 @@ export function SalesAnalyticsIntelligencePage() {
                 <ul className="space-y-2 text-sm">
                   {dashboard.connections.map((c) => (
                     <li key={c.target} className="flex flex-wrap items-baseline gap-2">
-                      <Link href={c.href} className="text-cyan-300 hover:underline">
+                      <Link href={c.href} className="yg-link">
                         {c.label}
                       </Link>
                       <span className="text-slate-500">
@@ -339,7 +339,7 @@ export function SalesAnalyticsIntelligencePage() {
                         <p className="text-xs text-slate-500">{row.note}</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm text-cyan-200">
+                        <p className="text-sm yg-text-accent-soft">
                           {row.unit === 'percent'
                             ? formatPercent(row.value)
                             : row.unit === 'cents'
@@ -559,7 +559,7 @@ export function SalesAnalyticsIntelligencePage() {
                       {insight.insight}
                     </pre>
                     {insight.href ? (
-                      <Link href={insight.href} className="mt-2 inline-block text-cyan-300 hover:underline">
+                      <Link href={insight.href} className="mt-2 yg-link inline-block">
                         Open link
                       </Link>
                     ) : null}

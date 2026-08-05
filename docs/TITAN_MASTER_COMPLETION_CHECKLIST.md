@@ -77,7 +77,7 @@ Boolean columns use **YES** / **NO** / **—** (not applicable).
 
 ## Requirements register
 
-**Total requirement rows:** 166
+**Total requirement rows:** 171
 
 | ID | Area | Requirement | Status | Built locally | Tests passed | Real DB/provider connected | RBAC tested | Tenant isolation tested | Deployed to staging | Authenticated E2E passed | Desktop verified | Tablet verified | Mobile verified | Claude verified | Gemini verified | Owner verified | Production ready | Evidence | Commit | Migration/provider dependency | Blocker | Next action |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -170,6 +170,11 @@ Boolean columns use **YES** / **NO** / **—** (not applicable).
 | J66A-003 | finance | Phase J-6.6A: Five reproducible test fixes (Cartrack TZ, doc-engine, merge heading) | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | shared 909/909; web 303/303; api 1046/1046 | J-6.6A |  |  |  |
 | J66A-004 | finance | Phase J-6.6A: Migration 0176 apply script hardening (backup gate, staging ref) | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | finance-migration-0176.test.ts; apply-0176-staging-only.mjs | J-6.6A | 0176 |  | Owner-approved staging apply |
 | J66A-005 | repo | Phase J-6.6A: Authoritative master completion checklist (this document) | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | docs/TITAN_MASTER_COMPLETION_CHECKLIST.md (166 rows) | J-6.6A |  |  | Maintain register each phase |
+| J66B-001 | ui | Phase J-6.6B: Global Young Guns tokens and shared component remediation | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | tokens.css; styles.css; young-guns-utilities.css | J-6.6B |  |  | Owner visual sign-off |
+| J66B-002 | ui | Phase J-6.6B: Command surface visual parity (Owner/Executive/AURA) | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | command-centre-page classes; Executive + AURA pages | J-6.6B |  |  | Canonical route decision pending Owner |
+| J66B-003 | ui | Phase J-6.6B: Intelligence page legacy cyan/teal removal | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | remediate-legacy-cyan.mjs; young-guns-visual-j66b.test.ts | J-6.6B |  |  |  |
+| J66B-004 | ui | Phase J-6.6B: Finance preview modal + completion report Young Guns styling | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | finance-document-preview.css; buildCompletionReportHtml shell | J-6.6B |  |  | Report export pipeline still not implemented |
+| J66B-005 | ui | Phase J-6.6B: Skip-to-content, map/banner tokens, visual contract tests | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | layout.tsx skip link; young-guns-theme.spec.ts | J-6.6B |  |  | Authenticated viewport E2E pending |
 | XERO-001 | Xero | OAuth connect + tenant isolation | DEPLOYED TO STAGING | YES | NO | YES | NO | NO | YES | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_FRZ018_XERO_STAGING_REPORT.md | f8cc0c4 |  |  |  |
 | XERO-002 | Xero | Background historical import (contacts/invoices/payments) | PARTIALLY IMPLEMENTED | YES | NO | YES | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 | Xero OAuth | Import job running; last_sync_at null |  |
 | XERO-003 | Xero | Xero as sole official quote/invoice numbering authority | BUILT LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | finance-document-preview.test.ts | f8cc0c4 |  |  |  |
@@ -232,7 +237,7 @@ Boolean columns use **YES** / **NO** / **—** (not applicable).
 | MON-001 | monitoring | Mission Control alert sync | FOUNDATION ONLY | YES | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  | NOT VISUALLY VERIFIED |  |
 | MON-002 | monitoring | Performance audit + observability Phase 22 | NOT FOUND | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  | PIPE-10 queued |  |
 | UX-001 | accessibility | Finance workspace reflow without overflow-x clip | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | YES | YES | YES | YES | YES | NO | NO |  | f8cc0c4 |  |  |  |
-| UX-002 | accessibility | Young Guns dark theme consistent (f8cc0c4 theme pass) | BUILT LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | young-guns-theme.test.ts @ f8cc0c4 | f8cc0c4 |  |  |  |
+| UX-002 | accessibility | Young Guns dark theme consistent (global J-6.6B remediation) | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | young-guns-theme.test.ts; young-guns-visual-j66b.test.ts | J-6.6B |  |  | Owner/Gemini live visual audit |
 | UX-003 | accessibility | WCAG audit across 155 pages | NOT FOUND | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  | No full a11y audit |  |
 | MOB-001 | mobile/tablet | Technician mobile execution UX-B closure | DEPLOYED TO STAGING | YES | NO | NO | NO | NO | YES | NO | NO | YES | YES | YES | YES | NO | NO | UX-B 35/35 | f8cc0c4 |  |  |  |
 | MOB-002 | mobile/tablet | Finance editor tablet/mobile reflow verified in tests | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | YES | YES | YES | YES | NO | NO |  | f8cc0c4 |  |  |  |
@@ -282,7 +287,7 @@ The following surfaces have **code/routes/tests** but lack **Owner authenticated
 | Live UI auto-refresh all operational lists | App-wide | Domain events limited subset | BIND-003 |
 | Stripe payments | Finance | FIN-012 missing | — |
 | Business evolution / continuous learning UI | `/business-evolution` | Extensive nav; not Owner verified | Milestone 70 |
-| Young Guns theme on all 155 pages | App-wide | f8cc0c4 covers finance/docs; full app sweep pending | UX-002 partial |
+| Young Guns theme on all 155 pages | App-wide | J-6.6B token/class remediation complete; Owner live visual audit pending | UX-002 J-6.6B |
 
 
 ---
@@ -293,7 +298,7 @@ These phases are **documented and visible in backlog/plans** but must **not** be
 
 | Phase | Focus | Source | Status |
 |-------|-------|--------|--------|
-| **Theme cleanup** | Young Guns theme consistency across remaining 155 pages; remove legacy tokens | f8cc0c4 partial pass | **QUEUED** |
+| **Theme cleanup** | Young Guns theme consistency across remaining 155 pages; remove legacy tokens | J-6.6B local remediation | **BUILT LOCALLY** — Owner/Gemini visual audit pending |
 | **Reports & analytics** | KPI definitions on home; quote→cash reporting; BI warehouse useful wiring | FRZ-008, RPT-002–004 | **QUEUED** |
 | **Technician tracking** | Live en-route map; portal ETA; Cartrack Directions | UX-030, FLT-008, EXE-005 | **QUEUED** |
 | **Integrations live** | Cartrack, WhatsApp live send, Gmail backend, Google Calendar, Meta/Google ads | COM-001–008, INT-009 | **QUEUED** — credential gates |
@@ -313,7 +318,23 @@ These phases are **documented and visible in backlog/plans** but must **not** be
 
 ---
 
-## Phase J-6.6A scope (current)
+## Phase J-6.6B scope (completed locally)
+
+Items **J66B-001 … J66B-005** in the register above were completed in **Phase J-6.6B**. Boolean columns marked **YES** only where proven locally — not deployed, Owner-verified, or production-ready.
+
+| ID | Deliverable | J-6.6B outcome |
+|----|-------------|----------------|
+| J66B-001 | Tokens + shared UI | Electric blue primary button; info/map/banner/preview tokens |
+| J66B-002 | Command surfaces | Owner/Executive/AURA share `command-centre-page` system |
+| J66B-003 | Intelligence pages | Legacy cyan/teal Tailwind removed from page sources |
+| J66B-004 | Preview + completion report | Token-based preview modal; YG report shell for completion HTML |
+| J66B-005 | A11y + contracts | Skip-to-content; visual contract tests + Playwright |
+
+**Canonical Owner Command Centre route** — still requires separate Owner approval (not decided in this phase).
+
+---
+
+## Phase J-6.6A scope (completed)
 
 Items **J66A-001 … J66A-005** in the register above are targeted for completion in **Phase J-6.6A**. Use **YES** in boolean columns **only after proven at the new J-6.6A commit** — not preemptively at baseline `f8cc0c4`.
 
@@ -338,4 +359,4 @@ Items **J66A-001 … J66A-005** in the register above are targeted for completio
 
 ---
 
-*Generated requirement count: **166** rows. Update this document when any row changes classification; do not maintain competing checklists elsewhere.*
+*Generated requirement count: **171** rows. Update this document when any row changes classification; do not maintain competing checklists elsewhere.*

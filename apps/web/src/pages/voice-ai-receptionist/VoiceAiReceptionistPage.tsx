@@ -159,27 +159,27 @@ export function VoiceAiReceptionistPage() {
       />
 
       <div className="flex flex-wrap gap-3 text-sm">
-        <Link href="/voice" className="text-cyan-300 hover:underline">
+        <Link href="/voice" className="yg-link">
           Voice sessions
         </Link>
-        <Link href="/voice-reception" className="text-cyan-300 hover:underline">
+        <Link href="/voice-reception" className="yg-link">
           Enterprise Voice Reception
         </Link>
-        <Link href="/crm" className="text-cyan-300 hover:underline">
+        <Link href="/crm" className="yg-link">
           CRM
         </Link>
-        <Link href="/leads" className="text-cyan-300 hover:underline">
+        <Link href="/leads" className="yg-link">
           Leads
         </Link>
-        <Link href="/jobs" className="text-cyan-300 hover:underline">
+        <Link href="/jobs" className="yg-link">
           Jobs
         </Link>
-        <Link href="/scheduling" className="text-cyan-300 hover:underline">
+        <Link href="/scheduling" className="yg-link">
           Scheduling
         </Link>
       </div>
 
-      <Panel title="Policy" className="border-cyan-500/40 bg-cyan-950/20 text-cyan-100">
+      <Panel title="Policy" className="yg-panel-accent">
         <p className="text-sm">
           No fake calls, customers, or leads. Human takeover is always available. Lead create and
           booking drafts require Owner approval. Live telephony/TTS/STT stay not_configured until
@@ -193,7 +193,7 @@ export function VoiceAiReceptionistPage() {
         </Panel>
       ) : null}
       {success ? (
-        <Panel title="Saved" className="border-cyan-500/40 bg-cyan-950/20 text-cyan-100">
+        <Panel title="Saved" className="yg-panel-accent">
           <p className="text-sm">{success}</p>
         </Panel>
       ) : null}
@@ -206,7 +206,7 @@ export function VoiceAiReceptionistPage() {
             onClick={() => setTab(t.id)}
             className={`rounded-md px-3 py-1.5 text-sm ${
               tab === t.id
-                ? 'bg-cyan-700/40 text-cyan-100 ring-1 ring-cyan-500/50'
+                ? 'yg-tab-active'
                 : 'bg-slate-900 text-slate-300 ring-1 ring-slate-700'
             }`}
           >

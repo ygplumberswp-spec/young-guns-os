@@ -202,24 +202,24 @@ export function ContentReputationIntelligencePage() {
       />
 
       <div className="flex flex-wrap gap-3 text-sm">
-        <Link href="/marketing-agent" className="text-cyan-300 hover:underline">
+        <Link href="/marketing-agent" className="yg-link">
           Marketing Agent
         </Link>
-        <Link href="/social-media-integrations" className="text-cyan-300 hover:underline">
+        <Link href="/social-media-integrations" className="yg-link">
           Social Media
         </Link>
-        <Link href="/communication-timeline" className="text-cyan-300 hover:underline">
+        <Link href="/communication-timeline" className="yg-link">
           Communication Timeline
         </Link>
-        <Link href="/aura/command-centre" className="text-cyan-300 hover:underline">
+        <Link href="/aura/command-centre" className="yg-link">
           Command Centre
         </Link>
-        <Link href="/customer-experience" className="text-cyan-300 hover:underline">
+        <Link href="/customer-experience" className="yg-link">
           Customer Experience
         </Link>
       </div>
 
-      <Panel title="Policy" className="border-cyan-500/40 bg-cyan-950/20 text-cyan-100">
+      <Panel title="Policy" className="yg-panel-accent">
         <p className="text-sm">
           No automatic publishing. No automatic review replies. Owner approval required for
           outbound drafts. Scores and sentiment stay unavailable when there is no real signal —
@@ -233,7 +233,7 @@ export function ContentReputationIntelligencePage() {
         </Panel>
       ) : null}
       {success ? (
-        <Panel title="Saved" className="border-cyan-500/40 bg-cyan-950/20 text-cyan-100">
+        <Panel title="Saved" className="yg-panel-accent">
           <p className="text-sm">{success}</p>
         </Panel>
       ) : null}
@@ -246,7 +246,7 @@ export function ContentReputationIntelligencePage() {
             onClick={() => setTab(t.id)}
             className={`rounded-md px-3 py-1.5 text-sm ${
               tab === t.id
-                ? 'bg-cyan-700/40 text-cyan-100 ring-1 ring-cyan-500/50'
+                ? 'yg-tab-active'
                 : 'bg-slate-900 text-slate-300 ring-1 ring-slate-700'
             }`}
           >
@@ -366,7 +366,7 @@ export function ContentReputationIntelligencePage() {
                   </label>
                   <Button type="submit">Score content</Button>
                   {scoreResult ? (
-                    <p className="text-xs text-cyan-300/80">{scoreResult}</p>
+                    <p className="text-xs yg-text-accent-subtle">{scoreResult}</p>
                   ) : null}
                 </form>
               </Panel>
@@ -387,7 +387,7 @@ export function ContentReputationIntelligencePage() {
                     </p>
                     <p className="mt-2 whitespace-pre-wrap text-sm text-slate-300">{s.body}</p>
                     {s.hashtags.length ? (
-                      <p className="mt-2 text-xs text-cyan-300/80">{s.hashtags.join(' ')}</p>
+                      <p className="mt-2 yg-text-accent-subtle text-xs">{s.hashtags.join(' ')}</p>
                     ) : null}
                     {canOwnerApprove &&
                     (s.status === 'pending_approval' || s.status === 'draft') ? (
@@ -691,7 +691,7 @@ export function ContentReputationIntelligencePage() {
                   <Panel key={c.id} title={c.name} className="border-slate-800 bg-slate-950/80">
                     <p className="text-sm text-slate-400">{c.notes || 'No notes'}</p>
                     {c.website ? (
-                      <p className="mt-1 text-xs text-cyan-300/80">{c.website}</p>
+                      <p className="mt-1 text-xs yg-text-accent-subtle">{c.website}</p>
                     ) : null}
                   </Panel>
                 ))
@@ -795,7 +795,7 @@ export function ContentReputationIntelligencePage() {
                   <p className="text-sm text-slate-300">{c.note}</p>
                   <Link
                     href={c.href}
-                    className="mt-2 inline-block text-sm text-cyan-300 hover:underline"
+                    className="mt-2 yg-link text-sm inline-block"
                   >
                     Open {c.label}
                   </Link>

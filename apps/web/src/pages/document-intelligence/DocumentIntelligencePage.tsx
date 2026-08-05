@@ -175,24 +175,24 @@ export function DocumentIntelligencePage() {
       />
 
       <div className="flex flex-wrap gap-3 text-sm">
-        <Link href="/documents" className="text-cyan-300 hover:underline">
+        <Link href="/documents" className="yg-link">
           Documents
         </Link>
-        <Link href="/crm" className="text-cyan-300 hover:underline">
+        <Link href="/crm" className="yg-link">
           Customers
         </Link>
-        <Link href="/jobs" className="text-cyan-300 hover:underline">
+        <Link href="/jobs" className="yg-link">
           Jobs
         </Link>
-        <Link href="/legal-compliance" className="text-cyan-300 hover:underline">
+        <Link href="/legal-compliance" className="yg-link">
           Legal & Compliance
         </Link>
-        <Link href="/aura/command-centre" className="text-cyan-300 hover:underline">
+        <Link href="/aura/command-centre" className="yg-link">
           Command Centre
         </Link>
       </div>
 
-      <Panel title="Policy" className="border-cyan-500/40 bg-cyan-950/20 text-cyan-100">
+      <Panel title="Policy" className="yg-panel-accent">
         <p className="text-sm">
           Real documents only — never invented. Operational uploads stay under /documents. AURA
           expiry alerts and missing-doc suggestions are drafts requiring Owner approval. Reminders
@@ -206,7 +206,7 @@ export function DocumentIntelligencePage() {
         </Panel>
       ) : null}
       {success ? (
-        <Panel title="Saved" className="border-cyan-500/40 bg-cyan-950/20 text-cyan-100">
+        <Panel title="Saved" className="yg-panel-accent">
           <p className="text-sm">{success}</p>
         </Panel>
       ) : null}
@@ -219,7 +219,7 @@ export function DocumentIntelligencePage() {
             onClick={() => setTab(t.id)}
             className={`rounded-md px-3 py-1.5 text-sm ${
               tab === t.id
-                ? 'bg-cyan-700/40 text-cyan-100 ring-1 ring-cyan-500/50'
+                ? 'yg-tab-active'
                 : 'bg-slate-900 text-slate-300 ring-1 ring-slate-700'
             }`}
           >
@@ -316,7 +316,7 @@ export function DocumentIntelligencePage() {
                   <ul className="mt-3 space-y-2 text-sm text-slate-300">
                     {dashboard.documents.map((doc) => (
                       <li key={doc.documentId} className="rounded border border-slate-800 px-3 py-2">
-                        <div className="font-medium text-cyan-100">
+                        <div className="font-medium yg-text-accent-muted">
                           {doc.title} · {DOCI_DOCUMENT_TYPE_LABELS[doc.documentType]}
                         </div>
                         <div className="text-xs text-slate-500">
@@ -329,7 +329,7 @@ export function DocumentIntelligencePage() {
                           {' · '}
                           <Link
                             href={`/documents/${doc.documentId}`}
-                            className="text-cyan-300 hover:underline"
+                            className="yg-link"
                           >
                             Open register
                           </Link>
@@ -473,7 +473,7 @@ export function DocumentIntelligencePage() {
                 <ul className="space-y-2 text-sm text-slate-300">
                   {dashboard.reminders.map((r) => (
                     <li key={r.id} className="rounded border border-slate-800 px-3 py-2">
-                      <div className="font-medium text-cyan-100">
+                      <div className="font-medium yg-text-accent-muted">
                         {r.documentTitle ?? r.documentId} · {r.status}
                       </div>
                       <div className="text-xs text-slate-500">
@@ -556,7 +556,7 @@ export function DocumentIntelligencePage() {
                   <ul className="space-y-2 text-sm text-slate-300">
                     {dashboard.recommendationDrafts.map((d: DocIRecommendationDraftSummary) => (
                       <li key={d.id} className="rounded border border-slate-800 px-3 py-2">
-                        <div className="font-medium text-cyan-100">
+                        <div className="font-medium yg-text-accent-muted">
                           {d.title} · {d.kind} · {d.status}
                         </div>
                         <pre className="mt-1 whitespace-pre-wrap text-xs text-slate-400">
@@ -736,7 +736,7 @@ export function DocumentIntelligencePage() {
                   <ul className="space-y-2 text-sm text-slate-300">
                     {dashboard.auraInsights.map((insight) => (
                       <li key={insight.id} className="rounded border border-slate-800 px-3 py-2">
-                        <div className="font-medium text-cyan-100">
+                        <div className="font-medium yg-text-accent-muted">
                           {insight.title} · {insight.target} · {insight.status}
                         </div>
                         <p className="text-xs text-slate-400">{insight.insight}</p>
@@ -766,7 +766,7 @@ export function DocumentIntelligencePage() {
                 <ul className="space-y-1 text-sm text-slate-300">
                   {dashboard.auraConnections.map((c) => (
                     <li key={c.target}>
-                      <Link href={c.href} className="text-cyan-300 hover:underline">
+                      <Link href={c.href} className="yg-link">
                         {c.label}
                       </Link>
                       <span className="text-xs text-slate-500"> — {c.note}</span>

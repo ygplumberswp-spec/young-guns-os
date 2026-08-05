@@ -233,7 +233,6 @@ export function CompletionReportDetailPage() {
             title="Completion report preview"
             className="completion-report-preview"
             srcDoc={report.htmlBody}
-            style={{ width: '100%', minHeight: 480, border: '1px solid #ccc', background: '#fff' }}
           />
         </Panel>
       ) : null}

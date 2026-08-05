@@ -58,7 +58,7 @@ function priorityClass(priority: CommAuraPriority) {
     case 'high':
       return 'text-amber-200';
     case 'normal':
-      return 'text-cyan-200';
+      return 'yg-text-accent-soft';
     default:
       return 'text-slate-400';
   }
@@ -270,19 +270,19 @@ export function CommunicationAuraIntelligencePage() {
       />
 
       <p className="text-sm text-slate-400">
-        <Link href="/email-centre" className="text-cyan-300 hover:underline">
+        <Link href="/email-centre" className="yg-link">
           Email Centre
         </Link>
         {' · '}
-        <Link href="/communication-timeline" className="text-cyan-300 hover:underline">
+        <Link href="/communication-timeline" className="yg-link">
           Communication Timeline
         </Link>
         {' · '}
-        <Link href="/communications-hub" className="text-cyan-300 hover:underline">
+        <Link href="/communications-hub" className="yg-link">
           Communications Hub
         </Link>
         {' · '}
-        <Link href="/communications-intelligence" className="text-cyan-300 hover:underline">
+        <Link href="/communications-intelligence" className="yg-link">
           Comms Intelligence
         </Link>
       </p>
@@ -303,7 +303,7 @@ export function CommunicationAuraIntelligencePage() {
             onClick={() => setTab(key)}
             className={`rounded-md px-3 py-1.5 text-sm ${
               tab === key
-                ? 'bg-cyan-700/40 text-cyan-100 ring-1 ring-cyan-500/50'
+                ? 'yg-tab-active'
                 : 'bg-slate-900 text-slate-300 ring-1 ring-slate-700'
             }`}
           >
@@ -318,7 +318,7 @@ export function CommunicationAuraIntelligencePage() {
         </Panel>
       ) : null}
       {success ? (
-        <Panel title="Status" className="border-cyan-500/40 bg-cyan-950/20 text-cyan-100">
+        <Panel title="Status" className="yg-panel-accent">
           {success}
         </Panel>
       ) : null}
@@ -340,7 +340,7 @@ export function CommunicationAuraIntelligencePage() {
                   <li>{dashboard.productClarification.thisLayer}</li>
                   <li>{dashboard.productClarification.personalWhatsappIntelligence}</li>
                 </ul>
-                <p className="mt-2 text-xs text-cyan-300/80">
+                <p className="mt-2 yg-text-accent-subtle text-xs">
                   Auto-send: off · Uses Personal WhatsApp: never · Sentiment never invented
                 </p>
               </Panel>
@@ -411,7 +411,7 @@ export function CommunicationAuraIntelligencePage() {
                           {msg.unread ? ' · unread' : ''}
                           {msg.urgent ? ' · urgent flag' : ''}
                         </p>
-                        <p className="font-medium text-cyan-100">
+                        <p className="font-medium yg-text-accent-muted">
                           {msg.subject || '(no subject)'} — {msg.participantLabel || 'unknown'}
                         </p>
                         <p className="text-slate-400">{msg.preview || 'No preview indexed.'}</p>
@@ -445,7 +445,7 @@ export function CommunicationAuraIntelligencePage() {
                         key={draft.id}
                         className="rounded-md border border-slate-800 bg-slate-900/60 p-3"
                       >
-                        <p className="text-sm font-medium text-cyan-100">{draft.subject}</p>
+                        <p className="text-sm font-medium yg-text-accent-muted">{draft.subject}</p>
                         <pre className="mt-2 whitespace-pre-wrap text-xs text-slate-300">
                           {draft.body}
                         </pre>
@@ -485,7 +485,7 @@ export function CommunicationAuraIntelligencePage() {
                         key={fu.id}
                         className="rounded-md border border-slate-800 bg-slate-900/60 p-3"
                       >
-                        <p className="text-sm font-medium text-cyan-100">{fu.subject}</p>
+                        <p className="text-sm font-medium yg-text-accent-muted">{fu.subject}</p>
                         <p className="mt-1 text-sm text-slate-300">{fu.recommendation}</p>
                         <p className="mt-1 text-xs text-slate-500">
                           due: {fu.dueHint || 'n/a'} · autoExecuted: false

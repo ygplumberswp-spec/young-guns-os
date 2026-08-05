@@ -152,13 +152,13 @@ export function SalesFollowupIntelligencePage() {
       />
 
       <div className="flex flex-wrap gap-3 text-sm">
-        <Link href="/sales-intelligence-agent" className="text-cyan-300 hover:underline">
+        <Link href="/sales-intelligence-agent" className="yg-link">
           Sales Intelligence Agent
         </Link>
-        <Link href="/sales-intelligence" className="text-cyan-300 hover:underline">
+        <Link href="/sales-intelligence" className="yg-link">
           Sales Intelligence
         </Link>
-        <Link href="/quotes" className="text-cyan-300 hover:underline">
+        <Link href="/quotes" className="yg-link">
           Quotes
         </Link>
       </div>
@@ -169,7 +169,7 @@ export function SalesFollowupIntelligencePage() {
         </div>
       ) : null}
       {success ? (
-        <div className="rounded-md border border-cyan-500/40 bg-cyan-950/20 px-3 py-2 text-sm text-cyan-100">
+        <div className="yg-info-banner rounded-md px-3 py-2 text-sm">
           {success}
         </div>
       ) : null}
@@ -190,7 +190,7 @@ export function SalesFollowupIntelligencePage() {
             onClick={() => setTab(key)}
             className={
               tab === key
-                ? 'rounded-md bg-cyan-700/40 px-3 py-1.5 text-sm text-cyan-100 ring-1 ring-cyan-500/50'
+                ? 'yg-tab-active rounded-md px-3 py-1.5 text-sm'
                 : 'rounded-md bg-slate-900 px-3 py-1.5 text-sm text-slate-300 ring-1 ring-slate-700'
             }
           >
@@ -220,7 +220,7 @@ export function SalesFollowupIntelligencePage() {
                 <p className="text-xs text-slate-400">
                   Auto-send: never. Fake campaigns: never. Extends Sales Intelligence Agent (10.1).
                 </p>
-                <p className="text-xs text-cyan-300/80">{dashboard.productClarification.thisLayer}</p>
+                <p className="text-xs yg-text-accent-subtle">{dashboard.productClarification.thisLayer}</p>
               </Panel>
               {canManage ? (
                 <div className="flex flex-wrap gap-2">
@@ -351,7 +351,7 @@ export function SalesFollowupIntelligencePage() {
                   <Panel
                     key={item.quoteId}
                     title={`${item.quoteNumber} — ${item.title}`}
-                    className="border border-cyan-500/20 bg-zinc-950/60 space-y-1"
+                    className="yg-card-accent space-y-1"
                   >
                     <p className="text-xs text-zinc-300">{item.summary}</p>
                     <p className="text-xs text-slate-400">
@@ -408,7 +408,7 @@ export function SalesFollowupIntelligencePage() {
                     title={`${signal.category} · ${signal.customerName ?? 'Customer'}${
                       signal.quoteNumber ? ` · ${signal.quoteNumber}` : ''
                     }`}
-                    className="border border-cyan-500/20 bg-zinc-950/60 space-y-1"
+                    className="yg-card-accent space-y-1"
                   >
                     <p className="text-xs text-zinc-300">{signal.recommendation}</p>
                     {signal.signalText ? (
@@ -438,7 +438,7 @@ export function SalesFollowupIntelligencePage() {
                   <Panel
                     key={op.id}
                     title={`${op.kind.replaceAll('_', ' ')} · ${op.customerName ?? 'Customer'}`}
-                    className="border border-cyan-500/20 bg-zinc-950/60 space-y-1"
+                    className="yg-card-accent space-y-1"
                   >
                     <p className="text-xs text-zinc-300">{op.recommendation}</p>
                     <p className="text-xs text-slate-400">
@@ -498,7 +498,7 @@ export function SalesFollowupIntelligencePage() {
                     title={`${draft.kind} · ${draft.status}${
                       draft.quoteNumber ? ` · ${draft.quoteNumber}` : ''
                     }`}
-                    className="border border-cyan-500/20 bg-zinc-950/60 space-y-2"
+                    className="yg-card-accent space-y-2"
                   >
                     <p className="text-xs text-zinc-300 whitespace-pre-wrap">{draft.body}</p>
                     {canManage &&

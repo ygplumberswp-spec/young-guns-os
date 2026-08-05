@@ -173,16 +173,16 @@ export function RecruitmentPerformanceIntelligencePage() {
       />
 
       <div className="flex flex-wrap gap-3 text-sm">
-        <Link href="/technician-intelligence" className="text-cyan-300 hover:underline">
+        <Link href="/technician-intelligence" className="yg-link">
           Technician Intelligence
         </Link>
-        <Link href="/hr-employee-intelligence" className="text-cyan-300 hover:underline">
+        <Link href="/hr-employee-intelligence" className="yg-link">
           HR Employee Intelligence
         </Link>
-        <Link href="/payroll-timesheet-intelligence" className="text-cyan-300 hover:underline">
+        <Link href="/payroll-timesheet-intelligence" className="yg-link">
           Payroll & Timesheet
         </Link>
-        <Link href="/recruiting" className="text-cyan-300 hover:underline">
+        <Link href="/recruiting" className="yg-link">
           Recruiting
         </Link>
       </div>
@@ -195,7 +195,7 @@ export function RecruitmentPerformanceIntelligencePage() {
             onClick={() => setTab(item.id)}
             className={`rounded-md px-3 py-1.5 text-sm transition ${
               tab === item.id
-                ? 'bg-cyan-500/20 text-cyan-200 ring-1 ring-cyan-400/40'
+                ? 'yg-tab-active'
                 : 'bg-slate-900 text-slate-300 ring-1 ring-slate-700 hover:bg-slate-800'
             }`}
           >
@@ -210,7 +210,7 @@ export function RecruitmentPerformanceIntelligencePage() {
         </Panel>
       ) : null}
       {success ? (
-        <Panel title="Done" className="border-cyan-500/30 bg-cyan-950/20 text-cyan-100">
+        <Panel title="Done" className="yg-panel-accent">
           <p className="text-sm">{success}</p>
         </Panel>
       ) : null}
@@ -310,7 +310,7 @@ export function RecruitmentPerformanceIntelligencePage() {
                         <p className="text-xs text-slate-500">{c.note}</p>
                       </div>
                       {c.status === 'available_link' ? (
-                        <Link href={c.href} className="text-sm text-cyan-300 hover:underline">
+                        <Link href={c.href} className="text-sm yg-link">
                           Open
                         </Link>
                       ) : (
@@ -333,7 +333,7 @@ export function RecruitmentPerformanceIntelligencePage() {
                       key={bucket.stage}
                       className="rounded-md border border-slate-800 bg-slate-900/70 px-3 py-2"
                     >
-                      <p className="text-xs uppercase tracking-wide text-cyan-300/80">
+                      <p className="yg-label-accent">
                         {bucket.stage}
                       </p>
                       <p className="text-lg font-semibold text-slate-100">{bucket.count}</p>
@@ -356,7 +356,7 @@ export function RecruitmentPerformanceIntelligencePage() {
                       >
                         <p className="text-sm text-slate-100">
                           {c.name}{' '}
-                          <span className="text-cyan-300/90">· {c.status}</span>
+                          <span className="yg-text-accent-subtle">· {c.status}</span>
                         </p>
                         <p className="text-xs text-slate-500">
                           {c.roleTitle ?? 'No role title'} · apps {c.applicationCount}
@@ -719,7 +719,7 @@ export function RecruitmentPerformanceIntelligencePage() {
                           <p className="text-sm text-slate-100">{row.displayName}</p>
                           <Link
                             href={row.technicianIntelligenceHref}
-                            className="text-xs text-cyan-300 hover:underline"
+                            className="text-xs yg-link"
                           >
                             Technician Intelligence
                           </Link>
@@ -798,7 +798,7 @@ export function RecruitmentPerformanceIntelligencePage() {
                       >
                         <p className="text-sm text-slate-100">
                           {r.title}{' '}
-                          <span className="text-cyan-300/90">· {r.kind}</span>
+                          <span className="yg-text-accent-subtle">· {r.kind}</span>
                         </p>
                         <p className="text-xs text-slate-500">
                           {r.subjectUserName ?? '—'} · {r.status}
@@ -855,15 +855,15 @@ export function RecruitmentPerformanceIntelligencePage() {
               </p>
               <p className="mb-3 text-sm text-slate-300">
                 Interview workflow:{' '}
-                <span className="text-cyan-300">
+                <span className="yg-text-accent">
                   {dashboard.settings.interviewWorkflowEnabled ? 'on' : 'off'}
                 </span>{' '}
                 · AURA suggestions:{' '}
-                <span className="text-cyan-300">
+                <span className="yg-text-accent">
                   {dashboard.settings.auraSuggestionsEnabled ? 'on' : 'off'}
                 </span>{' '}
-                · Auto hiring: <span className="text-cyan-300">off</span> · Invent scores:{' '}
-                <span className="text-cyan-300">off</span>
+                · Auto hiring: <span className="yg-text-accent">off</span> · Invent scores:{' '}
+                <span className="yg-text-accent">off</span>
               </p>
               {canManage ? (
                 <form

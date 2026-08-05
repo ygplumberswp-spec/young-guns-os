@@ -118,7 +118,7 @@ export function MobilePerformancePage() {
           </div>
 
           <Panel title="Assigned jobs" className="space-y-2 border-slate-800 bg-slate-950/80">
-            <h2 className="text-sm font-medium text-cyan-200">Assigned jobs</h2>
+            <h2 className="text-sm font-medium yg-text-accent-soft">Assigned jobs</h2>
             {view.assignedJobs.length === 0 ? (
               <EmptyState
                 title="No active assigned jobs"
@@ -150,7 +150,7 @@ export function MobilePerformancePage() {
           </Panel>
 
           <Panel title="Completion history" className="space-y-2 border-slate-800 bg-slate-950/80">
-            <h2 className="text-sm font-medium text-cyan-200">Completion history</h2>
+            <h2 className="text-sm font-medium yg-text-accent-soft">Completion history</h2>
             {view.completionHistory.length === 0 ? (
               <p className="text-sm text-slate-500">No completed jobs in this range.</p>
             ) : (

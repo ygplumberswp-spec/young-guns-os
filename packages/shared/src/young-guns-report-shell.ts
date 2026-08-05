@@ -58,6 +58,11 @@ export function buildYoungGunsReportShellCss(): string {
     .yg-report__meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4mm; font-size: 9pt; color: ${c.textMuted}; }
     .yg-report__meta strong { color: ${c.textPrimary}; }
     .yg-report__body { border: 1px solid ${c.panelBorder}; border-radius: 8px; padding: 5mm 6mm; background: ${c.panelBackground}; }
+    .yg-report__body section { margin-bottom: 1.25rem; }
+    .yg-report__body section h2 { margin: 0 0 0.5rem; font-size: 10.5pt; color: ${c.labelBlue}; text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid ${c.panelBorder}; padding-bottom: 0.25rem; }
+    .yg-report__body .muted { color: ${c.textMuted}; font-size: 9pt; }
+    .yg-report__body ul { padding-left: 1.2rem; margin: 0.35rem 0; }
+    .yg-report__body a { color: ${c.labelBlue}; }
     .yg-report__footer { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; color: ${c.textMuted}; font-size: 8.5pt; border-top: 1px solid ${c.panelBorder}; padding-top: 3mm; }
     .yg-report__slogan { color: ${c.labelBlue}; font-style: italic; }
   `;

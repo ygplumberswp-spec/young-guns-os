@@ -330,24 +330,24 @@ export function MarketIntelligencePage() {
       />
 
       <div className="flex flex-wrap gap-3 text-sm">
-        <Link href="/marketing-intelligence" className="text-cyan-300 hover:underline">
+        <Link href="/marketing-intelligence" className="yg-link">
           Marketing Intelligence
         </Link>
-        <Link href="/sales-analytics-intelligence" className="text-cyan-300 hover:underline">
+        <Link href="/sales-analytics-intelligence" className="yg-link">
           Sales Analytics
         </Link>
-        <Link href="/leads" className="text-cyan-300 hover:underline">
+        <Link href="/leads" className="yg-link">
           Leads
         </Link>
-        <Link href="/finance/quotes" className="text-cyan-300 hover:underline">
+        <Link href="/finance/quotes" className="yg-link">
           Quotes
         </Link>
-        <Link href="/executive-command-centre" className="text-cyan-300 hover:underline">
+        <Link href="/executive-command-centre" className="yg-link">
           Executive Command Centre
         </Link>
       </div>
 
-      <Panel title="Policy" className="border-cyan-500/40 bg-cyan-950/20 text-cyan-100">
+      <Panel title="Policy" className="yg-panel-accent">
         <p className="text-sm">
           Real evidence only. Every statement is labelled as a measured fact or an AURA
           recommendation and carries its source, observation date, freshness and confidence. A

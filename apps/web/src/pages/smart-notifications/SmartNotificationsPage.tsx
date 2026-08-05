@@ -302,18 +302,18 @@ export function SmartNotificationsPage() {
       />
 
       <div className="flex flex-wrap gap-3 text-sm">
-        <Link href="/notifications" className="text-cyan-300 hover:underline">
+        <Link href="/notifications" className="yg-link">
           Notifications inbox
         </Link>
-        <Link href="/settings/notifications" className="text-cyan-300 hover:underline">
+        <Link href="/settings/notifications" className="yg-link">
           Notification settings
         </Link>
-        <Link href="/security" className="text-cyan-300 hover:underline">
+        <Link href="/security" className="yg-link">
           Security
         </Link>
       </div>
 
-      <Panel title="Policy" className="border-cyan-500/40 bg-cyan-950/20 text-cyan-100">
+      <Panel title="Policy" className="yg-panel-accent">
         <p className="text-sm">
           Real rows only. Every signal is grouped from notification and alert rows that already
           exist — nothing is invented, and a category with no evidence says so. Signals held back by

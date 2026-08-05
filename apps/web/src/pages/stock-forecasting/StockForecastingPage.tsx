@@ -153,30 +153,30 @@ export function StockForecastingPage() {
       />
 
       <div className="flex flex-wrap gap-3 text-sm">
-        <Link href="/inventory-intelligence" className="text-cyan-300 hover:underline">
+        <Link href="/inventory-intelligence" className="yg-link">
           Inventory Intelligence
         </Link>
-        <Link href="/procurement-intelligence" className="text-cyan-300 hover:underline">
+        <Link href="/procurement-intelligence" className="yg-link">
           Procurement Intelligence
         </Link>
-        <Link href="/inventory/stock" className="text-cyan-300 hover:underline">
+        <Link href="/inventory/stock" className="yg-link">
           Stock overview
         </Link>
-        <Link href="/procurement" className="text-cyan-300 hover:underline">
+        <Link href="/procurement" className="yg-link">
           Procurement
         </Link>
-        <Link href="/recurring-maintenance" className="text-cyan-300 hover:underline">
+        <Link href="/recurring-maintenance" className="yg-link">
           Maintenance
         </Link>
-        <Link href="/jobs" className="text-cyan-300 hover:underline">
+        <Link href="/jobs" className="yg-link">
           Jobs
         </Link>
-        <Link href="/aura/command-centre" className="text-cyan-300 hover:underline">
+        <Link href="/aura/command-centre" className="yg-link">
           Command Centre
         </Link>
       </div>
 
-      <Panel title="Policy" className="border-cyan-500/40 bg-cyan-950/20 text-cyan-100">
+      <Panel title="Policy" className="yg-panel-accent">
         <p className="text-sm">
           Recommendations only. No automatic purchasing or reordering. Forecasts stay unavailable
           when issue/waste history is insufficient — demand is never invented. Assumptions are
@@ -190,7 +190,7 @@ export function StockForecastingPage() {
         </Panel>
       ) : null}
       {success ? (
-        <Panel title="Saved" className="border-cyan-500/40 bg-cyan-950/20 text-cyan-100">
+        <Panel title="Saved" className="yg-panel-accent">
           <p className="text-sm">{success}</p>
         </Panel>
       ) : null}
@@ -203,7 +203,7 @@ export function StockForecastingPage() {
             onClick={() => setTab(t.id)}
             className={`rounded-md px-3 py-1.5 text-sm ${
               tab === t.id
-                ? 'bg-cyan-600 text-white'
+                ? 'yg-tab-active'
                 : 'bg-slate-800 text-slate-200 hover:bg-slate-700'
             }`}
           >
@@ -231,7 +231,7 @@ export function StockForecastingPage() {
             <ul className="space-y-2 text-sm text-slate-300">
               {dashboard.auraConnections.map((c) => (
                 <li key={c.target}>
-                  <Link href={c.href} className="text-cyan-300 hover:underline">
+                  <Link href={c.href} className="yg-link">
                     {c.label}
                   </Link>
                   <span className="text-slate-500"> — {c.note}</span>
@@ -344,7 +344,7 @@ export function StockForecastingPage() {
           ) : (
             dashboard.recommendations.map((r) => (
               <Panel key={r.id} title={r.title} className="border-slate-700 bg-slate-900/60">
-                <p className="text-xs text-cyan-300">
+                <p className="text-xs yg-text-accent">
                   {r.kind} · {r.status}
                 </p>
                 <p className="mt-2 whitespace-pre-wrap text-sm text-slate-300">{r.body}</p>
@@ -366,7 +366,7 @@ export function StockForecastingPage() {
                       <span className="text-slate-500">Draft PO:</span>{' '}
                       <Link
                         href={`/procurement/purchase-orders/${r.draftPurchaseOrderId}`}
-                        className="text-cyan-300 hover:underline"
+                        className="yg-link"
                       >
                         {r.draftPurchaseOrderId}
                       </Link>{' '}
@@ -579,7 +579,7 @@ export function StockForecastingPage() {
           ) : (
             dashboard.auraInsights.map((insight) => (
               <Panel key={insight.id} title={insight.title} className="border-slate-700 bg-slate-900/60">
-                <p className="text-xs text-cyan-300">
+                <p className="text-xs yg-text-accent">
                   {insight.target} · {insight.status}
                 </p>
                 <p className="mt-2 text-sm text-slate-300">{insight.insight}</p>

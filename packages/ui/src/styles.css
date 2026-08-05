@@ -47,21 +47,21 @@
 }
 
 .titan-btn--primary {
-  background: linear-gradient(180deg, #164e63 0%, #0e3a4a 55%, #0a2a36 100%);
+  background: var(--yg-blue-primary);
   color: var(--titan-text);
-  border-color: rgba(var(--titan-accent-rgb), 0.4);
+  border-color: rgba(var(--titan-accent-rgb), 0.55);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    var(--titan-shadow-accent);
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    var(--titan-shadow-sm);
 }
 
 .titan-btn--primary:hover:not(:disabled) {
-  background: linear-gradient(180deg, #1a5f7a 0%, #124556 55%, #0d3342 100%);
+  background: var(--yg-blue-hover);
   border-color: var(--titan-accent);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.1),
-    0 0 0 1px rgba(var(--titan-accent-rgb), 0.4),
-    0 0 20px rgba(var(--titan-accent-rgb), 0.16);
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 0 0 1px rgba(var(--titan-accent-rgb), 0.35),
+    var(--titan-shadow-accent);
 }
 
 .titan-btn--secondary {
@@ -734,9 +734,9 @@ select.titan-input:focus-visible {
 }
 
 .titan-badge--info {
-  background: var(--titan-accent-soft);
-  border-color: rgba(var(--titan-accent-rgb), 0.35);
-  color: #a5f3fc;
+  background: var(--yg-info-badge-bg, var(--titan-accent-soft));
+  border-color: var(--yg-info-badge-border, rgba(var(--titan-accent-rgb), 0.35));
+  color: var(--yg-info-badge-text, var(--titan-text-secondary));
 }
 
 @keyframes titan-spin {

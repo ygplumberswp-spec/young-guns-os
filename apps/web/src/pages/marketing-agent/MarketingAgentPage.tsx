@@ -283,19 +283,19 @@ export function MarketingAgentPage() {
       />
 
       <p className="text-sm text-slate-400">
-        <Link href="/marketing" className="text-cyan-300 hover:underline">
+        <Link href="/marketing" className="yg-link">
           Marketing
         </Link>
         {' · '}
-        <Link href="/marketing-intelligence" className="text-cyan-300 hover:underline">
+        <Link href="/marketing-intelligence" className="yg-link">
           Marketing Intelligence
         </Link>
         {' · '}
-        <Link href="/communication-timeline" className="text-cyan-300 hover:underline">
+        <Link href="/communication-timeline" className="yg-link">
           Communication Timeline
         </Link>
         {' · '}
-        <Link href="/aura/command-centre" className="text-cyan-300 hover:underline">
+        <Link href="/aura/command-centre" className="yg-link">
           Command Centre
         </Link>
       </p>
@@ -317,7 +317,7 @@ export function MarketingAgentPage() {
             onClick={() => setTab(key)}
             className={`rounded-md px-3 py-1.5 text-sm ${
               tab === key
-                ? 'bg-cyan-700/40 text-cyan-100 ring-1 ring-cyan-500/50'
+                ? 'yg-tab-active'
                 : 'bg-slate-900 text-slate-300 ring-1 ring-slate-700'
             }`}
           >
@@ -332,7 +332,7 @@ export function MarketingAgentPage() {
         </Panel>
       ) : null}
       {success ? (
-        <Panel title="Status" className="border-cyan-500/40 bg-cyan-950/20 text-cyan-100">
+        <Panel title="Status" className="yg-panel-accent">
           {success}
         </Panel>
       ) : null}
@@ -354,7 +354,7 @@ export function MarketingAgentPage() {
                   <li>{dashboard.productClarification.thisLayer}</li>
                   <li>{dashboard.productClarification.socialIntegrations}</li>
                 </ul>
-                <p className="mt-2 text-xs text-cyan-300/80">
+                <p className="mt-2 yg-text-accent-subtle text-xs">
                   Auto-publish: off · Owner approval required · Social integrations: not live
                 </p>
               </Panel>
@@ -504,7 +504,7 @@ export function MarketingAgentPage() {
                   <Panel key={d.id} title={d.title} className="border-slate-800 bg-slate-950/80">
                     <p className="whitespace-pre-wrap text-sm text-slate-300">{d.body}</p>
                     {d.hashtags.length > 0 ? (
-                      <p className="mt-2 text-xs text-cyan-300/80">{d.hashtags.join(' ')}</p>
+                      <p className="mt-2 yg-text-accent-subtle text-xs">{d.hashtags.join(' ')}</p>
                     ) : null}
                     <p className="mt-2 text-xs text-slate-500">
                       {d.contentKind} · {d.channel} · {d.status} · Social publish: unavailable
@@ -640,7 +640,7 @@ export function MarketingAgentPage() {
                 <Panel key={c.target} title={c.label} className="border-slate-800 bg-slate-950/80">
                   <p className="text-sm text-slate-300">{c.note}</p>
                   <p className="mt-2 text-xs text-slate-500">Status: {c.status}</p>
-                  <Link href={c.href} className="mt-2 inline-block text-sm text-cyan-300 hover:underline">
+                  <Link href={c.href} className="mt-2 yg-link text-sm inline-block">
                     Open {c.label}
                   </Link>
                 </Panel>

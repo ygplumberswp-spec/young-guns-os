@@ -205,7 +205,7 @@ export function TechnicianIntelligencePage() {
             onClick={() => setTab(key)}
             className={`rounded-md px-3 py-1.5 text-sm ${
               tab === key
-                ? 'bg-cyan-700/40 text-cyan-100 ring-1 ring-cyan-500/50'
+                ? 'yg-tab-active'
                 : 'bg-slate-900 text-slate-300 ring-1 ring-slate-700'
             }`}
           >
@@ -218,7 +218,7 @@ export function TechnicianIntelligencePage() {
         <Panel title="Error" className="border-rose-500/40 bg-rose-950/30 text-rose-100">{error}</Panel>
       ) : null}
       {success ? (
-        <Panel title="Status" className="border-cyan-500/40 bg-cyan-950/20 text-cyan-100">{success}</Panel>
+        <Panel title="Status" className="yg-panel-accent">{success}</Panel>
       ) : null}
 
       {isLoading ? (
@@ -246,7 +246,7 @@ export function TechnicianIntelligencePage() {
           </div>
 
           <Panel title="Lifecycle tracking" className="space-y-2 border-slate-800 bg-slate-950/80">
-            <h2 className="text-sm font-medium text-cyan-200">Lifecycle tracking</h2>
+            <h2 className="text-sm font-medium yg-text-accent-soft">Lifecycle tracking</h2>
             <p className="text-sm text-slate-400">
               Mapped onto existing field phases — not a separate fake status system.
             </p>
@@ -350,7 +350,7 @@ export function TechnicianIntelligencePage() {
         </div>
       ) : tab === 'insights' ? (
         <div className="space-y-4">
-          <Panel title="AURA policy" className="border-cyan-900/50 bg-slate-950/80 text-sm text-slate-300">
+          <Panel title="AURA policy" className="yg-panel-muted text-sm text-slate-300">
             AURA insights are draft/advisory only. Approving records acknowledgment — TITAN never
             auto-reassigns, reschedules, or messages customers from this surface.
           </Panel>
@@ -364,7 +364,7 @@ export function TechnicianIntelligencePage() {
               <Panel key={insight.id} title={insight.subject} className="space-y-2 border-slate-800 bg-slate-950/70">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
-                    <div className="text-xs uppercase tracking-wide text-cyan-400/80">
+                    <div className="text-xs uppercase tracking-wide yg-text-accent/80">
                       {insight.insightType} · {insight.status}
                     </div>
                     <h3 className="text-base text-slate-100">{insight.subject}</h3>
@@ -395,15 +395,15 @@ export function TechnicianIntelligencePage() {
           )}
           <p className="text-xs text-slate-500">
             Related:{' '}
-            <Link href="/dispatch-intelligence" className="text-cyan-400 hover:underline">
+            <Link href="/dispatch-intelligence" className="yg-link">
               Dispatch Intelligence
             </Link>{' '}
             ·{' '}
-            <Link href="/quality" className="text-cyan-400 hover:underline">
+            <Link href="/quality" className="yg-link">
               Quality
             </Link>{' '}
             ·{' '}
-            <Link href="/workforce-intelligence" className="text-cyan-400 hover:underline">
+            <Link href="/workforce-intelligence" className="yg-link">
               Workforce Intelligence
             </Link>
           </p>

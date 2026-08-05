@@ -7,6 +7,7 @@
  */
 
 import { buildGoogleMapsPlaceUrl } from './google-maps.js';
+import { buildYoungGunsReportShellHtml } from './young-guns-report-shell.js';
 
 export const COMPLETION_REPORT_SECTION_IDS = [
   'customer_details',
@@ -482,27 +483,17 @@ export function buildCompletionReportHtml(input: {
     sections.push(`<section><h2>${heading}</h2>${body}</section>`);
   }
 
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <title>${escapeHtml(input.title)}</title>
-  <style>
-    body { font-family: Georgia, "Times New Roman", serif; color: #1a1a1a; max-width: 800px; margin: 2rem auto; padding: 0 1rem; line-height: 1.45; }
-    h1 { font-size: 1.6rem; margin-bottom: 0.25rem; }
-    h2 { font-size: 1.15rem; margin-top: 1.5rem; border-bottom: 1px solid #ccc; padding-bottom: 0.25rem; }
-    .meta { color: #555; font-size: 0.9rem; margin-bottom: 1.5rem; }
-    .muted { color: #666; font-size: 0.9rem; }
-    ul { padding-left: 1.2rem; }
-    @media print { body { margin: 0; } }
-  </style>
-</head>
-<body>
-  <h1>${escapeHtml(input.title)}</h1>
-  <p class="meta">Report ${escapeHtml(input.reportNumber)} · Generated ${escapeHtml(input.generatedAt)}</p>
-  ${sections.join('\n  ')}
-</body>
-</html>`;
+  const bodyHtml = `
+    <p class="muted">Report ${escapeHtml(input.reportNumber)} · Generated ${escapeHtml(input.generatedAt)}</p>
+    ${sections.join('\n    ')}
+  `;
+
+  return buildYoungGunsReportShellHtml({
+    reportKind: 'service',
+    reportTitle: input.title,
+    generatedAt: input.generatedAt,
+    bodyHtml,
+  });
 }
 
 export function completionReportDeliveryNote(input: {

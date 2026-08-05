@@ -18,6 +18,20 @@
   --yg-text-disabled: #6b7788;
   --yg-review-star: #facc15;
 
+  /* Shared surface roles — maps, banners, previews, overlays */
+  --yg-info-badge-bg: rgba(31, 122, 236, 0.12);
+  --yg-info-badge-text: var(--yg-text-secondary);
+  --yg-info-badge-border: rgba(31, 122, 236, 0.35);
+  --yg-map-marker-fill: #1f7aec;
+  --yg-map-marker-stroke: #1668d6;
+  --yg-live-banner-bg: rgba(31, 122, 236, 0.14);
+  --yg-live-banner-border: rgba(31, 122, 236, 0.38);
+  --yg-preview-backdrop: rgba(2, 6, 14, 0.82);
+  --yg-preview-surface: var(--yg-bg-input);
+  --yg-preview-toolbar: var(--yg-bg-surface);
+  --yg-overlay-backdrop: rgba(2, 6, 14, 0.72);
+  --yg-chrome-divider: rgba(226, 232, 240, 0.12);
+
   /* Legacy --titan-* aliases — map to Young Guns values for existing components */
   --titan-bg: var(--yg-bg-app);
   --titan-bg-elevated: var(--yg-bg-elevated);

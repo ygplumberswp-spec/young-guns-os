@@ -166,23 +166,23 @@ export function Customer360IntelligencePage() {
         description="Unified profile, timeline, and AURA recommendation drafts — extends CRM, never rebuilds it"
       />
       <div className="flex flex-wrap gap-3 text-sm">
-        <Link href="/crm" className="text-cyan-300 hover:underline">
+        <Link href="/crm" className="yg-link">
           CRM
         </Link>
-        <Link href="/jobs" className="text-cyan-300 hover:underline">
+        <Link href="/jobs" className="yg-link">
           Jobs
         </Link>
-        <Link href="/finance/invoices" className="text-cyan-300 hover:underline">
+        <Link href="/finance/invoices" className="yg-link">
           Invoices
         </Link>
-        <Link href="/communication-timeline" className="text-cyan-300 hover:underline">
+        <Link href="/communication-timeline" className="yg-link">
           Communication Timeline
         </Link>
-        <Link href="/recurring-maintenance" className="text-cyan-300 hover:underline">
+        <Link href="/recurring-maintenance" className="yg-link">
           Recurring Maintenance
         </Link>
       </div>
-      <Panel title="Privacy & policy" className="border-cyan-500/40 bg-cyan-950/20 text-cyan-100">
+      <Panel title="Privacy & policy" className="yg-panel-accent">
         <p className="text-sm">
           No fake customers. Tenant-isolated — no cross-customer visibility. Finance amounts and
           margins stay permission-gated. Internal notes require write access. AURA insights are
@@ -195,7 +195,7 @@ export function Customer360IntelligencePage() {
         </Panel>
       ) : null}
       {success ? (
-        <Panel title="Saved" className="border-cyan-500/40 bg-cyan-950/20 text-cyan-100">
+        <Panel title="Saved" className="yg-panel-accent">
           <p className="text-sm">{success}</p>
         </Panel>
       ) : null}
@@ -207,7 +207,7 @@ export function Customer360IntelligencePage() {
             onClick={() => setTab(t.id)}
             className={`rounded-md px-3 py-1.5 text-sm ${
               tab === t.id
-                ? 'bg-cyan-700/40 text-cyan-100 ring-1 ring-cyan-500/50'
+                ? 'yg-tab-active'
                 : 'bg-slate-900 text-slate-300 ring-1 ring-slate-700'
             }`}
           >
@@ -247,7 +247,7 @@ export function Customer360IntelligencePage() {
                   <li>{dashboard.productClarification.thisLayer}</li>
                 </ul>
               </Panel>
-              <Panel title="Customer directory" className="border border-cyan-500/20 bg-zinc-950/60">
+              <Panel title="Customer directory" className="yg-card-accent">
                 {dashboard.customers.length === 0 ? (
                   <EmptyState
                     title="No customers yet"
@@ -266,15 +266,15 @@ export function Customer360IntelligencePage() {
                               : 'Unable to load customer',
                           );
                         })}
-                        className="flex w-full items-center justify-between rounded border border-zinc-800 bg-slate-900/60 px-3 py-2 text-left hover:border-cyan-500/40"
+                        className="flex w-full items-center justify-between rounded border border-zinc-800 bg-slate-900/60 px-3 py-2 text-left hover:border-[color:var(--yg-blue-primary)]/40"
                       >
                         <div>
-                          <p className="font-medium text-cyan-100">{c.name}</p>
+                          <p className="font-medium yg-text-accent-muted">{c.name}</p>
                           <p className="text-xs text-slate-400">
                             {c.status} · {c.jobCount} jobs · {c.openJobCount} open
                           </p>
                         </div>
-                        <span className="text-xs text-cyan-300">Open 360 →</span>
+                        <span className="text-xs yg-text-accent">Open 360 →</span>
                       </button>
                     ))}
                   </div>
@@ -291,7 +291,7 @@ export function Customer360IntelligencePage() {
               />
             ) : (
               <div className="space-y-4">
-                <Panel title="Profile" className="border border-cyan-500/20 bg-zinc-950/60">
+                <Panel title="Profile" className="yg-card-accent">
                   <div className="grid gap-2 text-sm sm:grid-cols-2">
                     <p>
                       <span className="text-slate-400">Name:</span> {customerView.profile.name}
@@ -325,7 +325,7 @@ export function Customer360IntelligencePage() {
                   <div className="mt-3">
                     <Link
                       href={`/crm/${customerView.profile.id}`}
-                      className="text-sm text-cyan-300 hover:underline"
+                      className="text-sm yg-link"
                     >
                       Open in CRM
                     </Link>
@@ -340,7 +340,7 @@ export function Customer360IntelligencePage() {
                 <Panel title="Customer value" className="border-slate-800 bg-slate-950/80">
                   <p className="text-sm text-slate-300">{customerView.value.rationale}</p>
                   {!customerView.value.financeHidden ? (
-                    <p className="mt-2 text-sm text-cyan-200">
+                    <p className="mt-2 text-sm yg-text-accent-soft">
                       Paid {formatCents(customerView.value.totalPaidCents)} · Outstanding{' '}
                       {formatCents(customerView.value.outstandingCents)}
                     </p>
@@ -357,7 +357,7 @@ export function Customer360IntelligencePage() {
                     <ul className="space-y-2 text-sm">
                       {customerView.jobs.slice(0, 12).map((j) => (
                         <li key={j.id} className="rounded border border-zinc-800 p-2">
-                          <Link href={`/jobs/${j.id}`} className="text-cyan-300 hover:underline">
+                          <Link href={`/jobs/${j.id}`} className="yg-link">
                             {j.jobNumber ?? j.id.slice(0, 8)} — {j.title}
                           </Link>
                           <span className="ml-2 text-slate-400">{j.status}</span>
@@ -375,7 +375,7 @@ export function Customer360IntelligencePage() {
                     <div className="space-y-2 text-sm">
                       {customerView.maintenance.map((m) => (
                         <div key={m.planId} className="rounded border border-zinc-800 p-2">
-                          <p className="text-cyan-100">{m.planName}</p>
+                          <p className="yg-text-accent-muted">{m.planName}</p>
                           <p className="text-slate-400">
                             {m.status} · asset {m.assetName ?? m.assetId.slice(0, 8)} · next{' '}
                             {m.nextDueAt ?? 'n/a'}
@@ -407,12 +407,12 @@ export function Customer360IntelligencePage() {
                 description="No real interactions, jobs, documents, or maintenance events yet — nothing invented."
               />
             ) : (
-              <Panel title="Unified timeline" className="border border-cyan-500/20 bg-zinc-950/60">
+              <Panel title="Unified timeline" className="yg-card-accent">
                 <ul className="space-y-2">
                   {customerView.timeline.map((e) => (
                     <li key={e.id} className="rounded border border-zinc-800 bg-slate-900/60 p-3">
                       <div className="flex flex-wrap items-baseline justify-between gap-2">
-                        <p className="text-sm font-medium text-cyan-100">
+                        <p className="text-sm font-medium yg-text-accent-muted">
                           {e.kind} · {e.title}
                         </p>
                         <p className="text-xs text-slate-500">
@@ -421,7 +421,7 @@ export function Customer360IntelligencePage() {
                       </div>
                       <p className="mt-1 text-sm text-slate-300">{e.summary}</p>
                       {e.href ? (
-                        <Link href={e.href} className="mt-1 inline-block text-xs text-cyan-300 hover:underline">
+                        <Link href={e.href} className="mt-1 yg-link text-xs inline-block">
                           Open
                         </Link>
                       ) : null}
@@ -453,7 +453,7 @@ export function Customer360IntelligencePage() {
                   </Button>
                 </div>
               ) : null}
-              <Panel title="Recommendation drafts" className="border border-cyan-500/20 bg-zinc-950/60">
+              <Panel title="Recommendation drafts" className="yg-card-accent">
                 {(customerView?.insights ?? dashboard.recentInsights).length === 0 ? (
                   <EmptyState
                     title="No insight drafts"
@@ -463,7 +463,7 @@ export function Customer360IntelligencePage() {
                   <ul className="space-y-3">
                     {(customerView?.insights ?? dashboard.recentInsights).map((insight) => (
                       <li key={insight.id} className="rounded border border-zinc-800 p-3">
-                        <p className="text-sm font-medium text-cyan-100">
+                        <p className="text-sm font-medium yg-text-accent-muted">
                           {insight.kind} · {insight.title}
                         </p>
                         <p className="mt-1 text-sm text-slate-300">{insight.body}</p>
@@ -517,7 +517,7 @@ export function Customer360IntelligencePage() {
               <ul className="space-y-2">
                 {dashboard.connections.map((c) => (
                   <li key={c.target} className="rounded border border-zinc-800 p-3 text-sm">
-                    <Link href={c.href} className="text-cyan-300 hover:underline">
+                    <Link href={c.href} className="yg-link">
                       {c.label}
                     </Link>
                     <p className="text-slate-400">

@@ -185,27 +185,27 @@ export function ComplianceIntelligencePage() {
       />
 
       <div className="flex flex-wrap gap-3 text-sm">
-        <Link href="/document-intelligence" className="text-cyan-300 hover:underline">
+        <Link href="/document-intelligence" className="yg-link">
           Document Intelligence
         </Link>
-        <Link href="/documents" className="text-cyan-300 hover:underline">
+        <Link href="/documents" className="yg-link">
           Documents
         </Link>
-        <Link href="/legal-compliance" className="text-cyan-300 hover:underline">
+        <Link href="/legal-compliance" className="yg-link">
           Legal & Compliance
         </Link>
-        <Link href="/jobs" className="text-cyan-300 hover:underline">
+        <Link href="/jobs" className="yg-link">
           Jobs
         </Link>
-        <Link href="/assets" className="text-cyan-300 hover:underline">
+        <Link href="/assets" className="yg-link">
           Equipment
         </Link>
-        <Link href="/aura/command-centre" className="text-cyan-300 hover:underline">
+        <Link href="/aura/command-centre" className="yg-link">
           Command Centre
         </Link>
       </div>
 
-      <Panel title="Policy" className="border-cyan-500/40 bg-cyan-950/20 text-cyan-100">
+      <Panel title="Policy" className="yg-panel-accent">
         <p className="text-sm">
           Real compliance evidence only — never invented. No automatic certification. AURA risks,
           missing-doc suggestions, and expiry alerts are drafts requiring Owner approval. Actions
@@ -323,7 +323,7 @@ export function ComplianceIntelligencePage() {
                   <ul className="space-y-2 text-sm">
                     {dashboard.sansStandards.map((s) => (
                       <li key={s.id} className="rounded border border-slate-700/60 p-3">
-                        <div className="font-medium text-cyan-200">
+                        <div className="font-medium yg-text-accent-soft">
                           {s.code} — {s.title}
                         </div>
                         <div className="text-slate-400">
@@ -401,7 +401,7 @@ export function ComplianceIntelligencePage() {
                   <ul className="space-y-3 text-sm">
                     {dashboard.cocWorkflows.map((w) => (
                       <li key={w.id} className="rounded border border-slate-700/60 p-3 space-y-2">
-                        <div className="font-medium text-cyan-200">{w.title}</div>
+                        <div className="font-medium yg-text-accent-soft">{w.title}</div>
                         <div className="text-slate-400">
                           {CMI_COC_WORKFLOW_LABELS[w.status]} · autoCertified={String(w.autoCertified)}
                           {w.documentTitle ? ` · doc ${w.documentTitle}` : ''}
@@ -468,7 +468,7 @@ export function ComplianceIntelligencePage() {
                   <ul className="space-y-2 text-sm">
                     {dashboard.complianceChecks.map((c) => (
                       <li key={c.id} className="rounded border border-slate-700/60 p-3">
-                        <div className="font-medium text-cyan-200">
+                        <div className="font-medium yg-text-accent-soft">
                           [{c.result}] {c.title}
                         </div>
                         <div className="text-slate-400">{c.detail}</div>
@@ -507,7 +507,7 @@ export function ComplianceIntelligencePage() {
                         className="flex flex-wrap items-start justify-between gap-2 rounded border border-slate-700/60 p-3"
                       >
                         <div>
-                          <div className="font-medium text-cyan-200">{item.title}</div>
+                          <div className="font-medium yg-text-accent-soft">{item.title}</div>
                           <div className="text-slate-400">
                             {item.source} · {item.expiresAt}
                             {item.daysUntilExpiry != null
@@ -571,7 +571,7 @@ export function ComplianceIntelligencePage() {
                   <ul className="space-y-2 text-sm">
                     {dashboard.auditPacks.map((p) => (
                       <li key={p.id} className="rounded border border-slate-700/60 p-3">
-                        <div className="font-medium text-cyan-200">{p.title}</div>
+                        <div className="font-medium yg-text-accent-soft">{p.title}</div>
                         <div className="text-slate-400">
                           {p.status} · {p.documentCount} docs · {p.checkCount} checks ·{' '}
                           {p.gapCount} gaps · readiness {p.readiness}
@@ -627,7 +627,7 @@ export function ComplianceIntelligencePage() {
                   <ul className="space-y-3 text-sm">
                     {dashboard.recommendationDrafts.map((d: CmiRecommendationDraftSummary) => (
                       <li key={d.id} className="rounded border border-slate-700/60 p-3 space-y-2">
-                        <div className="font-medium text-cyan-200">
+                        <div className="font-medium yg-text-accent-soft">
                           [{d.kind}] {d.title}
                         </div>
                         <pre className="whitespace-pre-wrap text-slate-400">{d.body}</pre>
@@ -796,7 +796,7 @@ export function ComplianceIntelligencePage() {
                         className="flex flex-wrap items-start justify-between gap-2 rounded border border-slate-700/60 p-3"
                       >
                         <div>
-                          <div className="font-medium text-cyan-200">
+                          <div className="font-medium yg-text-accent-soft">
                             [{i.target}] {i.title}
                           </div>
                           <div className="text-slate-400">{i.insight}</div>
@@ -826,7 +826,7 @@ export function ComplianceIntelligencePage() {
                 <ul className="space-y-1 text-sm text-slate-400">
                   {dashboard.auraConnections.map((c) => (
                     <li key={c.target}>
-                      <Link href={c.href} className="text-cyan-300 hover:underline">
+                      <Link href={c.href} className="yg-link">
                         {c.label}
                       </Link>{' '}
                       — {c.note}

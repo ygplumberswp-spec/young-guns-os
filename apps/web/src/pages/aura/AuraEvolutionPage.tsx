@@ -210,7 +210,7 @@ export function AuraEvolutionPage() {
       <AuraSectionNav />
 
       {error ? <p className="text-sm text-rose-300">{error}</p> : null}
-      {success ? <p className="text-sm text-cyan-200">{success}</p> : null}
+      {success ? <p className="text-sm yg-text-accent-soft">{success}</p> : null}
       {isLoading ? <p className="text-sm text-slate-400">Loading AURA Evolution…</p> : null}
 
       {overview ? (
@@ -238,7 +238,7 @@ export function AuraEvolutionPage() {
                 onClick={() => setTab(entry.id)}
                 className={
                   tab === entry.id
-                    ? 'rounded border border-cyan-500/50 bg-cyan-500/10 px-3 py-1.5 text-sm text-cyan-200'
+                    ? 'yg-tab-active rounded px-3 py-1.5 text-sm yg-text-accent-soft'
                     : 'rounded border border-slate-700 bg-slate-950/60 px-3 py-1.5 text-sm text-slate-300'
                 }
               >
@@ -248,7 +248,7 @@ export function AuraEvolutionPage() {
           </div>
 
           {tab === 'insights' ? (
-            <Panel title="Learned insights" className="space-y-3 border border-cyan-500/20 bg-slate-950/70 p-4">
+            <Panel title="Learned insights" className="space-y-3 yg-card-accent p-4">
               {overview.insights.length === 0 ? (
                 <EmptyState
                   title="No insights yet"
@@ -258,7 +258,7 @@ export function AuraEvolutionPage() {
                 overview.insights.map((insight) => (
                   <div
                     key={insight.id}
-                    className="rounded border border-cyan-500/20 bg-slate-950/70 p-3"
+                    className="yg-card-accent rounded p-3"
                   >
                     <div className="flex flex-wrap items-start justify-between gap-2">
                       <div>
@@ -312,7 +312,7 @@ export function AuraEvolutionPage() {
           ) : null}
 
           {tab === 'patterns' ? (
-            <Panel title="Business patterns" className="space-y-3 border border-cyan-500/20 bg-slate-950/70 p-4">
+            <Panel title="Business patterns" className="space-y-3 yg-card-accent p-4">
               {overview.patterns.length === 0 ? (
                 <EmptyState
                   title="No patterns"
@@ -322,7 +322,7 @@ export function AuraEvolutionPage() {
                 overview.patterns.map((pattern) => (
                   <div
                     key={pattern.id}
-                    className="rounded border border-cyan-500/20 bg-slate-950/70 p-3"
+                    className="yg-card-accent rounded p-3"
                   >
                     <p className="text-sm text-slate-100">{pattern.title}</p>
                     <p className="mt-1 text-xs text-slate-400">{pattern.summary}</p>
@@ -340,7 +340,7 @@ export function AuraEvolutionPage() {
           ) : null}
 
           {tab === 'scores' ? (
-            <Panel title="Recommendation accuracy" className="space-y-3 border border-cyan-500/20 bg-slate-950/70 p-4">
+            <Panel title="Recommendation accuracy" className="space-y-3 yg-card-accent p-4">
               {overview.recommendationScores.length === 0 ? (
                 <EmptyState
                   title="Accuracy unavailable"
@@ -350,7 +350,7 @@ export function AuraEvolutionPage() {
                 overview.recommendationScores.map((score) => (
                   <div
                     key={score.id}
-                    className="rounded border border-cyan-500/20 bg-slate-950/70 p-3"
+                    className="yg-card-accent rounded p-3"
                   >
                     <p className="text-sm text-slate-100">{score.title}</p>
                     <p className="mt-1 text-xs text-slate-400">
@@ -361,7 +361,7 @@ export function AuraEvolutionPage() {
                       success {pct(score.successRate)} · confidence {pct(score.confidence)}
                     </p>
                     {score.improvementSuggestion ? (
-                      <p className="mt-2 text-xs text-cyan-200/90">{score.improvementSuggestion}</p>
+                      <p className="mt-2 text-xs yg-text-accent-soft/90">{score.improvementSuggestion}</p>
                     ) : null}
                   </div>
                 ))
@@ -370,7 +370,7 @@ export function AuraEvolutionPage() {
           ) : null}
 
           {tab === 'decisions' ? (
-            <Panel title="Decision history" className="space-y-3 border border-cyan-500/20 bg-slate-950/70 p-4">
+            <Panel title="Decision history" className="space-y-3 yg-card-accent p-4">
               {overview.recentDecisions.length === 0 ? (
                 <EmptyState
                   title="No decisions captured"
@@ -380,7 +380,7 @@ export function AuraEvolutionPage() {
                 overview.recentDecisions.map((decision) => (
                   <div
                     key={decision.id}
-                    className="rounded border border-cyan-500/20 bg-slate-950/70 p-3"
+                    className="yg-card-accent rounded p-3"
                   >
                     <p className="text-sm text-slate-100">{decision.title}</p>
                     <p className="mt-1 text-xs text-slate-400">{decision.reasoningContext}</p>
@@ -389,7 +389,7 @@ export function AuraEvolutionPage() {
                       {formatWhen(decision.decidedAt)}
                     </p>
                     {decision.improvementOpportunity ? (
-                      <p className="mt-1 text-xs text-cyan-200/90">
+                      <p className="mt-1 text-xs yg-text-accent-soft/90">
                         {decision.improvementOpportunity}
                       </p>
                     ) : null}
@@ -400,7 +400,7 @@ export function AuraEvolutionPage() {
           ) : null}
 
           {tab === 'knowledge' ? (
-            <Panel title="AURA knowledge memory" className="space-y-3 border border-cyan-500/20 bg-slate-950/70 p-4">
+            <Panel title="AURA knowledge memory" className="space-y-3 yg-card-accent p-4">
               <p className="text-xs text-slate-400">
                 Extends Command Centre / permanent AURA memory. Does not invent parallel private
                 stores and never sources Personal WhatsApp private data.
@@ -448,7 +448,7 @@ export function AuraEvolutionPage() {
                 overview.knowledgeMemory.map((entry) => (
                   <div
                     key={entry.id}
-                    className="rounded border border-cyan-500/20 bg-slate-950/70 p-3"
+                    className="yg-card-accent rounded p-3"
                   >
                     <p className="text-sm text-slate-100">{entry.title}</p>
                     <p className="mt-1 text-xs text-slate-400">{entry.content}</p>
@@ -464,7 +464,7 @@ export function AuraEvolutionPage() {
           ) : null}
 
           {tab === 'history' ? (
-            <Panel title="Learning history" className="space-y-3 border border-cyan-500/20 bg-slate-950/70 p-4">
+            <Panel title="Learning history" className="space-y-3 yg-card-accent p-4">
               {overview.learningHistory.length === 0 ? (
                 <EmptyState
                   title="No learning history"
@@ -474,7 +474,7 @@ export function AuraEvolutionPage() {
                 overview.learningHistory.map((item) => (
                   <div
                     key={item.id}
-                    className="flex flex-wrap items-start justify-between gap-2 rounded border border-cyan-500/20 bg-slate-950/70 p-3"
+                    className="flex flex-wrap items-start justify-between gap-2 yg-card-accent rounded p-3"
                   >
                     <div>
                       <p className="text-sm text-slate-100">{item.title}</p>
@@ -505,7 +505,7 @@ export function AuraEvolutionPage() {
           ) : null}
 
           {tab === 'controls' ? (
-            <Panel title="Learning controls" className="space-y-3 border border-cyan-500/20 bg-slate-950/70 p-4">
+            <Panel title="Learning controls" className="space-y-3 yg-card-accent p-4">
               <ul className="list-disc space-y-1 pl-5 text-xs text-slate-400">
                 <li>Owner must enable learning before sync captures signals.</li>
                 <li>Owner must approve learning insights — never auto-applied.</li>

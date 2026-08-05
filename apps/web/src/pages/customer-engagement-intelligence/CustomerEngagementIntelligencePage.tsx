@@ -286,31 +286,31 @@ export function CustomerEngagementIntelligencePage() {
       />
 
       <p className="text-sm text-slate-400">
-        <Link href="/customer-experience" className="text-cyan-300 hover:underline">
+        <Link href="/customer-experience" className="yg-link">
           Customer Experience
         </Link>
         {' · '}
-        <Link href="/communication-aura-intelligence" className="text-cyan-300 hover:underline">
+        <Link href="/communication-aura-intelligence" className="yg-link">
           Communication AURA
         </Link>
         {' · '}
-        <Link href="/content-reputation-intelligence" className="text-cyan-300 hover:underline">
+        <Link href="/content-reputation-intelligence" className="yg-link">
           Content & Reputation
         </Link>
         {' · '}
-        <Link href="/email-centre" className="text-cyan-300 hover:underline">
+        <Link href="/email-centre" className="yg-link">
           Email Centre
         </Link>
         {' · '}
-        <Link href="/homeshield-experience" className="text-cyan-300 hover:underline">
+        <Link href="/homeshield-experience" className="yg-link">
           HomeShield
         </Link>
         {' · '}
-        <Link href="/communication-timeline" className="text-cyan-300 hover:underline">
+        <Link href="/communication-timeline" className="yg-link">
           Communication Timeline
         </Link>
         {' · '}
-        <Link href="/recurring-maintenance" className="text-cyan-300 hover:underline">
+        <Link href="/recurring-maintenance" className="yg-link">
           Maintenance
         </Link>
       </p>
@@ -333,7 +333,7 @@ export function CustomerEngagementIntelligencePage() {
             onClick={() => setTab(key)}
             className={`rounded-md px-3 py-1.5 text-sm ${
               tab === key
-                ? 'bg-cyan-700/40 text-cyan-100 ring-1 ring-cyan-500/50'
+                ? 'yg-tab-active'
                 : 'bg-slate-900 text-slate-300 ring-1 ring-slate-700'
             }`}
           >
@@ -348,7 +348,7 @@ export function CustomerEngagementIntelligencePage() {
         </Panel>
       ) : null}
       {success ? (
-        <Panel title="Status" className="border-cyan-500/40 bg-cyan-950/20 text-cyan-100">
+        <Panel title="Status" className="yg-panel-accent">
           {success}
         </Panel>
       ) : null}
@@ -373,7 +373,7 @@ export function CustomerEngagementIntelligencePage() {
                   <li>{dashboard.productClarification.homeShield}</li>
                   <li>{dashboard.productClarification.recurringMaintenance}</li>
                 </ul>
-                <p className="mt-2 text-xs text-cyan-300/80">
+                <p className="mt-2 yg-text-accent-subtle text-xs">
                   Auto-send: off · AURA drafts only · Owner approval required · Customer 360:{' '}
                   {dashboard.connections.customer360 ? 'linked' : 'unavailable (not rebuilt)'} ·
                   HomeShield:{' '}
@@ -421,7 +421,7 @@ export function CustomerEngagementIntelligencePage() {
                   <ul className="space-y-2 text-sm text-slate-300">
                     {dashboard.followUpSuggestions.slice(0, 5).map((item) => (
                       <li key={item.id}>
-                        <span className="text-cyan-100">{item.customerName || item.customerId}</span>
+                        <span className="yg-text-accent-muted">{item.customerName || item.customerId}</span>
                         {' — '}
                         {item.recommendation}
                       </li>
@@ -513,7 +513,7 @@ export function CustomerEngagementIntelligencePage() {
                     className="border-slate-800 bg-slate-950/80"
                   >
                     <div className="space-y-1 text-sm text-slate-300">
-                      <p className="text-cyan-100">
+                      <p className="yg-text-accent-muted">
                         {eta.customerName || 'Customer unavailable'} · {eta.status}
                       </p>
                       <p>
@@ -572,7 +572,7 @@ export function CustomerEngagementIntelligencePage() {
                     title={`${row.reviewType} · ${row.rating ?? 'no rating'}`}
                     className="border-slate-800 bg-slate-950/80"
                   >
-                    <p className="text-sm text-cyan-100">
+                    <p className="text-sm yg-text-accent-muted">
                       {row.customerName || row.customerId} — {row.subject}
                     </p>
                     <p className="text-xs text-slate-500">{row.createdAt}</p>
@@ -677,14 +677,14 @@ export function CustomerEngagementIntelligencePage() {
                     className="border-slate-800 bg-slate-950/80"
                   >
                     <div className="space-y-1 text-sm text-slate-300">
-                      <p className="text-cyan-100">
+                      <p className="yg-text-accent-muted">
                         {row.customerName || row.customerId || 'Customer unavailable'}
                       </p>
                       <p>{row.recommendation}</p>
                       {row.homeShieldSubscriptionId || row.homeShieldRenewalOpportunityId ? (
                         <p className="text-xs text-slate-500">
                           HomeShield link · never auto-bill ·{' '}
-                          <Link href="/homeshield-experience" className="text-cyan-300 hover:underline">
+                          <Link href="/homeshield-experience" className="yg-link">
                             open HomeShield
                           </Link>
                         </p>
@@ -699,7 +699,7 @@ export function CustomerEngagementIntelligencePage() {
                   <ul className="space-y-2 text-sm text-slate-300">
                     {dashboard.relationshipScores.slice(0, 10).map((row) => (
                       <li key={row.customerId}>
-                        <span className="text-cyan-100">{row.customerName || row.customerId}</span>
+                        <span className="yg-text-accent-muted">{row.customerName || row.customerId}</span>
                         {' — score '}
                         {row.availability === 'available' && row.relationshipScore !== null
                           ? `${row.relationshipScore} (${row.band})`
@@ -727,7 +727,7 @@ export function CustomerEngagementIntelligencePage() {
                     className="border-slate-800 bg-slate-950/80"
                   >
                     <div className="space-y-2 text-sm text-slate-300">
-                      <p className="font-medium text-cyan-100">{draft.subject}</p>
+                      <p className="font-medium yg-text-accent-muted">{draft.subject}</p>
                       <p className="text-xs text-slate-500">
                         {draft.customerName || draft.customerId || 'No customer linked'} ·{' '}
                         {draft.channel}

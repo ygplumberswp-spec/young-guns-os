@@ -165,24 +165,24 @@ export function ProcurementIntelligencePage() {
       />
 
       <div className="flex flex-wrap gap-3 text-sm">
-        <Link href="/procurement" className="text-cyan-300 hover:underline">
+        <Link href="/procurement" className="yg-link">
           Procurement
         </Link>
-        <Link href="/procurement/suppliers" className="text-cyan-300 hover:underline">
+        <Link href="/procurement/suppliers" className="yg-link">
           Suppliers
         </Link>
-        <Link href="/inventory-intelligence" className="text-cyan-300 hover:underline">
+        <Link href="/inventory-intelligence" className="yg-link">
           Inventory Intelligence
         </Link>
-        <Link href="/inventory/stock" className="text-cyan-300 hover:underline">
+        <Link href="/inventory/stock" className="yg-link">
           Stock overview
         </Link>
-        <Link href="/aura/command-centre" className="text-cyan-300 hover:underline">
+        <Link href="/aura/command-centre" className="yg-link">
           Command Centre
         </Link>
       </div>
 
-      <Panel title="Policy" className="border-cyan-500/40 bg-cyan-950/20 text-cyan-100">
+      <Panel title="Policy" className="yg-panel-accent">
         <p className="text-sm">
           No automatic purchasing. No fake suppliers, POs, or prices. Purchase recommendations are
           drafts only — Owner approval required to accept. Optional draft PO creation still requires
@@ -196,7 +196,7 @@ export function ProcurementIntelligencePage() {
         </Panel>
       ) : null}
       {success ? (
-        <Panel title="Success" className="border-cyan-500/40 bg-cyan-950/20 text-cyan-100">
+        <Panel title="Success" className="yg-panel-accent">
           <p className="text-sm">{success}</p>
         </Panel>
       ) : null}
@@ -255,7 +255,7 @@ export function ProcurementIntelligencePage() {
                       <div className="flex flex-wrap items-baseline justify-between gap-2">
                         <Link
                           href={`/procurement/suppliers/${s.supplierId}`}
-                          className="font-medium text-cyan-300 hover:underline"
+                          className="font-medium yg-link"
                         >
                           {s.name}
                         </Link>
@@ -294,7 +294,7 @@ export function ProcurementIntelligencePage() {
                       <div>
                         <Link
                           href={`/procurement/purchase-orders/${po.purchaseOrderId}`}
-                          className="text-cyan-300 hover:underline"
+                          className="yg-link"
                         >
                           {po.referenceNumber}
                         </Link>
@@ -581,7 +581,7 @@ export function ProcurementIntelligencePage() {
                 <ul className="space-y-2 text-sm">
                   {dashboard.auraConnections.map((c) => (
                     <li key={c.target}>
-                      <Link href={c.href} className="text-cyan-300 hover:underline">
+                      <Link href={c.href} className="yg-link">
                         {c.label}
                       </Link>
                       <span className="text-slate-500"> — {c.note}</span>

@@ -161,30 +161,30 @@ export function VehicleIntelligencePage() {
       />
 
       <div className="flex flex-wrap gap-3 text-sm">
-        <Link href="/fleet" className="text-cyan-300 hover:underline">
+        <Link href="/fleet" className="yg-link">
           Fleet
         </Link>
-        <Link href="/fleet-intelligence" className="text-cyan-300 hover:underline">
+        <Link href="/fleet-intelligence" className="yg-link">
           Fleet Intelligence
         </Link>
-        <Link href="/integrations/cartrack" className="text-cyan-300 hover:underline">
+        <Link href="/integrations/cartrack" className="yg-link">
           Cartrack
         </Link>
-        <Link href="/jobs" className="text-cyan-300 hover:underline">
+        <Link href="/jobs" className="yg-link">
           Jobs
         </Link>
-        <Link href="/scheduling" className="text-cyan-300 hover:underline">
+        <Link href="/scheduling" className="yg-link">
           Scheduling
         </Link>
-        <Link href="/technician-intelligence" className="text-cyan-300 hover:underline">
+        <Link href="/technician-intelligence" className="yg-link">
           Technicians
         </Link>
-        <Link href="/aura/command-centre" className="text-cyan-300 hover:underline">
+        <Link href="/aura/command-centre" className="yg-link">
           Command Centre
         </Link>
       </div>
 
-      <Panel title="Policy" className="border-cyan-500/40 bg-cyan-950/20 text-cyan-100">
+      <Panel title="Policy" className="yg-panel-accent">
         <p className="text-sm">
           No fake GPS, tracking, or fuel data. When Cartrack is disconnected or records are missing,
           signals stay unavailable — never invented. Insight drafts require Owner approval and never
@@ -198,7 +198,7 @@ export function VehicleIntelligencePage() {
         </Panel>
       ) : null}
       {success ? (
-        <Panel title="Saved" className="border-cyan-500/40 bg-cyan-950/20 text-cyan-100">
+        <Panel title="Saved" className="yg-panel-accent">
           <p className="text-sm">{success}</p>
         </Panel>
       ) : null}
@@ -211,7 +211,7 @@ export function VehicleIntelligencePage() {
             onClick={() => setTab(t.id)}
             className={`rounded-md px-3 py-1.5 text-sm ${
               tab === t.id
-                ? 'bg-cyan-700/40 text-cyan-100 ring-1 ring-cyan-500/50'
+                ? 'yg-tab-active'
                 : 'bg-slate-900 text-slate-300 ring-1 ring-slate-700'
             }`}
           >
@@ -282,7 +282,7 @@ export function VehicleIntelligencePage() {
                 <ul className="space-y-2 text-sm text-slate-300">
                   {dashboard.vehicleProfiles.map((v: ViVehicleProfile) => (
                     <li key={v.vehicleId} className="rounded border border-slate-800 px-3 py-2">
-                      <div className="font-medium text-cyan-100">
+                      <div className="font-medium yg-text-accent-muted">
                         {v.name} · {v.licensePlate}
                       </div>
                       <div className="text-xs text-slate-500">
@@ -312,7 +312,7 @@ export function VehicleIntelligencePage() {
                   <ul className="space-y-2 text-sm text-slate-300">
                     {dashboard.fuelRows.map((row: ViFuelRow) => (
                       <li key={row.id} className="rounded border border-slate-800 px-3 py-2">
-                        <div className="font-medium text-cyan-100">
+                        <div className="font-medium yg-text-accent-muted">
                           {row.vehicleName ?? 'Unassigned vehicle'} · {row.amountCents}¢
                         </div>
                         <div className="text-xs text-slate-500">
@@ -335,7 +335,7 @@ export function VehicleIntelligencePage() {
                   <ul className="space-y-2 text-sm text-slate-300">
                     {dashboard.costRows.map((row: ViCostRow) => (
                       <li key={row.id} className="rounded border border-slate-800 px-3 py-2">
-                        <div className="font-medium text-cyan-100">
+                        <div className="font-medium yg-text-accent-muted">
                           {row.costType} · {row.vehicleName ?? 'Unassigned'} · {row.amountCents}¢
                         </div>
                         <div className="text-xs text-slate-500">{row.recordedAt}</div>
@@ -360,7 +360,7 @@ export function VehicleIntelligencePage() {
                   <ul className="space-y-2 text-sm text-slate-300">
                     {dashboard.usageHistory.map((row: ViUsageRow) => (
                       <li key={row.id} className="rounded border border-slate-800 px-3 py-2">
-                        <div className="font-medium text-cyan-100">
+                        <div className="font-medium yg-text-accent-muted">
                           {row.vehicleName ?? 'Vehicle'} → {row.jobTitle ?? row.jobId}
                         </div>
                         <div className="text-xs text-slate-500">
@@ -386,7 +386,7 @@ export function VehicleIntelligencePage() {
                   <ul className="space-y-2 text-sm text-slate-300">
                     {dashboard.maintenanceRows.map((row: ViMaintenanceRow) => (
                       <li key={row.id} className="rounded border border-slate-800 px-3 py-2">
-                        <div className="font-medium text-cyan-100">{row.title}</div>
+                        <div className="font-medium yg-text-accent-muted">{row.title}</div>
                         <div className="text-xs text-slate-500">
                           {row.source} · {row.status}
                           {row.vehicleName ? ` · ${row.vehicleName}` : ''}
@@ -443,7 +443,7 @@ export function VehicleIntelligencePage() {
                   <ul className="space-y-3 text-sm text-slate-300">
                     {dashboard.insightDrafts.map((draft: ViInsightDraftSummary) => (
                       <li key={draft.id} className="rounded border border-slate-800 px-3 py-2">
-                        <div className="font-medium text-cyan-100">
+                        <div className="font-medium yg-text-accent-muted">
                           {draft.title} · {draft.status}
                         </div>
                         <p className="mt-1 whitespace-pre-wrap text-xs text-slate-400">
@@ -615,7 +615,7 @@ export function VehicleIntelligencePage() {
                 <ul className="space-y-2 text-sm text-slate-300">
                   {dashboard.auraConnections.map((c: ViAuraConnection) => (
                     <li key={c.target}>
-                      <Link href={c.href} className="text-cyan-300 hover:underline">
+                      <Link href={c.href} className="yg-link">
                         {c.label}
                       </Link>
                       <span className="text-xs text-slate-500"> — {c.note}</span>
@@ -690,7 +690,7 @@ export function VehicleIntelligencePage() {
                   <ul className="space-y-3 text-sm text-slate-300">
                     {dashboard.auraInsights.map((insight: ViAuraInsightSummary) => (
                       <li key={insight.id} className="rounded border border-slate-800 px-3 py-2">
-                        <div className="font-medium text-cyan-100">
+                        <div className="font-medium yg-text-accent-muted">
                           {insight.title} · {insight.target} · {insight.status}
                         </div>
                         <p className="mt-1 whitespace-pre-wrap text-xs text-slate-400">

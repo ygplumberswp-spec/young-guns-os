@@ -110,20 +110,20 @@ export function HrEmployeeIntelligencePage() {
         description="Profiles, workforce overview, skills intelligence, and Owner/Admin-gated AURA recommendation drafts"
       />
       <div className="flex flex-wrap gap-3 text-sm">
-        <Link href="/technician-intelligence" className="text-cyan-300 hover:underline">
+        <Link href="/technician-intelligence" className="yg-link">
           Technician Intelligence
         </Link>
-        <Link href="/jobs" className="text-cyan-300 hover:underline">
+        <Link href="/jobs" className="yg-link">
           Jobs
         </Link>
-        <Link href="/scheduling" className="text-cyan-300 hover:underline">
+        <Link href="/scheduling" className="yg-link">
           Scheduling
         </Link>
-        <Link href="/workforce-intelligence" className="text-cyan-300 hover:underline">
+        <Link href="/workforce-intelligence" className="yg-link">
           Workforce Intelligence
         </Link>
       </div>
-      <Panel title="Privacy & policy" className="border-cyan-500/40 bg-cyan-950/20 text-cyan-100">
+      <Panel title="Privacy & policy" className="yg-panel-accent">
         <p className="text-sm">
           No fake employees or payroll. Sensitive HR and analytics are Owner/Admin only.
           Recommendations never auto-execute HR actions. Timesheets, payroll, and recruitment stay
@@ -136,7 +136,7 @@ export function HrEmployeeIntelligencePage() {
         </Panel>
       ) : null}
       {success ? (
-        <Panel title="Saved" className="border-cyan-500/40 bg-cyan-950/20 text-cyan-100">
+        <Panel title="Saved" className="yg-panel-accent">
           <p className="text-sm">{success}</p>
         </Panel>
       ) : null}
@@ -148,7 +148,7 @@ export function HrEmployeeIntelligencePage() {
             onClick={() => setTab(t.id)}
             className={`rounded-md px-3 py-1.5 text-sm ${
               tab === t.id
-                ? 'bg-cyan-700/40 text-cyan-100 ring-1 ring-cyan-500/50'
+                ? 'yg-tab-active'
                 : 'bg-slate-900 text-slate-300 ring-1 ring-slate-700'
             }`}
           >
@@ -214,7 +214,7 @@ export function HrEmployeeIntelligencePage() {
                   <ul className="space-y-2 text-sm text-slate-300">
                     {dashboard.team.slice(0, 40).map((n) => (
                       <li key={n.userId} className="rounded border border-slate-800 px-3 py-2">
-                        <div className="font-medium text-cyan-100">{n.displayName}</div>
+                        <div className="font-medium yg-text-accent-muted">{n.displayName}</div>
                         <div className="text-xs text-slate-500">
                           {n.roleName}
                           {n.department ? ` · ${n.department}` : ''}
@@ -240,7 +240,7 @@ export function HrEmployeeIntelligencePage() {
                 <ul className="space-y-2 text-sm text-slate-300">
                   {dashboard.employees.map((e) => (
                     <li key={e.userId} className="rounded border border-slate-800 px-3 py-2">
-                      <div className="font-medium text-cyan-100">
+                      <div className="font-medium yg-text-accent-muted">
                         {e.firstName} {e.lastName}
                         {!e.isActive ? ' · inactive' : ''}
                       </div>
@@ -273,7 +273,7 @@ export function HrEmployeeIntelligencePage() {
                   <ul className="space-y-2 text-sm text-slate-300">
                     {dashboard.skillsOverview.map((s) => (
                       <li key={s.skillKey} className="rounded border border-slate-800 px-3 py-2">
-                        <div className="font-medium text-cyan-100">
+                        <div className="font-medium yg-text-accent-muted">
                           {s.skillName} · {s.holderCount} holder(s)
                         </div>
                       </li>
@@ -294,7 +294,7 @@ export function HrEmployeeIntelligencePage() {
                         key={`${g.userId}-${g.gapKind}`}
                         className="rounded border border-slate-800 px-3 py-2"
                       >
-                        <div className="font-medium text-cyan-100">
+                        <div className="font-medium yg-text-accent-muted">
                           {g.displayName} · {g.gapKind}
                         </div>
                         <div className="text-xs text-slate-500">{g.rationale}</div>
@@ -319,7 +319,7 @@ export function HrEmployeeIntelligencePage() {
                         key={q.certificationId}
                         className="rounded border border-slate-800 px-3 py-2"
                       >
-                        <div className="font-medium text-cyan-100">
+                        <div className="font-medium yg-text-accent-muted">
                           {q.displayName} · {q.name} · {q.state}
                         </div>
                         <div className="text-xs text-slate-500">{q.rationale}</div>
@@ -360,7 +360,7 @@ export function HrEmployeeIntelligencePage() {
                   <ul className="space-y-2 text-sm text-slate-300">
                     {dashboard.recommendations.map((r) => (
                       <li key={r.id} className="rounded border border-slate-800 px-3 py-2">
-                        <div className="font-medium text-cyan-100">
+                        <div className="font-medium yg-text-accent-muted">
                           {r.title} · {r.kind} · {r.status}
                         </div>
                         <p className="mt-1 whitespace-pre-wrap text-xs text-slate-500">{r.body}</p>
@@ -410,14 +410,14 @@ export function HrEmployeeIntelligencePage() {
                 {dashboard.connections.map((c) => (
                   <li key={c.target} className="rounded border border-slate-800 px-3 py-2">
                     <div className="flex justify-between gap-2">
-                      <span className="font-medium text-cyan-100">{c.label}</span>
+                      <span className="font-medium yg-text-accent-muted">{c.label}</span>
                       <span className="text-xs text-slate-500">
                         {c.availability} · {c.status}
                       </span>
                     </div>
                     <p className="mt-1 text-xs text-slate-500">{c.note}</p>
                     {c.status === 'available_link' ? (
-                      <Link href={c.href} className="text-xs text-cyan-300 hover:underline">
+                      <Link href={c.href} className="text-xs yg-link">
                         Open {c.label}
                       </Link>
                     ) : null}

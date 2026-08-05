@@ -150,24 +150,24 @@ export function InventoryIntelligencePage() {
       />
 
       <div className="flex flex-wrap gap-3 text-sm">
-        <Link href="/inventory/stock" className="text-cyan-300 hover:underline">
+        <Link href="/inventory/stock" className="yg-link">
           Stock overview
         </Link>
-        <Link href="/inventory/movements" className="text-cyan-300 hover:underline">
+        <Link href="/inventory/movements" className="yg-link">
           Movements
         </Link>
-        <Link href="/procurement" className="text-cyan-300 hover:underline">
+        <Link href="/procurement" className="yg-link">
           Procurement
         </Link>
-        <Link href="/jobs" className="text-cyan-300 hover:underline">
+        <Link href="/jobs" className="yg-link">
           Jobs
         </Link>
-        <Link href="/aura/command-centre" className="text-cyan-300 hover:underline">
+        <Link href="/aura/command-centre" className="yg-link">
           Command Centre
         </Link>
       </div>
 
-      <Panel title="Policy" className="border-cyan-500/40 bg-cyan-950/20 text-cyan-100">
+      <Panel title="Policy" className="yg-panel-accent">
         <p className="text-sm">
           No fake stock. No automatic reorder or stock mutation from this layer. Shortage alerts
           are drafts only — Owner approval required. Levels and usage stay unavailable when there
@@ -181,7 +181,7 @@ export function InventoryIntelligencePage() {
         </Panel>
       ) : null}
       {success ? (
-        <Panel title="Saved" className="border-cyan-500/40 bg-cyan-950/20 text-cyan-100">
+        <Panel title="Saved" className="yg-panel-accent">
           <p className="text-sm">{success}</p>
         </Panel>
       ) : null}
@@ -194,7 +194,7 @@ export function InventoryIntelligencePage() {
             onClick={() => setTab(t.id)}
             className={`rounded-md px-3 py-1.5 text-sm ${
               tab === t.id
-                ? 'bg-cyan-700/40 text-cyan-100 ring-1 ring-cyan-500/50'
+                ? 'yg-tab-active'
                 : 'bg-slate-900 text-slate-300 ring-1 ring-slate-700'
             }`}
           >
@@ -273,7 +273,7 @@ export function InventoryIntelligencePage() {
                   <ul className="space-y-2 text-sm text-slate-300">
                     {dashboard.warehouses.map((w) => (
                       <li key={w.locationId} className="rounded border border-slate-800 px-3 py-2">
-                        <div className="font-medium text-cyan-100">
+                        <div className="font-medium yg-text-accent-muted">
                           {w.name}
                           {w.isDefault ? ' (default)' : ''}
                         </div>
@@ -297,7 +297,7 @@ export function InventoryIntelligencePage() {
                   <ul className="space-y-2 text-sm text-slate-300">
                     {dashboard.stockRows.map((row) => (
                       <li key={row.itemId} className="rounded border border-slate-800 px-3 py-2">
-                        <div className="font-medium text-cyan-100">
+                        <div className="font-medium yg-text-accent-muted">
                           {row.sku} — {row.name}
                           {row.isLowStock ? ' · low stock' : ''}
                         </div>
@@ -342,7 +342,7 @@ export function InventoryIntelligencePage() {
                   <ul className="space-y-2 text-sm text-slate-300">
                     {dashboard.recentMovements.map((m) => (
                       <li key={m.id} className="rounded border border-slate-800 px-3 py-2">
-                        <div className="font-medium text-cyan-100">
+                        <div className="font-medium yg-text-accent-muted">
                           {m.movementType} · {m.itemSku} · Δ{m.quantityDelta}
                         </div>
                         <div className="text-xs text-slate-500">
@@ -365,7 +365,7 @@ export function InventoryIntelligencePage() {
                   <ul className="space-y-2 text-sm text-slate-300">
                     {dashboard.materialUsage.map((m) => (
                       <li key={m.id} className="rounded border border-slate-800 px-3 py-2">
-                        <div className="font-medium text-cyan-100">
+                        <div className="font-medium yg-text-accent-muted">
                           {m.itemSku ?? 'Unlinked item'} · qty {m.quantity} · {m.status}
                         </div>
                         <div className="text-xs text-slate-500">
@@ -386,7 +386,7 @@ export function InventoryIntelligencePage() {
                   <ul className="space-y-2 text-sm text-slate-300">
                     {dashboard.usageSignals.map((s) => (
                       <li key={s.id} className="rounded border border-slate-800 px-3 py-2">
-                        <div className="font-medium text-cyan-100">{s.title}</div>
+                        <div className="font-medium yg-text-accent-muted">{s.title}</div>
                         <p className="mt-1 whitespace-pre-wrap text-xs text-slate-400">{s.body}</p>
                       </li>
                     ))}
@@ -440,7 +440,7 @@ export function InventoryIntelligencePage() {
                   <ul className="space-y-3 text-sm text-slate-300">
                     {dashboard.alertDrafts.map((a) => (
                       <li key={a.id} className="rounded border border-slate-800 px-3 py-2">
-                        <div className="font-medium text-cyan-100">
+                        <div className="font-medium yg-text-accent-muted">
                           {a.title} · {a.status}
                         </div>
                         <p className="mt-1 whitespace-pre-wrap text-xs text-slate-400">{a.body}</p>
@@ -589,7 +589,7 @@ export function InventoryIntelligencePage() {
                 <ul className="space-y-2 text-sm text-slate-300">
                   {dashboard.auraConnections.map((c) => (
                     <li key={c.target}>
-                      <Link href={c.href} className="text-cyan-300 hover:underline">
+                      <Link href={c.href} className="yg-link">
                         {c.label}
                       </Link>
                       <span className="text-xs text-slate-500"> — {c.note}</span>
@@ -661,7 +661,7 @@ export function InventoryIntelligencePage() {
                   <ul className="space-y-3 text-sm text-slate-300">
                     {dashboard.auraInsights.map((i) => (
                       <li key={i.id} className="rounded border border-slate-800 px-3 py-2">
-                        <div className="font-medium text-cyan-100">
+                        <div className="font-medium yg-text-accent-muted">
                           {i.title} · {i.target} · {i.status}
                         </div>
                         <p className="mt-1 whitespace-pre-wrap text-xs text-slate-400">
