@@ -15,6 +15,7 @@ import {
   generateFrfReport,
   refreshFrfInsights,
 } from '../../lib/finance-reporting-forecast-api-client';
+import { FinanceReportExportActions } from '../../features/reports/FinanceReportExportActions';
 
 type Tab = 'reports' | 'forecasts' | 'budgets' | 'insights' | 'actions' | 'connect';
 
@@ -294,6 +295,23 @@ export function FinanceReportingForecastPage() {
 
           {tab === 'reports' ? (
             <section className="frf-grid">
+              {accessToken ? (
+                <Panel title="PDF report exports">
+                  <p className="ux-muted">
+                    Finance aggregate and accounts receivable exports use verified TITAN ledger data
+                    only — profit is not inferred.
+                  </p>
+                  <FinanceReportExportActions
+                    accessToken={accessToken}
+                    kind="finance_aggregate"
+                  />
+                  <FinanceReportExportActions
+                    accessToken={accessToken}
+                    kind="accounts_receivable"
+                    showSnapshotDate
+                  />
+                </Panel>
+              ) : null}
               <div className="ux-actions">
                 {canManage ? (
                   <>

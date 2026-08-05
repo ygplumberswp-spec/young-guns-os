@@ -13,6 +13,7 @@ import {
   generateFcpActions,
   refreshFcpInsights,
 } from '../../lib/finance-cashflow-profit-api-client';
+import { FinanceReportExportActions } from '../../features/reports/FinanceReportExportActions';
 
 type Tab = 'dashboard' | 'cashflow' | 'profit' | 'insights' | 'actions' | 'aura';
 
@@ -284,6 +285,18 @@ export function FinanceCashflowProfitPage() {
         <>
           {tab === 'dashboard' ? (
             <>
+              {accessToken ? (
+                <Panel title="Cash-flow PDF export">
+                  <p style={{ margin: '0 0 0.75rem', color: 'var(--titan-muted, #94a3b8)' }}>
+                    Customer payments drive cash inflow totals. Bank feed lines are informational
+                    only to prevent double-counting.
+                  </p>
+                  <FinanceReportExportActions
+                    accessToken={accessToken}
+                    kind="cashflow_collections"
+                  />
+                </Panel>
+              ) : null}
               <Panel title="Status">
                 <p style={{ margin: '0 0 0.75rem', color: 'var(--titan-muted, #94a3b8)' }}>
                   {dashboard.summary}

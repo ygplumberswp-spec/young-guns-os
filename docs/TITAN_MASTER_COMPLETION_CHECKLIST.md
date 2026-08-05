@@ -233,6 +233,20 @@ Boolean columns use **YES** / **NO** / **—** (not applicable).
 | J67C-010 | reports | Phase J-6.7C: UI entry points (mobile self-service + TI workforce summary) | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | WorkforceReportExportActions; MobilePerformancePage | J-6.7C |  | NOT VISUALLY VERIFIED |  |
 | J67C-011 | reports | Phase J-6.7C: HTML/PDF payroll leakage tests | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | assertWorkforceReportHtmlSafe | J-6.7C |  |  |  |
 | J67C-012 | repo | Phase J-6.7C: Authoritative checklist update (this document) | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | docs/TITAN_MASTER_COMPLETION_CHECKLIST.md | J-6.7C |  |  | 231 requirement rows after J-6.7C |
+| J67D-001 | reports | Phase J-6.7D: Finance/customer source audit + source-of-truth policy | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | finance-report-source-policy.ts | J-6.7D |  |  | TITAN ledger + Xero history; no double-count |
+| J67D-002 | reports | Phase J-6.7D: Finance Aggregate Summary PDF export | TESTED LOCALLY | YES | YES | NO | YES | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | finance-report-data.service.ts; GET /finance/aggregate/pdf | J-6.7D |  | NOT VISUALLY VERIFIED | Profit unavailable unless canonical P&amp;L |
+| J67D-003 | reports | Phase J-6.7D: Cash-Flow and Collections Report PDF export | TESTED LOCALLY | YES | YES | NO | YES | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | payments-only inflows; bank feed informational | J-6.7D |  |  |  |
+| J67D-004 | reports | Phase J-6.7D: Accounts Receivable and Aging Report PDF export | TESTED LOCALLY | YES | YES | NO | YES | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | classifyAgingBucket; GET /finance/receivables/pdf | J-6.7D |  |  | Server-side aging buckets |
+| J67D-005 | reports | Phase J-6.7D: Customer and Property History Report (internal) | TESTED LOCALLY | YES | YES | NO | YES | YES | NO | NO | NO | NO | NO | YES | YES | NO | NO | GET /customers/:id/history/pdf | J-6.7D |  |  | Public references only |
+| J67D-006 | reports | Phase J-6.7D: Client-safe customer history (portal) | TESTED LOCALLY | YES | YES | NO | YES | YES | NO | NO | NO | NO | NO | YES | YES | NO | NO | projectCustomerHistoryForClient; GET /portal/.../customer/history/pdf | J-6.7D |  |  | Server-derived portal customer |
+| J67D-007 | reports | Phase J-6.7D: Finance report period validation (366d / 5yr history) | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | finance-report-period.ts | J-6.7D |  |  | Africa/Johannesburg default |
+| J67D-008 | reports | Phase J-6.7D: Finance RBAC + technician/client denial matrix | TESTED LOCALLY | YES | YES | NO | YES | YES | NO | NO | NO | NO | NO | YES | YES | NO | NO | finance-report-access.ts | J-6.7D |  |  |  |
+| J67D-009 | reports | Phase J-6.7D: Duplicate-prevention + honest freshness states | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | resolveFinanceFreshness; FINANCE_DUPLICATE_PREVENTION_BASIS | J-6.7D |  |  |  |
+| J67D-010 | reports | Phase J-6.7D: Money/VAT/currency safety (no float; stored VAT) | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | formatFinanceAuraCents; mixed-currency warnings | J-6.7D |  |  |  |
+| J67D-011 | reports | Phase J-6.7D: Multi-page Puppeteer finance PDF proof | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | finance-report-multipage-pdf.test.ts; test-results/j67d/*.pdf | J-6.7D | Chromium | NOT VISUALLY VERIFIED |  |
+| J67D-012 | reports | Phase J-6.7D: UI entry points (finance pages, CRM, portal) | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | FinanceReportExportActions; FinanceReportingForecastPage; PortalFinancePage | J-6.7D |  | NOT VISUALLY VERIFIED |  |
+| J67D-013 | reports | Phase J-6.7D: HTML/PDF sensitive-field leak tests | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | assertFinanceReportHtmlSafe | J-6.7D |  |  |  |
+| J67D-014 | repo | Phase J-6.7D: Authoritative checklist update (this document) | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | docs/TITAN_MASTER_COMPLETION_CHECKLIST.md | J-6.7D |  |  | 243 requirement rows after J-6.7D |
 | XERO-001 | Xero | OAuth connect + tenant isolation | DEPLOYED TO STAGING | YES | NO | YES | NO | NO | YES | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_FRZ018_XERO_STAGING_REPORT.md | f8cc0c4 |  |  |  |
 | XERO-002 | Xero | Background historical import (contacts/invoices/payments) | PARTIALLY IMPLEMENTED | YES | NO | YES | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 | Xero OAuth | Import job running; last_sync_at null |  |
 | XERO-003 | Xero | Xero as sole official quote/invoice numbering authority | BUILT LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | finance-document-preview.test.ts | f8cc0c4 |  |  |  |
@@ -487,7 +501,34 @@ Items **J67C-001 … J67C-012** add technician activity, timesheet, productivity
 | J67C-011 | Leak tests | assertWorkforceReportHtmlSafe — no payroll/wage |
 | J67C-012 | Checklist | 231 requirement rows |
 
-**Remaining report families (not in J-6.7C):** inspection, finance aggregate, customer history, fleet, compliance/COC standalone exports.
+**Remaining report families (not in J-6.7C):** inspection, fleet, compliance/COC standalone exports.
+
+---
+
+## Phase J-6.7D scope (completed locally)
+
+Items **J67D-001 … J67D-014** add finance aggregate, cash-flow/collections, accounts receivable aging, and customer/property history PDF exports (internal + client-safe portal).
+
+| ID | Deliverable | J-6.7D outcome |
+|----|-------------|----------------|
+| J67D-001 | Source audit + policy | TITAN ledger primary; Xero history supplemental; duplicate prevention |
+| J67D-002 | Finance aggregate | Period summary; profit unavailable; aging + status breakdown |
+| J67D-003 | Cash-flow/collections | Payments-only inflows; bank feed informational |
+| J67D-004 | Accounts receivable | Server aging buckets; snapshot date; public invoice numbers |
+| J67D-005 | Customer history (internal) | Jobs/quotes/invoices/payments/completion timeline |
+| J67D-006 | Client-safe history | Portal-only; server-derived customer; no internal notes |
+| J67D-007 | Period validation | Max 366d finance; 5yr customer history; server dates |
+| J67D-008 | Finance RBAC | Owner/finance full; office receivables; tech/client denied |
+| J67D-009 | Freshness + dedupe | never_synced/stale states; no payment+bank double-count |
+| J67D-010 | Money/VAT safety | Stored VAT; mixed currency warnings; no float math |
+| J67D-011 | Multi-page PDF | Puppeteer proof under test-results/j67d/ |
+| J67D-012 | UI entry points | FinanceReportingForecastPage, CashflowProfitPage, CRM, Portal |
+| J67D-013 | Leak tests | assertFinanceReportHtmlSafe — tokens, costs, provider IDs |
+| J67D-014 | Checklist | 243 requirement rows |
+
+**Remaining report families (not in J-6.7D):** inspection, fleet, compliance/COC standalone exports.
+
+**Deferred improvements (append-only):** Live authenticated finance report E2E on staging; Chromium staging PDF verification; P&amp;L-linked profit section when canonical accounting P&amp;L import exists; credit-note allocation display on AR lines when xero_credit_note_allocations populated.
 
 ---
 
@@ -532,4 +573,4 @@ Items **J66A-001 … J66A-005** in the register above are targeted for completio
 
 ---
 
-*Generated requirement count: **183** rows. Update this document when any row changes classification; do not maintain competing checklists elsewhere.*
+*Generated requirement count: **243** rows. Update this document when any row changes classification; do not maintain competing checklists elsewhere.*

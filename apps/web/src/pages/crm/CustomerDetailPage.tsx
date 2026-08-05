@@ -33,6 +33,7 @@ import {
 import { useAuth } from '../../lib/auth-context';
 import { canManageCustomers } from '../../features/crm/CustomerList';
 import { canAccessMarketingIntelligence } from '../../features/marketing-intelligence/utils';
+import { FinanceReportExportActions } from '../../features/reports/FinanceReportExportActions';
 
 function formatStatus(status: CustomerDetail['status']): string {
   return CUSTOMER_STATUS_OPTIONS.find((option) => option.value === status)?.label ?? status;
@@ -491,6 +492,18 @@ export function CustomerDetailPage() {
       ) : null}
 
       <div className="crm-detail">
+        {accessToken ? (
+          <Panel title="Customer history report">
+            <p className="ux-muted">
+              Internal customer and property history PDF — public references only, no provider IDs.
+            </p>
+            <FinanceReportExportActions
+              accessToken={accessToken}
+              kind="customer_property_history"
+              target={{ scope: 'customer', customerId: customer.id }}
+            />
+          </Panel>
+        ) : null}
         <Panel title="Profile">
           {isEditing && canWrite ? (
             <form className="crm-form" onSubmit={(event) => void handleSave(event)}>

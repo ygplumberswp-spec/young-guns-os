@@ -4,6 +4,7 @@ import { EmptyState, Panel } from '@titan/ui';
 import type { PortalFinanceCentre } from '@titan/shared';
 import { PortalApiClientError, fetchPortalFinance } from '../../lib/portal-api-client';
 import { usePortalAuth } from '../../lib/portal-auth-context';
+import { FinanceReportExportActions } from '../../features/reports/FinanceReportExportActions';
 
 export function PortalFinancePage() {
   const { accessToken } = usePortalAuth();
@@ -28,6 +29,19 @@ export function PortalFinancePage() {
       {error ? <p className="form-error">{error}</p> : null}
       {finance ? (
         <>
+          <Panel title="Account history report">
+            <p className="page-muted">
+              Download a client-safe PDF of your jobs, invoices, and service history for this
+              account.
+            </p>
+            {accessToken ? (
+              <FinanceReportExportActions
+                accessToken={accessToken}
+                kind="customer_property_history"
+                channel="portal"
+              />
+            ) : null}
+          </Panel>
           <Panel title="Outstanding Balance">
             <p className="tabular-nums">
               {(finance.outstandingBalanceCents / 100).toFixed(2)} {finance.currency}

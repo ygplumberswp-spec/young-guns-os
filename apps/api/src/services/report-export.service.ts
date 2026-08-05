@@ -27,6 +27,18 @@ import {
   buildTechnicianTimesheetReportHtml,
   buildTechnicianProductivityReportHtml,
   buildWorkforceOperationsReportHtml,
+  buildFinanceAggregateReportHtml,
+  buildCashflowCollectionsReportHtml,
+  buildAccountsReceivableReportHtml,
+  buildCustomerPropertyHistoryReportHtml,
+  assertFinanceReportAccess,
+  assertFinanceReportHtmlSafe,
+  FinanceReportAccessError,
+  FinanceReportPeriodError,
+  financeReportFilename,
+  projectCustomerHistoryForClient,
+  resolveAccountsReceivableSnapshotDate,
+  resolveFinanceReportPeriod,
   operationalReportFilename,
   parseRequestedReportAudience,
   projectCompletionPayloadForAudience,
@@ -37,8 +49,10 @@ import {
   WorkforceReportAccessError,
   WorkforceReportPeriodError,
   workforceReportFilename,
+  type FinanceReportKind,
   type ReportAudienceDecision,
   type WorkforceReportPeriod,
+  type FinanceReportPeriod,
 } from '@titan/shared';
 import type { CompletionReportService } from './completion-report.service.js';
 import { ChromiumPdfError, renderHtmlToPdf } from './chromium-pdf.service.js';
@@ -50,6 +64,7 @@ import {
 import { userHasJobAccess } from './job-execution.service.js';
 import { recordAuthorizationFailure } from '../middleware/authorization-guards.js';
 import { WorkforceReportDataService } from './workforce-report-data.service.js';
+import { FinanceReportDataService } from './finance-report-data.service.js';
 
 export class ReportExportError extends Error {
   constructor(
@@ -89,6 +104,7 @@ export type ReportExportPrincipal =
 
 export class ReportExportService {
   private readonly workforceData: WorkforceReportDataService;
+  private readonly financeData: FinanceReportDataService;
 
   constructor(
     private readonly db: DatabaseClient,
@@ -96,6 +112,7 @@ export class ReportExportService {
     private readonly jobEvidenceStorage: JobEvidenceStorageService,
   ) {
     this.workforceData = new WorkforceReportDataService(db);
+    this.financeData = new FinanceReportDataService(db);
   }
 
   async exportJobReportPdf(
@@ -717,5 +734,161 @@ export class ReportExportService {
     );
     const html = buildWorkforceOperationsReportHtml(ctx);
     return this.renderWorkforce('workforce_operations', ctx.reportReference, html);
+  }
+
+  private parseFinancePeriod(
+    reportKind: FinanceReportKind,
+    periodStart: unknown,
+    periodEnd: unknown,
+    timezone?: string | null,
+  ): FinanceReportPeriod {
+    try {
+      return resolveFinanceReportPeriod({ reportKind, periodStart, periodEnd, timezone });
+    } catch (error) {
+      if (error instanceof FinanceReportPeriodError) {
+        throw new ReportExportError(error.code, error.message);
+      }
+      throw error;
+    }
+  }
+
+  private assertFinanceAccess(
+    principal: ReportExportPrincipal,
+    reportKind: FinanceReportKind,
+    targetCustomerId: string | null,
+  ): void {
+    try {
+      assertFinanceReportAccess({
+        actorUserId:
+          principal.kind === 'staff' ? principal.actor.userId : principal.actor.portalUserId,
+        actorRoleName: principal.kind === 'staff' ? principal.actor.roleName : 'Client',
+        permissions: principal.actor.permissions,
+        reportKind,
+        targetCustomerId,
+        portalCustomerId: principal.kind === 'portal' ? principal.actor.customerId : null,
+        isPortal: principal.kind === 'portal',
+      });
+    } catch (error) {
+      if (error instanceof FinanceReportAccessError) {
+        throw new ReportExportError(error.code, error.message);
+      }
+      throw error;
+    }
+  }
+
+  private async renderFinance(
+    kind: FinanceReportKind,
+    reference: string,
+    html: string,
+    audience: 'internal' | 'client',
+  ): Promise<ReportPdfResult> {
+    assertFinanceReportHtmlSafe(html, audience);
+    try {
+      const buffer = await renderHtmlToPdf(html);
+      return {
+        buffer,
+        filename: financeReportFilename(kind, reference),
+        contentType: 'application/pdf',
+      };
+    } catch (error) {
+      if (error instanceof ChromiumPdfError && error.code === 'CHROMIUM_UNAVAILABLE') {
+        throw new ReportExportError('CHROMIUM_UNAVAILABLE', error.message);
+      }
+      throw error;
+    }
+  }
+
+  async exportFinanceAggregatePdf(
+    principal: ReportExportPrincipal,
+    periodStart: unknown,
+    periodEnd: unknown,
+  ): Promise<ReportPdfResult> {
+    this.assertFinanceAccess(principal, 'finance_aggregate', null);
+    const period = this.parseFinancePeriod('finance_aggregate', periodStart, periodEnd);
+    const ctx = await this.financeData.buildFinanceAggregateReport(
+      this.tenantId(principal),
+      period,
+    );
+    const html = buildFinanceAggregateReportHtml(ctx);
+    return this.renderFinance('finance_aggregate', ctx.reportReference, html, 'internal');
+  }
+
+  async exportCashflowCollectionsPdf(
+    principal: ReportExportPrincipal,
+    periodStart: unknown,
+    periodEnd: unknown,
+  ): Promise<ReportPdfResult> {
+    this.assertFinanceAccess(principal, 'cashflow_collections', null);
+    const period = this.parseFinancePeriod('cashflow_collections', periodStart, periodEnd);
+    const ctx = await this.financeData.buildCashflowCollectionsReport(
+      this.tenantId(principal),
+      period,
+    );
+    const html = buildCashflowCollectionsReportHtml(ctx);
+    return this.renderFinance('cashflow_collections', ctx.reportReference, html, 'internal');
+  }
+
+  async exportAccountsReceivablePdf(
+    principal: ReportExportPrincipal,
+    snapshotDate: unknown,
+  ): Promise<ReportPdfResult> {
+    this.assertFinanceAccess(principal, 'accounts_receivable', null);
+    let snapshot;
+    try {
+      snapshot = resolveAccountsReceivableSnapshotDate({ snapshotDate });
+    } catch (error) {
+      if (error instanceof FinanceReportPeriodError) {
+        throw new ReportExportError(error.code, error.message);
+      }
+      throw error;
+    }
+    const ctx = await this.financeData.buildAccountsReceivableReport(
+      this.tenantId(principal),
+      snapshot,
+    );
+    const html = buildAccountsReceivableReportHtml(ctx);
+    return this.renderFinance('accounts_receivable', ctx.reportReference, html, 'internal');
+  }
+
+  async exportCustomerPropertyHistoryPdf(
+    principal: ReportExportPrincipal,
+    customerId: string,
+    periodStart: unknown,
+    periodEnd: unknown,
+  ): Promise<ReportPdfResult> {
+    if (principal.kind === 'portal') {
+      throw new ReportExportError('FORBIDDEN', 'Use portal customer history route.');
+    }
+    this.assertFinanceAccess(principal, 'customer_property_history', customerId);
+    const period = this.parseFinancePeriod('customer_property_history', periodStart, periodEnd);
+    const ctx = await this.financeData.buildCustomerPropertyHistoryReport(
+      this.tenantId(principal),
+      customerId,
+      period,
+      'internal',
+    );
+    const html = buildCustomerPropertyHistoryReportHtml(ctx);
+    return this.renderFinance('customer_property_history', ctx.reportReference, html, 'internal');
+  }
+
+  async exportPortalCustomerHistoryPdf(
+    principal: ReportExportPrincipal,
+    periodStart: unknown,
+    periodEnd: unknown,
+  ): Promise<ReportPdfResult> {
+    if (principal.kind !== 'portal') {
+      throw new ReportExportError('FORBIDDEN', 'Portal principal required.');
+    }
+    this.assertFinanceAccess(principal, 'customer_property_history', principal.actor.customerId);
+    const period = this.parseFinancePeriod('customer_property_history', periodStart, periodEnd);
+    const raw = await this.financeData.buildCustomerPropertyHistoryReport(
+      principal.actor.companyId,
+      principal.actor.customerId,
+      period,
+      'client',
+    );
+    const ctx = projectCustomerHistoryForClient(raw);
+    const html = buildCustomerPropertyHistoryReportHtml(ctx);
+    return this.renderFinance('customer_property_history', ctx.reportReference, html, 'client');
   }
 }

@@ -12,6 +12,7 @@ import {
 } from './document-engine.js';
 import { operationalReportKindLabel, type OperationalReportKind } from './operational-report.js';
 import { workforceReportKindLabel, type WorkforceReportKind } from './workforce-report.js';
+import { financeReportKindLabel, type FinanceReportKind } from './finance-report.js';
 import { YOUNG_GUNS_SLOGAN } from './young-guns-theme.js';
 
 export type YoungGunsReportShellInput = {
@@ -21,6 +22,8 @@ export type YoungGunsReportShellInput = {
   operationalKind?: OperationalReportKind;
   /** Workforce PDF export kind — technician activity, timesheet, productivity, operations summary. */
   workforceKind?: WorkforceReportKind;
+  /** Finance PDF export kind — aggregate, cashflow, receivables, customer history. */
+  financeKind?: FinanceReportKind;
   reportTitle?: string | null;
   periodLabel?: string | null;
   generatedAt?: string | null;
@@ -42,8 +45,12 @@ export const REPORT_EXPORT_STATUS: Record<string, 'implemented' | 'not_yet_imple
   technician_productivity: 'implemented',
   workforce_operations: 'implemented',
   technician: 'implemented',
-  finance: 'not_yet_implemented',
-  customer: 'not_yet_implemented',
+  finance_aggregate: 'implemented',
+  cashflow_collections: 'implemented',
+  accounts_receivable: 'implemented',
+  customer_property_history: 'implemented',
+  finance: 'implemented',
+  customer: 'implemented',
   fleet: 'not_yet_implemented',
   compliance_coc: 'not_yet_implemented',
 };
@@ -82,13 +89,15 @@ export function buildYoungGunsReportShellCss(): string {
 
 /** Branded HTML shell wrapping report body content for print/PDF pipelines. */
 export function buildYoungGunsReportShellHtml(input: YoungGunsReportShellInput): string {
-  const variant = input.workforceKind
-    ? workforceReportKindLabel(input.workforceKind)
-    : input.operationalKind
-      ? operationalReportKindLabel(input.operationalKind)
-      : input.reportKind
-        ? documentVariantLabel({ type: 'report', reportKind: input.reportKind })
-        : 'Report';
+  const variant = input.financeKind
+    ? financeReportKindLabel(input.financeKind)
+    : input.workforceKind
+      ? workforceReportKindLabel(input.workforceKind)
+      : input.operationalKind
+        ? operationalReportKindLabel(input.operationalKind)
+        : input.reportKind
+          ? documentVariantLabel({ type: 'report', reportKind: input.reportKind })
+          : 'Report';
   const title = input.reportTitle?.trim() || variant;
   const pageLabel =
     input.pageNumber && input.pageCount

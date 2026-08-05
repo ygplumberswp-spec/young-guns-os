@@ -323,6 +323,79 @@ export function createReportExportRouter({
     },
   );
 
+  router.get(
+    '/finance/aggregate/pdf',
+    requireAnyPermission('finance:read', 'finance:write', 'documents:read'),
+    async (req, res) => {
+      const auth = getAuth(req);
+      try {
+        const result = await reportExportService.exportFinanceAggregatePdf(
+          staffPrincipal(auth),
+          req.query.periodStart,
+          req.query.periodEnd,
+        );
+        sendPdf(res, result);
+      } catch (error) {
+        handleError(res, error);
+      }
+    },
+  );
+
+  router.get(
+    '/finance/cashflow/pdf',
+    requireAnyPermission('finance:read', 'finance:write', 'documents:read'),
+    async (req, res) => {
+      const auth = getAuth(req);
+      try {
+        const result = await reportExportService.exportCashflowCollectionsPdf(
+          staffPrincipal(auth),
+          req.query.periodStart,
+          req.query.periodEnd,
+        );
+        sendPdf(res, result);
+      } catch (error) {
+        handleError(res, error);
+      }
+    },
+  );
+
+  router.get(
+    '/finance/receivables/pdf',
+    requireAnyPermission('finance:read', 'finance:write', 'customers:read', 'documents:read'),
+    async (req, res) => {
+      const auth = getAuth(req);
+      try {
+        const result = await reportExportService.exportAccountsReceivablePdf(
+          staffPrincipal(auth),
+          req.query.snapshotDate,
+        );
+        sendPdf(res, result);
+      } catch (error) {
+        handleError(res, error);
+      }
+    },
+  );
+
+  router.get(
+    '/customers/:customerId/history/pdf',
+    requireAnyPermission('finance:read', 'customers:read', 'crm:read', 'documents:read'),
+    async (req, res) => {
+      const auth = getAuth(req);
+      const customerId = routeParam(req.params.customerId);
+      try {
+        const result = await reportExportService.exportCustomerPropertyHistoryPdf(
+          staffPrincipal(auth),
+          customerId,
+          req.query.periodStart,
+          req.query.periodEnd,
+        );
+        sendPdf(res, result);
+      } catch (error) {
+        handleError(res, error);
+      }
+    },
+  );
+
   return router;
 }
 
@@ -386,6 +459,24 @@ export function createPortalReportExportRouter({
           portalPrincipal(portalAuth),
           reportId,
           parseAudienceQuery(req),
+        );
+        sendPdf(res, result);
+      } catch (error) {
+        handleError(res, error);
+      }
+    },
+  );
+
+  router.get(
+    '/customer/history/pdf',
+    requirePortalPermission('portal.jobs:read'),
+    async (req, res) => {
+      const portalAuth = (req as PortalAuthenticatedRequest).portalAuth;
+      try {
+        const result = await reportExportService.exportPortalCustomerHistoryPdf(
+          portalPrincipal(portalAuth),
+          req.query.periodStart,
+          req.query.periodEnd,
         );
         sendPdf(res, result);
       } catch (error) {
