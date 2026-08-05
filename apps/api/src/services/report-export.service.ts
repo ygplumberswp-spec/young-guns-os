@@ -12,20 +12,33 @@ import type {
   MaintenanceReportContext,
   OperationalJobReportContext,
   OperationalReportKind,
+  WorkforceReportKind,
 } from '@titan/shared';
 import {
   assertReportHtmlFreeOfSensitiveFields,
+  assertWorkforceReportHtmlSafe,
+  assertWorkforceReportAccess,
+  assertTechnicianSelfBinding,
   buildCompletionReportHtml,
   buildMaintenanceReportHtml,
   buildOperationalJobReportHtml,
   buildServiceReportHtml,
+  buildTechnicianActivityReportHtml,
+  buildTechnicianTimesheetReportHtml,
+  buildTechnicianProductivityReportHtml,
+  buildWorkforceOperationsReportHtml,
   operationalReportFilename,
   parseRequestedReportAudience,
   projectCompletionPayloadForAudience,
   ReportAudienceError,
   resolvePortalReportAudience,
   resolveStaffReportAudience,
+  resolveWorkforceReportPeriod,
+  WorkforceReportAccessError,
+  WorkforceReportPeriodError,
+  workforceReportFilename,
   type ReportAudienceDecision,
+  type WorkforceReportPeriod,
 } from '@titan/shared';
 import type { CompletionReportService } from './completion-report.service.js';
 import { ChromiumPdfError, renderHtmlToPdf } from './chromium-pdf.service.js';
@@ -36,6 +49,7 @@ import {
 } from './report-photo-embed.service.js';
 import { userHasJobAccess } from './job-execution.service.js';
 import { recordAuthorizationFailure } from '../middleware/authorization-guards.js';
+import { WorkforceReportDataService } from './workforce-report-data.service.js';
 
 export class ReportExportError extends Error {
   constructor(
@@ -74,11 +88,15 @@ export type ReportExportPrincipal =
   | { kind: 'portal'; actor: PortalReportExportActor };
 
 export class ReportExportService {
+  private readonly workforceData: WorkforceReportDataService;
+
   constructor(
     private readonly db: DatabaseClient,
     private readonly completionReports: CompletionReportService,
     private readonly jobEvidenceStorage: JobEvidenceStorageService,
-  ) {}
+  ) {
+    this.workforceData = new WorkforceReportDataService(db);
+  }
 
   async exportJobReportPdf(
     principal: ReportExportPrincipal,
@@ -552,5 +570,152 @@ export class ReportExportService {
       }
       throw error;
     }
+  }
+
+  private parseWorkforcePeriod(
+    periodStart: unknown,
+    periodEnd: unknown,
+    timezone?: string | null,
+  ): WorkforceReportPeriod {
+    try {
+      return resolveWorkforceReportPeriod({ periodStart, periodEnd, timezone });
+    } catch (error) {
+      if (error instanceof WorkforceReportPeriodError) {
+        throw new ReportExportError(error.code, error.message);
+      }
+      throw error;
+    }
+  }
+
+  private assertStaffWorkforceAccess(
+    actor: ReportExportActor,
+    reportKind: WorkforceReportKind,
+    targetUserId: string | null,
+    isSelfRoute: boolean,
+  ): void {
+    if (actor.roleName.trim() === 'Client') {
+      throw new ReportExportError('FORBIDDEN', 'Client users cannot access workforce reports.');
+    }
+    try {
+      assertTechnicianSelfBinding(actor.userId, targetUserId ?? undefined, isSelfRoute);
+      assertWorkforceReportAccess({
+        actorUserId: actor.userId,
+        actorRoleName: actor.roleName,
+        permissions: actor.permissions,
+        targetUserId: isSelfRoute ? actor.userId : targetUserId,
+        reportKind,
+        isSelfRoute,
+      });
+    } catch (error) {
+      if (error instanceof WorkforceReportAccessError) {
+        throw new ReportExportError(error.code, error.message);
+      }
+      throw error;
+    }
+  }
+
+  private async renderWorkforce(
+    kind: WorkforceReportKind,
+    reference: string,
+    html: string,
+  ): Promise<ReportPdfResult> {
+    assertWorkforceReportHtmlSafe(html);
+    try {
+      const buffer = await renderHtmlToPdf(html);
+      return {
+        buffer,
+        filename: workforceReportFilename(kind, reference),
+        contentType: 'application/pdf',
+      };
+    } catch (error) {
+      if (error instanceof ChromiumPdfError && error.code === 'CHROMIUM_UNAVAILABLE') {
+        throw new ReportExportError('CHROMIUM_UNAVAILABLE', error.message);
+      }
+      throw error;
+    }
+  }
+
+  async exportTechnicianActivityPdf(
+    principal: ReportExportPrincipal,
+    targetUserId: string,
+    periodStart: unknown,
+    periodEnd: unknown,
+    isSelfRoute: boolean,
+  ): Promise<ReportPdfResult> {
+    if (principal.kind === 'portal') {
+      throw new ReportExportError('FORBIDDEN', 'Workforce reports are not available on the client portal.');
+    }
+    this.assertStaffWorkforceAccess(principal.actor, 'technician_activity', targetUserId, isSelfRoute);
+    const period = this.parseWorkforcePeriod(periodStart, periodEnd);
+    const effectiveUserId = isSelfRoute ? principal.actor.userId : targetUserId;
+    const ctx = await this.workforceData.buildTechnicianActivityReport(
+      principal.actor.companyId,
+      effectiveUserId,
+      period,
+    );
+    const html = buildTechnicianActivityReportHtml(ctx);
+    return this.renderWorkforce('technician_activity', ctx.reportReference, html);
+  }
+
+  async exportTechnicianTimesheetPdf(
+    principal: ReportExportPrincipal,
+    targetUserId: string,
+    periodStart: unknown,
+    periodEnd: unknown,
+    isSelfRoute: boolean,
+  ): Promise<ReportPdfResult> {
+    if (principal.kind === 'portal') {
+      throw new ReportExportError('FORBIDDEN', 'Workforce reports are not available on the client portal.');
+    }
+    this.assertStaffWorkforceAccess(principal.actor, 'technician_timesheet', targetUserId, isSelfRoute);
+    const period = this.parseWorkforcePeriod(periodStart, periodEnd);
+    const effectiveUserId = isSelfRoute ? principal.actor.userId : targetUserId;
+    const ctx = await this.workforceData.buildTechnicianTimesheetReport(
+      principal.actor.companyId,
+      effectiveUserId,
+      period,
+    );
+    const html = buildTechnicianTimesheetReportHtml(ctx);
+    return this.renderWorkforce('technician_timesheet', ctx.reportReference, html);
+  }
+
+  async exportTechnicianProductivityPdf(
+    principal: ReportExportPrincipal,
+    targetUserId: string,
+    periodStart: unknown,
+    periodEnd: unknown,
+    isSelfRoute: boolean,
+  ): Promise<ReportPdfResult> {
+    if (principal.kind === 'portal') {
+      throw new ReportExportError('FORBIDDEN', 'Workforce reports are not available on the client portal.');
+    }
+    this.assertStaffWorkforceAccess(principal.actor, 'technician_productivity', targetUserId, isSelfRoute);
+    const period = this.parseWorkforcePeriod(periodStart, periodEnd);
+    const effectiveUserId = isSelfRoute ? principal.actor.userId : targetUserId;
+    const ctx = await this.workforceData.buildTechnicianProductivityReport(
+      principal.actor.companyId,
+      effectiveUserId,
+      period,
+    );
+    const html = buildTechnicianProductivityReportHtml(ctx);
+    return this.renderWorkforce('technician_productivity', ctx.reportReference, html);
+  }
+
+  async exportWorkforceOperationsPdf(
+    principal: ReportExportPrincipal,
+    periodStart: unknown,
+    periodEnd: unknown,
+  ): Promise<ReportPdfResult> {
+    if (principal.kind === 'portal') {
+      throw new ReportExportError('FORBIDDEN', 'Workforce reports are not available on the client portal.');
+    }
+    this.assertStaffWorkforceAccess(principal.actor, 'workforce_operations', null, false);
+    const period = this.parseWorkforcePeriod(periodStart, periodEnd);
+    const ctx = await this.workforceData.buildWorkforceOperationsReport(
+      principal.actor.companyId,
+      period,
+    );
+    const html = buildWorkforceOperationsReportHtml(ctx);
+    return this.renderWorkforce('workforce_operations', ctx.reportReference, html);
   }
 }

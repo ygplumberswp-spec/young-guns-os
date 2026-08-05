@@ -10,6 +10,7 @@ import type {
 import { lifecycleStepLabel, TECHNICIAN_LIFECYCLE_FLOW } from '@titan/shared';
 import { PageHeader } from '../../components/ux';
 import { LiveDispatchNav } from '../../features/dispatch/LiveDispatchNav';
+import { WorkforceReportExportActions } from '../../features/reports/WorkforceReportExportActions';
 import { useAuth } from '../../lib/auth-context';
 import {
   decideTechnicianInsight,
@@ -244,6 +245,19 @@ export function TechnicianIntelligencePage() {
               }
             />
           </div>
+
+          {accessToken ? (
+            <Panel title="Workforce reports" className="space-y-3 border-slate-800 bg-slate-950/80">
+              <p className="text-sm text-slate-400">
+                Export operational workforce summary PDFs. No wage or payroll values are included.
+              </p>
+              <WorkforceReportExportActions
+                accessToken={accessToken}
+                kind="workforce_operations"
+                target={{ scope: 'workforce_summary' }}
+              />
+            </Panel>
+          ) : null}
 
           <Panel title="Lifecycle tracking" className="space-y-2 border-slate-800 bg-slate-950/80">
             <h2 className="text-sm font-medium yg-text-accent-soft">Lifecycle tracking</h2>

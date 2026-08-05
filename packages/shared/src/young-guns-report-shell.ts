@@ -11,6 +11,7 @@ import {
   type TitanReportKind,
 } from './document-engine.js';
 import { operationalReportKindLabel, type OperationalReportKind } from './operational-report.js';
+import { workforceReportKindLabel, type WorkforceReportKind } from './workforce-report.js';
 import { YOUNG_GUNS_SLOGAN } from './young-guns-theme.js';
 
 export type YoungGunsReportShellInput = {
@@ -18,6 +19,8 @@ export type YoungGunsReportShellInput = {
   reportKind?: TitanReportKind;
   /** Operational PDF export kind — preferred for job/completion/service/maintenance exports. */
   operationalKind?: OperationalReportKind;
+  /** Workforce PDF export kind — technician activity, timesheet, productivity, operations summary. */
+  workforceKind?: WorkforceReportKind;
   reportTitle?: string | null;
   periodLabel?: string | null;
   generatedAt?: string | null;
@@ -34,7 +37,11 @@ export const REPORT_EXPORT_STATUS: Record<string, 'implemented' | 'not_yet_imple
   service: 'implemented',
   maintenance: 'implemented',
   inspection: 'not_yet_implemented',
-  technician: 'not_yet_implemented',
+  technician_activity: 'implemented',
+  technician_timesheet: 'implemented',
+  technician_productivity: 'implemented',
+  workforce_operations: 'implemented',
+  technician: 'implemented',
   finance: 'not_yet_implemented',
   customer: 'not_yet_implemented',
   fleet: 'not_yet_implemented',
@@ -75,11 +82,13 @@ export function buildYoungGunsReportShellCss(): string {
 
 /** Branded HTML shell wrapping report body content for print/PDF pipelines. */
 export function buildYoungGunsReportShellHtml(input: YoungGunsReportShellInput): string {
-  const variant = input.operationalKind
-    ? operationalReportKindLabel(input.operationalKind)
-    : input.reportKind
-      ? documentVariantLabel({ type: 'report', reportKind: input.reportKind })
-      : 'Report';
+  const variant = input.workforceKind
+    ? workforceReportKindLabel(input.workforceKind)
+    : input.operationalKind
+      ? operationalReportKindLabel(input.operationalKind)
+      : input.reportKind
+        ? documentVariantLabel({ type: 'report', reportKind: input.reportKind })
+        : 'Report';
   const title = input.reportTitle?.trim() || variant;
   const pageLabel =
     input.pageNumber && input.pageCount

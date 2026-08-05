@@ -7,6 +7,7 @@ import type {
 } from '@titan/shared';
 import { lifecycleStepLabel } from '@titan/shared';
 import { PageHeader } from '../../components/ux';
+import { WorkforceReportExportActions } from '../../features/reports/WorkforceReportExportActions';
 import { useAuth } from '../../lib/auth-context';
 import {
   fetchTechnicianSelfView,
@@ -116,6 +117,29 @@ export function MobilePerformancePage() {
               value={formatValue(view.performance.productivityScore.value)}
             />
           </div>
+
+          {accessToken ? (
+            <Panel title="My reports" className="space-y-3 border-slate-800 bg-slate-950/80">
+              <p className="text-sm text-slate-400">
+                Download your activity, timesheet and productivity reports for the selected period.
+              </p>
+              <WorkforceReportExportActions
+                accessToken={accessToken}
+                kind="technician_activity"
+                target={{ scope: 'me' }}
+              />
+              <WorkforceReportExportActions
+                accessToken={accessToken}
+                kind="technician_timesheet"
+                target={{ scope: 'me' }}
+              />
+              <WorkforceReportExportActions
+                accessToken={accessToken}
+                kind="technician_productivity"
+                target={{ scope: 'me' }}
+              />
+            </Panel>
+          ) : null}
 
           <Panel title="Assigned jobs" className="space-y-2 border-slate-800 bg-slate-950/80">
             <h2 className="text-sm font-medium yg-text-accent-soft">Assigned jobs</h2>

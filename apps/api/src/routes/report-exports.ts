@@ -182,6 +182,147 @@ export function createReportExportRouter({
     },
   );
 
+  router.get(
+    '/workforce/me/activity/pdf',
+    requireAnyPermission('mobile:read', 'workforce:read', 'workforce_intelligence:read', 'ops:read', 'analytics:read'),
+    async (req, res) => {
+      const auth = getAuth(req);
+      try {
+        const result = await reportExportService.exportTechnicianActivityPdf(
+          staffPrincipal(auth),
+          auth.userId,
+          req.query.periodStart,
+          req.query.periodEnd,
+          true,
+        );
+        sendPdf(res, result);
+      } catch (error) {
+        handleError(res, error);
+      }
+    },
+  );
+
+  router.get(
+    '/workforce/me/timesheet/pdf',
+    requireAnyPermission('mobile:read', 'workforce:read', 'workforce_intelligence:read', 'ops:read'),
+    async (req, res) => {
+      const auth = getAuth(req);
+      try {
+        const result = await reportExportService.exportTechnicianTimesheetPdf(
+          staffPrincipal(auth),
+          auth.userId,
+          req.query.periodStart,
+          req.query.periodEnd,
+          true,
+        );
+        sendPdf(res, result);
+      } catch (error) {
+        handleError(res, error);
+      }
+    },
+  );
+
+  router.get(
+    '/workforce/me/productivity/pdf',
+    requireAnyPermission('mobile:read', 'workforce:read', 'workforce_intelligence:read', 'ops:read', 'analytics:read'),
+    async (req, res) => {
+      const auth = getAuth(req);
+      try {
+        const result = await reportExportService.exportTechnicianProductivityPdf(
+          staffPrincipal(auth),
+          auth.userId,
+          req.query.periodStart,
+          req.query.periodEnd,
+          true,
+        );
+        sendPdf(res, result);
+      } catch (error) {
+        handleError(res, error);
+      }
+    },
+  );
+
+  router.get(
+    '/workforce/technicians/:userId/activity/pdf',
+    requireAnyPermission('workforce:read', 'workforce_intelligence:read', 'ops:read', 'analytics:read', 'documents:read'),
+    async (req, res) => {
+      const auth = getAuth(req);
+      const userId = routeParam(req.params.userId);
+      try {
+        const result = await reportExportService.exportTechnicianActivityPdf(
+          staffPrincipal(auth),
+          userId,
+          req.query.periodStart,
+          req.query.periodEnd,
+          false,
+        );
+        sendPdf(res, result);
+      } catch (error) {
+        handleError(res, error);
+      }
+    },
+  );
+
+  router.get(
+    '/workforce/technicians/:userId/timesheet/pdf',
+    requireAnyPermission('workforce:read', 'workforce_intelligence:read', 'ops:read', 'documents:read'),
+    async (req, res) => {
+      const auth = getAuth(req);
+      const userId = routeParam(req.params.userId);
+      try {
+        const result = await reportExportService.exportTechnicianTimesheetPdf(
+          staffPrincipal(auth),
+          userId,
+          req.query.periodStart,
+          req.query.periodEnd,
+          false,
+        );
+        sendPdf(res, result);
+      } catch (error) {
+        handleError(res, error);
+      }
+    },
+  );
+
+  router.get(
+    '/workforce/technicians/:userId/productivity/pdf',
+    requireAnyPermission('workforce:read', 'workforce_intelligence:read', 'ops:read', 'analytics:read', 'documents:read'),
+    async (req, res) => {
+      const auth = getAuth(req);
+      const userId = routeParam(req.params.userId);
+      try {
+        const result = await reportExportService.exportTechnicianProductivityPdf(
+          staffPrincipal(auth),
+          userId,
+          req.query.periodStart,
+          req.query.periodEnd,
+          false,
+        );
+        sendPdf(res, result);
+      } catch (error) {
+        handleError(res, error);
+      }
+    },
+  );
+
+  router.get(
+    '/workforce/summary/pdf',
+    requireAnyPermission('workforce_intelligence:read', 'ops:read', 'analytics:read', 'documents:read'),
+    async (req, res) => {
+      const auth = getAuth(req);
+      try {
+        const result = await reportExportService.exportWorkforceOperationsPdf(
+          staffPrincipal(auth),
+          req.query.periodStart,
+          req.query.periodEnd,
+        );
+        sendPdf(res, result);
+      } catch (error) {
+        handleError(res, error);
+      }
+    },
+  );
+
   return router;
 }
 

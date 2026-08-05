@@ -221,6 +221,18 @@ Boolean columns use **YES** / **NO** / **—** (not applicable).
 | J67B-008 | reports | Phase J-6.7B: UI role behaviour (no audience selector; portal/mobile/staff) | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | ReportExportActions; MobileJobDetailPage; PortalJobDetailPage | J-6.7B |  | NOT VISUALLY VERIFIED |  |
 | J67B-009 | reports | Phase J-6.7B: RBAC matrix tests all four report families | TESTED LOCALLY | YES | YES | NO | YES | YES | NO | NO | NO | NO | NO | YES | YES | NO | NO | report-export-audience.test.ts; report-audience.test.ts | J-6.7B |  |  |  |
 | J67B-010 | repo | Phase J-6.7B: Authoritative checklist update (this document) | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | docs/TITAN_MASTER_COMPLETION_CHECKLIST.md | J-6.7B |  |  | 219 requirement rows after J-6.7B |
+| J67C-001 | reports | Phase J-6.7C: Workforce report kinds (activity/timesheet/productivity/operations) | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | packages/shared/src/workforce-report.ts | J-6.7C |  |  |  |
+| J67C-002 | reports | Phase J-6.7C: Technician Activity Report PDF (genuine tenant data) | TESTED LOCALLY | YES | YES | NO | YES | YES | NO | NO | NO | NO | NO | YES | YES | NO | NO | workforce-report-data.service.ts; buildTechnicianActivityReportHtml | J-6.7C |  | NOT VISUALLY VERIFIED |  |
+| J67C-003 | reports | Phase J-6.7C: Technician Timesheet Report PDF (wi_timesheets + mobile entries) | TESTED LOCALLY | YES | YES | NO | YES | YES | NO | NO | NO | NO | NO | YES | YES | NO | NO | buildTimesheetDailyRows; no wage calculation | J-6.7C |  |  |  |
+| J67C-004 | reports | Phase J-6.7C: Technician Productivity Report (transparent metrics, no scores) | TESTED LOCALLY | YES | YES | NO | YES | YES | NO | NO | NO | NO | NO | YES | YES | NO | NO | numerator/denominator metrics; no computeProductivityScore in PDF | J-6.7C |  |  |  |
+| J67C-005 | reports | Phase J-6.7C: Workforce Operations Summary (internal aggregates) | TESTED LOCALLY | YES | YES | NO | YES | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | exportWorkforceOperationsPdf | J-6.7C |  |  |  |
+| J67C-006 | reports | Phase J-6.7C: Report period validation (Africa/Johannesburg, max 93 days) | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | workforce-report-period.ts | J-6.7C |  |  |  |
+| J67C-007 | reports | Phase J-6.7C: Workforce RBAC + technician self-service /me routes | TESTED LOCALLY | YES | YES | NO | YES | YES | NO | NO | NO | NO | NO | YES | YES | NO | NO | workforce-report-access.ts; /workforce/me/* | J-6.7C |  |  |  |
+| J67C-008 | reports | Phase J-6.7C: Honest unavailable states (no fake zeroes) | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | WorkforceMetricState; dataQualityNotes | J-6.7C |  |  |  |
+| J67C-009 | reports | Phase J-6.7C: Multi-page Puppeteer workforce PDF proof | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | workforce-report-multipage-pdf.test.ts; test-results/j67c/*.pdf | J-6.7C | Chromium | NOT VISUALLY VERIFIED |  |
+| J67C-010 | reports | Phase J-6.7C: UI entry points (mobile self-service + TI workforce summary) | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | WorkforceReportExportActions; MobilePerformancePage | J-6.7C |  | NOT VISUALLY VERIFIED |  |
+| J67C-011 | reports | Phase J-6.7C: HTML/PDF payroll leakage tests | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | assertWorkforceReportHtmlSafe | J-6.7C |  |  |  |
+| J67C-012 | repo | Phase J-6.7C: Authoritative checklist update (this document) | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | docs/TITAN_MASTER_COMPLETION_CHECKLIST.md | J-6.7C |  |  | 231 requirement rows after J-6.7C |
 | XERO-001 | Xero | OAuth connect + tenant isolation | DEPLOYED TO STAGING | YES | NO | YES | NO | NO | YES | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_FRZ018_XERO_STAGING_REPORT.md | f8cc0c4 |  |  |  |
 | XERO-002 | Xero | Background historical import (contacts/invoices/payments) | PARTIALLY IMPLEMENTED | YES | NO | YES | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 | Xero OAuth | Import job running; last_sync_at null |  |
 | XERO-003 | Xero | Xero as sole official quote/invoice numbering authority | BUILT LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | finance-document-preview.test.ts | f8cc0c4 |  |  |  |
@@ -431,7 +443,7 @@ Items **J67A-001 … J67A-012** in the register above were completed in **Phase 
 | J67A-011 | UI entry points | Preview/Download on job, completion, maintenance screens |
 | J67A-012 | Checklist | This document updated to 207 requirement rows |
 
-**Remaining report families (not in J-6.7A):** technician productivity, finance aggregate, customer history, fleet, compliance/COC standalone exports.
+**Remaining report families (not in J-6.7A):** finance aggregate, customer history, fleet, compliance/COC standalone exports.
 
 **Still NOT VISUALLY VERIFIED:** authenticated staging report journeys; Owner acceptance of client-safe report shapes.
 
@@ -453,6 +465,29 @@ Items **J67B-001 … J67B-010** close the report-audience security gap before ad
 | J67B-008 | UI alignment | No audience selector; portal/mobile/staff entry points |
 | J67B-009 | RBAC matrix tests | Owner/office/tech/client/portal scenarios |
 | J67B-010 | Checklist | 219 requirement rows |
+
+---
+
+## Phase J-6.7C scope (completed locally)
+
+Items **J67C-001 … J67C-012** add technician activity, timesheet, productivity and workforce operations PDF exports.
+
+| ID | Deliverable | J-6.7C outcome |
+|----|-------------|----------------|
+| J67C-001 | Report kinds | technician_activity, technician_timesheet, technician_productivity, workforce_operations |
+| J67C-002 | Activity report | Genuine jobs, workflow, maintenance, completion counts — no inferred travel |
+| J67C-003 | Timesheet report | wi_timesheets + mobile_time_entries; overtime policy honest when unconfigured |
+| J67C-004 | Productivity report | Transparent numerator/denominator metrics — no weighted scores |
+| J67C-005 | Workforce summary | Internal aggregates; technicians denied |
+| J67C-006 | Period validation | Africa/Johannesburg; max 93 days; server-validated dates |
+| J67C-007 | RBAC + /me routes | Technician self-service; peer/cross-tenant denied |
+| J67C-008 | Honest empty states | measured_zero vs not_recorded vs unavailable |
+| J67C-009 | Multi-page PDF | Puppeteer proof under test-results/j67c/ |
+| J67C-010 | UI entry points | MobilePerformancePage + TechnicianIntelligencePage |
+| J67C-011 | Leak tests | assertWorkforceReportHtmlSafe — no payroll/wage |
+| J67C-012 | Checklist | 231 requirement rows |
+
+**Remaining report families (not in J-6.7C):** inspection, finance aggregate, customer history, fleet, compliance/COC standalone exports.
 
 ---
 
