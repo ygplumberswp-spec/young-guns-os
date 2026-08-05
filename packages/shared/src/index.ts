@@ -22,6 +22,7 @@ export function isApiError(response: ApiResponse<unknown>): response is ApiError
   return 'error' in response;
 }
 
+export * from './audit-sandbox.js';
 export * from './auth.js';
 export * from './cache-keys.js';
 export * from './aura.js';

@@ -21,6 +21,7 @@ import { CompanyMediaImage } from '../features/company/CompanyMediaImage';
 import { NavIcon } from '../components/NavIcon';
 import { TitanWordmark } from '../brand/TitanWordmark';
 import { StagingBadge } from '../components/StagingBadge';
+import { AuditSandboxBanner } from '../components/AuditSandboxBanner';
 import { SessionStatusBanner } from '../components/SessionStatusBanner';
 import {
   HeaderSearchTrigger,
@@ -236,6 +237,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         />
       ) : null}
       <SessionStatusBanner state={sessionUxState} onDismiss={dismissSessionUxState} />
+      <AuditSandboxBanner />
       <SearchCommandPalette
         open={commandPaletteOpen}
         onClose={() => setCommandPaletteOpen(false)}

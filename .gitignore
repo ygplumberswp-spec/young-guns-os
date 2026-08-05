@@ -54,3 +54,4 @@ diagnostic-output/*.dump
 diagnostic-output/staging-pg-dump-*.dump
 
 test-results/
+diagnostic-output/qa0-audit-sandbox-manifest.json

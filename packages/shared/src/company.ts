@@ -34,6 +34,12 @@ export type CompanyPreferences = {
   cocSettings?: YoungGunsCocSettings;
   /** Owner-managed public Google review URL — HTTPS, approved domains only. */
   googleReviewUrl?: string | null;
+  /** QA-0 BrowserStack audit sandbox flags (staging only). */
+  auditSandbox?: boolean;
+  auditSandboxBanner?: string;
+  auditSandboxPurpose?: string;
+  auditSandboxOutboundBlocked?: boolean;
+  auditSandboxMfaDisabled?: boolean;
 };
 
 export type CompanyProfile = {

@@ -1,7 +1,7 @@
 import { type ReactNode, useMemo } from 'react';
 import { Link, useLocation } from 'wouter';
 import { Button } from '@titan/ui';
-import { AI_NAME } from '@titan/shared';
+import { AI_NAME, AUDIT_SANDBOX_COMPANY_NAME } from '@titan/shared';
 import { usePortalAuth } from '../lib/portal-auth-context';
 import { filterPortalNav } from '../lib/role-experience';
 import { portalHrefMatchesLocation, toPortalNestedHref } from '../lib/portal-routing';
@@ -59,6 +59,11 @@ export function PortalLayout({ children }: PortalLayoutProps) {
           ) : null}
         </div>
       </header>
+      {user?.companyName === AUDIT_SANDBOX_COMPANY_NAME ? (
+        <div className="audit-sandbox-banner" role="status" aria-live="polite">
+          STAGING AUDIT SANDBOX — NO REAL BUSINESS DATA
+        </div>
+      ) : null}
       <div className="portal-body">
         <nav className="portal-nav">
           {navItems.map((item) => (
