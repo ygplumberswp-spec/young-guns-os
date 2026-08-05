@@ -649,4 +649,21 @@ Items **J66A-001 … J66A-005** in the register above are targeted for completio
 
 ---
 
+## Deferred: Future social provider expansion (post approved J-6.7F sequence)
+
+**Do not implement during J-6.7F.** Record only — execution begins only after the current approved social-connection sequence is complete, live providers are verified, and Owner grants a separate expansion approval.
+
+| ID | Area | Requirement | Status | Entry gates (all required) |
+|----|------|-------------|--------|----------------------------|
+| J67X-001 | integrations | **LinkedIn Company Page** — secure connection via existing canonical architecture (`social_media_connections` + `social_oauth_states` + `/api/v1/social-connections`; no parallel OAuth/token store) | **DEFERRED** | Facebook, Instagram and TikTok fully connected and verified on staging; LinkedIn API scopes and app-review requirements confirmed; Owner approval; architecture reuse proven without duplication |
+| J67X-002 | integrations | **Additional social providers** (e.g. YouTube, other suitable platforms) — evaluate and scope individually | **DEFERRED** | Same gates as J67X-001; per-provider API/approval audit; explicit Owner approval per provider; no implementation until prior deferred items are closed |
+
+**Initial future provider:** LinkedIn Company Page.
+
+**Possible later providers:** YouTube and other suitable platforms — only after core Meta-family providers (Facebook, Instagram, TikTok) are fully connected and verified, provider APIs and approval requirements are confirmed, Owner approval is obtained, and the existing canonical connection architecture can be reused without duplication.
+
+**Explicitly out of scope until deferred gates close:** LinkedIn OAuth, YouTube OAuth, new migration tags, new provider cards on `/integrations`, publishing/scheduling/analytics for any new provider.
+
+---
+
 *Generated requirement count: **243** rows. Update this document when any row changes classification; do not maintain competing checklists elsewhere.*
