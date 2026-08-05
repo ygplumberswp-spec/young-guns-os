@@ -30,6 +30,8 @@ const envSchema = z.object({
   META_APP_ID: z.string().trim().min(1).optional(),
   META_APP_SECRET: z.string().min(1).optional(),
   META_REDIRECT_URI: z.string().url().optional(),
+  /** Facebook Login for Business configuration ID (Meta App Dashboard). */
+  META_LOGIN_CONFIG_ID: z.string().trim().min(1).optional(),
   /** Echoed back during Meta's webhook subscription handshake. */
   META_WEBHOOK_VERIFY_TOKEN: z.string().min(1).optional(),
   SEED_DEV: z
@@ -321,6 +323,7 @@ export type FacebookAppEnvConfig = {
   appSecret: string;
   redirectUri: string;
   webhookVerifyToken: string | null;
+  loginConfigId: string | null;
   configured: true;
 };
 
@@ -351,5 +354,6 @@ export function resolveFacebookAppConfig(
     appSecret,
     redirectUri,
     webhookVerifyToken: env.META_WEBHOOK_VERIFY_TOKEN?.trim() ?? null,
+    loginConfigId: env.META_LOGIN_CONFIG_ID?.trim() ?? null,
   };
 }

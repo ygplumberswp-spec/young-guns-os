@@ -1,8 +1,8 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import {
   FACEBOOK_GRAPH_BASE_URL,
+  FACEBOOK_OAUTH_BASIC_SCOPES,
   FACEBOOK_OAUTH_DIALOG_URL,
-  FACEBOOK_REQUESTED_SCOPES,
   type FacebookPermission,
 } from '@titan/shared';
 
@@ -75,6 +75,11 @@ export type FacebookAppConfig = {
   appId: string;
   appSecret: string;
   redirectUri: string;
+  /**
+   * Facebook Login for Business configuration ID from Meta App Dashboard.
+   * When set, OAuth uses config_id only — never combined with scope parameter.
+   */
+  loginConfigId?: string | null;
 };
 
 export type FacebookPageSummary = {
@@ -135,16 +140,31 @@ export class FacebookGraphClient {
     return createHmac('sha256', this.config.appSecret).update(accessToken).digest('hex');
   }
 
-  buildAuthorizeUrl(state: string, scopes: FacebookPermission[] = FACEBOOK_REQUESTED_SCOPES): string {
+  /**
+   * Builds Meta OAuth authorize URL.
+   *
+   * - With `loginConfigId`: Facebook Login for Business (config_id only, no scope).
+   * - Without: least-privilege scope flow (pages_show_list only at initial connect).
+   */
+  buildAuthorizeUrl(
+    state: string,
+    scopes: FacebookPermission[] = FACEBOOK_OAUTH_BASIC_SCOPES,
+  ): string {
     const params = new URLSearchParams({
       client_id: this.config.appId,
       redirect_uri: this.config.redirectUri,
       state,
-      scope: scopes.join(','),
       response_type: 'code',
       // Forces the Page picker so the Owner can correct a wrong earlier grant.
       auth_type: 'rerequest',
     });
+
+    if (this.config.loginConfigId?.trim()) {
+      params.set('config_id', this.config.loginConfigId.trim());
+    } else {
+      params.set('scope', scopes.join(','));
+    }
+
     return `${FACEBOOK_OAUTH_DIALOG_URL}?${params.toString()}`;
   }
 

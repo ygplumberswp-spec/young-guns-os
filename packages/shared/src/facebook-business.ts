@@ -76,8 +76,39 @@ export const FACEBOOK_PERMISSIONS: FacebookPermission[] = [
   'business_management',
 ];
 
-/** Requested at authorise time. Meta decides what is actually granted. */
-export const FACEBOOK_REQUESTED_SCOPES: FacebookPermission[] = [
+/**
+ * Staged OAuth scope model (J-6.7F invalid-scope correction).
+ *
+ * Initial Facebook Page connection requests **basic scopes only** so Meta's
+ * "Manage everything on your Page" use case is not blocked by advanced
+ * permissions that require separate App Review or use-case configuration.
+ */
+
+/** Tier 1 — basic Page discovery and selection (initial OAuth). */
+export const FACEBOOK_OAUTH_BASIC_SCOPES: FacebookPermission[] = ['pages_show_list'];
+
+/**
+ * Tier 2 — publishing (requested only via re-authorisation when Meta use case
+ * supports it; never bundled into initial connect).
+ */
+export const FACEBOOK_OAUTH_PUBLISHING_SCOPES: FacebookPermission[] = ['pages_manage_posts'];
+
+/**
+ * Tier 3 — optional future capabilities (never requested at initial connect).
+ * Honest capability states surface when these are absent from the token.
+ */
+export const FACEBOOK_OAUTH_OPTIONAL_SCOPES: FacebookPermission[] = [
+  'pages_read_engagement',
+  'pages_manage_engagement',
+  'pages_manage_metadata',
+  'pages_messaging',
+  'leads_retrieval',
+  'pages_read_user_content',
+  'read_insights',
+];
+
+/** Pre-correction scopes that caused Meta "Invalid Scopes" on staging (audit reference). */
+export const FACEBOOK_LEGACY_FULL_OAUTH_SCOPES: FacebookPermission[] = [
   'pages_show_list',
   'pages_read_engagement',
   'pages_manage_posts',
@@ -88,6 +119,63 @@ export const FACEBOOK_REQUESTED_SCOPES: FacebookPermission[] = [
   'pages_read_user_content',
   'read_insights',
 ];
+
+/** Scopes requested at initial authorise time. Meta decides what is actually granted. */
+export const FACEBOOK_REQUESTED_SCOPES: FacebookPermission[] = [...FACEBOOK_OAUTH_BASIC_SCOPES];
+
+/** Scopes that must never appear on the initial OAuth URL. */
+export const FACEBOOK_FORBIDDEN_BASIC_OAUTH_SCOPES: FacebookPermission[] = [
+  'pages_read_engagement',
+  'pages_manage_posts',
+  'pages_manage_engagement',
+  'pages_manage_metadata',
+  'pages_messaging',
+  'leads_retrieval',
+  'pages_read_user_content',
+  'read_insights',
+  'business_management',
+];
+
+/** Instagram scopes must never appear on the Facebook Business OAuth URL. */
+export const FACEBOOK_FORBIDDEN_INSTAGRAM_OAUTH_SCOPES = [
+  'instagram_basic',
+  'instagram_content_publish',
+  'instagram_manage_comments',
+  'instagram_manage_insights',
+] as const;
+
+export type FacebookExtendedCapabilityStatus =
+  | 'AVAILABLE'
+  | 'NOT_CONFIGURED'
+  | 'REQUIRES_META_ACCESS'
+  | 'REQUIRES_OWNER_APPROVAL';
+
+/** Classifies optional capabilities for honest UI when not granted at connect time. */
+export function resolveFacebookExtendedCapabilityStatus(
+  capability: FacebookCapability,
+  grantedPermissions: readonly string[],
+): FacebookExtendedCapabilityStatus {
+  const state = resolveFacebookCapability(capability, grantedPermissions);
+  if (state.available) return 'AVAILABLE';
+  if (capability === 'list_pages') {
+    return grantedPermissions.includes('pages_show_list') ? 'AVAILABLE' : 'REQUIRES_META_ACCESS';
+  }
+  if (capability === 'publish_posts' || capability === 'schedule_posts') {
+    return 'REQUIRES_META_ACCESS';
+  }
+  if (
+    capability === 'read_messages' ||
+    capability === 'send_messages' ||
+    capability === 'retrieve_leads' ||
+    capability === 'read_insights'
+  ) {
+    return 'REQUIRES_META_ACCESS';
+  }
+  if (capability === 'read_page' || capability === 'read_comments' || capability === 'reply_comments') {
+    return 'REQUIRES_META_ACCESS';
+  }
+  return 'NOT_CONFIGURED';
+}
 
 export type FacebookCapability =
   | 'list_pages'
@@ -224,8 +312,11 @@ export const FACEBOOK_CONNECTION_STATE_LABELS: Record<FacebookConnectionState, s
   provider_unavailable: 'Provider unavailable',
 };
 
-/** Capabilities without which the connection cannot do its core job. */
-export const FACEBOOK_CORE_CAPABILITIES: FacebookCapability[] = ['read_page'];
+/**
+ * Capabilities without which the connection cannot complete basic Page linking.
+ * Advanced read/publish capabilities are optional tiers — not connect blockers.
+ */
+export const FACEBOOK_CORE_CAPABILITIES: FacebookCapability[] = ['list_pages'];
 
 export type FacebookConnectionStateInput = {
   /** META_APP_ID + META_APP_SECRET present on the API host. */
@@ -386,17 +477,15 @@ export function resolveFacebookConnectionState(
   if (missingCore.length > 0) {
     return build(
       'missing_permission',
-      `The Page is reachable, but Meta has not granted ${missingCore.join(', ')}, which TITAN needs to read the Page.`,
-      'Reconnect and grant the missing permissions, or complete Meta App Review for them.',
+      `Facebook authorisation succeeded but Meta has not granted ${missingCore.join(', ')}, which TITAN needs to list and select your Page.`,
+      'Reconnect and grant Page list access, or complete Meta App Review if the permission is not yet approved for this app.',
     );
   }
 
   if (missingPermissions.length > 0) {
     return build(
       'connected',
-      `Connected and verified against Facebook. Some optional capabilities are unavailable because Meta has not granted ${missingPermissions.join(
-        ', ',
-      )}.`,
+      `Connected and verified against Facebook. Optional capabilities (publishing, Messenger, leads, insights) remain unavailable until Meta grants additional permissions — use Reconnect when your Meta app use case includes them.`,
       null,
     );
   }
@@ -408,7 +497,67 @@ export function missingFacebookPermissions(
   grantedPermissions: readonly string[],
 ): FacebookPermission[] {
   const granted = new Set(grantedPermissions);
-  return FACEBOOK_REQUESTED_SCOPES.filter((permission) => !granted.has(permission));
+  const optionalCatalog = [
+    ...FACEBOOK_OAUTH_PUBLISHING_SCOPES,
+    ...FACEBOOK_OAUTH_OPTIONAL_SCOPES,
+  ];
+  return optionalCatalog.filter((permission) => !granted.has(permission));
+}
+
+/** Parses scope query param from an OAuth authorize URL (for tests and audit). */
+export function parseFacebookOAuthScopesFromAuthorizeUrl(authorizeUrl: string): string[] {
+  try {
+    const scope = new URL(authorizeUrl).searchParams.get('scope');
+    if (!scope) return [];
+    return scope.split(',').map((entry) => entry.trim()).filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
+/** True when the URL uses Facebook Login for Business config_id (no raw scope param). */
+export function usesFacebookLoginForBusinessConfig(authorizeUrl: string): boolean {
+  try {
+    return Boolean(new URL(authorizeUrl).searchParams.get('config_id'));
+  } catch {
+    return false;
+  }
+}
+
+/** Validates initial OAuth URL uses least-privilege scopes only. */
+export function assertFacebookBasicOAuthUrl(authorizeUrl: string): {
+  ok: boolean;
+  violations: string[];
+} {
+  const violations: string[] = [];
+  if (usesFacebookLoginForBusinessConfig(authorizeUrl)) {
+    const scopeParam = new URL(authorizeUrl).searchParams.get('scope');
+    if (scopeParam) {
+      violations.push('config_id flow must not combine scope parameter');
+    }
+    return { ok: violations.length === 0, violations };
+  }
+
+  const scopes = parseFacebookOAuthScopesFromAuthorizeUrl(authorizeUrl);
+  for (const forbidden of FACEBOOK_FORBIDDEN_BASIC_OAUTH_SCOPES) {
+    if (scopes.includes(forbidden)) {
+      violations.push(`forbidden basic OAuth scope: ${forbidden}`);
+    }
+  }
+  for (const forbidden of FACEBOOK_FORBIDDEN_INSTAGRAM_OAUTH_SCOPES) {
+    if (scopes.includes(forbidden)) {
+      violations.push(`instagram scope on facebook URL: ${forbidden}`);
+    }
+  }
+  if (scopes.length === 0) {
+    violations.push('missing scope parameter on non-config_id OAuth URL');
+  }
+  for (const required of FACEBOOK_OAUTH_BASIC_SCOPES) {
+    if (!scopes.includes(required)) {
+      violations.push(`missing required basic scope: ${required}`);
+    }
+  }
+  return { ok: violations.length === 0, violations };
 }
 
 // ─── Content workspace (Phase D) ─────────────────────────────────────────────

@@ -95,15 +95,38 @@ Do **not** list WhatsApp Business or Google Business Profile as Social Connectio
    - `https://young-guns-os-staging.up.railway.app/api/v1/social-connections/oauth/callback?provider=instagram`
 4. Register TikTok redirect URI when approved:
    - `https://young-guns-os-staging.up.railway.app/api/v1/social-connections/oauth/callback?provider=tiktok`
-5. On TITAN staging API host, set (never commit values): `META_APP_ID`, `META_APP_SECRET`, `INTEGRATIONS_ENCRYPTION_KEY`, TikTok keys when approved.
-6. As **Company Owner**, open `/integrations` → Social Connections (three cards) → Connect.
-7. **Google Business Profile:** use `/social-media-integrations` — not Social Connections.
-8. **WhatsApp Business:** use `/integrations/whatsapp` — not Social Connections.
+5. On TITAN staging API host, set (never commit values): `META_APP_ID`, `META_APP_SECRET`, `META_REDIRECT_URI`, `INTEGRATIONS_ENCRYPTION_KEY`, optional `META_LOGIN_CONFIG_ID`, TikTok keys when approved.
+
+---
+
+## 7. Facebook OAuth invalid-scope correction (2026-08-05)
+
+**Symptom:** Meta returned Invalid Scopes for `pages_read_engagement`, `pages_manage_posts`, `pages_manage_engagement`, `pages_manage_metadata`, `pages_messaging`, `leads_retrieval`, `pages_read_user_content`, `read_insights`.
+
+**Root cause:** `FACEBOOK_REQUESTED_SCOPES` bundled all planned capabilities into the initial OAuth URL. The unpublished Meta app use case does not grant those permissions at connect time.
+
+**Correction (local @ recovery branch):**
+
+| Item | Before | After |
+|------|--------|-------|
+| Initial OAuth scopes | 9 permissions (full bundle) | `pages_show_list` only |
+| OAuth flow | Raw `scope` only | `META_LOGIN_CONFIG_ID` → `config_id` only; else `scope=pages_show_list` |
+| Core connect capability | `read_page` (required `pages_read_engagement`) | `list_pages` (`pages_show_list`) |
+| Optional capabilities | Blocked connect | Honest `REQUIRES_META_ACCESS` — do not block basic Page link |
+
+**Instagram and TikTok:** unchanged by this correction.
+
+**Owner Meta dashboard actions remaining:**
+
+1. Ensure Facebook Login for Business use case "Manage everything on your Page" is configured.
+2. If Meta requires a Configuration ID, create Login configuration and set `META_LOGIN_CONFIG_ID` on Railway staging API.
+3. Register staging callback URL (unchanged).
+4. Re-test Connect as Company Owner — do **not** publish the app until Owner approves.
 
 ---
 
 ## 6. Explicitly not done
 
-- No push/redeploy until Owner approves three-platform correction locally
+- No push/redeploy until Owner approves OAuth scope correction locally
 - No J-6.7G publishing work
 - LinkedIn / YouTube remain deferred checklist items only

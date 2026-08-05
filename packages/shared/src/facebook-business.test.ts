@@ -20,6 +20,11 @@ import {
   detectFacebookLeadDuplicate,
   evaluateFacebookPublishEligibility,
   facebookAuraRequiresConfirmation,
+  assertFacebookBasicOAuthUrl,
+  FACEBOOK_LEGACY_FULL_OAUTH_SCOPES,
+  FACEBOOK_OAUTH_BASIC_SCOPES,
+  FACEBOOK_OAUTH_OPTIONAL_SCOPES,
+  resolveFacebookExtendedCapabilityStatus,
   isFacebookOriginatedUtm,
   isWithinMessengerWindow,
   missingFacebookPermissions,
@@ -140,21 +145,22 @@ describe('facebook connection honesty (Phase C)', () => {
     assert.equal(result.state, 'partial');
   });
 
-  it('reports missing permission when a core permission was not granted', () => {
+  it('reports missing permission when list_pages was not granted', () => {
     const result = resolveFacebookConnectionState(
-      connectionInput({ grantedPermissions: ['pages_show_list'] }),
+      connectionInput({ grantedPermissions: [] }),
     );
     assert.equal(result.state, 'missing_permission');
-    assert.ok(result.missingPermissions.includes('pages_read_engagement'));
+    assert.ok(result.missingPermissions.includes('pages_manage_posts'));
   });
 
-  it('stays connected but lists optional permissions Meta withheld', () => {
+  it('stays connected with basic scope only and lists optional permissions Meta withheld', () => {
     const result = resolveFacebookConnectionState(
       connectionInput({
-        grantedPermissions: ['pages_show_list', 'pages_read_engagement'],
+        grantedPermissions: ['pages_show_list'],
       }),
     );
     assert.equal(result.state, 'connected');
+    assert.ok(result.missingPermissions.includes('pages_manage_posts'));
     assert.ok(result.missingPermissions.includes('leads_retrieval'));
     assert.equal(
       result.capabilities.find((entry) => entry.capability === 'publish_posts')?.available,
@@ -698,6 +704,42 @@ describe('retry policy (Phase Q)', () => {
 
   it('gives up and escalates after the attempt limit', () => {
     assert.equal(decideFacebookRetry({ attempt: 5, transient: true }).retry, false);
+  });
+});
+
+describe('facebook OAuth scope tiers (J-6.7F invalid-scope correction)', () => {
+  it('documents legacy scopes that caused Meta invalid-scope failure', () => {
+    assert.ok(FACEBOOK_LEGACY_FULL_OAUTH_SCOPES.includes('pages_messaging'));
+    assert.ok(FACEBOOK_LEGACY_FULL_OAUTH_SCOPES.includes('leads_retrieval'));
+    assert.ok(FACEBOOK_LEGACY_FULL_OAUTH_SCOPES.includes('read_insights'));
+  });
+
+  it('basic tier is pages_show_list only', () => {
+    assert.deepEqual(FACEBOOK_OAUTH_BASIC_SCOPES, ['pages_show_list']);
+  });
+
+  it('optional tier excludes messaging leads insights from basic request', () => {
+    assert.ok(FACEBOOK_OAUTH_OPTIONAL_SCOPES.includes('pages_messaging'));
+    assert.ok(FACEBOOK_OAUTH_OPTIONAL_SCOPES.includes('leads_retrieval'));
+    assert.ok(!FACEBOOK_OAUTH_BASIC_SCOPES.includes('pages_messaging'));
+  });
+
+  it('classifies Messenger as REQUIRES_META_ACCESS when not granted', () => {
+    assert.equal(
+      resolveFacebookExtendedCapabilityStatus('read_messages', ['pages_show_list']),
+      'REQUIRES_META_ACCESS',
+    );
+  });
+
+  it('validates basic OAuth URL helper rejects forbidden scopes', () => {
+    const bad = assertFacebookBasicOAuthUrl(
+      'https://www.facebook.com/v21.0/dialog/oauth?client_id=1&redirect_uri=https%3A%2F%2Fexample.com&state=s&scope=pages_show_list,pages_messaging',
+    );
+    assert.equal(bad.ok, false);
+    const good = assertFacebookBasicOAuthUrl(
+      'https://www.facebook.com/v21.0/dialog/oauth?client_id=1&redirect_uri=https%3A%2F%2Fexample.com&state=s&scope=pages_show_list',
+    );
+    assert.equal(good.ok, true);
   });
 });
 

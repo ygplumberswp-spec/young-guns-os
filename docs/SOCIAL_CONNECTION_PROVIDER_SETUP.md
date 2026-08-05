@@ -17,7 +17,7 @@ It does **not** contain secrets, tokens or live credentials.
 
 | Provider | Env variables | Callback pattern |
 |----------|---------------|------------------|
-| Facebook Page | `META_APP_ID`, `META_APP_SECRET`, `INTEGRATIONS_ENCRYPTION_KEY` | `{API_PUBLIC_URL}/api/v1/facebook-business/oauth/callback` |
+| Facebook Page | `META_APP_ID`, `META_APP_SECRET`, `META_REDIRECT_URI`, `INTEGRATIONS_ENCRYPTION_KEY`, optional `META_LOGIN_CONFIG_ID` | `{API_PUBLIC_URL}/api/v1/facebook-business/oauth/callback` |
 | Instagram Business | Same Meta app as Facebook | `{API_PUBLIC_URL}/api/v1/social-connections/oauth/callback?provider=instagram` |
 | TikTok | `TIKTOK_CLIENT_KEY`, `TIKTOK_CLIENT_SECRET`, `INTEGRATIONS_ENCRYPTION_KEY` | `{API_PUBLIC_URL}/api/v1/social-connections/oauth/callback?provider=tiktok` |
 
@@ -28,6 +28,29 @@ Alternate env aliases accepted where documented in code (`FACEBOOK_APP_ID`, `MET
 - **Facebook:** Owner selects a Page returned by Meta for the authenticated account (canonical path: Facebook Business API).
 - **Instagram:** Instagram **Business** accounts linked to an available Facebook Page only — personal accounts are invalid.
 - **TikTok:** Readiness structure only until `TIKTOK_LIVE_OAUTH_ENABLED=1` and provider review complete. TITAN reports `PROVIDER_REVIEW_REQUIRED` — never a fake Connected state.
+
+## Facebook OAuth — least-privilege (invalid-scope correction)
+
+**Live staging failure (2026-08-05):** Meta rejected the initial connect with **Invalid Scopes** because TITAN requested advanced permissions not enabled for the unpublished app's "Manage everything on your Page" use case.
+
+**Corrected initial OAuth (Facebook Business `/api/v1/facebook-business`):**
+
+| Tier | Scopes | When requested |
+|------|--------|----------------|
+| **Basic connection** | `pages_show_list` only | Initial Connect — Page discovery and selection |
+| **Publishing** | `pages_manage_posts` | Re-authorisation only, when Meta use case supports it |
+| **Optional** | engagement, messaging, leads, insights, metadata, visitor content | Never at initial connect — honest `REQUIRES_META_ACCESS` in UI |
+
+**Forbidden on initial OAuth URL:** `pages_read_engagement`, `pages_manage_posts`, `pages_manage_engagement`, `pages_manage_metadata`, `pages_messaging`, `leads_retrieval`, `pages_read_user_content`, `read_insights`, and all Instagram scopes.
+
+### Facebook Login for Business (optional)
+
+If your Meta app requires Login for Business (Configuration ID):
+
+1. Meta App Dashboard → **Facebook Login for Business** → create a **Login configuration** for Page management.
+2. Set on TITAN API host: `META_LOGIN_CONFIG_ID=<configuration-id>` (never commit).
+3. TITAN uses `config_id` **only** — never combined with a raw `scope` parameter.
+4. If `META_LOGIN_CONFIG_ID` is unset, TITAN falls back to scope-based OAuth with `pages_show_list` only.
 
 ## Provider review / approval blockers
 

@@ -130,6 +130,7 @@ export class FacebookBusinessService {
           appId: config.appId,
           appSecret: config.appSecret,
           redirectUri: config.redirectUri,
+          loginConfigId: config.loginConfigId,
         }));
   }
 
@@ -365,7 +366,10 @@ export class FacebookBusinessService {
       initiatorRoleName: actor.roleName,
     });
     await this.audit(actor, 'connection.oauth_started', null, {
-      requestedScopes: this.graph().buildAuthorizeUrl(state).includes('scope=') ? 'requested' : null,
+      oauthFlow: this.appConfig.configured && this.appConfig.loginConfigId
+        ? 'login_for_business_config_id'
+        : 'scope_basic',
+      requestedOAuthTier: 'basic',
     });
 
     return { authorizationUrl: this.graph().buildAuthorizeUrl(state) };

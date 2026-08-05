@@ -349,3 +349,16 @@
 | BC-022 | Communications | Business chain audit §FRZ-023 | — | Business Chain | All roles in chain | WhatsApp live send | Linked: INT-003 | Chain-dependent | Chain-dependent | Chain-dependent | ROLE-008 baseline | Partial | E2E JSON where proven | Unproven authenticated | — | **BLOCKED_EXTERNAL_SETUP** | Provider | — | Configure provider credentials on Railway staging |
 | BC-023 | Social connections | Business chain audit §FRZ-023 | — | Business Chain | All roles in chain | FB/IG/TikTok OAuth | Linked: J67F-003 | Chain-dependent | Chain-dependent | Chain-dependent | ROLE-008 baseline | Partial | Phase tests | Unproven authenticated | — | **COMPLETE_LOCAL_ONLY** | — | — | Owner authenticated staging E2E + visual sign-off |
 | BC-024 | End-to-end chain | Business chain audit §FRZ-023 | — | Business Chain | All roles in chain | Lead → cash live verified | Linked: FRZ-023 | Chain-dependent | Chain-dependent | Chain-dependent | ROLE-008 baseline | Partial | E2E JSON where proven | Unproven authenticated | — | **PARTIAL** | — | — | Close acceptance chain gaps per gap plan |
+
+---
+
+## Addendum — J-6.7F Facebook OAuth invalid-scope correction (local, 2026-08-05)
+
+| Field | Value |
+|-------|-------|
+| **Affected** | J67F-003, J67F-004, Facebook Business integration |
+| **Live failure** | Meta Invalid Scopes on 8 advanced permissions at initial Connect |
+| **Correction** | Initial OAuth → `pages_show_list` only; optional capabilities honest `REQUIRES_META_ACCESS` |
+| **Optional env** | `META_LOGIN_CONFIG_ID` for Facebook Login for Business (never combined with scope) |
+| **Status after fix** | **COMPLETE_LOCAL_ONLY** — staging re-test pending Owner approval (no push/deploy) |
+| **Instagram/TikTok** | Unchanged |
