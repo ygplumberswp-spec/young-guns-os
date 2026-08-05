@@ -5,6 +5,7 @@ import type { SocialConnectionProviderCard, SocialPublishingProvider } from '@ti
 import {
   canManageSocialConnections,
   canViewSocialConnections,
+  FACEBOOK_PAGE_SELECTION_WORKSPACE_PATH,
 } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import {
@@ -262,7 +263,9 @@ function SocialConnectionCard({
             pageSelectionMismatch={card.pageSelectionMismatch}
             showViewSetup={card.canViewSetupRequirements}
             onConnect={() => void handleConnect()}
-            onChoosePage={() => void handleConnect()}
+            onChoosePage={() => {
+              window.location.assign(FACEBOOK_PAGE_SELECTION_WORKSPACE_PATH);
+            }}
             onGrantPageRead={() => void handleGrantPageRead()}
             onCheckHealth={() => void handleHealth()}
             onReconnect={() => void handleReconnect()}

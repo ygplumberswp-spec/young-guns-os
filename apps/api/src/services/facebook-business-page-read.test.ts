@@ -58,3 +58,23 @@ describe('facebook page identity binding (J-6.7F7)', () => {
     assert.ok(socialSource.includes('resolveFacebookPageIdentity'));
   });
 });
+
+describe('facebook choose correct Page click path (J-6.7F8)', () => {
+  it('web actions invoke handler for choose_correct_page instead of same-page Link', () => {
+    const actionsSource = readFileSync(
+      join(here, '../../../web/src/features/integrations/FacebookConnectionActions.tsx'),
+      'utf8',
+    );
+    assert.ok(actionsSource.includes('choose_correct_page: props.onChoosePage'));
+    assert.equal(
+      actionsSource.includes("action === 'choose_correct_page' && choosePageHref"),
+      false,
+    );
+  });
+
+  it('pages discovery route remains read-only GET', () => {
+    const routeSource = readFileSync(join(here, '../routes/facebook-business.ts'), 'utf8');
+    assert.ok(routeSource.includes("router.get('/pages'"));
+    assert.ok(routeSource.includes('discoverPagesForSelection'));
+  });
+});

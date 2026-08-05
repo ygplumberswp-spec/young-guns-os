@@ -86,17 +86,7 @@ function renderActionButton(
   if (action === 'choose_page' && choosePageHref) {
     return (
       <Link key="choose-page" href={choosePageHref}>
-        <Button size="sm" variant={variant} disabled={disabled}>
-          {label}
-        </Button>
-      </Link>
-    );
-  }
-
-  if (action === 'choose_correct_page' && choosePageHref) {
-    return (
-      <Link key="choose-correct-page" href={choosePageHref}>
-        <Button size="sm" variant={variant} disabled={disabled}>
+        <Button size="sm" variant={variant} disabled={disabled} type="button">
           {label}
         </Button>
       </Link>
@@ -121,6 +111,7 @@ function renderActionButton(
       size="sm"
       variant={variant}
       disabled={disabled}
+      type="button"
       onClick={() => handlers[action]()}
     >
       {label}

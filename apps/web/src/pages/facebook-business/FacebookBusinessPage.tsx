@@ -1,4 +1,4 @@
-import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'wouter';
 import { Button, EmptyState, Input, Panel, StatCard } from '@titan/ui';
 import {
@@ -14,6 +14,7 @@ import {
   FACEBOOK_PAGE_READ_OAUTH_EXPLANATION,
   FACEBOOK_SYNC_INACTIVE_UNTIL_READ_PERMISSION,
   hasFacebookPageReadEngagement,
+  maskFacebookPageId,
   resolveFacebookFeatureMetricAvailability,
   formatFacebookScheduleForOwner,
   YOUNG_GUNS_BRAND,
@@ -92,6 +93,8 @@ export function FacebookBusinessPage() {
 
   const [isLoading, setIsLoading] = useState(true);
   const [isBusy, setIsBusy] = useState(false);
+  const [isLoadingPages, setIsLoadingPages] = useState(false);
+  const pagesLoadInFlight = useRef(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -223,17 +226,32 @@ export function FacebookBusinessPage() {
 
   async function handleLoadPages() {
     if (!accessToken || !canManage) return;
+    if (pagesLoadInFlight.current) return;
+    pagesLoadInFlight.current = true;
     setError(null);
     setSuccess(null);
-    setIsBusy(true);
+    setIsLoadingPages(true);
     try {
       const discovery = await fetchFacebookPages(accessToken);
       setPageDiscovery(discovery);
-      setSuccess(
-        discovery.pages.some((page) => page.selectable)
-          ? 'Selectable Pages loaded from Meta. Choose Young Guns Plumbing – Cape Town.'
-          : `${FACEBOOK_PAGE_DISCOVERY_STATUS_LABELS[discovery.status]}: ${discovery.detail}`,
-      );
+      const verified = discovery.pendingPageCandidate;
+      const verifiedSelectable =
+        discovery.pages.some((page) => page.selectable && page.id === verified?.pageId) ||
+        (discovery.directLookup?.selectable &&
+          discovery.directLookup.candidatePageId === verified?.pageId);
+      if (discovery.needsBusinessPortfolioAccess) {
+        setError(
+          'Meta requires Business Portfolio access before managed Pages can be listed. Grant Business Portfolio access to continue Page discovery.',
+        );
+      } else if (verifiedSelectable && verified) {
+        setSuccess(
+          `Verified Page found: ${verified.pageName} (ID ending ${maskFacebookPageId(verified.pageId)?.replace(/^···/, '') ?? 'unknown'}). Select it below to finish binding.`,
+        );
+      } else if (discovery.pages.some((page) => page.selectable)) {
+        setSuccess('Selectable Pages loaded from Meta. Choose Young Guns Plumbing – Cape Town.');
+      } else {
+        setError(`${FACEBOOK_PAGE_DISCOVERY_STATUS_LABELS[discovery.status]}: ${discovery.detail}`);
+      }
     } catch (err) {
       setError(
         err instanceof FacebookBusinessApiClientError
@@ -241,7 +259,8 @@ export function FacebookBusinessPage() {
           : 'Could not load Pages from Meta.',
       );
     } finally {
-      setIsBusy(false);
+      setIsLoadingPages(false);
+      pagesLoadInFlight.current = false;
     }
   }
 
@@ -265,10 +284,10 @@ export function FacebookBusinessPage() {
     const params = new URLSearchParams(window.location.search);
     if (
       params.get('facebook') === 'select-page' &&
-      params.get('business') === 'portfolio' &&
       accessToken &&
       canManage &&
-      !pageDiscovery
+      !pageDiscovery &&
+      !pagesLoadInFlight.current
     ) {
       void handleLoadPages();
     }
@@ -530,6 +549,7 @@ export function FacebookBusinessPage() {
               pageDiscovery={pageDiscovery}
               canManage={canManage}
               isBusy={isBusy}
+              isLoadingPages={isLoadingPages}
               onConnect={handleConnect}
               onLoadPages={handleLoadPages}
               onGrantBusinessPortfolio={handleGrantBusinessPortfolio}
@@ -711,6 +731,7 @@ function ConnectionTab({
   pageDiscovery,
   canManage,
   isBusy,
+  isLoadingPages,
   onConnect,
   onLoadPages,
   onGrantBusinessPortfolio,
@@ -724,6 +745,7 @@ function ConnectionTab({
   pageDiscovery: FacebookPagesDiscoveryResponse | null;
   canManage: boolean;
   isBusy: boolean;
+  isLoadingPages: boolean;
   onConnect: () => void;
   onLoadPages: () => void;
   onGrantBusinessPortfolio: () => void;
@@ -869,13 +891,12 @@ function ConnectionTab({
           ) : null}
           <FacebookConnectionActions
             connectionState={connection.state}
-            busy={isBusy}
+            busy={isBusy || isLoadingPages}
             canManage={canManage}
             needsConfiguration={needsConfiguration}
             needsBusinessPortfolioAccess={needsBusinessPortfolioAccess}
             pageSelectionMismatch={pageSelectionMismatch}
             confirmDisconnect={confirmDisconnect}
-            choosePageHref="/facebook-business"
             onConnect={onConnect}
             onChoosePage={onLoadPages}
             onGrantBusinessPortfolio={onGrantBusinessPortfolio}
@@ -886,6 +907,24 @@ function ConnectionTab({
             onRequestDisconnect={() => setConfirmDisconnect(true)}
             onCancelDisconnect={() => setConfirmDisconnect(false)}
           />
+
+          {isLoadingPages ? (
+            <p className="page-muted" role="status" aria-live="polite">
+              Loading Pages…
+            </p>
+          ) : null}
+
+          {pageSelectionMismatch && pageDiscovery?.needsBusinessPortfolioAccess ? (
+            <Panel title="Business Portfolio access required" className="titan-panel--warning">
+              <p className="page-muted">
+                Meta did not return managed Pages with the current token. Grant Business Portfolio
+                access to continue discovery for the verified Young Guns Page.
+              </p>
+              <Button size="sm" variant="primary" disabled={isBusy} onClick={onGrantBusinessPortfolio}>
+                Grant Business Portfolio access
+              </Button>
+            </Panel>
+          ) : null}
 
           {!isConnectedLimited && pageDiscovery?.businessPortfolio ? (
             <div className="space-y-3">
@@ -930,7 +969,7 @@ function ConnectionTab({
             </div>
           ) : null}
 
-          {!isConnectedLimited && pageDiscovery ? (
+          {(pageSelectionMismatch || !isConnectedLimited) && pageDiscovery ? (
             <div className="space-y-3">
               <p className="page-muted">
                 {FACEBOOK_PAGE_DISCOVERY_STATUS_LABELS[pageDiscovery.status]}: {pageDiscovery.detail}
