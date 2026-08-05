@@ -155,6 +155,9 @@ function createMockFinanceDb(options?: {
       customers: {
         findFirst: async () => ({ id: CUSTOMER_A, companyId: TENANT_A }),
       },
+      titanDocuments: {
+        findFirst: async () => null,
+      },
     },
     update: (table: typeof quotes | typeof invoices) => ({
       set: (values: Record<string, unknown>) => ({

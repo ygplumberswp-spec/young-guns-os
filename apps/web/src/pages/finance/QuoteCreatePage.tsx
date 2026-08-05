@@ -39,6 +39,12 @@ import {
 import { useFinanceDocumentPreview } from '../../features/finance/useFinanceDocumentPreview';
 import { FinanceDocumentPhotosPanel } from '../../features/finance/FinanceDocumentPhotosPanel';
 import { linkPhotosAfterFinanceSave } from '../../features/finance/finance-document-editor-save';
+import { FinanceDocumentSectionsFields } from '../../features/finance/FinanceDocumentSectionsFields';
+import {
+  emptyFinanceDocumentSectionsEditorState,
+  quoteSectionsToApiPayload,
+  type FinanceDocumentSectionsEditorState,
+} from '../../features/finance/finance-document-sections-state';
 import { PageHeader } from '../../components/ux';
 import { useFormDraftShell } from '../../hooks/useFormDraftShell';
 import { useTitanNotify } from '../../components/ux/TitanNotifications';
@@ -57,6 +63,9 @@ export function QuoteCreatePage() {
   const [validUntil, setValidUntil] = useState('');
   const [customerReference, setCustomerReference] = useState('');
   const [message, setMessage] = useState('');
+  const [documentSections, setDocumentSections] = useState<FinanceDocumentSectionsEditorState>(
+    emptyFinanceDocumentSectionsEditorState(),
+  );
   const [addresses, setAddresses] = useState<FinanceDocumentAddresses>({
     billingAddress: '',
     siteAddress: '',
@@ -92,6 +101,7 @@ export function QuoteCreatePage() {
       validUntil,
       customerReference,
       message,
+      documentSections,
       addresses,
       lines,
       vatMode,
@@ -228,6 +238,7 @@ export function QuoteCreatePage() {
     validUntil,
     customerReference,
     message,
+    documentSections,
     addresses,
     lines,
     vatMode,
@@ -262,6 +273,7 @@ export function QuoteCreatePage() {
         customerNotes: customerReference.trim() || null,
         notes: message.trim() || null,
         ...addressesToApiPayload(addresses),
+        ...quoteSectionsToApiPayload(documentSections),
         lineItems: lineItems!,
         clientActionId,
       };
@@ -283,6 +295,7 @@ export function QuoteCreatePage() {
           billingAddress: body.billingAddress,
           siteAddress: body.siteAddress,
           postalAddress: body.postalAddress,
+          ...quoteSectionsToApiPayload(documentSections),
           lineItems: body.lineItems,
         });
         setStatus(updated.status);
@@ -300,6 +313,7 @@ export function QuoteCreatePage() {
         billingAddress: body.billingAddress,
         siteAddress: body.siteAddress,
         postalAddress: body.postalAddress,
+        ...quoteSectionsToApiPayload(documentSections),
         lineItems: body.lineItems,
         clientActionId,
       });
@@ -314,6 +328,7 @@ export function QuoteCreatePage() {
       clientActionId,
       customerId,
       customerReference,
+      documentSections,
       draftShell.autosave,
       jobId,
       lines,
@@ -394,6 +409,8 @@ export function QuoteCreatePage() {
           vatMode,
           priceMode,
           notes: message,
+          sections: documentSections,
+          quoteId: savedQuoteId,
           jobReference: job?.title ?? null,
           status,
           photos,
@@ -577,6 +594,13 @@ export function QuoteCreatePage() {
               disabled={!canWrite}
             />
           ) : null}
+
+          <FinanceDocumentSectionsFields
+            kind="quote"
+            state={documentSections}
+            onChange={setDocumentSections}
+            disabled={!canWrite}
+          />
 
           <div className="finance-editor__bottom-grid">
             <FinanceEditorCard title="Message / Notes" className="finance-editor-card--notes">

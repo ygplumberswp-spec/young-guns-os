@@ -77,7 +77,7 @@ Boolean columns use **YES** / **NO** / **—** (not applicable).
 
 ## Requirements register
 
-**Total requirement rows:** 171
+**Total requirement rows:** 195
 
 | ID | Area | Requirement | Status | Built locally | Tests passed | Real DB/provider connected | RBAC tested | Tenant isolation tested | Deployed to staging | Authenticated E2E passed | Desktop verified | Tablet verified | Mobile verified | Claude verified | Gemini verified | Owner verified | Production ready | Evidence | Commit | Migration/provider dependency | Blocker | Next action |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -187,6 +187,18 @@ Boolean columns use **YES** / **NO** / **—** (not applicable).
 | J66C-010 | finance | Phase J-6.6C: Multi-page print CSS (break-inside, table headers) | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | finance-document-preview-html.test.ts 30-line table | J-6.6C |  | NOT VISUALLY VERIFIED | Puppeteer multi-page render audit pending |
 | J66C-011 | finance | Phase J-6.6C: Quote vs invoice section visibility contract tests | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | finance-document-preview-sections.test.ts; html tests | J-6.6C |  |  |  |
 | J66C-012 | repo | Phase J-6.6C: Authoritative checklist update (this document) | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | docs/TITAN_MASTER_COMPLETION_CHECKLIST.md | J-6.6C |  |  | Maintain register each phase |
+| J66D-001 | finance | Phase J-6.6D: Quote editor section wiring (scope, terms, warranty, maintenance) | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | FinanceDocumentSectionsFields; QuoteCreate/Edit pages; finance-document-sections-state.test.ts | J-6.6D |  | NOT VISUALLY VERIFIED | Authenticated staging editor E2E pending |
+| J66D-002 | finance | Phase J-6.6D: Invoice Work Completed dedicated field (save/reload/preview) | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | titan_documents.content; InvoiceCreate/Edit; roundtrip tests | J-6.6D |  | NOT VISUALLY VERIFIED |  |
+| J66D-003 | finance | Phase J-6.6D: Warranty + Recommended Maintenance round-trip (no defaults) | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | finance-document-content.test.ts; sections-state.test.ts | J-6.6D |  |  |  |
+| J66D-004 | finance | Phase J-6.6D: Genuine COC evidence connection (typed metadata, tenant-scoped) | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | finance-document-sections.service.test.ts; FinanceCocEvidenceSelector | J-6.6D |  | NOT VISUALLY VERIFIED |  |
+| J66D-005 | finance | Phase J-6.6D: Server-sourced Yoco payment URL from invoice_payment_links | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | finance-document-preview-enrichment.service.test.ts | J-6.6D |  |  | Client paymentUrl ignored; saved invoice only |
+| J66D-006 | finance | Phase J-6.6D: Owner-managed googleReviewUrl tenant setting | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | CompanySettingsPage; company route Owner gate; security audit log | J-6.6D |  | NOT VISUALLY VERIFIED | No migration — JSON preferences |
+| J66D-007 | finance | Phase J-6.6D: Draft bank-detail preview policy (Owner override) | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | FinanceDraftPaymentToggle; enrichment resolveShowPaymentDetails | J-6.6D |  | NOT VISUALLY VERIFIED | Interim policy pending Owner visual verification |
+| J66D-008 | finance | Phase J-6.6D: Preview API server authority (spoofed URL rejection) | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | finance routes preview schema; enrichment service | J-6.6D |  |  |  |
+| J66D-009 | finance | Phase J-6.6D: Four-editor round-trip tests (create/edit save reload) | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | finance-document-roundtrip.service.test.ts; finance-document-sections-state.test.ts | J-6.6D |  |  |  |
+| J66D-010 | finance | Phase J-6.6D: Genuine multi-page Puppeteer PDF proof | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | finance-document-multipage-pdf.test.ts; test-results/j66d/*.pdf | J-6.6D | Chromium | NOT VISUALLY VERIFIED | Local Puppeteer evidence only — not Owner verified |
+| J66D-011 | finance | Phase J-6.6D: Accessibility/responsive finance section fields | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | finance-j64/j64a Playwright contracts; labeled controls | J-6.6D |  | NOT VISUALLY VERIFIED | Not authenticated staging verification |
+| J66D-012 | repo | Phase J-6.6D: Authoritative checklist update (this document) | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | docs/TITAN_MASTER_COMPLETION_CHECKLIST.md | J-6.6D |  |  | 195 requirement rows after J-6.6D |
 | XERO-001 | Xero | OAuth connect + tenant isolation | DEPLOYED TO STAGING | YES | NO | YES | NO | NO | YES | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_FRZ018_XERO_STAGING_REPORT.md | f8cc0c4 |  |  |  |
 | XERO-002 | Xero | Background historical import (contacts/invoices/payments) | PARTIALLY IMPLEMENTED | YES | NO | YES | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 | Xero OAuth | Import job running; last_sync_at null |  |
 | XERO-003 | Xero | Xero as sole official quote/invoice numbering authority | BUILT LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | finance-document-preview.test.ts | f8cc0c4 |  |  |  |
@@ -349,7 +361,32 @@ Items **J66C-001 … J66C-012** in the register above were completed in **Phase 
 | J66C-011 | Visibility tests | Quote/invoice section matrix covered in shared tests |
 | J66C-012 | Checklist | This document updated to 183 requirement rows |
 
-**Owner decisions still required:** draft preview bank-detail visibility policy; tenant `googleReviewUrl` configuration; finance-editor wiring for workCompleted/warranty/COC from job evidence.
+**J-6.6D closures:** editor section wiring, server Yoco lookup, tenant `googleReviewUrl`, COC evidence selector, draft payment Owner override, preview API authority, Puppeteer multi-page proof (local only).
+
+---
+
+## Phase J-6.6D scope (completed locally)
+
+Items **J66D-001 … J66D-012** in the register above were completed in **Phase J-6.6D**. Boolean columns marked **YES** only where proven locally — not deployed, Owner-verified, or production-ready.
+
+| ID | Deliverable | J-6.6D outcome |
+|----|-------------|----------------|
+| J66D-001 | Quote editor sections | Scope, exclusions, payment terms, warranty, maintenance wired on create/edit |
+| J66D-002 | Work Completed | Invoice-only field in `titan_documents.content`; save/reload/preview |
+| J66D-003 | Warranty + maintenance | Optional text; no defaults; empty sections hidden in PDF |
+| J66D-004 | COC evidence | Typed metadata only; tenant/job validation; no storage paths in API/PDF |
+| J66D-005 | Yoco URL | Server lookup from `invoice_payment_links`; client spoof ignored |
+| J66D-006 | Google review URL | Owner-managed `preferences.googleReviewUrl`; audit logged |
+| J66D-007 | Draft bank details | Hidden on draft unless Owner preview override |
+| J66D-008 | Preview authority | Server enriches payment/review/COC/status; editor content only for narratives |
+| J66D-009 | Round-trip tests | Four editors + API roundtrip suite green |
+| J66D-010 | Multi-page PDF | Puppeteer proof: 1-line=2pp, 30-line=4pp, 100-line=6pp (local artifacts) |
+| J66D-011 | Responsive UX | Labeled fields; existing Playwright layout contracts preserved |
+| J66D-012 | Checklist | This document updated to 195 requirement rows |
+
+**Still NOT VISUALLY VERIFIED:** authenticated staging editor journeys; Owner acceptance of draft payment policy; Gemini live visual audit.
+
+**Owner decisions still required:** controlled migration apply on staging; live provider connection; production release.
 
 ---
 

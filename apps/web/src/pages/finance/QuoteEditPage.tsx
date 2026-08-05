@@ -38,6 +38,13 @@ import { buildFinanceEditorPreviewInput } from '../../features/finance/finance-p
 import { useFinanceDocumentPreview } from '../../features/finance/useFinanceDocumentPreview';
 import { FinanceDocumentPhotosPanel } from '../../features/finance/FinanceDocumentPhotosPanel';
 import { linkPhotosAfterFinanceSave } from '../../features/finance/finance-document-editor-save';
+import { FinanceDocumentSectionsFields } from '../../features/finance/FinanceDocumentSectionsFields';
+import {
+  emptyFinanceDocumentSectionsEditorState,
+  quoteSectionsToApiPayload,
+  sectionsFromQuoteDetail,
+  type FinanceDocumentSectionsEditorState,
+} from '../../features/finance/finance-document-sections-state';
 import { PageHeader } from '../../components/ux';
 import { useFormDraftShell } from '../../hooks/useFormDraftShell';
 import { useTitanNotify } from '../../components/ux/TitanNotifications';
@@ -60,9 +67,9 @@ export function QuoteEditPage() {
   const [validUntil, setValidUntil] = useState('');
   const [customerReference, setCustomerReference] = useState('');
   const [message, setMessage] = useState('');
-  const [scopeOfWork, setScopeOfWork] = useState('');
-  const [exclusions, setExclusions] = useState('');
-  const [paymentTerms, setPaymentTerms] = useState('');
+  const [documentSections, setDocumentSections] = useState<FinanceDocumentSectionsEditorState>(
+    emptyFinanceDocumentSectionsEditorState(),
+  );
   const [addresses, setAddresses] = useState<FinanceDocumentAddresses>({
     billingAddress: '',
     siteAddress: '',
@@ -146,9 +153,7 @@ export function QuoteEditPage() {
         setValidUntil(toDateInputValue(quote.validUntil));
         setCustomerReference(quote.customerNotes ?? '');
         setMessage(quote.notes ?? '');
-        setScopeOfWork(quote.scopeOfWork ?? '');
-        setExclusions(quote.exclusions ?? '');
-        setPaymentTerms(quote.paymentTerms ?? '');
+        setDocumentSections(sectionsFromQuoteDetail(quote));
         setAddresses(addressesFromSnapshot(quote.addresses));
         setVatMode(inferVatModeFromLines(quote.lineItems));
         setLines(lineItemsToEditorLines(quote.lineItems));
@@ -208,6 +213,7 @@ export function QuoteEditPage() {
         customerNotes: customerReference.trim() || null,
         notes: message.trim() || null,
         ...addressesToApiPayload(addresses),
+        ...quoteSectionsToApiPayload(documentSections),
         lineItems: lineItems!,
       });
     },
@@ -219,6 +225,7 @@ export function QuoteEditPage() {
       jobId,
       lines,
       message,
+      documentSections,
       priceMode,
       quoteDate,
       quoteId,
@@ -269,6 +276,7 @@ export function QuoteEditPage() {
       await openPreview(
         buildFinanceEditorPreviewInput({
           kind: 'quote',
+          quoteId,
           customer: customerName
             ? { id: customerId, name: customerName, companyName: null, email: null, phone: null, xeroContactId: null }
             : null,
@@ -280,9 +288,7 @@ export function QuoteEditPage() {
           vatMode,
           priceMode,
           notes: message,
-          scopeOfWork,
-          exclusions,
-          paymentTerms,
+          sections: documentSections,
           xeroQuoteNumber,
           jobReference: job?.title ?? null,
           status,
@@ -455,6 +461,13 @@ export function QuoteEditPage() {
               disabled={!canWrite}
             />
           ) : null}
+
+          <FinanceDocumentSectionsFields
+            kind="quote"
+            state={documentSections}
+            onChange={setDocumentSections}
+            disabled={!canWrite}
+          />
 
           <div className="finance-editor__bottom-grid">
             <FinanceEditorCard title="Message / Notes" className="finance-editor-card--notes">

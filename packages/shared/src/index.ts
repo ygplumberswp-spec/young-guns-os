@@ -44,6 +44,8 @@ export * from './finance-catalogue.js';
 export * from './finance-document-roundtrip.js';
 export * from './finance-document-preview.js';
 export * from './finance-document-preview-html.js';
+export * from './finance-document-content.js';
+export * from './finance-document-preview-sections.js';
 export * from './finance-tenant-pricebook.js';
 export * from './finance-document-photo-utils.js';
 export * from './finance-document-evidence.js';

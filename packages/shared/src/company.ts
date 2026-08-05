@@ -32,6 +32,8 @@ export type CompanyPreferences = {
   serviceGeography?: YoungGunsServiceGeography;
   /** UX-I / UX-035 — COC / SANS applicability defaults. */
   cocSettings?: YoungGunsCocSettings;
+  /** Owner-managed public Google review URL — HTTPS, approved domains only. */
+  googleReviewUrl?: string | null;
 };
 
 export type CompanyProfile = {

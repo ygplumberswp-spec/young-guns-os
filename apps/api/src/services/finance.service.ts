@@ -37,14 +37,18 @@ import {
   resolveQuoteIssuedAtUpdate,
   searchFinanceCatalogueItems,
   toFinanceDocumentAddressSnapshot,
-  buildFinanceDocumentPreviewModel,
   filterFinanceCatalogueCostFields,
   canViewFinanceProfit,
   sanitizeFinanceDocumentWriteRequest,
   resolveYoungGunsPricebookForTenant,
-  type FinanceDocumentPreviewInput,
   type FinanceDocumentPreviewModel,
 } from '@titan/shared';
+import { FinanceDocumentSectionsService } from './finance-document-sections.service.js';
+import {
+  FinanceDocumentPreviewEnrichmentService,
+  type FinancePreviewEnrichmentActor,
+  type FinancePreviewEnrichmentRequest,
+} from './finance-document-preview-enrichment.service.js';
 import type { DatabaseClient } from '@titan/db';
 import {
   companyFinanceSettings,
@@ -124,7 +128,13 @@ export type FinanceActor = {
 };
 
 export class FinanceService {
-  constructor(private readonly db: DatabaseClient) {}
+  private readonly documentSections: FinanceDocumentSectionsService;
+  private readonly previewEnrichment: FinanceDocumentPreviewEnrichmentService;
+
+  constructor(private readonly db: DatabaseClient) {
+    this.documentSections = new FinanceDocumentSectionsService(db);
+    this.previewEnrichment = new FinanceDocumentPreviewEnrichmentService(db, this.documentSections);
+  }
 
   async listQuotes(companyId: string, query: FinanceListQuery = {}): Promise<QuoteSummary[]> {
     const rows = await this.db.query.quotes.findMany({
@@ -229,7 +239,31 @@ export class FinanceService {
     }).returning();
     if (!created) throw new FinanceError('CREATE_FAILED', 'Unable to create quote');
     await this.insertQuoteLines(created.id, companyId, computed.lines);
-    emitBusinessEvent({ companyId, eventType: 'quote.created', entityType: 'quote', entityId: created.id, payload: { quote: { id: created.id, status: created.status, customerId: created.customerId, amountCents: created.amountCents }, customerId: created.customerId } });
+    if (sanitized.documentContent) {
+      await this.documentSections.saveSections(toSectionsActor(actor), {
+        quoteId: created.id,
+        jobId: sanitized.jobId ?? null,
+        documentNumber: displayOfficialQuoteNumber({ xeroQuoteNumber: created.xeroQuoteNumber }),
+        title,
+        customerId: sanitized.customerId,
+        content: sanitized.documentContent,
+      });
+    }
+    emitBusinessEvent({
+      companyId,
+      eventType: 'quote.created',
+      entityType: 'quote',
+      entityId: created.id,
+      payload: {
+        quote: {
+          id: created.id,
+          status: created.status,
+          customerId: created.customerId,
+          amountCents: created.amountCents,
+        },
+        customerId: created.customerId,
+      },
+    });
     return (await this.getQuote(companyId, created.id))!;
   }
 
@@ -299,6 +333,18 @@ export class FinanceService {
       throw new FinanceError('CREATE_FAILED', 'Unable to create invoice');
     }
     await this.insertInvoiceLines(created.id, companyId, computed.lines);
+
+    if (sanitized.documentContent || sanitized.cocDocumentationId !== undefined) {
+      await this.documentSections.saveSections(toSectionsActor(actor), {
+        invoiceId: created.id,
+        jobId: sanitized.jobId ?? null,
+        documentNumber: displayOfficialInvoiceNumber({ xeroInvoiceNumber: created.xeroInvoiceNumber }),
+        title,
+        customerId: sanitized.customerId,
+        content: sanitized.documentContent ?? undefined,
+        cocDocumentationId: sanitized.cocDocumentationId ?? null,
+      });
+    }
 
     const invoice = (await this.getInvoice(companyId, created.id))!;
 
@@ -422,6 +468,10 @@ export class FinanceService {
     const row = await this.db.query.quotes.findFirst({ where: and(eq(quotes.id, quoteId), eq(quotes.companyId, companyId)), with: { customer: true, job: true, lineItems: true, acceptances: true } });
     if (!row) return null;
     const profit = options.includeProfit ? profitFromQuote(row) : null;
+    const documentSections = await this.documentSections.loadSections({
+      companyId,
+      quoteId,
+    });
     return {
       ...toQuoteSummary(row, profit), scopeOfWork: row.scopeOfWork, exclusions: row.exclusions, assumptions: row.assumptions,
       customerNotes: row.customerNotes, internalNotes: options.includeProfit ? row.internalNotes : null, paymentTerms: row.paymentTerms,
@@ -435,6 +485,7 @@ export class FinanceService {
         lineSubtotalCents: line.lineSubtotalCents, lineVatCents: line.lineVatCents, lineTotalCents: line.lineTotalCents,
         lineCostCents: options.includeProfit ? line.lineCostCents : null, isOptional: line.isOptional, optionTier: line.optionTier,
       })), acceptance: row.acceptances[0] ? acceptanceSummary(row.acceptances[0]) : null, xeroQuoteId: row.xeroQuoteId,
+      documentSections,
     };
   }
 
@@ -462,12 +513,25 @@ export class FinanceService {
       jobId: sanitized.jobId === undefined ? current.jobId : sanitized.jobId ?? null,
       customerNotes: sanitized.customerNotes === undefined ? current.customerNotes : normalizeOptionalText(sanitized.customerNotes),
       validUntil: sanitized.validUntil === undefined ? current.validUntil : parseOptionalDate(sanitized.validUntil), notes: sanitized.notes === undefined ? current.notes : normalizeOptionalText(sanitized.notes),
+      scopeOfWork: sanitized.scopeOfWork === undefined ? current.scopeOfWork : normalizeOptionalText(sanitized.scopeOfWork),
+      exclusions: sanitized.exclusions === undefined ? current.exclusions : normalizeOptionalText(sanitized.exclusions),
+      paymentTerms: sanitized.paymentTerms === undefined ? current.paymentTerms : normalizeOptionalText(sanitized.paymentTerms),
       ...(issuedAtUpdate !== undefined ? { issuedAt: issuedAtUpdate } : {}),
       ...(addressUpdate ?? {}),
       ...computed && { amountCents: computed.totalCents, subtotalCents: computed.subtotalCents, vatCents: computed.vatCents, totalCents: computed.totalCents, estimatedCostCents: computed.profit.estimatedCostCents, grossProfitCents: computed.profit.grossProfitCents, markupBps: computed.profit.markupBps, marginBps: computed.profit.marginBps, profitFloorCents: computed.profit.profitFloorCents, targetPriceCents: computed.profit.targetPriceCents },
       updatedAt: new Date(),
     }).where(eq(quotes.id, quoteId));
     if (computed) { await this.db.delete(quoteLineItems).where(eq(quoteLineItems.quoteId, quoteId)); await this.insertQuoteLines(quoteId, actor.companyId, computed.lines); }
+    if (sanitized.documentContent !== undefined) {
+      await this.documentSections.saveSections(toSectionsActor(actor), {
+        quoteId,
+        jobId: sanitized.jobId === undefined ? current.jobId : sanitized.jobId ?? null,
+        documentNumber: displayOfficialQuoteNumber({ xeroQuoteNumber: current.xeroQuoteNumber }),
+        title: current.title,
+        customerId: current.customerId,
+        content: sanitized.documentContent,
+      });
+    }
     return (await this.getQuote(actor.companyId, quoteId))!;
   }
 
@@ -537,6 +601,7 @@ export class FinanceService {
   ): Promise<InvoiceDetail | null> {
     const row = await this.db.query.invoices.findFirst({ where: and(eq(invoices.id, invoiceId), eq(invoices.companyId, companyId)), with: { customer: true, job: true, quote: true, lineItems: true, payments: { with: { invoice: { with: { customer: true } } } } } });
     if (!row) return null;
+    const documentSections = await this.documentSections.loadSections({ companyId, invoiceId });
     return {
       ...toInvoiceSummary(row),
       subtotalCents: row.subtotalCents,
@@ -560,6 +625,7 @@ export class FinanceService {
         lineTotalCents: line.lineTotalCents,
       })),
       payments: row.payments.map(toPaymentSummary),
+      documentSections,
     };
   }
 
@@ -622,6 +688,18 @@ export class FinanceService {
     if (computed) {
       await this.db.delete(invoiceLineItems).where(eq(invoiceLineItems.invoiceId, invoiceId));
       await this.insertInvoiceLines(invoiceId, actor.companyId, computed.lines);
+    }
+
+    if (sanitized.documentContent !== undefined || sanitized.cocDocumentationId !== undefined) {
+      await this.documentSections.saveSections(toSectionsActor(actor), {
+        invoiceId,
+        jobId: current.jobId,
+        documentNumber: displayOfficialInvoiceNumber({ xeroInvoiceNumber: current.xeroInvoiceNumber }),
+        title: current.title,
+        customerId: current.customerId,
+        content: sanitized.documentContent,
+        cocDocumentationId: sanitized.cocDocumentationId,
+      });
     }
 
     emitBusinessEvent({
@@ -814,12 +892,20 @@ export class FinanceService {
     return filterFinanceCatalogueCostFields(results, options.includeCost ?? false);
   }
 
-  /** Read-only preview — maps live form values through the document engine without persisting. */
-  previewDocument(
-    _actor: { companyId: string; userId: string },
-    input: FinanceDocumentPreviewInput,
-  ): FinanceDocumentPreviewModel {
-    return buildFinanceDocumentPreviewModel(input);
+  /** Read-only preview — enriches editor values with server-authoritative payment/review/COC data. */
+  async previewDocument(
+    actor: FinancePreviewEnrichmentActor,
+    input: FinancePreviewEnrichmentRequest,
+  ): Promise<FinanceDocumentPreviewModel> {
+    return this.previewEnrichment.buildPreviewModel(actor, input);
+  }
+
+  async listJobCocEvidence(companyId: string, jobId: string) {
+    const job = await this.db.query.jobs.findFirst({
+      where: and(eq(jobs.id, jobId), eq(jobs.companyId, companyId)),
+    });
+    if (!job) throw new FinanceError('JOB_NOT_FOUND', 'Job not found');
+    return this.documentSections.listCocEvidence(companyId, jobId);
   }
 
   async buildAuraContext(companyId: string): Promise<AuraFinanceContext> {
@@ -1129,6 +1215,10 @@ function toPaymentSummary(row: PaymentWithRelations & Record<string, any>): Paym
 
 function toActor(actor: FinanceActor | string): FinanceActor {
   return typeof actor === 'string' ? { companyId: actor, canWrite: true } : actor;
+}
+
+function toSectionsActor(actor: FinanceActor): { companyId: string; userId: string | null } {
+  return { companyId: actor.companyId, userId: actor.userId ?? null };
 }
 
 function legacyQuoteLines(amountCents: number, vatRateBps: number) {

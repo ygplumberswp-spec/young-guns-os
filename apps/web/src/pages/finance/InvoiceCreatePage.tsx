@@ -46,6 +46,17 @@ import {
 import { useFinanceDocumentPreview } from '../../features/finance/useFinanceDocumentPreview';
 import { FinanceDocumentPhotosPanel } from '../../features/finance/FinanceDocumentPhotosPanel';
 import { linkPhotosAfterFinanceSave } from '../../features/finance/finance-document-editor-save';
+import { FinanceDocumentSectionsFields } from '../../features/finance/FinanceDocumentSectionsFields';
+import { FinanceCocEvidenceSelector } from '../../features/finance/FinanceCocEvidenceSelector';
+import {
+  emptyFinanceDocumentSectionsEditorState,
+  invoiceSectionsToApiPayload,
+  type FinanceDocumentSectionsEditorState,
+} from '../../features/finance/finance-document-sections-state';
+import {
+  FinanceDraftPaymentToggle,
+  isFinanceDocumentOwner,
+} from '../../features/finance/FinanceDraftPaymentToggle';
 import { PageHeader } from '../../components/ux';
 import { useFormDraftShell } from '../../hooks/useFormDraftShell';
 import { useTitanNotify } from '../../components/ux/TitanNotifications';
@@ -68,6 +79,11 @@ export function InvoiceCreatePage() {
   const [dueDate, setDueDate] = useState('');
   const [customerReference, setCustomerReference] = useState('');
   const [message, setMessage] = useState('');
+  const [documentSections, setDocumentSections] = useState<FinanceDocumentSectionsEditorState>(
+    emptyFinanceDocumentSectionsEditorState(),
+  );
+  const [cocDocumentationId, setCocDocumentationId] = useState<string | null>(null);
+  const [showPaymentDetails, setShowPaymentDetails] = useState(false);
   const [addresses, setAddresses] = useState<FinanceDocumentAddresses>({
     billingAddress: '',
     siteAddress: '',
@@ -104,6 +120,9 @@ export function InvoiceCreatePage() {
       dueDate,
       customerReference,
       message,
+      documentSections,
+      cocDocumentationId,
+      showPaymentDetails,
       addresses,
       vatMode,
       priceMode,
@@ -212,6 +231,9 @@ export function InvoiceCreatePage() {
     dueDate,
     customerReference,
     message,
+    documentSections,
+    cocDocumentationId,
+    showPaymentDetails,
     addresses,
     vatMode,
     priceMode,
@@ -256,6 +278,8 @@ export function InvoiceCreatePage() {
         customerReference: customerReference.trim() || null,
         notes: message.trim() || null,
         ...addressesToApiPayload(addresses),
+        ...invoiceSectionsToApiPayload(documentSections),
+        cocDocumentationId,
         clientActionId,
       };
 
@@ -271,6 +295,8 @@ export function InvoiceCreatePage() {
           billingAddress: payload.billingAddress,
           siteAddress: payload.siteAddress,
           postalAddress: payload.postalAddress,
+          ...invoiceSectionsToApiPayload(documentSections),
+          cocDocumentationId,
         });
         setStatus(updated.status);
         return updated;
@@ -288,6 +314,8 @@ export function InvoiceCreatePage() {
       clientActionId,
       customerId,
       customerReference,
+      documentSections,
+      cocDocumentationId,
       draftShell.autosave,
       dueDate,
       invoiceDate,
@@ -370,8 +398,12 @@ export function InvoiceCreatePage() {
           vatMode,
           priceMode,
           notes: message,
+          sections: documentSections,
+          cocDocumentationId,
+          invoiceId: savedInvoiceId,
           jobReference: job?.title ?? null,
           status,
+          showPaymentDetails: isFinanceDocumentOwner(user) ? showPaymentDetails : false,
           photos,
         }),
       );
@@ -573,6 +605,33 @@ export function InvoiceCreatePage() {
               disabled={!canWrite}
             />
           ) : null}
+
+          <FinanceEditorCard title="Compliance" className="finance-editor-card--full">
+            {accessToken ? (
+              <FinanceCocEvidenceSelector
+                accessToken={accessToken}
+                jobId={jobId}
+                value={cocDocumentationId}
+                onChange={setCocDocumentationId}
+                disabled={!canWrite}
+              />
+            ) : null}
+          </FinanceEditorCard>
+
+          <FinanceDocumentSectionsFields
+            kind="invoice"
+            state={documentSections}
+            onChange={setDocumentSections}
+            disabled={!canWrite}
+          />
+
+          <FinanceDraftPaymentToggle
+            isOwner={isFinanceDocumentOwner(user)}
+            canWrite={canWrite}
+            checked={showPaymentDetails}
+            onChange={setShowPaymentDetails}
+            status={status}
+          />
 
           <div className="finance-editor__bottom-grid">
             <FinanceEditorCard title="Message / Notes" className="finance-editor-card--notes">

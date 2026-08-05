@@ -12,9 +12,15 @@ import {
   type FinanceDocumentVatMode,
   type FinanceEditorLine,
 } from './finance-editor-utils';
+import {
+  editorStateToDocumentContent,
+  type FinanceDocumentSectionsEditorState,
+} from './finance-document-sections-state';
 
 export type FinanceEditorPreviewContext = {
   kind: FinanceDocumentPreviewKind;
+  quoteId?: string | null;
+  invoiceId?: string | null;
   customer: FinanceCustomerSearchResult | null;
   customerName?: string | null;
   customerReference: string;
@@ -25,13 +31,8 @@ export type FinanceEditorPreviewContext = {
   vatMode: FinanceDocumentVatMode;
   priceMode: FinanceDocumentPriceMode;
   notes: string;
-  paymentTerms?: string | null;
-  scopeOfWork?: string | null;
-  exclusions?: string | null;
-  workCompleted?: string | null;
-  warranty?: FinanceDocumentPreviewInput['warranty'];
-  recommendedMaintenance?: FinanceDocumentPreviewInput['recommendedMaintenance'];
-  coc?: FinanceDocumentPreviewInput['coc'];
+  sections?: FinanceDocumentSectionsEditorState;
+  cocDocumentationId?: string | null;
   xeroQuoteNumber?: string | null;
   xeroInvoiceNumber?: string | null;
   jobReference?: string | null;
@@ -39,8 +40,6 @@ export type FinanceEditorPreviewContext = {
   jobScheduledAt?: string | null;
   status?: string | null;
   showPaymentDetails?: boolean | null;
-  paymentUrl?: string | null;
-  reviewUrl?: string | null;
   amountPaidCents?: number | null;
   depositReceivedCents?: number | null;
   photos?: DocumentPhoto[];
@@ -48,7 +47,11 @@ export type FinanceEditorPreviewContext = {
 
 export function buildFinanceEditorPreviewInput(
   context: FinanceEditorPreviewContext,
-): FinanceDocumentPreviewInput {
+): FinanceDocumentPreviewInput & {
+  quoteId?: string | null;
+  invoiceId?: string | null;
+  cocDocumentationId?: string | null;
+} {
   const parsedLines = parseEditorLinesForPreview(context.lines, {
     priceMode: context.priceMode,
     vatMode: context.vatMode,
@@ -59,8 +62,14 @@ export function buildFinanceEditorPreviewInput(
     context.customerName?.trim() ||
     '';
 
+  const sections = context.sections;
+  const documentContent = sections ? editorStateToDocumentContent(sections, context.kind) : {};
+
   return {
     kind: context.kind,
+    quoteId: context.quoteId ?? null,
+    invoiceId: context.invoiceId ?? null,
+    cocDocumentationId: context.cocDocumentationId ?? null,
     customer: customerName
       ? {
           name: customerName,
@@ -82,13 +91,12 @@ export function buildFinanceEditorPreviewInput(
       vatRateBps: line.vatRateBps,
     })),
     notes: context.notes.trim() || null,
-    paymentTerms: context.paymentTerms?.trim() || null,
-    scopeOfWork: context.scopeOfWork?.trim() || null,
-    exclusions: context.exclusions?.trim() || null,
-    workCompleted: context.workCompleted?.trim() || null,
-    warranty: context.warranty ?? null,
-    recommendedMaintenance: context.recommendedMaintenance ?? null,
-    coc: context.coc ?? null,
+    paymentTerms: sections?.paymentTerms.trim() || null,
+    scopeOfWork: sections?.scopeOfWork.trim() || null,
+    exclusions: sections?.exclusions.trim() || null,
+    workCompleted: documentContent.workCompleted ?? null,
+    warranty: documentContent.warranty ?? null,
+    recommendedMaintenance: documentContent.recommendedMaintenance ?? null,
     xeroQuoteNumber: context.xeroQuoteNumber ?? null,
     xeroInvoiceNumber: context.xeroInvoiceNumber ?? null,
     jobReference: context.jobReference?.trim() || null,
@@ -96,8 +104,6 @@ export function buildFinanceEditorPreviewInput(
     jobScheduledAt: context.jobScheduledAt || null,
     status: context.status ?? 'draft',
     showPaymentDetails: context.showPaymentDetails ?? null,
-    paymentUrl: context.paymentUrl ?? null,
-    reviewUrl: context.reviewUrl ?? null,
     amountPaidCents: context.amountPaidCents ?? null,
     depositReceivedCents: context.depositReceivedCents ?? null,
     photos: context.photos ?? [],

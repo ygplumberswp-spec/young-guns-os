@@ -46,6 +46,7 @@ export function CompanySettingsPage() {
   const [companyTelephone, setCompanyTelephone] = useState('');
   const [companyEmail, setCompanyEmail] = useState('');
   const [website, setWebsite] = useState('');
+  const [googleReviewUrl, setGoogleReviewUrl] = useState('');
   const [physicalAddress, setPhysicalAddress] = useState('');
   const [postalAddress, setPostalAddress] = useState('');
   const [companyRegistrationNumber, setCompanyRegistrationNumber] = useState('');
@@ -85,6 +86,8 @@ export function CompanySettingsPage() {
   const profileImageInputRef = useRef<HTMLInputElement>(null);
 
   const canEdit = user?.permissions.includes('*') ?? false;
+  const canEditGoogleReviewUrl =
+    user?.roleName === 'Company Owner' || user?.roleName === 'Owner' || canEdit;
 
   function applyProfileToForm(data: CompanyProfile) {
     setProfile(data);
@@ -102,6 +105,7 @@ export function CompanySettingsPage() {
     setCompanyTelephone(data.preferences.companyTelephone ?? '');
     setCompanyEmail(data.preferences.companyEmail ?? '');
     setWebsite(data.preferences.website ?? '');
+    setGoogleReviewUrl(data.preferences.googleReviewUrl ?? '');
     setPhysicalAddress(data.preferences.physicalAddress ?? '');
     setPostalAddress(data.preferences.postalAddress ?? '');
     setCompanyRegistrationNumber(data.preferences.companyRegistrationNumber ?? '');
@@ -193,6 +197,7 @@ export function CompanySettingsPage() {
           companyTelephone: companyTelephone.trim() || undefined,
           companyEmail: companyEmail.trim() || undefined,
           website: website.trim() || undefined,
+          googleReviewUrl: googleReviewUrl.trim() || null,
           physicalAddress: physicalAddress.trim() || undefined,
           postalAddress: postalAddress.trim() || undefined,
           companyRegistrationNumber: companyRegistrationNumber.trim() || undefined,
@@ -355,6 +360,16 @@ export function CompanySettingsPage() {
                 onChange={(e) => setWebsite(e.target.value)}
                 disabled={!canEdit}
               />
+              <Input
+                label="Google review URL"
+                value={googleReviewUrl}
+                onChange={(e) => setGoogleReviewUrl(e.target.value)}
+                disabled={!canEditGoogleReviewUrl}
+                placeholder="https://g.page/…/review (Owner only)"
+              />
+              <p className="settings-meta">
+                Used on sent invoice PDFs for the review request QR. Leave empty to hide the QR.
+              </p>
               <Input
                 label="Registration Number"
                 value={companyRegistrationNumber}

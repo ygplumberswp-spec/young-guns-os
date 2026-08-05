@@ -486,6 +486,13 @@ export function buildFinanceDocumentPreviewHtml(model: FinanceDocumentPreviewMod
 </html>`;
 }
 
+/** Counts PDF pages using /Type /Page markers — suitable for Puppeteer-generated PDFs. */
+export function countPdfPages(buffer: Uint8Array | Buffer): number {
+  const text = Buffer.from(buffer).toString('latin1');
+  const matches = text.match(/\/Type\s*\/Page\b/g);
+  return matches?.length ?? 0;
+}
+
 /** Validates a buffer begins with a PDF signature. */
 export function isValidPdfBuffer(buffer: Uint8Array | Buffer): boolean {
   if (buffer.length < 5) return false;

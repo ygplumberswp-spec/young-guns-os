@@ -108,26 +108,12 @@ const financeDocumentPreviewSchema = z
       })
       .nullable()
       .optional(),
-    coc: z
-      .discriminatedUnion('status', [
-        z.object({ status: z.literal('not_attached') }),
-        z.object({
-          status: z.literal('attached'),
-          documentId: z.string().uuid(),
-          jobId: z.string().uuid(),
-          fileName: z.string().trim().min(1).max(500),
-          mimeType: z.string().trim().max(200),
-          sizeBytes: z.number().int().nullable().default(null),
-          downloadPath: z.string().trim().min(1).max(500),
-        }),
-      ])
-      .nullable()
-      .optional(),
+    quoteId: z.string().uuid().nullable().optional(),
+    invoiceId: z.string().uuid().nullable().optional(),
+    cocDocumentationId: z.string().uuid().nullable().optional(),
     jobTechnician: z.string().trim().max(200).nullable().optional(),
     jobScheduledAt: z.string().trim().max(40).nullable().optional(),
     showPaymentDetails: z.boolean().nullable().optional(),
-    paymentUrl: z.string().trim().max(2000).nullable().optional(),
-    reviewUrl: z.string().trim().max(2000).nullable().optional(),
     amountPaidCents: z.number().int().min(0).nullable().optional(),
     depositReceivedCents: z.number().int().min(0).nullable().optional(),
     photos: z
@@ -512,6 +498,16 @@ export function createFinanceRouter({
     res.json({ data: { summary: await financeService.getJobFinanceSummary(auth.companyId, routeParam(req.params.jobId), { includeProfit: canViewProfit(auth) }) } });
   });
 
+  router.get('/jobs/:jobId/coc-evidence', requireAnyPermission('finance:read', 'finance:write'), async (req, res) => {
+    const auth = getAuth(req);
+    try {
+      const evidence = await financeService.listJobCocEvidence(auth.companyId, routeParam(req.params.jobId));
+      res.json({ data: { evidence } });
+    } catch (error) {
+      handleFinanceError(res, error);
+    }
+  });
+
   router.post('/documents/preview', requireAnyPermission('finance:read', 'finance:write'), async (req, res) => {
     const parsed = financeDocumentPreviewSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -520,7 +516,8 @@ export function createFinanceRouter({
       });
       return;
     }
-    const preview = financeService.previewDocument(toFinanceActor(getAuth(req)), {
+    const auth = getAuth(req);
+    const preview = await financeService.previewDocument(toFinanceActor(auth), {
       ...parsed.data,
       addresses: parsed.data.addresses
         ? {
@@ -542,7 +539,8 @@ export function createFinanceRouter({
       return;
     }
 
-    const preview = financeService.previewDocument(toFinanceActor(getAuth(req)), {
+    const auth = getAuth(req);
+    const preview = await financeService.previewDocument(toFinanceActor(auth), {
       ...parsed.data,
       addresses: parsed.data.addresses
         ? {

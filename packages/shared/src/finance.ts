@@ -1,5 +1,8 @@
 import type { JobPaymentLedger } from './job-payment-ledger.js';
 import type { FinanceDocumentAddressSnapshot } from './finance-document-roundtrip.js';
+import type { FinanceDocumentContent, FinanceDocumentSectionsSnapshot } from './finance-document-content.js';
+
+export type { FinanceDocumentContent, FinanceDocumentSectionsSnapshot };
 
 export type QuoteStatus =
   | 'draft'
@@ -190,6 +193,7 @@ export type QuoteDetail = QuoteSummary & {
   lineItems: QuoteLineItemSummary[];
   acceptance: QuoteAcceptanceSummary | null;
   xeroQuoteId: string | null;
+  documentSections: FinanceDocumentSectionsSnapshot;
 };
 
 export type InvoiceSummary = {
@@ -252,6 +256,7 @@ export type InvoiceDetail = InvoiceSummary & {
   addresses: FinanceDocumentAddressSnapshot;
   lineItems: InvoiceLineItemSummary[];
   payments: PaymentSummary[];
+  documentSections: FinanceDocumentSectionsSnapshot;
 };
 
 export type PaymentSummary = {
@@ -337,6 +342,7 @@ export type CreateQuoteRequest = {
   clientActionId?: string | null;
   /** @deprecated legacy aggregate — prefer lineItems */
   amountCents?: number;
+  documentContent?: FinanceDocumentContent | null;
 };
 
 export type UpdateQuoteRequest = Partial<Omit<CreateQuoteRequest, 'customerId' | 'clientActionId'>> & {
@@ -379,11 +385,16 @@ export type CreateInvoiceRequest = {
   paymentTerms?: string | null;
   lineItems?: QuoteLineItemInput[];
   clientActionId?: string | null;
+  documentContent?: FinanceDocumentContent | null;
+  cocDocumentationId?: string | null;
 };
 
 export type UpdateInvoiceRequest = Partial<
   Omit<CreateInvoiceRequest, 'customerId' | 'quoteId' | 'clientActionId'>
->;
+> & {
+  documentContent?: FinanceDocumentContent | null;
+  cocDocumentationId?: string | null;
+};
 
 export type CreatePaymentRequest = {
   invoiceId: string;

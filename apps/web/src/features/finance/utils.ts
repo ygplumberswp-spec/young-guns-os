@@ -1,21 +1,21 @@
 import { hasAnyPermission } from '@titan/auth/browser';
 
-export function canAccessFinance(permissions: string[]): boolean {
-  return hasAnyPermission(permissions, ['finance:read', 'finance:write', '*']);
+export function canAccessFinance(permissions: readonly string[]): boolean {
+  return hasAnyPermission([...permissions], ['finance:read', 'finance:write', '*']);
 }
 
-export function canManageFinance(permissions: string[]): boolean {
-  return hasAnyPermission(permissions, ['finance:write', '*']);
+export function canManageFinance(permissions: readonly string[]): boolean {
+  return hasAnyPermission([...permissions], ['finance:write', '*']);
 }
 
-export function canCreateCustomer(permissions: string[]): boolean {
-  return hasAnyPermission(permissions, ['customers:write', '*']);
+export function canCreateCustomer(permissions: readonly string[]): boolean {
+  return hasAnyPermission([...permissions], ['customers:write', '*']);
 }
 
 export { canViewFinanceProfit } from '@titan/shared';
 
-export function canViewJobCosting(permissions: string[]): boolean {
-  return hasAnyPermission(permissions, [
+export function canViewJobCosting(permissions: readonly string[]): boolean {
+  return hasAnyPermission([...permissions], [
     'finance:read',
     'finance:write',
     'inventory:write',
