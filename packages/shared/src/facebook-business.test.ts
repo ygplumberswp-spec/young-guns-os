@@ -34,7 +34,10 @@ import {
   resolveFacebookCapabilities,
   resolveFacebookCapability,
   resolveFacebookConnectionState,
+  resolveFacebookOAuthBrowserReturnPath,
   resolveFacebookMessengerAvailability,
+  FACEBOOK_PAGE_SELECTION_WORKSPACE_PATH,
+  FACEBOOK_PENDING_PAGE_SELECTION_DETAIL,
   shouldSendFacebookNotification,
   validateFacebookMedia,
   validateFacebookSchedule,
@@ -795,5 +798,33 @@ describe('audit redaction (Phase S)', () => {
 
   it('leaves an absent secret as null rather than inventing one', () => {
     assert.equal(redactFacebookAuditMetadata({ refreshToken: null }).refreshToken, null);
+  });
+});
+
+describe('facebook OAuth return path and partial Page selection (J-6.7F)', () => {
+  it('redirects /integrations OAuth return to Facebook Business workspace', () => {
+    assert.equal(resolveFacebookOAuthBrowserReturnPath('/integrations'), '/facebook-business');
+    assert.equal(resolveFacebookOAuthBrowserReturnPath('/facebook-business'), '/facebook-business');
+    assert.equal(resolveFacebookOAuthBrowserReturnPath(null), '/facebook-business');
+    assert.equal(resolveFacebookOAuthBrowserReturnPath('//evil.example'), '/facebook-business');
+  });
+
+  it('exposes Page-selection workspace path with select-page query', () => {
+    assert.equal(FACEBOOK_PAGE_SELECTION_WORKSPACE_PATH, '/facebook-business?facebook=select-page');
+  });
+
+  it('partial state detail is honest and not disconnected wording', () => {
+    assert.match(FACEBOOK_PENDING_PAGE_SELECTION_DETAIL, /authorisation succeeded/i);
+    assert.match(FACEBOOK_PENDING_PAGE_SELECTION_DETAIL, /Select a Page/i);
+    assert.equal(FACEBOOK_PENDING_PAGE_SELECTION_DETAIL.includes('Disconnected'), false);
+  });
+
+  it('partial connection state reports Page selection required', () => {
+    const result = resolveFacebookConnectionState(
+      connectionInput({ pageSelected: false, lastVerification: null }),
+    );
+    assert.equal(result.state, 'partial');
+    assert.match(result.detail, /no Page has been selected/i);
+    assert.equal(result.usable, false);
   });
 });

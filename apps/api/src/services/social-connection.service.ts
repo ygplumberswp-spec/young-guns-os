@@ -15,6 +15,8 @@ import {
   SOCIAL_CONNECTION_PROVIDER_LABELS,
   SOCIAL_CONNECTION_PROVIDERS,
   socialConnectionMapsToSocialMediaPlatform,
+  FACEBOOK_PAGE_SELECTION_WORKSPACE_PATH,
+  FACEBOOK_PENDING_PAGE_SELECTION_DETAIL,
   type SelectSocialConnectionAccountRequest,
   type SocialAccountSelection,
   type SocialConnectionHealthResult,
@@ -86,6 +88,8 @@ export type SocialConnectionServiceDeps = {
   db: DatabaseClient;
   encryptionKey?: string;
   appUrl: string;
+  /** Resolved Meta OAuth callback (META_REDIRECT_URI ?? API_PUBLIC_URL). Facebook only. */
+  facebookRedirectUri?: string;
   adapters?: Record<SocialConnectionProvider, SocialConnectionProviderAdapter>;
 };
 
@@ -93,12 +97,14 @@ export class SocialConnectionService {
   private readonly db: DatabaseClient;
   private readonly encryptionKey: string | undefined;
   private readonly appUrl: string;
+  private readonly facebookRedirectUri: string | undefined;
   private readonly adapters: Record<SocialConnectionProvider, SocialConnectionProviderAdapter>;
 
   constructor(deps: SocialConnectionServiceDeps) {
     this.db = deps.db;
     this.encryptionKey = deps.encryptionKey;
     this.appUrl = deps.appUrl;
+    this.facebookRedirectUri = deps.facebookRedirectUri;
     this.adapters = deps.adapters ?? createDefaultSocialConnectionAdapters();
   }
 
@@ -255,6 +261,11 @@ export class SocialConnectionService {
     const row = companyId ? await this.loadFacebookRow(companyId) : null;
     const foundationStatus = mapFacebookStateToFoundationStatus(row?.state ?? 'configuration_required');
     const canManage = actor ? canManageSocialConnections(actor) : false;
+    const pendingPageSelection = foundationStatus === 'ACCOUNT_SELECTION_REQUIRED';
+    const safeErrorMessage =
+      pendingPageSelection || foundationStatus === 'DISCONNECTED'
+        ? null
+        : row?.lastVerificationMessage ?? null;
 
     return {
       provider: 'facebook',
@@ -267,8 +278,11 @@ export class SocialConnectionService {
       hasCredentials: Boolean(row?.credentialsEncrypted),
       liveProviderVerified: row?.state === 'connected' && Boolean(row?.lastVerificationOk),
       lastHealthCheckAt: row?.lastVerifiedAt?.toISOString() ?? null,
-      lastError: row?.lastVerificationMessage ?? null,
-      safeErrorMessage: row?.lastVerificationMessage ?? null,
+      lastError: safeErrorMessage,
+      safeErrorMessage,
+      statusDetail: pendingPageSelection ? FACEBOOK_PENDING_PAGE_SELECTION_DETAIL : null,
+      accountSelectionPath:
+        pendingPageSelection && canManage ? FACEBOOK_PAGE_SELECTION_WORKSPACE_PATH : null,
       setupRequirementCategory:
         foundationStatus === 'NOT_CONFIGURED' ? 'missing_oauth_app' : null,
       canConnect:
@@ -426,7 +440,11 @@ export class SocialConnectionService {
 
   getSetupRequirements(provider: SocialConnectionProvider) {
     this.assertSocialPublishingProvider(provider);
-    return buildSocialConnectionSetupRequirements(provider, this.appUrl.replace(/\/$/, ''));
+    const callbackBaseUrl = this.appUrl.replace(/\/$/, '');
+    return buildSocialConnectionSetupRequirements(provider, callbackBaseUrl, {
+      facebookCallbackUrl:
+        provider === 'facebook' ? this.facebookRedirectUri : undefined,
+    });
   }
 
   async startOAuth(

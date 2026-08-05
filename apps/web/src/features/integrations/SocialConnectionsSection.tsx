@@ -65,7 +65,7 @@ function SocialConnectionCard({
     setError(null);
     try {
       if (card.delegatedTo === 'facebook_business') {
-        const result = await startFacebookOAuth(accessToken, '/integrations');
+        const result = await startFacebookOAuth(accessToken, '/facebook-business');
         window.location.assign(result.authorizationUrl);
         return;
       }
@@ -85,7 +85,7 @@ function SocialConnectionCard({
     setError(null);
     try {
       if (card.delegatedTo === 'facebook_business') {
-        const result = await startFacebookOAuth(accessToken, '/integrations');
+        const result = await startFacebookOAuth(accessToken, '/facebook-business');
         window.location.assign(result.authorizationUrl);
         return;
       }
@@ -201,6 +201,7 @@ function SocialConnectionCard({
       {card.setupRequirementCategory ? (
         <p className="page-muted">Setup: {card.setupRequirementCategory.replace(/_/g, ' ')}</p>
       ) : null}
+      {card.statusDetail ? <p className="page-muted">{card.statusDetail}</p> : null}
       {card.safeErrorMessage ? <p className="form-error">{card.safeErrorMessage}</p> : null}
       {error ? <p className="form-error">{error}</p> : null}
       {setupOpen && setupText ? (
@@ -213,7 +214,14 @@ function SocialConnectionCard({
               Connect
             </Button>
           ) : null}
-          {card.canCompleteAccountSelection && card.delegatedTo !== 'facebook_business' ? (
+          {card.canCompleteAccountSelection && card.accountSelectionPath ? (
+            <Link href={card.accountSelectionPath}>
+              <Button size="sm" variant="primary" disabled={busy}>
+                Choose Page
+              </Button>
+            </Link>
+          ) : null}
+          {card.canCompleteAccountSelection && !card.accountSelectionPath ? (
             <Button
               size="sm"
               variant="secondary"

@@ -34,6 +34,29 @@ export const FACEBOOK_OAUTH_DIALOG_URL = `https://www.facebook.com/${FACEBOOK_GR
 /** Web route for the Facebook Business workspace. */
 export const FACEBOOK_BUSINESS_HREF = '/facebook-business';
 
+/** Honest detail when OAuth succeeded but Page selection is still outstanding. */
+export const FACEBOOK_PENDING_PAGE_SELECTION_DETAIL =
+  'Facebook authorisation succeeded. Select a Page to complete the connection.';
+
+/** Owner completes Page selection here after OAuth (query opens the picker prompt). */
+export const FACEBOOK_PAGE_SELECTION_WORKSPACE_PATH =
+  '/facebook-business?facebook=select-page';
+
+/**
+ * Post-OAuth browser return path. Connect from /integrations must land on the
+ * Facebook Business workspace where the Page picker lives.
+ */
+export function resolveFacebookOAuthBrowserReturnPath(
+  returnPath: string | null | undefined,
+): string {
+  if (!returnPath?.trim()) return FACEBOOK_BUSINESS_HREF;
+  const trimmed = returnPath.trim();
+  if (!trimmed.startsWith('/') || trimmed.startsWith('//')) return FACEBOOK_BUSINESS_HREF;
+  const path = trimmed.slice(0, 500);
+  if (path === '/integrations') return FACEBOOK_BUSINESS_HREF;
+  return path;
+}
+
 /** Young Guns Plumbing operates in Cape Town; all scheduling is anchored here. */
 export const FACEBOOK_SCHEDULING_TIME_ZONE = 'Africa/Johannesburg';
 

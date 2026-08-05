@@ -100,7 +100,21 @@ Live provider authorization is **not** marked complete in the master checklist u
 `/integrations` → **Social Connections** section — exactly three cards (Facebook, Instagram, TikTok).
 Owner full access; Admin/Office view-only; Technician/Client hidden.
 
+**Facebook Page selection:** After OAuth, the Owner completes Page selection in the **Facebook Business workspace** (`/facebook-business?facebook=select-page`). The Integrations card shows **Choose Page** when `partial`. Setup requirements display the Facebook callback from `META_REDIRECT_URI` or `{API_PUBLIC_URL}/api/v1/facebook-business/oauth/callback` — never from web `APP_URL`.
+
 **Business Profile integrations** and **Communications integrations** are linked separately on the same page.
+
+## Facebook Page-selection UX and callback display (2026-08-05)
+
+**Staging evidence:** OAuth and token exchange succeeded (`state=partial`, credentials present, `pendingPageSelection=true`) but Integrations showed stale "Disconnected in TITAN." and no **Choose Page** action; setup panel showed web-origin callback.
+
+| Defect | Correction (local) |
+|--------|-------------------|
+| Stale disconnect text after successful OAuth reconnect | OAuth callback clears verification fields; sets honest pending Page-selection message |
+| OAuth from `/integrations` returned without Page picker | Browser return redirects to `/facebook-business?facebook=select-page`; Integrations card adds **Choose Page** |
+| Setup requirements showed `APP_URL` callback | Facebook setup uses `META_REDIRECT_URI ?? API_PUBLIC_URL` |
+
+**Outstanding (not changed in this fix):** Instagram and TikTok OAuth runtime callbacks in `social-connection.service.ts` still derive from `APP_URL` — separate fix when those providers go live on split-host staging.
 
 ## Local test mode
 

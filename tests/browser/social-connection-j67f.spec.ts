@@ -106,11 +106,43 @@ test.describe('Social connection foundation (J-6.7F)', () => {
     await page.setContent(`
       <article class="social-connection-card">
         <span class="status-pill status-pill--warning">Account selection required</span>
-        <button type="button">Complete account selection</button>
+        <button type="button">Choose Page</button>
       </article>
     `);
     await expect(page.getByText('Account selection required')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Complete account selection' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Choose Page' })).toBeVisible();
+  });
+
+  test('Facebook OAuth from integrations lands on Page-selection workspace', async () => {
+    const serviceSource = readFileSync(
+      join(repoRoot, 'apps/api/src/services/facebook-business.service.ts'),
+      'utf8',
+    );
+    const sectionSource = readFileSync(
+      join(repoRoot, 'apps/web/src/features/integrations/SocialConnectionsSection.tsx'),
+      'utf8',
+    );
+    const integrationsSource = readFileSync(
+      join(repoRoot, 'apps/web/src/pages/integrations/IntegrationsDashboardPage.tsx'),
+      'utf8',
+    );
+    expect(serviceSource).toMatch(/resolveFacebookOAuthBrowserReturnPath/);
+    expect(sectionSource).toMatch(/startFacebookOAuth\(accessToken, '\/facebook-business'\)/);
+    expect(sectionSource).toMatch(/Choose Page/);
+    expect(integrationsSource).toMatch(/FACEBOOK_PAGE_SELECTION_WORKSPACE_PATH/);
+  });
+
+  test('Facebook setup requirements use API callback not web APP_URL', async () => {
+    const serviceSource = readFileSync(
+      join(repoRoot, 'apps/api/src/services/social-connection.service.ts'),
+      'utf8',
+    );
+    const sharedSource = readFileSync(
+      join(repoRoot, 'packages/shared/src/social-connection.ts'),
+      'utf8',
+    );
+    expect(serviceSource).toMatch(/facebookRedirectUri/);
+    expect(sharedSource).toMatch(/facebookCallbackUrl/);
   });
 
   test('successful mocked account selection API', async () => {

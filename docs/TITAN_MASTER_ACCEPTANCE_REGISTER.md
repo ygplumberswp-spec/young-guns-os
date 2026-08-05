@@ -362,3 +362,13 @@
 | **Optional env** | `META_LOGIN_CONFIG_ID` for Facebook Login for Business (never combined with scope) |
 | **Status after fix** | **COMPLETE_LOCAL_ONLY** — staging re-test pending Owner approval (no push/deploy) |
 | **Instagram/TikTok** | Unchanged |
+
+## Addendum — J-6.7F Facebook Page-selection UX and callback display (local, 2026-08-05)
+
+| Field | Value |
+|-------|-------|
+| **Affected** | J67F-003, J67F-004, Integrations Social Connections card, Facebook Business workspace |
+| **Pre-fix staging** | OAuth/token exchange OK; `partial` + credentials; Page selection outstanding; UI showed stale disconnect + wrong setup callback |
+| **Correction** | OAuth state hygiene; `/facebook-business?facebook=select-page` return; **Choose Page** on Integrations; setup callback from API host |
+| **Status after fix** | **COMPLETE_LOCAL_ONLY** — Owner staging retest pending (no push/deploy) |
+| **Instagram/TikTok** | Unchanged |

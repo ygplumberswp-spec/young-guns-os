@@ -1,8 +1,9 @@
 import { PageHeader } from '../../components/ux';
-import { useMemo, useState } from 'react';
-import { Link } from 'wouter';
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useLocation } from 'wouter';
 import { Button, EmptyState, LoadingState, Panel, StatCard } from '@titan/ui';
 import type { IntegrationProviderAutoSyncStatus, IntegrationProviderStatus } from '@titan/shared';
+import { FACEBOOK_PAGE_SELECTION_WORKSPACE_PATH } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import { invalidateStaffQueryPrefixes } from '../../lib/cache-invalidation';
 import { fetchIntegrationAutoSyncStatuses } from '../../lib/integration-auto-sync-api-client';
@@ -147,12 +148,21 @@ function SimpleProviderRow({
 
 export function IntegrationsDashboardPage() {
   const { accessToken, user } = useAuth();
+  const [, navigate] = useLocation();
   const cacheScope = useStaffCacheScope();
   const [viewMode, setViewMode] = useState<'simple' | 'advanced'>('simple');
   const [isSyncingConnectors, setIsSyncingConnectors] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
   const [advancedOpen, setAdvancedOpen] = useState(false);
+
+  // Legacy OAuth returns may land here; Page selection completes in Facebook Business.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('facebook') === 'select-page') {
+      navigate(FACEBOOK_PAGE_SELECTION_WORKSPACE_PATH, { replace: true });
+    }
+  }, [navigate]);
 
   const canView = useMemo(() => (user ? canAccessIntegrations(user.permissions) : false), [user]);
   const canManage = useMemo(() => (user ? canManageIntegrations(user.permissions) : false), [user]);

@@ -125,6 +125,27 @@ Do **not** list WhatsApp Business or Google Business Profile as Social Connectio
 
 ---
 
+## 8. Facebook Page-selection UX and callback display (2026-08-05)
+
+**Staging evidence after invalid-scope fix:** OAuth succeeded; DB `partial` with encrypted credentials and `pendingPageSelection=true`. UI defects:
+
+1. Stale `lastVerificationMessage` ("Disconnected in TITAN.") shown alongside "Account selection required".
+2. No **Choose Page** on `/integrations`; OAuth return to `/integrations?facebook=select-page` unhandled.
+3. Setup requirements panel showed web `APP_URL` callback instead of API `META_REDIRECT_URI`.
+
+**Local correction:**
+
+| Area | Fix |
+|------|-----|
+| OAuth callback | Clear verification fields; set `FACEBOOK_PENDING_PAGE_SELECTION_DETAIL`; remain `partial` until Page validated |
+| Return path | `/integrations` OAuth → `/facebook-business?facebook=select-page` |
+| Integrations card | **Choose Page** primary action; honest `statusDetail`; no stale disconnect text |
+| Setup requirements | `facebookRedirectUri` from `META_REDIRECT_URI ?? API_PUBLIC_URL` |
+
+**Instagram/TikTok:** unchanged. Runtime Instagram/TikTok callbacks still use `APP_URL` — logged as outstanding split-host item.
+
+---
+
 ## 6. Explicitly not done
 
 - No push/redeploy until Owner approves OAuth scope correction locally

@@ -212,6 +212,10 @@ export type SocialConnectionProviderCard = {
   delegatedTo?: 'facebook_business' | null;
   canonicalSource?: keyof typeof SOCIAL_CONNECTION_CANONICAL_SOURCES;
   managementPath?: string | null;
+  /** Non-error status detail (e.g. pending Page selection after OAuth). */
+  statusDetail?: string | null;
+  /** Primary path to complete account/Page selection when required. */
+  accountSelectionPath?: string | null;
 };
 
 export type SocialConnectionsDashboard = {
@@ -491,6 +495,7 @@ export function resolveSocialConnectionFoundationStatus(input: {
 export function buildSocialConnectionSetupRequirements(
   provider: SocialPublishingProvider,
   callbackBaseUrl: string,
+  options?: { facebookCallbackUrl?: string },
 ): SocialConnectionSetupRequirements {
   const callbackUrlPattern = `${callbackBaseUrl}/api/v1/social-connections/oauth/callback?provider=${provider}`;
   const commonNeverCommit = [
@@ -507,7 +512,9 @@ export function buildSocialConnectionSetupRequirements(
         label: SOCIAL_CONNECTION_PROVIDER_LABELS.facebook,
         foundationStatus: 'NOT_CONFIGURED',
         envVariables: ['META_APP_ID', 'META_APP_SECRET', 'INTEGRATIONS_ENCRYPTION_KEY'],
-        callbackUrlPattern: `${callbackBaseUrl}/api/v1/facebook-business/oauth/callback`,
+        callbackUrlPattern:
+          options?.facebookCallbackUrl ??
+          `${callbackBaseUrl}/api/v1/facebook-business/oauth/callback`,
         configurationCategories: ['Meta Developer App', 'Facebook Login product', 'Pages permissions'],
         accountSelectionExpectations: [
           'Owner authenticates with Meta',

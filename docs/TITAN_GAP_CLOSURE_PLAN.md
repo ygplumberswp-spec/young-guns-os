@@ -63,7 +63,7 @@
 | ID | Action | Requirements | Blocker |
 |----|--------|--------------|---------|
 | 4.1 | Xero import GO + two-way write verify queue | XERO-002, XERO-004, BC-014 | Xero OAuth + Owner write approval |
-| 4.2 | Meta FB OAuth on staging — least-privilege `pages_show_list` connect (corrected locally 2026-08-05) | J67F-003, J67F-004 | Meta credentials on Railway; optional `META_LOGIN_CONFIG_ID` if Login for Business required |
+| 4.2 | Meta FB OAuth on staging — least-privilege `pages_show_list` connect; Page-selection UX + API callback display (corrected locally 2026-08-05) | J67F-003, J67F-004 | Meta credentials on Railway; optional `META_LOGIN_CONFIG_ID` if Login for Business required |
 | 4.3 | TikTok live OAuth after review | J67F-010 | `TIKTOK_LIVE_OAUTH_ENABLED` + provider review |
 | 4.4 | WhatsApp live send + human takeover | INT-003, BC-022 | Meta Business credentials |
 | 4.5 | Cartrack credentials + fleet map | FLT-002–FLT-004, BC-021 | Cartrack API |

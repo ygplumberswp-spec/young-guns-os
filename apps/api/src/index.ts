@@ -982,12 +982,16 @@ const socialMediaIntegrationsService = new SocialMediaIntegrationsService(
   db,
   env.INTEGRATIONS_ENCRYPTION_KEY,
 );
+const facebookAppConfig = resolveFacebookAppConfig(env, apiPublicUrl);
+const facebookRedirectUri =
+  env.META_REDIRECT_URI?.trim() ??
+  `${apiPublicUrl.replace(/\/$/, '')}/api/v1/facebook-business/oauth/callback`;
 const socialConnectionService = new SocialConnectionService({
   db,
   encryptionKey: env.INTEGRATIONS_ENCRYPTION_KEY,
   appUrl: env.APP_URL,
+  facebookRedirectUri,
 });
-const facebookAppConfig = resolveFacebookAppConfig(env, apiPublicUrl);
 const facebookBusinessService = new FacebookBusinessService({
   db,
   encryptionKey: env.INTEGRATIONS_ENCRYPTION_KEY,

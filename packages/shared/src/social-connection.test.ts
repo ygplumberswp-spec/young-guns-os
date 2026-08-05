@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
+  buildSocialConnectionSetupRequirements,
   canManageSocialConnections,
   canViewSocialConnections,
   isCompanyOwnerRole,
@@ -55,5 +56,25 @@ describe('social-connection owner-gate audit (J-6.7F)', () => {
   it('maps Facebook partial state to account selection required', () => {
     assert.equal(mapFacebookStateToFoundationStatus('partial'), 'ACCOUNT_SELECTION_REQUIRED');
     assert.equal(mapFacebookStateToFoundationStatus('connected'), 'CONNECTED');
+  });
+
+  it('Facebook setup requirements use explicit API callback, not web APP_URL', () => {
+    const webOrigin = 'https://comfortable-determination-staging.up.railway.app';
+    const apiCallback =
+      'https://young-guns-os-staging.up.railway.app/api/v1/facebook-business/oauth/callback';
+    const requirements = buildSocialConnectionSetupRequirements('facebook', webOrigin, {
+      facebookCallbackUrl: apiCallback,
+    });
+    assert.equal(requirements.callbackUrlPattern, apiCallback);
+    assert.equal(requirements.callbackUrlPattern.includes('comfortable-determination'), false);
+  });
+
+  it('Instagram setup requirements still derive callback from provided base URL', () => {
+    const webOrigin = 'https://comfortable-determination-staging.up.railway.app';
+    const requirements = buildSocialConnectionSetupRequirements('instagram', webOrigin);
+    assert.equal(
+      requirements.callbackUrlPattern,
+      `${webOrigin}/api/v1/social-connections/oauth/callback?provider=instagram`,
+    );
   });
 });

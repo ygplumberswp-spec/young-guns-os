@@ -19,6 +19,7 @@ import {
   detectFacebookLeadDuplicate,
   evaluateFacebookPublishEligibility,
   FACEBOOK_LEAD_SOURCE_KEY,
+  FACEBOOK_PENDING_PAGE_SELECTION_DETAIL,
   FACEBOOK_SUBSCRIBED_WEBHOOK_FIELDS,
   FACEBOOK_SYNC_POLICY,
   isCompanyOwnerRole,
@@ -27,6 +28,7 @@ import {
   redactFacebookAuditMetadata,
   resolveFacebookCapabilities,
   resolveFacebookConnectionState,
+  resolveFacebookOAuthBrowserReturnPath,
   resolveFacebookMessengerAvailability,
   shouldSendFacebookNotification,
   validateFacebookMedia,
@@ -447,8 +449,19 @@ export class FacebookBusinessService {
       tokenExpiresAt: expiresAt,
       disconnectedAt: null,
       connectedByUserId: stateRow.userId,
+      pageId: null,
+      pageName: null,
+      pageUrl: null,
+      pageCategory: null,
+      connectedAt: null,
       metadata: { pendingPageSelection: true },
       updatedAt: new Date(),
+      lastVerifiedAt: null,
+      lastVerificationOk: null,
+      lastVerificationAuthError: false,
+      lastVerificationPermissionError: false,
+      lastVerificationProviderUnavailable: false,
+      lastVerificationMessage: FACEBOOK_PENDING_PAGE_SELECTION_DETAIL,
       // Stored under a marker so the row never looks like a working connection.
       credentialsEncrypted: encryptFacebookCredentials(
         { ...credentials, pageAccessToken: `pending:${longLived.accessToken}` },
@@ -475,7 +488,7 @@ export class FacebookBusinessService {
       metadata: { grantedPermissions, missingPermissions: missingFacebookPermissions(grantedPermissions) },
     });
 
-    const returnPath = stateRow.returnPath ?? '/facebook-business';
+    const returnPath = resolveFacebookOAuthBrowserReturnPath(stateRow.returnPath);
     return { redirectUrl: `${this.appUrl.replace(/\/$/, '')}${returnPath}?facebook=select-page` };
   }
 
