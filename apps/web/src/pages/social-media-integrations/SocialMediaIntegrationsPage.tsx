@@ -238,6 +238,20 @@ export function SocialMediaIntegrationsPage() {
         description="Connect Facebook, Instagram, TikTok, LinkedIn, and Google Business Profile with honest status. Monitor real synced items only. Publish/reply only after Owner approval."
       />
 
+      <Panel title="Canonical connection paths">
+        <p className="page-muted">
+          Facebook Page and Instagram Business account connections are managed on{' '}
+          <Link href="/integrations" className="yg-link">
+            Integrations → Social Connections
+          </Link>
+          . Facebook uses the Facebook Business workspace (
+          <Link href="/facebook-business" className="yg-link">
+            /facebook-business
+          </Link>
+          ) for Page OAuth and publishing. Manual token paste on this page does not replace Owner-approved OAuth on Integrations.
+        </p>
+      </Panel>
+
       <p className="text-sm text-slate-400">
         <Link href="/marketing-agent" className="yg-link">
           Marketing Agent

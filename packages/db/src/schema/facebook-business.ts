@@ -170,6 +170,7 @@ export const fbOauthStates = pgTable(
       .references(() => users.id, { onDelete: 'cascade' }),
     stateHash: text('state_hash').notNull().unique(),
     returnPath: text('return_path'),
+    initiatorRoleName: text('initiator_role_name'),
     expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
     consumedAt: timestamp('consumed_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

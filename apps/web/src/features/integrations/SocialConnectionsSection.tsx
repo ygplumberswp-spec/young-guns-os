@@ -1,11 +1,17 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'wouter';
 import { Button, LoadingState, Panel } from '@titan/ui';
 import type { SocialConnectionProvider, SocialConnectionProviderCard } from '@titan/shared';
 import {
-  canAccessSocialConnections,
   canManageSocialConnections,
+  canViewSocialConnections,
 } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
+import {
+  checkFacebookConnection,
+  disconnectFacebook,
+  startFacebookOAuth,
+} from '../../lib/facebook-business-api-client';
 import {
   checkSocialConnectionHealth,
   disconnectSocialConnection,
@@ -58,6 +64,11 @@ function SocialConnectionCard({
     setBusy(true);
     setError(null);
     try {
+      if (card.delegatedTo === 'facebook_business') {
+        const result = await startFacebookOAuth(accessToken, '/integrations');
+        window.location.assign(result.authorizationUrl);
+        return;
+      }
       const { authorizationUrl } = await startSocialConnectionOAuth(accessToken, {
         provider: card.provider,
         returnPath: '/integrations',
@@ -73,6 +84,11 @@ function SocialConnectionCard({
     setBusy(true);
     setError(null);
     try {
+      if (card.delegatedTo === 'facebook_business') {
+        const result = await startFacebookOAuth(accessToken, '/integrations');
+        window.location.assign(result.authorizationUrl);
+        return;
+      }
       const { authorizationUrl } = await reconnectSocialConnection(accessToken, card.provider);
       window.location.assign(authorizationUrl);
     } catch (err) {
@@ -85,7 +101,11 @@ function SocialConnectionCard({
     setBusy(true);
     setError(null);
     try {
-      await checkSocialConnectionHealth(accessToken, card.provider);
+      if (card.delegatedTo === 'facebook_business') {
+        await checkFacebookConnection(accessToken);
+      } else {
+        await checkSocialConnectionHealth(accessToken, card.provider);
+      }
       onRefresh();
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : 'Health check failed.');
@@ -98,7 +118,11 @@ function SocialConnectionCard({
     setBusy(true);
     setError(null);
     try {
-      await disconnectSocialConnection(accessToken, card.provider);
+      if (card.delegatedTo === 'facebook_business') {
+        await disconnectFacebook(accessToken);
+      } else {
+        await disconnectSocialConnection(accessToken, card.provider);
+      }
       setConfirmDisconnect(false);
       onRefresh();
     } catch (err) {
@@ -160,6 +184,12 @@ function SocialConnectionCard({
           {card.statusLabel}
         </span>
       </header>
+      {card.delegatedTo === 'facebook_business' && card.managementPath ? (
+        <p className="page-muted">
+          Canonical connection:{' '}
+          <Link href={card.managementPath}>Facebook Business workspace</Link>
+        </p>
+      ) : null}
       {card.selectedAccountLabel ? (
         <p className="page-muted">Selected: {card.selectedAccountLabel}</p>
       ) : null}
@@ -183,7 +213,7 @@ function SocialConnectionCard({
               Connect
             </Button>
           ) : null}
-          {card.canCompleteAccountSelection ? (
+          {card.canCompleteAccountSelection && card.delegatedTo !== 'facebook_business' ? (
             <Button
               size="sm"
               variant="secondary"
@@ -274,7 +304,7 @@ export function SocialConnectionsSection() {
   const [error, setError] = useState<string | null>(null);
 
   const canView = useMemo(
-    () => (user ? canAccessSocialConnections({ roleName: user.roleName, permissions: user.permissions }) : false),
+    () => (user ? canViewSocialConnections({ roleName: user.roleName, permissions: user.permissions }) : false),
     [user],
   );
   const canManage = useMemo(

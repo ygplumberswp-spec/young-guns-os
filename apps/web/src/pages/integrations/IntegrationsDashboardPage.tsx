@@ -32,10 +32,9 @@ const PROVIDER_GROUPS: Array<{ id: string; label: string; providers: string[] }>
   { id: 'fleet', label: 'Fleet', providers: ['cartrack'] },
   { id: 'payments', label: 'Payments', providers: ['yoco'] },
   { id: 'automation', label: 'Automation', providers: ['n8n'] },
-  { id: 'marketing', label: 'Marketing & Social', providers: ['facebook'] },
 ];
 
-/** J-6.7F social providers are rendered in SocialConnectionsSection — not the hub API list. */
+/** Social providers (Facebook, Instagram, GBP, WhatsApp Business, TikTok) render in SocialConnectionsSection only. */
 
 /**
  * Decision 4 / UX-G — status pill and action are always derived from the

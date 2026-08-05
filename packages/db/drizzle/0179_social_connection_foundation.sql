@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS "social_oauth_states" (
   "provider" "social_connection_provider" NOT NULL,
   "state_hash" text NOT NULL UNIQUE,
   "return_path" text,
+  "initiator_role_name" text NOT NULL,
   "expires_at" timestamp with time zone NOT NULL,
   "consumed_at" timestamp with time zone,
   "created_at" timestamp with time zone DEFAULT now() NOT NULL

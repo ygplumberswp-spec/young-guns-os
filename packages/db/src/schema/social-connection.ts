@@ -29,6 +29,8 @@ export const socialOauthStates = pgTable(
     provider: socialConnectionProviderEnum('provider').notNull(),
     stateHash: text('state_hash').notNull().unique(),
     returnPath: text('return_path'),
+    /** Role recorded when Owner approved OAuth start — verified on callback. */
+    initiatorRoleName: text('initiator_role_name').notNull(),
     expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
     consumedAt: timestamp('consumed_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

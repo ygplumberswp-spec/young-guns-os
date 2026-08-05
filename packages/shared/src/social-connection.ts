@@ -16,7 +16,63 @@
  * - No fake provider IDs or demonstration account data
  */
 
-import { canApproveMarketingAgentPublish, canWriteMarketingAgent } from './marketing-agent.js';
+import { canWriteMarketingAgent } from './marketing-agent.js';
+
+/** Company Owner roles that may approve and execute social account connection changes. */
+export function isCompanyOwnerRole(roleName: string): boolean {
+  return (
+    roleName === 'Company Owner' ||
+    roleName === 'Owner' ||
+    roleName === 'Platform Owner'
+  );
+}
+
+/**
+ * Canonical connection source of truth per J-6.7F owner-gate audit.
+ * Owner-visible status on /integrations reads from these stores only.
+ */
+export const SOCIAL_CONNECTION_CANONICAL_SOURCES = {
+  facebook: {
+    table: 'fb_connections',
+    oauthStates: 'fb_oauth_states',
+    api: '/api/v1/facebook-business',
+    ui: '/facebook-business',
+    note: 'Facebook Page OAuth, token storage and Page selection. Not social_media_connections.',
+  },
+  instagram: {
+    table: 'social_media_connections',
+    platform: 'instagram',
+    oauthStates: 'social_oauth_states',
+    api: '/api/v1/social-connections',
+    ui: '/integrations',
+    note: 'Instagram Business via social-connections OAuth only.',
+  },
+  google_business: {
+    table: 'social_media_connections',
+    platform: 'google_business',
+    oauthStates: 'social_oauth_states',
+    api: '/api/v1/social-connections',
+    ui: '/integrations',
+    note: 'Google Business Profile location selection via social-connections.',
+  },
+  whatsapp_business: {
+    table: 'whatsapp_connections',
+    oauthStates: 'social_oauth_states',
+    api: '/api/v1/social-connections',
+    operationalApi: '/api/v1/whatsapp',
+    ui: '/integrations',
+    operationalUi: '/integrations/whatsapp',
+    note: 'Social foundation bridges whatsapp_connections; operational messaging uses WhatsApp settings.',
+  },
+  tiktok: {
+    table: 'social_media_connections',
+    platform: 'tiktok',
+    oauthStates: 'social_oauth_states',
+    api: '/api/v1/social-connections',
+    ui: '/integrations',
+    note: 'Readiness only until TikTok provider review completes.',
+  },
+} as const;
 
 /** J-6.7F social connection providers (distinct from legacy social_media linkedin). */
 export type SocialConnectionProvider =
@@ -136,6 +192,10 @@ export type SocialConnectionProviderCard = {
   connectionId: string | null;
   updatedAt: string | null;
   disconnectedAt: string | null;
+  /** When set, connect/disconnect actions use the delegated API (e.g. Facebook Business). */
+  delegatedTo?: 'facebook_business' | null;
+  canonicalSource?: keyof typeof SOCIAL_CONNECTION_CANONICAL_SOURCES;
+  managementPath?: string | null;
 };
 
 export type SocialConnectionsDashboard = {
@@ -198,34 +258,73 @@ export const SOCIAL_CONNECTION_PRODUCT_COPY = {
     'Connected means encrypted credentials and a server-validated account selection exist. Live provider authorization requires Owner-configured OAuth apps and is not triggered automatically by TITAN.',
 } as const;
 
-/** Read social connection cards — Owner and permitted Admin only. */
-export function canAccessSocialConnections(identity: {
+/** View social connection status and setup requirements — Owner, Admin and Office. */
+export function canViewSocialConnections(identity: {
   roleName: string;
   permissions: string[];
 }): boolean {
   if (identity.roleName === 'Technician' || identity.roleName === 'Client') {
     return false;
   }
-  return canWriteMarketingAgent(identity) || canApproveMarketingAgentPublish(identity);
+  if (identity.permissions.includes('*')) return true;
+  return (
+    canWriteMarketingAgent(identity) ||
+    identity.permissions.includes('marketing:read') ||
+    identity.permissions.includes('marketing_intelligence:read') ||
+    identity.permissions.includes('marketing_intelligence:write') ||
+    identity.permissions.includes('marketing_intelligence:manage') ||
+    identity.permissions.includes('integrations:read') ||
+    identity.permissions.includes('integrations:manage')
+  );
 }
 
-/** Connect, reconnect, disconnect and account selection — Owner by default. */
+/** @deprecated Use canViewSocialConnections */
+export function canAccessSocialConnections(identity: {
+  roleName: string;
+  permissions: string[];
+}): boolean {
+  return canViewSocialConnections(identity);
+}
+
+/** Connect, select, reconnect and disconnect — Company Owner only (Young Guns policy). */
 export function canManageSocialConnections(identity: {
   roleName: string;
   permissions: string[];
 }): boolean {
-  if (!canAccessSocialConnections(identity)) return false;
-  return canApproveMarketingAgentPublish(identity);
+  if (!canViewSocialConnections(identity)) return false;
+  if (identity.permissions.includes('*')) return true;
+  return isCompanyOwnerRole(identity.roleName);
 }
 
-/** Admin read-only where marketing intelligence manage is granted without Owner role. */
+/** Admin read-only — same view gate as Office staff with marketing/integrations read. */
 export function canAdminViewSocialConnections(identity: {
   roleName: string;
   permissions: string[];
 }): boolean {
-  if (identity.roleName === 'Technician' || identity.roleName === 'Client') return false;
-  if (identity.permissions.includes('*')) return true;
-  return identity.permissions.includes('marketing_intelligence:manage');
+  return canViewSocialConnections(identity);
+}
+
+export function mapFacebookStateToFoundationStatus(
+  state: string,
+): SocialConnectionFoundationStatus {
+  switch (state) {
+    case 'connected':
+      return 'CONNECTED';
+    case 'partial':
+      return 'ACCOUNT_SELECTION_REQUIRED';
+    case 'disconnected':
+      return 'DISCONNECTED';
+    case 'configuration_required':
+      return 'NOT_CONFIGURED';
+    case 'reauthorisation_required':
+    case 'expired':
+      return 'RECONNECT_REQUIRED';
+    case 'missing_permission':
+    case 'provider_unavailable':
+      return 'ERROR';
+    default:
+      return 'ERROR';
+  }
 }
 
 export function formatSocialConnectionFoundationStatus(

@@ -3,10 +3,12 @@ import { and, eq, gt, isNull } from 'drizzle-orm';
 import {
   buildSelectedAccountLabel,
   buildSocialConnectionSetupRequirements,
-  canAccessSocialConnections,
   canManageSocialConnections,
+  canViewSocialConnections,
   formatSocialConnectionFoundationStatus,
   hasCompleteAccountSelection,
+  isCompanyOwnerRole,
+  mapFacebookStateToFoundationStatus,
   resolveSocialConnectionFoundationStatus,
   SOCIAL_CONNECTION_PRODUCT_COPY,
   SOCIAL_CONNECTION_PROVIDER_LABELS,
@@ -24,6 +26,7 @@ import {
 } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
 import {
+  fbConnections,
   securityAuditLogs,
   socialMediaConnectionEvents,
   socialMediaConnections,
@@ -99,10 +102,28 @@ export class SocialConnectionService {
   }
 
   private assertRead(actor: SocialConnectionActor): void {
-    if (!canAccessSocialConnections(actor)) {
+    if (!canViewSocialConnections(actor)) {
       throw new SocialConnectionError(
         'FORBIDDEN',
-        'Social Connections require Owner or permitted Admin access. Technicians and Clients are denied.',
+        'Social Connections require Owner, Admin or Office access. Technicians and Clients are denied.',
+      );
+    }
+  }
+
+  private assertFacebookDelegated(provider: SocialConnectionProvider): void {
+    if (provider === 'facebook') {
+      throw new SocialConnectionError(
+        'DELEGATED_TO_FACEBOOK_BUSINESS',
+        'Facebook Page connection is managed through Facebook Business (/api/v1/facebook-business). Use that canonical path to connect, select a Page, reconnect or disconnect.',
+      );
+    }
+  }
+
+  private assertOwnerOAuthInitiator(roleName: string): void {
+    if (!isCompanyOwnerRole(roleName)) {
+      throw new SocialConnectionError(
+        'FORBIDDEN',
+        'OAuth connection changes require Company Owner approval. Admin and Office roles may view status only.',
       );
     }
   }
@@ -212,12 +233,76 @@ export class SocialConnectionService {
     }
   }
 
+  private async loadFacebookRow(companyId: string) {
+    const [row] = await this.db
+      .select()
+      .from(fbConnections)
+      .where(eq(fbConnections.companyId, companyId))
+      .limit(1);
+    return row ?? null;
+  }
+
+  private async buildFacebookProviderCard(
+    companyId: string,
+    oauthConfigured: Record<SocialConnectionProvider, boolean>,
+    actor: SocialConnectionActor | null,
+  ): Promise<SocialConnectionProviderCard> {
+    const row = companyId ? await this.loadFacebookRow(companyId) : null;
+    const foundationStatus = mapFacebookStateToFoundationStatus(row?.state ?? 'configuration_required');
+    const canManage = actor ? canManageSocialConnections(actor) : false;
+
+    return {
+      provider: 'facebook',
+      label: SOCIAL_CONNECTION_PROVIDER_LABELS.facebook,
+      foundationStatus,
+      statusLabel: formatSocialConnectionFoundationStatus(foundationStatus),
+      selectedAccountLabel: row?.pageName ?? row?.pageId ?? null,
+      oauthAppConfigured: oauthConfigured.facebook,
+      authorizeUrlAvailable: oauthConfigured.facebook,
+      hasCredentials: Boolean(row?.credentialsEncrypted),
+      liveProviderVerified: row?.state === 'connected' && Boolean(row?.lastVerificationOk),
+      lastHealthCheckAt: row?.lastVerifiedAt?.toISOString() ?? null,
+      lastError: row?.lastVerificationMessage ?? null,
+      safeErrorMessage: row?.lastVerificationMessage ?? null,
+      setupRequirementCategory:
+        foundationStatus === 'NOT_CONFIGURED' ? 'missing_oauth_app' : null,
+      canConnect:
+        canManage &&
+        (foundationStatus === 'NOT_CONFIGURED' ||
+          foundationStatus === 'READY_TO_CONNECT' ||
+          foundationStatus === 'DISCONNECTED' ||
+          foundationStatus === 'ERROR'),
+      canCompleteAccountSelection:
+        canManage && foundationStatus === 'ACCOUNT_SELECTION_REQUIRED',
+      canReconnect:
+        canManage &&
+        (foundationStatus === 'RECONNECT_REQUIRED' || foundationStatus === 'ERROR'),
+      canDisconnect:
+        canManage &&
+        (foundationStatus === 'CONNECTED' ||
+          foundationStatus === 'ACCOUNT_SELECTION_REQUIRED' ||
+          foundationStatus === 'RECONNECT_REQUIRED' ||
+          foundationStatus === 'ERROR'),
+      canViewSetupRequirements: Boolean(actor && canViewSocialConnections(actor)),
+      connectionId: row?.id ?? null,
+      updatedAt: row?.updatedAt?.toISOString() ?? null,
+      disconnectedAt: row?.disconnectedAt?.toISOString() ?? null,
+      delegatedTo: 'facebook_business',
+      canonicalSource: 'facebook',
+      managementPath: '/facebook-business',
+    };
+  }
+
   private async buildProviderCardForCompany(
     provider: SocialConnectionProvider,
     oauthConfigured: Record<SocialConnectionProvider, boolean>,
     companyId: string,
     actor: SocialConnectionActor | null,
   ): Promise<SocialConnectionProviderCard> {
+    if (provider === 'facebook') {
+      return this.buildFacebookProviderCard(companyId, oauthConfigured, actor);
+    }
+
     const adapter = this.getAdapter(provider);
     const encryptionKeyConfigured = Boolean(this.encryptionKey);
     let hasCredentials = false;
@@ -319,10 +404,13 @@ export class SocialConnectionService {
           foundationStatus === 'ACCOUNT_SELECTION_REQUIRED' ||
           foundationStatus === 'RECONNECT_REQUIRED' ||
           foundationStatus === 'ERROR'),
-      canViewSetupRequirements: canManage || Boolean(actor && canAccessSocialConnections(actor)),
+      canViewSetupRequirements: Boolean(actor && canViewSocialConnections(actor)),
       connectionId,
       updatedAt,
       disconnectedAt,
+      delegatedTo: null,
+      canonicalSource: provider,
+      managementPath: provider === 'whatsapp_business' ? '/integrations/whatsapp' : '/integrations',
     };
   }
 
@@ -357,7 +445,9 @@ export class SocialConnectionService {
     input: StartSocialConnectionOAuthRequest,
   ): Promise<{ authorizationUrl: string }> {
     this.assertManage(actor);
+    this.assertOwnerOAuthInitiator(actor.roleName);
     const provider = input.provider;
+    this.assertFacebookDelegated(provider);
     const adapter = this.getAdapter(provider);
 
     if (adapter.requiresProviderReview() && process.env.TIKTOK_LIVE_OAUTH_ENABLED !== '1') {
@@ -387,6 +477,7 @@ export class SocialConnectionService {
       provider,
       stateHash,
       returnPath,
+      initiatorRoleName: actor.roleName,
       expiresAt,
     });
 
@@ -398,7 +489,13 @@ export class SocialConnectionService {
       );
     }
 
+    await this.recordAudit(actor, 'owner_approval.oauth_start', provider, {
+      provider,
+      returnPath,
+      initiatorRoleName: actor.roleName,
+    });
     await this.recordAudit(actor, 'oauth.start', provider, { provider, returnPath });
+    await this.recordEvent(actor, null, provider, 'owner_approval', null, 'CONNECTING', 'Owner approved OAuth connection start');
     await this.recordEvent(actor, null, provider, 'oauth_started', null, 'CONNECTING', 'OAuth flow started');
 
     return { authorizationUrl };
@@ -425,29 +522,19 @@ export class SocialConnectionService {
       );
     }
 
+    if (!isCompanyOwnerRole(stateRow.initiatorRoleName)) {
+      throw new SocialConnectionError(
+        'FORBIDDEN',
+        'OAuth callback rejected — connection was not initiated by Company Owner.',
+      );
+    }
+
     await this.db
       .update(socialOauthStates)
       .set({ consumedAt: new Date() })
       .where(eq(socialOauthStates.id, stateRow.id));
 
     return stateRow;
-  }
-
-  /** Reject replay — second consume attempt fails at DB query level. */
-  async assertOAuthStateNotReplayed(state: string, provider: SocialConnectionProvider): Promise<void> {
-    const [consumed] = await this.db
-      .select()
-      .from(socialOauthStates)
-      .where(
-        and(
-          eq(socialOauthStates.stateHash, hashOAuthState(state)),
-          eq(socialOauthStates.provider, provider),
-        ),
-      )
-      .limit(1);
-    if (consumed && consumed.consumedAt) {
-      throw new SocialConnectionError('STATE_REPLAY', 'OAuth state replay rejected.');
-    }
   }
 
   async handleOAuthCallback(input: {
@@ -641,6 +728,7 @@ export class SocialConnectionService {
     provider: SocialConnectionProvider,
   ): Promise<SocialDiscoveredAccount[]> {
     this.assertManage(actor);
+    this.assertFacebookDelegated(provider);
     const adapter = this.getAdapter(provider);
 
     if (provider === 'whatsapp_business') {
@@ -685,6 +773,8 @@ export class SocialConnectionService {
     input: SelectSocialConnectionAccountRequest,
   ): Promise<SocialConnectionProviderCard> {
     this.assertManage(actor);
+    this.assertOwnerOAuthInitiator(actor.roleName);
+    this.assertFacebookDelegated(input.provider);
     const { provider, selection } = input;
     const discovered = await this.listDiscoveredAccounts(actor, provider);
     this.validateSelection(provider, selection, discovered);
@@ -885,6 +975,7 @@ export class SocialConnectionService {
     provider: SocialConnectionProvider,
   ): Promise<SocialConnectionHealthResult> {
     this.assertManage(actor);
+    this.assertFacebookDelegated(provider);
     const adapter = this.getAdapter(provider);
     const now = new Date().toISOString();
 
@@ -997,12 +1088,16 @@ export class SocialConnectionService {
     provider: SocialConnectionProvider,
   ): Promise<{ authorizationUrl: string }> {
     this.assertManage(actor);
+    this.assertOwnerOAuthInitiator(actor.roleName);
+    this.assertFacebookDelegated(provider);
     await this.recordEvent(actor, null, provider, 'reconnect_requested', null, 'CONNECTING', 'Reconnect requested');
     return this.startOAuth(actor, { provider, returnPath: '/integrations' });
   }
 
   async disconnect(actor: SocialConnectionActor, provider: SocialConnectionProvider) {
     this.assertManage(actor);
+    this.assertOwnerOAuthInitiator(actor.roleName);
+    this.assertFacebookDelegated(provider);
 
     if (provider === 'whatsapp_business') {
       const waRow = await this.loadWhatsappRow(actor.companyId);

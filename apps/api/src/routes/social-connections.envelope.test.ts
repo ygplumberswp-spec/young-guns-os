@@ -39,9 +39,20 @@ describe('social connections API envelope & safety (J-6.7F)', () => {
     assert.ok(serviceSource.includes('not returned by the authenticated provider connection'));
   });
 
-  it('rejects OAuth state replay', () => {
-    assert.ok(serviceSource.includes('STATE_REPLAY'));
+  it('rejects OAuth state replay via consumedAt single-use consume', () => {
     assert.ok(serviceSource.includes('consumedAt'));
+    assert.ok(serviceSource.includes('isNull(socialOauthStates.consumedAt)'));
+  });
+
+  it('requires Owner initiator on OAuth callback', () => {
+    assert.ok(serviceSource.includes('initiatorRoleName'));
+    assert.ok(serviceSource.includes('isCompanyOwnerRole'));
+    assert.ok(serviceSource.includes('owner_approval.oauth_start'));
+  });
+
+  it('delegates Facebook to facebook-business canonical path', () => {
+    assert.ok(serviceSource.includes('DELEGATED_TO_FACEBOOK_BUSINESS'));
+    assert.ok(serviceSource.includes('fbConnections'));
   });
 
   it('scopes disconnect and health by companyId', () => {

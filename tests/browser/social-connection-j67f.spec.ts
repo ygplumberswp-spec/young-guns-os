@@ -68,7 +68,7 @@ test.describe('Social connection foundation (J-6.7F)', () => {
       join(repoRoot, 'apps/web/src/features/integrations/SocialConnectionsSection.tsx'),
       'utf8',
     );
-    expect(sectionSource).toMatch(/canAccessSocialConnections/);
+    expect(sectionSource).toMatch(/canViewSocialConnections/);
     expect(sectionSource).toMatch(/if \(!canView\)/);
     expect(sectionSource).toMatch(/return null/);
   });

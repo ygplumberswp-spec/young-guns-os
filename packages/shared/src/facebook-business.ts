@@ -22,6 +22,7 @@ import {
   canApproveMarketingAgentPublish,
   canWriteMarketingAgent,
 } from './marketing-agent.js';
+import { canViewSocialConnections, isCompanyOwnerRole } from './social-connection.js';
 
 // ─── Provider surface ────────────────────────────────────────────────────────
 
@@ -1523,9 +1524,11 @@ export function canApproveFacebookContent(identity: Identity): boolean {
   return canApproveMarketingAgentPublish(identity);
 }
 
-/** Connecting and disconnecting moves credentials, so it is Owner-only. */
+/** Connecting and disconnecting moves credentials — Company Owner only (not Admin manage perm). */
 export function canManageFacebookConnection(identity: Identity): boolean {
-  return canApproveMarketingAgentPublish(identity);
+  if (!canViewSocialConnections(identity)) return false;
+  if (identity.permissions.includes('*')) return true;
+  return isCompanyOwnerRole(identity.roleName);
 }
 
 /** Lead handling is wider than publishing — sales roles need it. */
@@ -1570,6 +1573,7 @@ export function redactFacebookAuditMetadata(
 }
 
 export type FacebookAuditAction =
+  | 'connection.owner_approval'
   | 'connection.oauth_started'
   | 'connection.oauth_completed'
   | 'connection.page_selected'

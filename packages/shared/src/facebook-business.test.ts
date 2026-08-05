@@ -722,6 +722,15 @@ describe('RBAC (Phase R)', () => {
     assert.equal(canManageFacebookConnection(owner), true);
   });
 
+  it('denies Admin with marketing_intelligence:manage from managing the connection', () => {
+    const admin = {
+      roleName: 'Office Admin',
+      permissions: ['marketing_intelligence:manage', 'marketing:read'],
+    };
+    assert.equal(canAccessFacebookBusiness(admin), true);
+    assert.equal(canManageFacebookConnection(admin), false);
+  });
+
   it('lets a sales role work leads without marketing write', () => {
     assert.equal(canWorkFacebookLeads({ roleName: 'Sales', permissions: ['leads:write'] }), true);
   });

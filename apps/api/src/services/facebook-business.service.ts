@@ -21,6 +21,7 @@ import {
   FACEBOOK_LEAD_SOURCE_KEY,
   FACEBOOK_SUBSCRIBED_WEBHOOK_FIELDS,
   FACEBOOK_SYNC_POLICY,
+  isCompanyOwnerRole,
   missingFacebookPermissions,
   nextFacebookPublishAttempt,
   redactFacebookAuditMetadata,
@@ -356,9 +357,13 @@ export class FacebookBusinessService {
       userId: actor.userId,
       stateHash: hashOAuthState(state),
       returnPath: sanitiseReturnPath(returnPath),
+      initiatorRoleName: actor.roleName,
       expiresAt: new Date(Date.now() + OAUTH_STATE_TTL_MS),
     });
 
+    await this.audit(actor, 'connection.owner_approval', null, {
+      initiatorRoleName: actor.roleName,
+    });
     await this.audit(actor, 'connection.oauth_started', null, {
       requestedScopes: this.graph().buildAuthorizeUrl(state).includes('scope=') ? 'requested' : null,
     });
@@ -394,6 +399,13 @@ export class FacebookBusinessService {
       throw new FacebookBusinessError(
         'INVALID_STATE',
         'This Facebook authorisation link is invalid or has expired. Start the connection again.',
+      );
+    }
+
+    if (stateRow.initiatorRoleName && !isCompanyOwnerRole(stateRow.initiatorRoleName)) {
+      throw new FacebookBusinessError(
+        'FORBIDDEN',
+        'Facebook OAuth callback rejected — connection was not initiated by Company Owner.',
       );
     }
 
