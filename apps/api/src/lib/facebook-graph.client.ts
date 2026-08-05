@@ -5,7 +5,8 @@ import {
   FACEBOOK_OAUTH_DIALOG_URL,
   FACEBOOK_PAGE_LIST_ENDPOINT,
   FACEBOOK_PAGE_LIST_FIELDS,
-  FACEBOOK_DIRECT_PAGE_LOOKUP_FIELDS,
+  FACEBOOK_DIRECT_PAGE_IDENTITY_FIELDS,
+  FACEBOOK_DIRECT_PAGE_TOKEN_FIELDS,
   type FacebookPermission,
   type RawFacebookAccountRow,
   type FacebookDirectPageLookupRaw,
@@ -498,20 +499,22 @@ export class FacebookGraphClient {
     pageId: string,
     userAccessToken: string,
   ): Promise<string | null> {
-    const result = await this.lookupPageDirect(pageId, userAccessToken);
+    const result = await this.lookupPageDirectStage(
+      pageId,
+      userAccessToken,
+      FACEBOOK_DIRECT_PAGE_TOKEN_FIELDS,
+    );
     return result.raw?.access_token ?? null;
   }
 
-  /**
-   * Meta documented specific-Page lookup: GET /{page-id}?fields=id,name,access_token,tasks.
-   * Returns provider metadata for sanitized diagnosis; raw.access_token is for server-side use only.
-   */
-  async lookupPageDirect(
+  private async lookupPageDirectStage(
     pageId: string,
     userAccessToken: string,
+    fields: string,
   ): Promise<{
     raw: FacebookDirectPageLookupRaw | null;
     httpStatus: number;
+    fields: string;
     providerError: {
       code: number | null;
       subcode: number | null;
@@ -522,14 +525,15 @@ export class FacebookGraphClient {
     try {
       const body = await this.request<FacebookDirectPageLookupRaw>(`/${pageId}`, {
         accessToken: userAccessToken,
-        searchParams: { fields: FACEBOOK_DIRECT_PAGE_LOOKUP_FIELDS },
+        searchParams: { fields },
       });
-      return { raw: body, httpStatus: 200, providerError: null };
+      return { raw: body, httpStatus: 200, fields, providerError: null };
     } catch (error) {
       if (error instanceof FacebookGraphError) {
         return {
           raw: null,
           httpStatus: error.httpStatus ?? 502,
+          fields,
           providerError: {
             code: error.graphCode,
             subcode: error.graphSubcode,
@@ -541,6 +545,7 @@ export class FacebookGraphClient {
       return {
         raw: null,
         httpStatus: 502,
+        fields,
         providerError: {
           code: null,
           subcode: null,
@@ -549,6 +554,100 @@ export class FacebookGraphClient {
         },
       };
     }
+  }
+
+  /**
+   * Two-stage Meta specific-Page lookup (J-6.7F3):
+   * 1. Identity probe — fields=id,name
+   * 2. Page-token probe — fields=id,name,access_token (only when identity probe succeeds)
+   *
+   * Never requests `tasks` on direct Page-object lookups.
+   */
+  async lookupPageDirect(
+    pageId: string,
+    userAccessToken: string,
+  ): Promise<{
+    identityProbe: {
+      raw: FacebookDirectPageLookupRaw | null;
+      httpStatus: number;
+      fields: string;
+      providerError: {
+        code: number | null;
+        subcode: number | null;
+        type: string | null;
+        message: string;
+      } | null;
+    };
+    tokenProbe: {
+      raw: FacebookDirectPageLookupRaw | null;
+      httpStatus: number;
+      fields: string;
+      skipped: boolean;
+      providerError: {
+        code: number | null;
+        subcode: number | null;
+        type: string | null;
+        message: string;
+      } | null;
+    };
+    /** Convenience merge for callers that read raw/access_token directly. */
+    raw: FacebookDirectPageLookupRaw | null;
+    httpStatus: number;
+    providerError: {
+      code: number | null;
+      subcode: number | null;
+      type: string | null;
+      message: string;
+    } | null;
+  }> {
+    const identityProbe = await this.lookupPageDirectStage(
+      pageId,
+      userAccessToken,
+      FACEBOOK_DIRECT_PAGE_IDENTITY_FIELDS,
+    );
+
+    const identitySucceeded =
+      identityProbe.providerError === null &&
+      Boolean(identityProbe.raw?.id || identityProbe.raw?.name);
+
+    if (!identitySucceeded) {
+      return {
+        identityProbe,
+        tokenProbe: {
+          raw: null,
+          httpStatus: 0,
+          fields: FACEBOOK_DIRECT_PAGE_TOKEN_FIELDS,
+          skipped: true,
+          providerError: null,
+        },
+        raw: identityProbe.raw,
+        httpStatus: identityProbe.httpStatus,
+        providerError: identityProbe.providerError,
+      };
+    }
+
+    const tokenProbeResult = await this.lookupPageDirectStage(
+      pageId,
+      userAccessToken,
+      FACEBOOK_DIRECT_PAGE_TOKEN_FIELDS,
+    );
+
+    const tokenProbe = {
+      ...tokenProbeResult,
+      skipped: false,
+    };
+
+    const mergedRaw: FacebookDirectPageLookupRaw | null = tokenProbe.raw
+      ? { ...identityProbe.raw, ...tokenProbe.raw }
+      : identityProbe.raw;
+
+    return {
+      identityProbe,
+      tokenProbe,
+      raw: mergedRaw,
+      httpStatus: tokenProbe.providerError ? tokenProbe.httpStatus : tokenProbe.httpStatus,
+      providerError: tokenProbe.providerError,
+    };
   }
 
   /** Returns only Pages with usable tokens — used for server-side selection validation. */

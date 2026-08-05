@@ -18,10 +18,13 @@ const pageSource = readFileSync(
 const graphSource = readFileSync(join(here, '../lib/facebook-graph.client.ts'), 'utf8');
 const instagramSource = readFileSync(join(here, 'social-connection.service.ts'), 'utf8');
 
-describe('Facebook direct page validation fallback (J-6.7F2)', () => {
-  it('graph client exposes lookupPageDirect with documented fields', () => {
+describe('Facebook direct page validation fallback (J-6.7F2 / J-6.7F3)', () => {
+  it('graph client exposes two-stage lookupPageDirect without tasks field', () => {
     assert.ok(graphSource.includes('lookupPageDirect'));
-    assert.ok(graphSource.includes('FACEBOOK_DIRECT_PAGE_LOOKUP_FIELDS'));
+    assert.ok(graphSource.includes('FACEBOOK_DIRECT_PAGE_IDENTITY_FIELDS'));
+    assert.ok(graphSource.includes('FACEBOOK_DIRECT_PAGE_TOKEN_FIELDS'));
+    assert.ok(graphSource.includes('lookupPageDirectStage'));
+    assert.equal(graphSource.includes('access_token,tasks'), false);
   });
 
   it('discoverPagesForSelection attempts direct lookup when list is empty', () => {
@@ -55,14 +58,19 @@ describe('Facebook direct page validation fallback (J-6.7F2)', () => {
   it('routes expose directLookup in pages response and map new error codes', () => {
     assert.ok(routeSource.includes('directLookup: discovery.directLookup'));
     assert.ok(routeSource.includes('DIRECT_PAGE_PERMISSION_DENIED'));
+    assert.ok(routeSource.includes('DIRECT_PAGE_INVALID_FIELD'));
+    assert.ok(routeSource.includes('DIRECT_PAGE_IDENTITY_AVAILABLE'));
     assert.ok(routeSource.includes('PAGE_NOT_AUTHORISED'));
     assert.ok(routeSource.includes('PAGE_IDENTITY_MISMATCH'));
   });
 
-  it('UI shows direct lookup result without exposing Page tokens', () => {
+  it('UI shows two-stage direct lookup diagnosis without exposing Page tokens', () => {
     assert.ok(pageSource.includes('Direct Page lookup'));
     assert.ok(pageSource.includes('formatDirectPageLookupDiagnosis'));
     assert.ok(pageSource.includes('FACEBOOK_DIRECT_PAGE_LOOKUP_STATUS_LABELS'));
+    assert.ok(pageSource.includes('Identity probe fields'));
+    assert.ok(pageSource.includes('Token probe fields'));
+    assert.ok(pageSource.includes('Provider message classification'));
     assert.ok(pageSource.includes('Has access_token: ${directLookup.hasAccessToken}'));
     assert.equal(pageSource.includes('does not administer any Pages'), false);
     assert.equal(pageSource.includes('directLookup.access_token'), false);

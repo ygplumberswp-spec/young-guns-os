@@ -35,6 +35,7 @@ import {
   resolveFacebookPageDiscoveryStatus,
   assertClientPageIdMatchesPendingCandidate,
   buildFacebookDirectPageLookupSanitized,
+  mapFacebookGraphDirectLookupToProbes,
   resolveFacebookPendingPageCandidate,
   type FacebookPageDiscoveryResult,
   type FacebookPendingPageCandidate,
@@ -601,14 +602,10 @@ export class FacebookBusinessService {
         pendingPageCandidate.pageId,
         userToken,
       );
+      const probes = mapFacebookGraphDirectLookupToProbes(directResult);
       directLookup = buildFacebookDirectPageLookupSanitized({
         candidate: pendingPageCandidate,
-        httpStatus: directResult.httpStatus,
-        providerErrorCode: directResult.providerError?.code ?? null,
-        providerErrorSubcode: directResult.providerError?.subcode ?? null,
-        providerErrorType: directResult.providerError?.type ?? null,
-        providerFailed: Boolean(directResult.providerError),
-        raw: directResult.raw,
+        ...probes,
       });
 
       if (directLookup.selectable) {
@@ -616,7 +613,7 @@ export class FacebookBusinessService {
           id: pendingPageCandidate.pageId,
           name: pendingPageCandidate.pageName,
           category: null,
-          tasks: directResult.raw?.tasks ?? [],
+          tasks: [],
           selectable: true,
           status: 'PAGE_SELECTION_READY' as const,
           statusDetail:
@@ -737,14 +734,10 @@ export class FacebookBusinessService {
 
     if (!page && pendingPageCandidate && pageId === pendingPageCandidate.pageId) {
       const directResult = await graph.lookupPageDirect(pendingPageCandidate.pageId, userToken);
+      const probes = mapFacebookGraphDirectLookupToProbes(directResult);
       const sanitized = buildFacebookDirectPageLookupSanitized({
         candidate: pendingPageCandidate,
-        httpStatus: directResult.httpStatus,
-        providerErrorCode: directResult.providerError?.code ?? null,
-        providerErrorSubcode: directResult.providerError?.subcode ?? null,
-        providerErrorType: directResult.providerError?.type ?? null,
-        providerFailed: Boolean(directResult.providerError),
-        raw: directResult.raw,
+        ...probes,
       });
 
       await this.audit(actor, 'connection.direct_page_lookup', row.id, {
@@ -763,10 +756,10 @@ export class FacebookBusinessService {
 
       page = {
         id: pendingPageCandidate.pageId,
-        name: directResult.raw.name ?? pendingPageCandidate.pageName,
+        name: directResult.raw?.name ?? pendingPageCandidate.pageName,
         category: null,
-        accessToken: directResult.raw.access_token,
-        tasks: directResult.raw.tasks ?? [],
+        accessToken: directResult.raw!.access_token!,
+        tasks: [],
       };
     }
 
