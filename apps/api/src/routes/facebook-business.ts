@@ -119,6 +119,14 @@ const STATUS_BY_CODE: Record<string, number> = {
   META_PAGE_ROW_INCOMPLETE: 409,
   META_PAGE_TOKEN_UNAVAILABLE: 409,
   META_TOKEN_SCOPE_MISMATCH: 403,
+  PAGE_NOT_AUTHORISED: 403,
+  DIRECT_PAGE_LOOKUP_READY: 409,
+  DIRECT_PAGE_TOKEN_AVAILABLE: 409,
+  DIRECT_PAGE_TOKEN_UNAVAILABLE: 409,
+  DIRECT_PAGE_PERMISSION_DENIED: 403,
+  DIRECT_PAGE_NOT_FOUND: 404,
+  DIRECT_PAGE_LOOKUP_FAILED: 502,
+  PAGE_IDENTITY_MISMATCH: 409,
 };
 
 function handleError(res: import('express').Response, error: unknown): boolean {
@@ -260,6 +268,8 @@ export function createFacebookBusinessRouter({
       const discovery = await facebookBusinessService.discoverPagesForSelection(toActor(req));
       return {
         ...discovery,
+        pendingPageCandidate: discovery.pendingPageCandidate,
+        directLookup: discovery.directLookup,
         pages: discovery.pages.map((page) => ({
           id: page.id,
           name: page.name,

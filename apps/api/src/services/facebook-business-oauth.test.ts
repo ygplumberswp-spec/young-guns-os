@@ -93,6 +93,14 @@ describe('Facebook Business OAuth hygiene and Page selection (J-6.7F)', () => {
     assert.ok(serviceSource.includes('mapRawFacebookAccountRow'));
     assert.ok(serviceSource.includes('buildFacebookPageDiscoveryDiagnosis'));
     assert.ok(serviceSource.includes('tryResolvePageAccessToken'));
+    assert.ok(serviceSource.includes('lookupPageDirect'));
+    assert.ok(serviceSource.includes('buildFacebookDirectPageLookupSanitized'));
+  });
+
+  it('direct Page lookup rejects arbitrary browser Page ids (J-6.7F2)', () => {
+    assert.ok(serviceSource.includes('assertClientPageIdMatchesPendingCandidate'));
+    assert.ok(serviceSource.includes("'PAGE_NOT_AUTHORISED'"));
+    assert.ok(serviceSource.includes('resolvePendingPageCandidateForCompany'));
   });
 
   it('Instagram/TikTok runtime callback still uses APP_URL (outstanding item)', () => {

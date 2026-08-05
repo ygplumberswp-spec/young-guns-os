@@ -5,8 +5,10 @@ import {
   FACEBOOK_OAUTH_DIALOG_URL,
   FACEBOOK_PAGE_LIST_ENDPOINT,
   FACEBOOK_PAGE_LIST_FIELDS,
+  FACEBOOK_DIRECT_PAGE_LOOKUP_FIELDS,
   type FacebookPermission,
   type RawFacebookAccountRow,
+  type FacebookDirectPageLookupRaw,
 } from '@titan/shared';
 
 /**
@@ -496,14 +498,56 @@ export class FacebookGraphClient {
     pageId: string,
     userAccessToken: string,
   ): Promise<string | null> {
+    const result = await this.lookupPageDirect(pageId, userAccessToken);
+    return result.raw?.access_token ?? null;
+  }
+
+  /**
+   * Meta documented specific-Page lookup: GET /{page-id}?fields=id,name,access_token,tasks.
+   * Returns provider metadata for sanitized diagnosis; raw.access_token is for server-side use only.
+   */
+  async lookupPageDirect(
+    pageId: string,
+    userAccessToken: string,
+  ): Promise<{
+    raw: FacebookDirectPageLookupRaw | null;
+    httpStatus: number;
+    providerError: {
+      code: number | null;
+      subcode: number | null;
+      type: string | null;
+      message: string;
+    } | null;
+  }> {
     try {
-      const body = await this.request<{ access_token?: string }>(`/${pageId}`, {
+      const body = await this.request<FacebookDirectPageLookupRaw>(`/${pageId}`, {
         accessToken: userAccessToken,
-        searchParams: { fields: 'access_token' },
+        searchParams: { fields: FACEBOOK_DIRECT_PAGE_LOOKUP_FIELDS },
       });
-      return body.access_token ?? null;
-    } catch {
-      return null;
+      return { raw: body, httpStatus: 200, providerError: null };
+    } catch (error) {
+      if (error instanceof FacebookGraphError) {
+        return {
+          raw: null,
+          httpStatus: error.httpStatus ?? 502,
+          providerError: {
+            code: error.graphCode,
+            subcode: error.graphSubcode,
+            type: error.kind,
+            message: error.message,
+          },
+        };
+      }
+      return {
+        raw: null,
+        httpStatus: 502,
+        providerError: {
+          code: null,
+          subcode: null,
+          type: 'unknown',
+          message: error instanceof Error ? error.message : 'Unknown Facebook error.',
+        },
+      };
     }
   }
 

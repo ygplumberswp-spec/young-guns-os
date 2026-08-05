@@ -8,6 +8,7 @@ import {
   canWriteFacebookBusiness,
   FACEBOOK_CONTENT_STATUS_LABELS,
   FACEBOOK_PAGE_DISCOVERY_STATUS_LABELS,
+  FACEBOOK_DIRECT_PAGE_LOOKUP_STATUS_LABELS,
   formatFacebookScheduleForOwner,
   YOUNG_GUNS_BRAND,
   type FacebookContentStatus,
@@ -553,7 +554,7 @@ export function FacebookBusinessPage() {
 function emptyPageDiscoveryMessage(status: FacebookPageDiscoveryStatusCode): string {
   switch (status) {
     case 'META_PAGE_LIST_EMPTY':
-      return 'Meta returned no managed Pages for this token. Confirm Young Guns Plumbing – Cape Town is granted under Meta Business Integrations for this app.';
+      return 'Meta returned no managed Pages for this token. TITAN will attempt direct Page lookup for the server-controlled Young Guns candidate when you load Pages.';
     case 'META_PAGE_LIST_FAILED':
       return 'Meta did not return a successful Page list. Retry after confirming Business Integrations access.';
     case 'META_PAGE_TOKEN_UNAVAILABLE':
@@ -563,6 +564,28 @@ function emptyPageDiscoveryMessage(status: FacebookPageDiscoveryStatusCode): str
     default:
       return 'No selectable Pages are available yet.';
   }
+}
+
+function formatDirectPageLookupDiagnosis(directLookup: NonNullable<FacebookPagesDiscoveryResponse['directLookup']>): string {
+  return [
+    `Graph version: ${directLookup.graphVersion}`,
+    `Endpoint: ${directLookup.endpoint}`,
+    `Fields: ${directLookup.fields}`,
+    `HTTP status: ${directLookup.httpStatus}`,
+    `Provider error code: ${directLookup.providerErrorCode ?? 'none'}`,
+    `Provider error subcode: ${directLookup.providerErrorSubcode ?? 'none'}`,
+    `Provider error type: ${directLookup.providerErrorType ?? 'none'}`,
+    `Has id: ${directLookup.hasId}`,
+    `Has name: ${directLookup.hasName}`,
+    `Name matches: ${directLookup.nameMatches}`,
+    `ID matches: ${directLookup.idMatches}`,
+    `Has access_token: ${directLookup.hasAccessToken}`,
+    `Has tasks: ${directLookup.hasTasks}`,
+    `Task count: ${directLookup.taskCount}`,
+    `Candidate Page id: ${directLookup.candidatePageId}`,
+    `Returned Page id: ${directLookup.returnedPageId ?? 'none'}`,
+    `Returned Page name: ${directLookup.returnedPageName ?? 'none'}`,
+  ].join('\n');
 }
 
 function formatPageDiscoveryDiagnosis(discovery: FacebookPagesDiscoveryResponse): string {
@@ -722,9 +745,43 @@ function ConnectionTab({
               <p className="page-muted">
                 {FACEBOOK_PAGE_DISCOVERY_STATUS_LABELS[pageDiscovery.status]}: {pageDiscovery.detail}
               </p>
-              {pageDiscovery.pages.length === 0 ? (
+              {pageDiscovery.pages.length === 0 && !pageDiscovery.directLookup?.selectable ? (
                 <p>{emptyPageDiscoveryMessage(pageDiscovery.status)}</p>
-              ) : (
+              ) : null}
+              {pageDiscovery.directLookup ? (
+                <div className="space-y-2">
+                  <p>
+                    <strong>Direct Page lookup</strong> —{' '}
+                    {FACEBOOK_DIRECT_PAGE_LOOKUP_STATUS_LABELS[pageDiscovery.directLookup.status]}:{' '}
+                    {pageDiscovery.directLookup.detail}
+                  </p>
+                  {pageDiscovery.directLookup.selectable ? (
+                    <div>
+                      <p>
+                        <strong>{pageDiscovery.directLookup.candidatePageName}</strong>
+                        {pageDiscovery.directLookup.taskCount > 0
+                          ? ` · tasks: ${pageDiscovery.directLookup.taskCount}`
+                          : null}
+                      </p>
+                      <Button
+                        onClick={() => onSelectPage(pageDiscovery.directLookup!.candidatePageId)}
+                        disabled={isBusy}
+                      >
+                        Use this Page
+                      </Button>
+                    </div>
+                  ) : null}
+                  {canManage ? (
+                    <details>
+                      <summary className="page-muted">Sanitized direct Page lookup diagnosis</summary>
+                      <pre className="social-connection-card__setup">
+                        {formatDirectPageLookupDiagnosis(pageDiscovery.directLookup)}
+                      </pre>
+                    </details>
+                  ) : null}
+                </div>
+              ) : null}
+              {pageDiscovery.pages.length > 0 ? (
                 <ul>
                   {pageDiscovery.pages.map((page) => (
                     <li key={page.id || page.name}>
@@ -740,7 +797,7 @@ function ConnectionTab({
                     </li>
                   ))}
                 </ul>
-              )}
+              ) : null}
               {canManage ? (
                 <details>
                   <summary className="page-muted">Sanitized provider diagnosis</summary>

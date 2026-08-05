@@ -33,7 +33,13 @@ import {
   buildFacebookPageDiscoveryDiagnosis,
   mapRawFacebookAccountRow,
   resolveFacebookPageDiscoveryStatus,
+  assertClientPageIdMatchesPendingCandidate,
+  buildFacebookDirectPageLookupSanitized,
+  resolveFacebookPendingPageCandidate,
   type FacebookPageDiscoveryResult,
+  type FacebookPendingPageCandidate,
+  type FacebookPageDiscoveryRow,
+  isYoungGunsFinanceTenant,
   shouldSendFacebookNotification,
   validateFacebookMedia,
   validateFacebookSchedule,
@@ -67,6 +73,7 @@ import {
   leadSources,
   leads,
   securityAuditLogs,
+  companies,
 } from '@titan/db';
 import type { FacebookAppEnvConfig } from '../config.js';
 import {
@@ -224,6 +231,27 @@ export class FacebookBusinessService {
 
   private graph(): FacebookGraphClient {
     return this.graphClientFactory(this.requireAppConfig());
+  }
+
+  private async isYoungGunsTenant(companyId: string): Promise<boolean> {
+    const [company] = await this.db
+      .select({ slug: companies.slug, name: companies.name })
+      .from(companies)
+      .where(eq(companies.id, companyId))
+      .limit(1);
+    return isYoungGunsFinanceTenant(companyId, company ?? null);
+  }
+
+  private async resolvePendingPageCandidateForCompany(input: {
+    companyId: string;
+    connectionMetadata?: Record<string, unknown> | null;
+  }): Promise<FacebookPendingPageCandidate | null> {
+    const isYoungGuns = await this.isYoungGunsTenant(input.companyId);
+    return resolveFacebookPendingPageCandidate({
+      companyId: input.companyId,
+      connectionMetadata: input.connectionMetadata ?? null,
+      isYoungGunsTenant: isYoungGuns,
+    });
   }
 
   // ─── Audit ─────────────────────────────────────────────────────────────────
@@ -435,6 +463,10 @@ export class FacebookBusinessService {
 
     const existing = await this.loadConnection(stateRow.companyId);
     const stateBefore = existing?.state ?? null;
+    const pendingPageCandidate = await this.resolvePendingPageCandidateForCompany({
+      companyId: stateRow.companyId,
+      connectionMetadata: existing?.metadata as Record<string, unknown> | null,
+    });
 
     // The user token is parked so `/pages` can list Pages and a later disconnect
     // can revoke the grant. No Page token exists until a Page is chosen.
@@ -458,7 +490,18 @@ export class FacebookBusinessService {
       pageUrl: null,
       pageCategory: null,
       connectedAt: null,
-      metadata: { pendingPageSelection: true },
+      metadata: {
+        pendingPageSelection: true,
+        ...(pendingPageCandidate
+          ? {
+              pendingPageCandidate: {
+                pageId: pendingPageCandidate.pageId,
+                pageName: pendingPageCandidate.pageName,
+                source: pendingPageCandidate.source,
+              },
+            }
+          : {}),
+      },
       updatedAt: new Date(),
       lastVerifiedAt: null,
       lastVerificationOk: null,
@@ -518,7 +561,7 @@ export class FacebookBusinessService {
       graph.inspectAccessToken(userToken),
     ]);
 
-    const mappedPages = [];
+    const mappedPages: FacebookPageDiscoveryRow[] = [];
     for (const raw of fetchResult.rows) {
       let resolvedToken = raw.access_token ?? null;
       if (raw.id && raw.name && !resolvedToken) {
@@ -543,9 +586,77 @@ export class FacebookBusinessService {
       providerErrorMessage: fetchResult.providerError?.message ?? null,
     });
 
+    const pendingPageCandidate = await this.resolvePendingPageCandidateForCompany({
+      companyId: actor.companyId,
+      connectionMetadata: row?.metadata as Record<string, unknown> | null,
+    });
+
+    let directLookup = null;
+    const shouldAttemptDirectLookup =
+      pendingPageCandidate &&
+      (fetchResult.rows.length === 0 || mappedPages.every((page) => !page.selectable));
+
+    if (shouldAttemptDirectLookup && pendingPageCandidate) {
+      const directResult = await graph.lookupPageDirect(
+        pendingPageCandidate.pageId,
+        userToken,
+      );
+      directLookup = buildFacebookDirectPageLookupSanitized({
+        candidate: pendingPageCandidate,
+        httpStatus: directResult.httpStatus,
+        providerErrorCode: directResult.providerError?.code ?? null,
+        providerErrorSubcode: directResult.providerError?.subcode ?? null,
+        providerErrorType: directResult.providerError?.type ?? null,
+        providerFailed: Boolean(directResult.providerError),
+        raw: directResult.raw,
+      });
+
+      if (directLookup.selectable) {
+        mappedPages.push({
+          id: pendingPageCandidate.pageId,
+          name: pendingPageCandidate.pageName,
+          category: null,
+          tasks: directResult.raw?.tasks ?? [],
+          selectable: true,
+          status: 'PAGE_SELECTION_READY' as const,
+          statusDetail:
+            'Meta confirmed this Page via direct lookup. Confirm to finish the connection.',
+          diagnostics: {
+            hasId: directLookup.hasId,
+            hasName: directLookup.hasName,
+            hasAccessToken: directLookup.hasAccessToken,
+            hasTasks: directLookup.hasTasks,
+            taskCount: directLookup.taskCount,
+            filteredOutByTitan: false,
+            filterReason: null,
+          },
+        });
+      }
+
+      await this.audit(actor, 'connection.direct_page_lookup', row?.id ?? null, {
+        status: directLookup.status,
+        httpStatus: directLookup.httpStatus,
+        providerErrorCode: directLookup.providerErrorCode,
+        hasAccessToken: directLookup.hasAccessToken,
+        idMatches: directLookup.idMatches,
+        nameMatches: directLookup.nameMatches,
+      });
+    }
+
+    const resolvedStatus =
+      mappedPages.some((page) => page.selectable) && status.status !== 'META_PAGE_LIST_FAILED'
+        ? {
+            status: 'PAGE_SELECTION_READY' as const,
+            detail:
+              directLookup?.selectable === true
+                ? 'Meta confirmed Young Guns Plumbing – Cape Town via direct Page lookup. Confirm this Page to finish the connection.'
+                : 'Select the Young Guns Plumbing Page to finish the connection.',
+          }
+        : status;
+
     return {
-      status: status.status,
-      detail: status.detail,
+      status: resolvedStatus.status,
+      detail: resolvedStatus.detail,
       pages: mappedPages,
       diagnosis: buildFacebookPageDiscoveryDiagnosis({
         httpStatus: fetchResult.httpStatus,
@@ -564,6 +675,8 @@ export class FacebookBusinessService {
         pagingPageCount: fetchResult.pagingPageCount,
         appliedFilters,
       }),
+      pendingPageCandidate,
+      directLookup,
     };
   }
 
@@ -606,16 +719,70 @@ export class FacebookBusinessService {
 
     const graph = this.graphClientFactory(config);
     const pages = await graph.listPages(userToken);
-    const page = pages.find((entry) => entry.id === pageId);
+    const pendingPageCandidate = await this.resolvePendingPageCandidateForCompany({
+      companyId: actor.companyId,
+      connectionMetadata: row.metadata as Record<string, unknown> | null,
+    });
+
+    const pageIdCheck = assertClientPageIdMatchesPendingCandidate({
+      clientPageId: pageId,
+      candidate: pendingPageCandidate,
+      listedPageIds: pages.map((entry) => entry.id),
+    });
+    if (!pageIdCheck.allowed) {
+      throw new FacebookBusinessError('PAGE_NOT_AUTHORISED', pageIdCheck.reason);
+    }
+
+    let page = pages.find((entry) => entry.id === pageId) ?? null;
+
+    if (!page && pendingPageCandidate && pageId === pendingPageCandidate.pageId) {
+      const directResult = await graph.lookupPageDirect(pendingPageCandidate.pageId, userToken);
+      const sanitized = buildFacebookDirectPageLookupSanitized({
+        candidate: pendingPageCandidate,
+        httpStatus: directResult.httpStatus,
+        providerErrorCode: directResult.providerError?.code ?? null,
+        providerErrorSubcode: directResult.providerError?.subcode ?? null,
+        providerErrorType: directResult.providerError?.type ?? null,
+        providerFailed: Boolean(directResult.providerError),
+        raw: directResult.raw,
+      });
+
+      await this.audit(actor, 'connection.direct_page_lookup', row.id, {
+        phase: 'select_page',
+        status: sanitized.status,
+        httpStatus: sanitized.httpStatus,
+        providerErrorCode: sanitized.providerErrorCode,
+        hasAccessToken: sanitized.hasAccessToken,
+        idMatches: sanitized.idMatches,
+        nameMatches: sanitized.nameMatches,
+      });
+
+      if (!sanitized.selectable || !directResult.raw?.access_token) {
+        throw new FacebookBusinessError(sanitized.status, sanitized.detail);
+      }
+
+      page = {
+        id: pendingPageCandidate.pageId,
+        name: directResult.raw.name ?? pendingPageCandidate.pageName,
+        category: null,
+        accessToken: directResult.raw.access_token,
+        tasks: directResult.raw.tasks ?? [],
+      };
+    }
+
     if (!page) {
       const discovery = await this.discoverPagesForSelection(actor);
       const listed = discovery.pages.find((entry) => entry.id === pageId);
       if (listed && !listed.selectable) {
         throw new FacebookBusinessError(listed.status, listed.statusDetail);
       }
+      if (discovery.directLookup && pageId === discovery.directLookup.candidatePageId) {
+        throw new FacebookBusinessError(discovery.directLookup.status, discovery.directLookup.detail);
+      }
       throw new FacebookBusinessError(
         'PAGE_NOT_AVAILABLE',
-        'That Page is not among the Pages this Facebook account administers.',
+        discovery.directLookup?.detail ??
+          'That Page could not be validated against Meta for this Facebook account.',
       );
     }
 

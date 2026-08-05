@@ -1748,6 +1748,7 @@ export type FacebookAuditAction =
   | 'connection.owner_approval'
   | 'connection.oauth_started'
   | 'connection.oauth_completed'
+  | 'connection.direct_page_lookup'
   | 'connection.page_selected'
   | 'connection.verified'
   | 'connection.disconnected'

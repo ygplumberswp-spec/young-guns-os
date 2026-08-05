@@ -11,6 +11,8 @@ import type {
   FacebookPageDiscoveryDiagnosis,
   FacebookPageDiscoveryResult,
   FacebookPageDiscoveryRow,
+  FacebookDirectPageLookupSanitized,
+  FacebookPendingPageCandidate,
   FacebookPermission,
 } from '@titan/shared';
 import { request, ApiClientError } from './api-client';
@@ -68,6 +70,8 @@ export type FacebookPageOption = FacebookPageDiscoveryRow;
 export type FacebookPagesDiscoveryResponse = FacebookPageDiscoveryResult & {
   pages: FacebookPageDiscoveryRow[];
   diagnosis: FacebookPageDiscoveryDiagnosis;
+  pendingPageCandidate: FacebookPendingPageCandidate | null;
+  directLookup: FacebookDirectPageLookupSanitized | null;
 };
 
 export type FacebookContentMediaView = {

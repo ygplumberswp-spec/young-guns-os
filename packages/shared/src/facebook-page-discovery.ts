@@ -1,4 +1,8 @@
 import { FACEBOOK_GRAPH_VERSION } from './facebook-business.js';
+import type {
+  FacebookDirectPageLookupSanitized,
+  FacebookPendingPageCandidate,
+} from './facebook-direct-page-lookup.js';
 
 /** Canonical Graph fields for Page discovery (Meta /me/accounts). */
 export const FACEBOOK_PAGE_LIST_ENDPOINT = '/me/accounts';
@@ -62,6 +66,10 @@ export type FacebookPageDiscoveryResult = {
   detail: string;
   pages: FacebookPageDiscoveryRow[];
   diagnosis: FacebookPageDiscoveryDiagnosis;
+  /** Server-controlled candidate used for Meta GET /{page-id} fallback (J-6.7F2). */
+  pendingPageCandidate: FacebookPendingPageCandidate | null;
+  /** Sanitized direct Page lookup when /me/accounts is empty or unusable. */
+  directLookup: FacebookDirectPageLookupSanitized | null;
 };
 
 export type RawFacebookAccountRow = {

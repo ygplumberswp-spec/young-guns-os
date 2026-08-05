@@ -162,9 +162,32 @@ test.describe('Social connection foundation (J-6.7F)', () => {
       'utf8',
     );
     expect(graphSource).toMatch(/discoverPages/);
+    expect(graphSource).toMatch(/lookupPageDirect/);
     expect(graphSource).not.toMatch(/filter\(\(page\) => page\.id && page\.name && page\.access_token\)/);
     expect(pageSource).toMatch(/META_PAGE_LIST_EMPTY/);
+    expect(pageSource).toMatch(/Direct Page lookup/);
     expect(pageSource).not.toMatch(/does not administer any Pages/);
+  });
+
+  test('Facebook direct Page lookup fallback is server-controlled (J-6.7F2)', async () => {
+    const serviceSource = readFileSync(
+      join(repoRoot, 'apps/api/src/services/facebook-business.service.ts'),
+      'utf8',
+    );
+    const sharedSource = readFileSync(
+      join(repoRoot, 'packages/shared/src/facebook-direct-page-lookup.ts'),
+      'utf8',
+    );
+    const businessSource = readFileSync(
+      join(repoRoot, 'packages/shared/src/facebook-business.ts'),
+      'utf8',
+    );
+    expect(sharedSource).toMatch(/394603137072407/);
+    expect(serviceSource).toMatch(/assertClientPageIdMatchesPendingCandidate/);
+    expect(serviceSource).toMatch(/resolvePendingPageCandidateForCompany/);
+    expect(businessSource).toMatch(
+      /export const FACEBOOK_OAUTH_BASIC_SCOPES: FacebookPermission\[\] = \['pages_show_list'\]/,
+    );
   });
 
   test('Facebook setup requirements use API callback not web APP_URL', async () => {

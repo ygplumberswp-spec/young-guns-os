@@ -163,6 +163,7 @@ export * from './social-media-integrations.js';
 export * from './social-connection.js';
 export * from './facebook-business.js';
 export * from './facebook-page-discovery.js';
+export * from './facebook-direct-page-lookup.js';
 export * from './facebook-connection-actions.js';
 export * from './content-reputation-intelligence.js';
 export * from './finance-aura-agent.js';
