@@ -108,6 +108,31 @@ test('buildCompletionReportHtml includes selected sections and omits map invent'
   assert.ok(!html.includes('maps.googleapis.com/maps/api/staticmap'));
 });
 
+test('completion report HTML renders embedded photos without storage paths', () => {
+  const html = buildCompletionReportHtml({
+    title: 'Completion',
+    reportNumber: 'CR-0002',
+    generatedAt: '2026-08-04T12:00:00.000Z',
+    includedSections: ['photos_before', 'quote'],
+    payload: {
+      photosBefore: [
+        {
+          id: 'photo-1',
+          title: 'Before photo',
+          evidencePhase: 'before',
+          downloadPath: null,
+          dataUrl: 'data:image/png;base64,abc',
+        },
+      ],
+      quote: { id: 'quote-internal', label: 'Quote YGP-100' },
+    },
+  });
+  assert.ok(html.includes('data:image/png;base64,abc'));
+  assert.ok(!html.includes('/api/v1/jobs'));
+  assert.ok(!html.includes('quote-internal'));
+  assert.ok(html.includes('Quote YGP-100'));
+});
+
 test('completionReportDeliveryNote is honest about Email Centre path', () => {
   assert.ok(
     completionReportDeliveryNote({

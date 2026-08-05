@@ -1,7 +1,6 @@
 import puppeteer, { type Browser } from 'puppeteer';
 import {
   buildFinanceDocumentPreviewHtml,
-  isValidPdfBuffer,
   type FinanceDocumentPreviewModel,
 } from '@titan/shared';
 import {
@@ -9,6 +8,7 @@ import {
   FINANCE_PDF_RENDER_TIMEOUT_MS,
   resolveChromiumExecutablePath,
 } from '../lib/chromium-executable.js';
+import { probeChromiumPdfAvailability, renderHtmlToPdf } from './chromium-pdf.service.js';
 
 export class FinanceDocumentPdfError extends Error {
   constructor(
@@ -45,30 +45,7 @@ export async function launchFinancePdfBrowser(): Promise<Browser> {
 export class PuppeteerFinanceDocumentPdfRenderer implements FinanceDocumentPdfRenderer {
   async renderPreviewPdf(model: FinanceDocumentPreviewModel): Promise<Buffer> {
     const html = buildFinanceDocumentPreviewHtml(model);
-    const browser = await launchFinancePdfBrowser();
-
-    try {
-      const page = await browser.newPage();
-      page.setDefaultTimeout(FINANCE_PDF_RENDER_TIMEOUT_MS);
-      await page.setContent(html, { waitUntil: 'load', timeout: FINANCE_PDF_RENDER_TIMEOUT_MS });
-      const pdf = await page.pdf({
-        format: 'A4',
-        printBackground: true,
-        margin: { top: '10mm', right: '10mm', bottom: '10mm', left: '10mm' },
-        timeout: FINANCE_PDF_RENDER_TIMEOUT_MS,
-      });
-      const buffer = Buffer.from(pdf);
-      if (!isValidPdfBuffer(buffer)) {
-        throw new FinanceDocumentPdfError('PDF_RENDER_FAILED', 'Renderer did not produce a valid PDF');
-      }
-      return buffer;
-    } catch (error) {
-      if (error instanceof FinanceDocumentPdfError) throw error;
-      const message = error instanceof Error ? error.message : String(error);
-      throw new FinanceDocumentPdfError('PDF_RENDER_FAILED', message);
-    } finally {
-      await browser.close();
-    }
+    return renderHtmlToPdf(html);
   }
 }
 
@@ -95,9 +72,5 @@ export async function probeFinancePdfRendererAvailability(): Promise<{
   available: boolean;
   source: 'env' | 'candidate' | 'bundled' | 'none';
 }> {
-  const resolution = await resolveChromiumExecutablePath();
-  return {
-    available: resolution.executablePath != null,
-    source: resolution.source,
-  };
+  return probeChromiumPdfAvailability();
 }

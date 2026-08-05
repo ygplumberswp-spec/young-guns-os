@@ -74,6 +74,11 @@ export class CompletionReportService {
     return ctx.preview;
   }
 
+  /** Tenant-scoped job assembly for operational report PDF exports. */
+  async getJobExportContext(companyId: string, jobId: string): Promise<AssembledJobContext> {
+    return this.assembleJobContext(companyId, jobId);
+  }
+
   async listReports(
     companyId: string,
     query: { jobId?: string } = {},

@@ -10,10 +10,14 @@ import {
   YOUNG_GUNS_CONTACT,
   type TitanReportKind,
 } from './document-engine.js';
+import { operationalReportKindLabel, type OperationalReportKind } from './operational-report.js';
 import { YOUNG_GUNS_SLOGAN } from './young-guns-theme.js';
 
 export type YoungGunsReportShellInput = {
-  reportKind: TitanReportKind;
+  /** Document-engine report kind (legacy section-based reports). */
+  reportKind?: TitanReportKind;
+  /** Operational PDF export kind — preferred for job/completion/service/maintenance exports. */
+  operationalKind?: OperationalReportKind;
   reportTitle?: string | null;
   periodLabel?: string | null;
   generatedAt?: string | null;
@@ -23,12 +27,13 @@ export type YoungGunsReportShellInput = {
   pageCount?: number | null;
 };
 
-/** Reports recognised by the engine but without a dedicated export pipeline yet. */
+/** Local implementation status for operational report PDF exports. */
 export const REPORT_EXPORT_STATUS: Record<string, 'implemented' | 'not_yet_implemented'> = {
+  job: 'implemented',
+  completion: 'implemented',
   service: 'implemented',
-  inspection: 'implemented',
   maintenance: 'implemented',
-  job: 'not_yet_implemented',
+  inspection: 'not_yet_implemented',
   technician: 'not_yet_implemented',
   finance: 'not_yet_implemented',
   customer: 'not_yet_implemented',
@@ -70,7 +75,11 @@ export function buildYoungGunsReportShellCss(): string {
 
 /** Branded HTML shell wrapping report body content for print/PDF pipelines. */
 export function buildYoungGunsReportShellHtml(input: YoungGunsReportShellInput): string {
-  const variant = documentVariantLabel({ type: 'report', reportKind: input.reportKind });
+  const variant = input.operationalKind
+    ? operationalReportKindLabel(input.operationalKind)
+    : input.reportKind
+      ? documentVariantLabel({ type: 'report', reportKind: input.reportKind })
+      : 'Report';
   const title = input.reportTitle?.trim() || variant;
   const pageLabel =
     input.pageNumber && input.pageCount

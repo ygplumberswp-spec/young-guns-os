@@ -97,6 +97,8 @@ export type CompletionReportPhotoRef = {
   title: string;
   evidencePhase: string | null;
   downloadPath: string | null;
+  /** Embedded image for PDF export — never a storage path. */
+  dataUrl?: string | null;
 };
 
 export type CompletionReportMaterialLine = {
@@ -145,6 +147,7 @@ export type CompletionReportSectionPayload = {
     signatureDocId: string | null;
     customerRepName: string | null;
     unavailableReason: string | null;
+    dataUrl?: string | null;
   };
 };
 
@@ -330,6 +333,28 @@ function renderList(items: string[]): string {
   return `<ul>${items.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>`;
 }
 
+function renderPhotoRefs(photos: CompletionReportPhotoRef[] | undefined): string {
+  if (!photos?.length) return '<p><em>No photos attached.</em></p>';
+  const withImages = photos.filter((p) => p.dataUrl);
+  const withoutImages = photos.filter((p) => !p.dataUrl);
+  const grid =
+    withImages.length > 0
+      ? `<div class="photo-grid">${withImages
+          .map(
+            (photo) =>
+              `<figure class="photo-card"><img src="${photo.dataUrl}" alt="${escapeHtml(photo.title)}" style="max-width:100%;height:auto;" /><figcaption>${escapeHtml(photo.title)}</figcaption></figure>`,
+          )
+          .join('')}</div>`
+      : '';
+  const refs =
+    withoutImages.length > 0
+      ? `<ul>${withoutImages
+          .map((photo) => `<li>${escapeHtml(photo.title)} — reference on file</li>`)
+          .join('')}</ul>`
+      : '';
+  return `${grid}${refs}` || '<p><em>No photos attached.</em></p>';
+}
+
 /** Pure HTML builder for customer-facing completion reports (print/PDF via browser). */
 export function buildCompletionReportHtml(input: {
   title: string;
@@ -421,44 +446,32 @@ export function buildCompletionReportHtml(input: {
         break;
       }
       case 'photos_before':
-        body = renderList(
-          (input.payload.photosBefore ?? []).map((p) =>
-            p.downloadPath ? `${p.title} (${p.downloadPath})` : p.title,
-          ),
-        );
+        body = renderPhotoRefs(input.payload.photosBefore);
         break;
       case 'photos_during':
-        body = renderList(
-          (input.payload.photosDuring ?? []).map((p) =>
-            p.downloadPath ? `${p.title} (${p.downloadPath})` : p.title,
-          ),
-        );
+        body = renderPhotoRefs(input.payload.photosDuring);
         break;
       case 'photos_after':
-        body = renderList(
-          (input.payload.photosAfter ?? []).map((p) =>
-            p.downloadPath ? `${p.title} (${p.downloadPath})` : p.title,
-          ),
-        );
+        body = renderPhotoRefs(input.payload.photosAfter);
         break;
       case 'quote':
         body = input.payload.quote
-          ? `<p>${escapeHtml(input.payload.quote.label)} (ref ${escapeHtml(input.payload.quote.id)})</p>`
+          ? `<p>${escapeHtml(input.payload.quote.label)}</p>`
           : '<p><em>No quote linked.</em></p>';
         break;
       case 'boq':
         body = input.payload.boq
-          ? `<p>${escapeHtml(input.payload.boq.label)} (ref ${escapeHtml(input.payload.boq.id)})</p>`
+          ? `<p>${escapeHtml(input.payload.boq.label)}</p>`
           : '<p><em>No BOQ linked.</em></p>';
         break;
       case 'invoice':
         body = input.payload.invoice
-          ? `<p>${escapeHtml(input.payload.invoice.label)} (ref ${escapeHtml(input.payload.invoice.id)})</p>`
+          ? `<p>${escapeHtml(input.payload.invoice.label)}</p>`
           : '<p><em>No invoice linked.</em></p>';
         break;
       case 'payment_receipt':
         body = input.payload.paymentReceipt
-          ? `<p>${escapeHtml(input.payload.paymentReceipt.label)} (ref ${escapeHtml(input.payload.paymentReceipt.id)})</p>`
+          ? `<p>${escapeHtml(input.payload.paymentReceipt.label)}</p>`
           : '<p><em>No payment receipt linked.</em></p>';
         break;
       case 'coc':
@@ -469,8 +482,10 @@ export function buildCompletionReportHtml(input: {
         break;
       case 'customer_signature': {
         const sig = input.payload.customerSignature;
-        if (sig?.present) {
-          body = `<p>Signed by ${escapeHtml(sig.customerRepName ?? 'customer representative')}${sig.signatureDocId ? ` (evidence ${escapeHtml(sig.signatureDocId)})` : ''}.</p>`;
+        if (sig?.present && sig.dataUrl) {
+          body = `<figure class="report-signature"><p>Signed by ${escapeHtml(sig.customerRepName ?? 'customer representative')}</p><img src="${sig.dataUrl}" alt="Customer signature" style="max-height:80px;" /></figure>`;
+        } else if (sig?.present) {
+          body = `<p>Signed by ${escapeHtml(sig.customerRepName ?? 'customer representative')}.</p>`;
         } else {
           body = `<p class="muted">${escapeHtml(sig?.unavailableReason ?? 'Signature not captured.')}</p>`;
         }
@@ -489,7 +504,7 @@ export function buildCompletionReportHtml(input: {
   `;
 
   return buildYoungGunsReportShellHtml({
-    reportKind: 'service',
+    operationalKind: 'completion',
     reportTitle: input.title,
     generatedAt: input.generatedAt,
     bodyHtml,

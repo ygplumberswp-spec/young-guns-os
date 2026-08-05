@@ -77,7 +77,7 @@ Boolean columns use **YES** / **NO** / **—** (not applicable).
 
 ## Requirements register
 
-**Total requirement rows:** 195
+**Total requirement rows:** 207
 
 | ID | Area | Requirement | Status | Built locally | Tests passed | Real DB/provider connected | RBAC tested | Tenant isolation tested | Deployed to staging | Authenticated E2E passed | Desktop verified | Tablet verified | Mobile verified | Claude verified | Gemini verified | Owner verified | Production ready | Evidence | Commit | Migration/provider dependency | Blocker | Next action |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -199,6 +199,18 @@ Boolean columns use **YES** / **NO** / **—** (not applicable).
 | J66D-010 | finance | Phase J-6.6D: Genuine multi-page Puppeteer PDF proof | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | finance-document-multipage-pdf.test.ts; test-results/j66d/*.pdf | J-6.6D | Chromium | NOT VISUALLY VERIFIED | Local Puppeteer evidence only — not Owner verified |
 | J66D-011 | finance | Phase J-6.6D: Accessibility/responsive finance section fields | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | finance-j64/j64a Playwright contracts; labeled controls | J-6.6D |  | NOT VISUALLY VERIFIED | Not authenticated staging verification |
 | J66D-012 | repo | Phase J-6.6D: Authoritative checklist update (this document) | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | docs/TITAN_MASTER_COMPLETION_CHECKLIST.md | J-6.6D |  |  | 195 requirement rows after J-6.6D |
+| J67A-001 | reports | Phase J-6.7A: Shared operational report PDF architecture (shell + Chromium renderer) | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | chromium-pdf.service.ts; young-guns-report-shell; operational-report*.ts | J-6.7A | Chromium | NOT VISUALLY VERIFIED | Local Puppeteer only |
+| J67A-002 | reports | Phase J-6.7A: Genuine job report PDF export (tenant data, RBAC) | TESTED LOCALLY | YES | YES | NO | YES | YES | NO | NO | NO | NO | NO | YES | YES | NO | NO | report-export.service.ts; GET /report-exports/jobs/:jobId/pdf | J-6.7A |  | NOT VISUALLY VERIFIED |  |
+| J67A-003 | reports | Phase J-6.7A: Completion report Young Guns PDF export | TESTED LOCALLY | YES | YES | NO | YES | YES | NO | NO | NO | NO | NO | YES | YES | NO | NO | completion-report HTML + embedded photos; GET /completion/:id/pdf | J-6.7A |  | NOT VISUALLY VERIFIED | Stored HTML preview retained |
+| J67A-004 | reports | Phase J-6.7A: Service report PDF export from job execution data | TESTED LOCALLY | YES | YES | NO | YES | YES | NO | NO | NO | NO | NO | YES | YES | NO | NO | buildServiceReportHtml; GET /jobs/:id/service/pdf | J-6.7A |  | NOT VISUALLY VERIFIED |  |
+| J67A-005 | reports | Phase J-6.7A: Maintenance report PDF export from plan/run data | TESTED LOCALLY | YES | YES | NO | YES | YES | NO | NO | NO | NO | NO | YES | YES | NO | NO | ops maintenance runs; GET /maintenance/runs/:id/pdf | J-6.7A |  | NOT VISUALLY VERIFIED |  |
+| J67A-006 | reports | Phase J-6.7A: Internal vs client-safe report models (server-side filtering) | TESTED LOCALLY | YES | YES | NO | YES | YES | NO | NO | NO | NO | NO | YES | YES | NO | NO | resolveJobContextForAudience; operational-report-html.test.ts | J-6.7A |  |  |  |
+| J67A-007 | reports | Phase J-6.7A: Report export RBAC matrix tests | TESTED LOCALLY | YES | YES | NO | YES | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | report-export.service.test.ts | J-6.7A |  |  |  |
+| J67A-008 | reports | Phase J-6.7A: Tenant-scoped report routes and evidence denial | TESTED LOCALLY | YES | YES | NO | YES | YES | NO | NO | NO | NO | NO | YES | YES | NO | NO | companyId filters in report-export.service; embed service job match | J-6.7A |  |  | Cross-tenant matrix reuses existing patterns |
+| J67A-009 | reports | Phase J-6.7A: Photos/signatures/attachments honest rendering | TESTED LOCALLY | YES | YES | NO | NO | YES | NO | NO | NO | NO | NO | YES | YES | NO | NO | report-photo-embed.service.ts; no storage paths in HTML | J-6.7A |  |  |  |
+| J67A-010 | reports | Phase J-6.7A: Multi-page Puppeteer operational report proof | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | operational-report-multipage-pdf.test.ts; test-results/j67a/*.pdf | J-6.7A | Chromium | NOT VISUALLY VERIFIED | Local artifacts gitignored |
+| J67A-011 | reports | Phase J-6.7A: UI entry points (Preview/Download on job, completion, maintenance) | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | ReportExportActions; JobDetailPage; CompletionReportDetailPage; RecurringMaintenancePage | J-6.7A |  | NOT VISUALLY VERIFIED | Playwright layout contracts |
+| J67A-012 | repo | Phase J-6.7A: Authoritative checklist update (this document) | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | docs/TITAN_MASTER_COMPLETION_CHECKLIST.md | J-6.7A |  |  | 207 requirement rows after J-6.7A |
 | XERO-001 | Xero | OAuth connect + tenant isolation | DEPLOYED TO STAGING | YES | NO | YES | NO | NO | YES | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_FRZ018_XERO_STAGING_REPORT.md | f8cc0c4 |  |  |  |
 | XERO-002 | Xero | Background historical import (contacts/invoices/payments) | PARTIALLY IMPLEMENTED | YES | NO | YES | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 | Xero OAuth | Import job running; last_sync_at null |  |
 | XERO-003 | Xero | Xero as sole official quote/invoice numbering authority | BUILT LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | finance-document-preview.test.ts | f8cc0c4 |  |  |  |
@@ -387,6 +399,31 @@ Items **J66D-001 … J66D-012** in the register above were completed in **Phase 
 **Still NOT VISUALLY VERIFIED:** authenticated staging editor journeys; Owner acceptance of draft payment policy; Gemini live visual audit.
 
 **Owner decisions still required:** controlled migration apply on staging; live provider connection; production release.
+
+---
+
+## Phase J-6.7A scope (completed locally)
+
+Items **J67A-001 … J67A-012** in the register above were completed in **Phase J-6.7A**. Boolean columns marked **YES** only where proven locally — not deployed, Owner-verified, or production-ready.
+
+| ID | Deliverable | J-6.7A outcome |
+|----|-------------|----------------|
+| J67A-001 | Shared report architecture | Young Guns shell + shared Chromium PDF renderer |
+| J67A-002 | Job report | Tenant job data → authenticated PDF export |
+| J67A-003 | Completion report | Existing completion data → Young Guns PDF (canonical download) |
+| J67A-004 | Service report | Job execution fields only; honest empty states |
+| J67A-005 | Maintenance report | Plan/run metadata + optional linked job evidence |
+| J67A-006 | Audience models | internal / client / technician server-side filtering |
+| J67A-007 | RBAC tests | assertAudienceAccess matrix |
+| J67A-008 | Tenant isolation | companyId-scoped queries and evidence embed |
+| J67A-009 | Evidence handling | Embedded photos/signatures; no storage paths |
+| J67A-010 | Multi-page PDF | Puppeteer proof under test-results/j67a/ |
+| J67A-011 | UI entry points | Preview/Download on job, completion, maintenance screens |
+| J67A-012 | Checklist | This document updated to 207 requirement rows |
+
+**Remaining report families (not in J-6.7A):** technician productivity, finance aggregate, customer history, fleet, compliance/COC standalone exports.
+
+**Still NOT VISUALLY VERIFIED:** authenticated staging report journeys; Owner acceptance of client-safe report shapes.
 
 ---
 

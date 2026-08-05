@@ -21,6 +21,7 @@ import {
 } from '../../lib/completion-report-api';
 import { useAuth } from '../../lib/auth-context';
 import { DocumentsNav } from '../../features/documents/DocumentsNav';
+import { ReportExportActions } from '../../features/reports/ReportExportActions';
 import { canAccessDocuments, canManageDocuments } from '../../features/documents/utils';
 
 function formatStatus(status: CompletionReportDetail['status']): string {
@@ -138,6 +139,19 @@ export function CompletionReportDetailPage() {
       <DocumentsNav />
       {error ? <p className="form-error">{error}</p> : null}
       {success ? <p className="form-success">{success}</p> : null}
+
+      {accessToken && report.status !== 'cancelled' ? (
+        <Panel title="Report export">
+          <ReportExportActions
+            accessToken={accessToken}
+            kind="completion"
+            resourceId={report.id}
+            audience="client"
+            reportNumber={report.reportNumber}
+            disabled={isWorking}
+          />
+        </Panel>
+      ) : null}
 
       <Panel title="Links">
         <ul className="documents-list">

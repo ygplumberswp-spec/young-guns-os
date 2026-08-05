@@ -54,6 +54,8 @@ export * from './inventory.js';
 export * from './job-costing.js';
 export * from './job-document-pack.js';
 export * from './completion-report.js';
+export * from './operational-report.js';
+export * from './operational-report-html.js';
 export * from './job-finance-workflow.js';
 export * from './fleet.js';
 export * from './fleet-tracking.js';

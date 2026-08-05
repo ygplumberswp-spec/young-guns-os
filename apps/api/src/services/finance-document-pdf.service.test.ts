@@ -21,6 +21,10 @@ const pdfServiceSource = readFileSync(
   join(repoRoot, 'apps/api/src/services/finance-document-pdf.service.ts'),
   'utf8',
 );
+const sharedChromiumPdfSource = readFileSync(
+  join(repoRoot, 'apps/api/src/services/chromium-pdf.service.ts'),
+  'utf8',
+);
 
 test('finance preview/pdf route returns application/pdf from document engine renderer', () => {
   assert.match(financeRouteSource, /\/documents\/preview\/pdf/);
@@ -34,7 +38,8 @@ test('finance PDF renderer resolves executable path without downloading on start
   assert.match(chromiumSource, /CHROMIUM_CANDIDATE_PATHS/);
   assert.match(pdfServiceSource, /launchFinancePdfBrowser/);
   assert.match(pdfServiceSource, /CHROMIUM_UNAVAILABLE/);
-  assert.match(pdfServiceSource, /browser\.close\(\)/);
+  assert.match(pdfServiceSource, /renderHtmlToPdf/);
+  assert.match(sharedChromiumPdfSource, /browser\.close\(\)/);
 });
 
 test('probeFinancePdfRendererAvailability reports availability shape', async () => {

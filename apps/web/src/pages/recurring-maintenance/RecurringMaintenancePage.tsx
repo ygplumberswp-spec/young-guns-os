@@ -13,6 +13,7 @@ import type {
 } from '@titan/shared';
 import { PLUMBING_EQUIPMENT_KIND_LABELS } from '@titan/shared';
 import { PageHeader } from '../../components/ux';
+import { ReportExportActions } from '../../features/reports/ReportExportActions';
 import { useAuth } from '../../lib/auth-context';
 import {
   acknowledgeRecurringMaintenanceReminder,
@@ -530,6 +531,16 @@ export function RecurringMaintenancePage() {
                   {run.jobId ? ` · job ${run.jobId}` : ''}
                   {run.maintenanceRecordId ? ` · record ${run.maintenanceRecordId}` : ''}
                   {run.notes ? ` · ${run.notes}` : ''}
+                  {accessToken ? (
+                    <div className="mt-2">
+                      <ReportExportActions
+                        accessToken={accessToken}
+                        kind="maintenance"
+                        resourceId={run.id}
+                        label="Maintenance report"
+                      />
+                    </div>
+                  ) : null}
                 </li>
               ))}
             </ul>
