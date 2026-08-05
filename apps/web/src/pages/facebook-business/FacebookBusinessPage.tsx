@@ -94,7 +94,11 @@ export function FacebookBusinessPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isBusy, setIsBusy] = useState(false);
   const [isLoadingPages, setIsLoadingPages] = useState(false);
+  const [isSelectingPage, setIsSelectingPage] = useState(false);
+  const [selectingPageId, setSelectingPageId] = useState<string | null>(null);
+  const [pageSelectionError, setPageSelectionError] = useState<string | null>(null);
   const pagesLoadInFlight = useRef(false);
+  const pageSelectInFlight = useRef(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -294,16 +298,64 @@ export function FacebookBusinessPage() {
   }, [accessToken, canManage, pageDiscovery]);
 
   async function handleSelectPage(pageId: string) {
-    if (!accessToken || !canManage) return;
-    await withAction(async () => {
-      const next = await selectFacebookPage(accessToken, pageId);
-      setPageDiscovery(null);
-      setSuccess(
-        next.state === 'connected'
-          ? `Connected and verified against Facebook as "${next.pageName}".`
-          : `Page selected, but the connection is ${next.stateLabel}: ${next.detail}`,
+    if (!accessToken || !canManage) {
+      setPageSelectionError('You do not have permission to select a Facebook Page for this company.');
+      return;
+    }
+
+    const normalizedPageId = pageId?.trim();
+    if (!normalizedPageId) {
+      setPageSelectionError(
+        'The selected Page row is missing an id. Reload Pages from Meta and try again.',
       );
-    });
+      return;
+    }
+
+    const verifiedPageId = pageDiscovery?.pendingPageCandidate?.pageId ?? null;
+    if (verifiedPageId && normalizedPageId !== verifiedPageId) {
+      setPageSelectionError(
+        'Only the verified Young Guns Plumbing Page can be selected for this company.',
+      );
+      return;
+    }
+
+    if (pageSelectInFlight.current) {
+      return;
+    }
+
+    pageSelectInFlight.current = true;
+    setPageSelectionError(null);
+    setError(null);
+    setSuccess(null);
+    setIsSelectingPage(true);
+    setSelectingPageId(normalizedPageId);
+
+    try {
+      const next = await selectFacebookPage(accessToken, normalizedPageId);
+      setConnection(next);
+      setPageDiscovery(null);
+      setPageSelectionError(null);
+      if (next.state === 'connected_limited') {
+        setSuccess(
+          `${next.pageName ?? 'Young Guns Plumbing – Cape Town'} is connected with limited permissions. Grant Page read access when you are ready.`,
+        );
+      } else if (next.state === 'connected') {
+        setSuccess(`Connected and verified against Facebook as "${next.pageName}".`);
+      } else {
+        setSuccess(`Page selected — ${next.stateLabel}. ${next.detail}`);
+      }
+      await load();
+    } catch (err) {
+      setPageSelectionError(
+        err instanceof FacebookBusinessApiClientError
+          ? err.message
+          : 'Could not select that Page. Your stored credentials were preserved.',
+      );
+    } finally {
+      setIsSelectingPage(false);
+      setSelectingPageId(null);
+      pageSelectInFlight.current = false;
+    }
   }
 
   async function handleCheck() {
@@ -550,6 +602,9 @@ export function FacebookBusinessPage() {
               canManage={canManage}
               isBusy={isBusy}
               isLoadingPages={isLoadingPages}
+              isSelectingPage={isSelectingPage}
+              selectingPageId={selectingPageId}
+              pageSelectionError={pageSelectionError}
               onConnect={handleConnect}
               onLoadPages={handleLoadPages}
               onGrantBusinessPortfolio={handleGrantBusinessPortfolio}
@@ -631,7 +686,40 @@ export function FacebookBusinessPage() {
   );
 }
 
-// ─── Connection ──────────────────────────────────────────────────────────────
+function pageDiscoveryRowSelectable(input: {
+  pageId: string;
+  selectable: boolean;
+}): boolean {
+  return input.selectable && Boolean(input.pageId.trim());
+}
+
+function UseThisPageButton({
+  pageId,
+  isLoadingPages,
+  isSelectingPage,
+  selectingPageId,
+  onSelectPage,
+}: {
+  pageId: string;
+  isLoadingPages: boolean;
+  isSelectingPage: boolean;
+  selectingPageId: string | null;
+  onSelectPage: (pageId: string) => void;
+}) {
+  const isThisPageSelecting = isSelectingPage && selectingPageId === pageId;
+  const selectionBlocked =
+    isLoadingPages || (isSelectingPage && selectingPageId !== null && !isThisPageSelecting);
+
+  return (
+    <Button
+      type="button"
+      onClick={() => onSelectPage(pageId)}
+      disabled={selectionBlocked || isThisPageSelecting}
+    >
+      {isThisPageSelecting ? 'Selecting Page…' : 'Use this Page'}
+    </Button>
+  );
+}
 
 function emptyPageDiscoveryMessage(status: FacebookPageDiscoveryStatusCode): string {
   switch (status) {
@@ -732,6 +820,9 @@ function ConnectionTab({
   canManage,
   isBusy,
   isLoadingPages,
+  isSelectingPage,
+  selectingPageId,
+  pageSelectionError,
   onConnect,
   onLoadPages,
   onGrantBusinessPortfolio,
@@ -746,6 +837,9 @@ function ConnectionTab({
   canManage: boolean;
   isBusy: boolean;
   isLoadingPages: boolean;
+  isSelectingPage: boolean;
+  selectingPageId: string | null;
+  pageSelectionError: string | null;
   onConnect: () => void;
   onLoadPages: () => void;
   onGrantBusinessPortfolio: () => void;
@@ -756,6 +850,7 @@ function ConnectionTab({
   onReconnect: () => void;
 }) {
   const [confirmDisconnect, setConfirmDisconnect] = useState(false);
+  const verifiedPageId = pageDiscovery?.pendingPageCandidate?.pageId ?? null;
 
   async function handleDisconnectConfirmed() {
     await onDisconnect();
@@ -914,6 +1009,12 @@ function ConnectionTab({
             </p>
           ) : null}
 
+          {pageSelectionError ? (
+            <p className="form-error" role="alert">
+              {pageSelectionError}
+            </p>
+          ) : null}
+
           {pageSelectionMismatch && pageDiscovery?.needsBusinessPortfolioAccess ? (
             <Panel title="Business Portfolio access required" className="titan-panel--warning">
               <p className="page-muted">
@@ -949,10 +1050,17 @@ function ConnectionTab({
                       {` · ${page.businessPortfolioName}`}
                       {page.source === 'assigned' ? ' · assigned' : ' · owned'}
                       <p className="page-muted">{page.statusDetail}</p>
-                      {page.selectable ? (
-                        <Button onClick={() => onSelectPage(page.id)} disabled={isBusy}>
-                          Use this Page
-                        </Button>
+                      {pageDiscoveryRowSelectable({
+                        pageId: page.id,
+                        selectable: page.selectable,
+                      }) ? (
+                        <UseThisPageButton
+                          pageId={page.id}
+                          isLoadingPages={isLoadingPages}
+                          isSelectingPage={isSelectingPage}
+                          selectingPageId={selectingPageId}
+                          onSelectPage={onSelectPage}
+                        />
                       ) : null}
                     </li>
                   ))}
@@ -991,13 +1099,22 @@ function ConnectionTab({
                         {pageDiscovery.directLookup.taskCount > 0
                           ? ` · tasks: ${pageDiscovery.directLookup.taskCount}`
                           : null}
+                        {verifiedPageId
+                          ? ` · Page ID ending ${maskFacebookPageId(verifiedPageId)?.replace(/^···/, '') ?? ''}`
+                          : null}
                       </p>
-                      <Button
-                        onClick={() => onSelectPage(pageDiscovery.directLookup!.candidatePageId)}
-                        disabled={isBusy}
-                      >
-                        Use this Page
-                      </Button>
+                      {pageDiscoveryRowSelectable({
+                        pageId: pageDiscovery.directLookup.candidatePageId,
+                        selectable: pageDiscovery.directLookup.selectable,
+                      }) ? (
+                        <UseThisPageButton
+                          pageId={pageDiscovery.directLookup.candidatePageId}
+                          isLoadingPages={isLoadingPages}
+                          isSelectingPage={isSelectingPage}
+                          selectingPageId={selectingPageId}
+                          onSelectPage={onSelectPage}
+                        />
+                      ) : null}
                     </div>
                   ) : null}
                   {canManage ? (
@@ -1018,10 +1135,17 @@ function ConnectionTab({
                       {page.category ? ` · ${page.category}` : ''}
                       {page.tasks.length > 0 ? ` · tasks: ${page.tasks.join(', ')}` : null}
                       <p className="page-muted">{page.statusDetail}</p>
-                      {page.selectable ? (
-                        <Button onClick={() => onSelectPage(page.id)} disabled={isBusy}>
-                          Use this Page
-                        </Button>
+                      {pageDiscoveryRowSelectable({
+                        pageId: page.id,
+                        selectable: page.selectable,
+                      }) ? (
+                        <UseThisPageButton
+                          pageId={page.id}
+                          isLoadingPages={isLoadingPages}
+                          isSelectingPage={isSelectingPage}
+                          selectingPageId={selectingPageId}
+                          onSelectPage={onSelectPage}
+                        />
                       ) : null}
                     </li>
                   ))}
