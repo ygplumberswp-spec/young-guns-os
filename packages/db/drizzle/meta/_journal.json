@@ -1226,6 +1226,20 @@
       "when": 1785863000000,
       "tag": "0178_finance_title_free_legacy",
       "breakpoints": true
+    },
+    {
+      "idx": 175,
+      "version": "7",
+      "when": 1785864000000,
+      "tag": "0179_social_connection_foundation",
+      "breakpoints": true
+    },
+    {
+      "idx": 176,
+      "version": "7",
+      "when": 1785865000000,
+      "tag": "0180_fb_oauth_initiator_role",
+      "breakpoints": true
     }
   ]
 }
