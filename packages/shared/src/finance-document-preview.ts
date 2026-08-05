@@ -4,6 +4,7 @@ import {
   computeDocumentTotals,
   setSectionVisibility,
   updateSection,
+  type CocAttachmentState,
   type DocumentLineItem,
   type DocumentPhoto,
   type DocumentSection,
@@ -14,6 +15,18 @@ import {
   normalizeFinanceDocumentAddresses,
   type FinanceDocumentAddressSnapshot,
 } from './finance-document-roundtrip.js';
+import {
+  type FinancePreviewCocInput,
+  type FinancePreviewMaintenanceInput,
+  type FinancePreviewWarrantyInput,
+  shouldHideFinancePreviewPaymentOptions,
+  shouldShowFinancePreviewCoc,
+  shouldShowFinancePreviewReviewSection,
+  shouldShowFinancePreviewWorkCompleted,
+  sanitizeFinancePreviewPaymentUrl,
+  sanitizeFinancePreviewReviewUrl,
+  buildFinancePreviewReviewQrSvg,
+} from './finance-document-preview-sections.js';
 
 export type FinanceDocumentPreviewKind = 'quote' | 'invoice';
 
@@ -45,10 +58,21 @@ export type FinanceDocumentPreviewInput = {
   paymentTerms?: string | null;
   scopeOfWork?: string | null;
   exclusions?: string | null;
+  workCompleted?: string | null;
+  warranty?: FinancePreviewWarrantyInput | null;
+  recommendedMaintenance?: FinancePreviewMaintenanceInput | null;
+  coc?: FinancePreviewCocInput | null;
   xeroQuoteNumber?: string | null;
   xeroInvoiceNumber?: string | null;
   jobReference?: string | null;
+  jobTechnician?: string | null;
+  jobScheduledAt?: string | null;
   status?: string | null;
+  showPaymentDetails?: boolean | null;
+  paymentUrl?: string | null;
+  reviewUrl?: string | null;
+  amountPaidCents?: number | null;
+  depositReceivedCents?: number | null;
   photos?: DocumentPhoto[];
 };
 
@@ -56,7 +80,8 @@ export type FinanceDocumentPreviewAttachment = {
   fileName: string;
   mimeType: string;
   caption: string | null;
-  dataUrl: string;
+  dataUrl: string | null;
+  role?: 'before' | 'after' | 'additional';
 };
 
 export type FinanceDocumentPreviewModel = {
@@ -77,20 +102,14 @@ export type FinanceDocumentPreviewModel = {
   job: { reference: string | null; scheduledAt: string | null; technician: string | null } | null;
   vatRateLabel: string;
   hideTitle: true;
-  hidePaymentOptions: true;
+  hidePaymentOptions: boolean;
+  showReviewSection: boolean;
+  paymentUrl: string | null;
+  reviewUrl: string | null;
+  reviewQrSvg: string | null;
+  coc: CocAttachmentState | null;
   attachments?: FinanceDocumentPreviewAttachment[];
 };
-
-const PREVIEW_HIDDEN_SECTIONS = new Set([
-  'payment_options',
-  'review_request',
-  'before_after_photos',
-  'image_gallery',
-  'coc_attachment',
-  'warranty',
-  'recommended_maintenance',
-  'work_completed',
-]);
 
 function dateInputToIso(value: string | null | undefined): string | null {
   if (!value?.trim()) return null;
@@ -149,12 +168,101 @@ function applyTextSection(
   sections: DocumentSection[],
   kind: DocumentSection['kind'],
   text: string | null | undefined,
+  visible?: boolean,
 ): DocumentSection[] {
   const trimmed = text?.trim();
-  if (!trimmed) return sections;
   const target = sections.find((section) => section.kind === kind);
   if (!target) return sections;
-  return updateSection(sections, target.id, { payload: { text: trimmed } });
+  if (!trimmed) {
+    return setSectionVisibility(sections, target.id, false);
+  }
+  let next = updateSection(sections, target.id, { payload: { text: trimmed } });
+  if (visible !== undefined) {
+    next = setSectionVisibility(next, target.id, visible);
+  } else {
+    next = setSectionVisibility(next, target.id, true);
+  }
+  return next;
+}
+
+function applyWarrantySection(
+  sections: DocumentSection[],
+  warranty: FinancePreviewWarrantyInput | null | undefined,
+): DocumentSection[] {
+  const target = sections.find((section) => section.kind === 'warranty');
+  if (!target) return sections;
+  const text = warranty?.text?.trim();
+  if (!text) return setSectionVisibility(sections, target.id, false);
+  return setSectionVisibility(
+    updateSection(sections, target.id, {
+      payload: { text, months: warranty?.months ?? null },
+    }),
+    target.id,
+    true,
+  );
+}
+
+function applyMaintenanceSection(
+  sections: DocumentSection[],
+  maintenance: FinancePreviewMaintenanceInput | null | undefined,
+): DocumentSection[] {
+  const target = sections.find((section) => section.kind === 'recommended_maintenance');
+  if (!target) return sections;
+  const text = maintenance?.text?.trim() ?? '';
+  const items = (maintenance?.items ?? []).filter((item) => (item.label ?? item.description ?? '').trim());
+  if (!text && items.length === 0) return setSectionVisibility(sections, target.id, false);
+  return setSectionVisibility(
+    updateSection(sections, target.id, {
+      payload: { text: text || null, items },
+    }),
+    target.id,
+    true,
+  );
+}
+
+function applyWorkCompletedSection(
+  sections: DocumentSection[],
+  workCompleted: string | null | undefined,
+  visible: boolean,
+): DocumentSection[] {
+  const target = sections.find((section) => section.kind === 'work_completed');
+  if (!target) return sections;
+  if (!visible || !workCompleted?.trim()) {
+    return setSectionVisibility(sections, target.id, false);
+  }
+  return setSectionVisibility(
+    updateSection(sections, target.id, { payload: { text: workCompleted.trim() } }),
+    target.id,
+    true,
+  );
+}
+
+function applyCocSection(
+  sections: DocumentSection[],
+  coc: FinancePreviewCocInput | null | undefined,
+  visible: boolean,
+): DocumentSection[] {
+  const target = sections.find((section) => section.kind === 'coc_attachment');
+  if (!target) return sections;
+  if (!visible || !coc || coc.status !== 'attached') {
+    return setSectionVisibility(sections, target.id, false);
+  }
+  return setSectionVisibility(
+    updateSection(sections, target.id, {
+      payload: {
+        fileName: coc.fileName,
+        statusLabel: 'Certificate attached',
+      },
+    }),
+    target.id,
+    true,
+  );
+}
+
+function applyContactHelpSection(sections: DocumentSection[]): DocumentSection[] {
+  const target = sections.find((section) => section.kind === 'contact_help');
+  if (!target) return sections;
+  return setSectionVisibility(sections, target.id, true);
 }
 
 /** Maps live editor values into the shared document engine preview model. Pure — no persistence. */
@@ -163,51 +271,56 @@ export function buildFinanceDocumentPreviewModel(
 ): FinanceDocumentPreviewModel {
   const documentType = input.kind;
   const lineItems = buildPreviewLineItems(input.lines);
-  const totals = computeDocumentTotals({ lineItems });
+  const totals = computeDocumentTotals({
+    lineItems,
+    amountPaidCents: input.amountPaidCents ?? 0,
+    depositReceivedCents: input.depositReceivedCents ?? 0,
+  });
   const vatRateLabel =
     lineItems.every((line) => line.vatRateBps === 0) || totals.vatCents === 0
       ? 'VAT (0%)'
       : 'VAT (15%)';
 
   let sections = buildDefaultSections(documentType);
-  for (const section of sections) {
-    if (PREVIEW_HIDDEN_SECTIONS.has(section.kind)) {
-      sections = setSectionVisibility(sections, section.id, false);
-    }
-  }
-
-  const statusSection = sections.find((section) => section.kind === 'status_panel');
-  if (statusSection) {
-    sections = setSectionVisibility(sections, statusSection.id, true);
-  }
-
-  if (input.jobReference?.trim()) {
-    const jobSection = sections.find((section) => section.kind === 'job_details');
-    if (jobSection) {
-      sections = setSectionVisibility(sections, jobSection.id, true);
-      sections = updateSection(sections, jobSection.id, {
-        payload: { reference: input.jobReference.trim() },
-      });
-    }
-  }
 
   const notes = input.notes?.trim() || null;
   const paymentTerms = input.paymentTerms?.trim() || null;
-  const scopeOfWork = input.scopeOfWork?.trim() || notes;
-  const exclusions =
-    input.exclusions?.trim() ||
-    [paymentTerms, documentType === 'invoice' ? notes : null].filter(Boolean).join('\n\n') ||
-    null;
+  const scopeOfWork = input.scopeOfWork?.trim() || null;
+  const exclusions = input.exclusions?.trim() || null;
 
   if (documentType === 'quote') {
-    sections = applyTextSection(sections, 'scope_of_work', scopeOfWork);
-    sections = applyTextSection(sections, 'terms_exclusions', exclusions);
+    sections = applyTextSection(sections, 'scope_of_work', scopeOfWork ?? notes);
+    const termsText = [exclusions, paymentTerms].filter(Boolean).join('\n\n') || null;
+    sections = applyTextSection(sections, 'terms_exclusions', termsText);
   } else {
-    sections = applyTextSection(sections, 'terms_exclusions', exclusions || notes);
+    sections = applyTextSection(sections, 'terms_exclusions', exclusions || paymentTerms || notes);
+  }
+
+  sections = applyWorkCompletedSection(
+    sections,
+    input.workCompleted,
+    shouldShowFinancePreviewWorkCompleted(input),
+  );
+  sections = applyWarrantySection(sections, input.warranty);
+  sections = applyMaintenanceSection(sections, input.recommendedMaintenance);
+  sections = applyCocSection(sections, input.coc, shouldShowFinancePreviewCoc(documentType, input.coc));
+  sections = applyContactHelpSection(sections);
+
+  const hidePaymentOptions = shouldHideFinancePreviewPaymentOptions(input);
+  const paymentSection = sections.find((section) => section.kind === 'payment_options');
+  if (paymentSection) {
+    sections = setSectionVisibility(sections, paymentSection.id, !hidePaymentOptions);
+  }
+
+  const showReviewSection = shouldShowFinancePreviewReviewSection(input);
+  const reviewSection = sections.find((section) => section.kind === 'review_request');
+  if (reviewSection) {
+    sections = setSectionVisibility(sections, reviewSection.id, showReviewSection);
   }
 
   const documentAddresses = normalizeFinanceDocumentAddresses(input.addresses ?? undefined);
   const site = documentAddresses.siteAddress?.trim() || null;
+  const reviewUrl = sanitizeFinancePreviewReviewUrl(input.reviewUrl);
 
   return {
     documentType,
@@ -235,11 +348,21 @@ export function buildFinanceDocumentPreviewModel(
       suburb: null,
       city: null,
     },
-    job: input.jobReference?.trim()
-      ? { reference: input.jobReference.trim(), scheduledAt: null, technician: null }
-      : null,
+    job:
+      input.jobReference?.trim() || input.jobTechnician?.trim() || input.jobScheduledAt
+        ? {
+            reference: input.jobReference?.trim() || null,
+            scheduledAt: dateInputToIso(input.jobScheduledAt),
+            technician: input.jobTechnician?.trim() || null,
+          }
+        : null,
     vatRateLabel,
     hideTitle: true,
-    hidePaymentOptions: true,
+    hidePaymentOptions,
+    showReviewSection,
+    paymentUrl: sanitizeFinancePreviewPaymentUrl(input.paymentUrl),
+    reviewUrl,
+    reviewQrSvg: buildFinancePreviewReviewQrSvg(reviewUrl),
+    coc: input.coc?.status === 'attached' ? input.coc : null,
   };
 }

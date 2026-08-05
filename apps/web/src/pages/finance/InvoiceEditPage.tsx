@@ -57,6 +57,8 @@ export function InvoiceEditPage() {
   const [dueDate, setDueDate] = useState('');
   const [customerReference, setCustomerReference] = useState('');
   const [message, setMessage] = useState('');
+  const [paymentTerms, setPaymentTerms] = useState('');
+  const [amountPaidCents, setAmountPaidCents] = useState(0);
   const [jobId, setJobId] = useState('');
   const [photos, setPhotos] = useState<DocumentPhoto[]>([]);
   const [addresses, setAddresses] = useState<FinanceDocumentAddresses>({
@@ -143,6 +145,8 @@ export function InvoiceEditPage() {
         setDueDate(toDateInputValue(invoice.dueDate));
         setCustomerReference(invoice.customerReference ?? invoice.xeroReference ?? '');
         setMessage(invoice.notes ?? '');
+        setPaymentTerms(invoice.paymentTerms ?? '');
+        setAmountPaidCents(invoice.amountPaidCents ?? 0);
         setJobId(invoice.jobId ?? '');
         setAddresses(addressesFromSnapshot(invoice.addresses));
         setVatMode(inferVatModeFromLines(invoice.lineItems));
@@ -273,8 +277,10 @@ export function InvoiceEditPage() {
           vatMode,
           priceMode,
           notes: message,
+          paymentTerms,
           xeroInvoiceNumber,
           status,
+          amountPaidCents,
           photos,
         }),
       );

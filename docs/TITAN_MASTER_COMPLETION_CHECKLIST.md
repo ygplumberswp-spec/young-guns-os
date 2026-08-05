@@ -44,7 +44,7 @@ Execute in order. Do **not** skip gates. Production is forbidden until step 16 g
 | **4** | Backup | Verified `pg_dump` custom backup, SHA-256, `pg_restore --list`, rollback command recorded | **NOT RUN** |
 | **5** | Migration precheck | Read-only: prior migration applied, target not yet applied, protected row counts | **NOT RUN** — blocked by step 4 |
 | **6** | Migration apply | Guarded staging-only scripts **0176 → 0177 → 0178** (never `drizzle-kit migrate`) | **NOT RUN** |
-| **7** | Local quality | `pnpm` build + automated test suite green (incl. J-6.6A fixes) | **IN PROGRESS** — J-6.6A |
+| **7** | Local quality | `pnpm` build + automated test suite green (incl. J-6.6C document sections) | **TESTED LOCALLY** — J-6.6C |
 | **8** | Git publish | Push recovery branch; fast-forward deploy branch without force-push | **PENDING** — Owner gate |
 | **9** | Deploy | Railway staging API + Web from `cursor/titan-v1-integration`; Chromium on API pod | **PARTIAL** — health probes OK; revision unconfirmed |
 | **10** | Smoke probes | `/health`, `/health/ready`, finance routes return 401 not 404, PDF renderer diagnostic | **PARTIAL** |
@@ -175,6 +175,18 @@ Boolean columns use **YES** / **NO** / **—** (not applicable).
 | J66B-003 | ui | Phase J-6.6B: Intelligence page legacy cyan/teal removal | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | remediate-legacy-cyan.mjs; young-guns-visual-j66b.test.ts | J-6.6B |  |  |  |
 | J66B-004 | ui | Phase J-6.6B: Finance preview modal + completion report Young Guns styling | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | finance-document-preview.css; buildCompletionReportHtml shell | J-6.6B |  |  | Report export pipeline still not implemented |
 | J66B-005 | ui | Phase J-6.6B: Skip-to-content, map/banner tokens, visual contract tests | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | layout.tsx skip link; young-guns-theme.spec.ts | J-6.6B |  |  | Authenticated viewport E2E pending |
+| J66C-001 | finance | Phase J-6.6C: Work Completed section (invoice-only, populated) | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | finance-document-preview-html.test.ts | J-6.6C |  |  | Finance editor UI field not wired — preview API accepts workCompleted |
+| J66C-002 | finance | Phase J-6.6C: Warranty conditional rendering (no defaults) | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | finance-document-preview-sections.test.ts | J-6.6C |  |  | Editor UI field not wired — preview API accepts warranty |
+| J66C-003 | finance | Phase J-6.6C: COC support (attached state only, no fabrication) | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | finance-document-preview-html.test.ts | J-6.6C |  |  | Editor COC wiring pending — API discriminated union |
+| J66C-004 | finance | Phase J-6.6C: Before/after photo grouping + non-image file refs | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | finance-document-preview-photos.service.ts | J-6.6C |  |  |  |
+| J66C-005 | finance | Phase J-6.6C: Contact/help section from YOUNG_GUNS_CONTACT | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | document-engine.ts YOUNG_GUNS_CONTACT | J-6.6C |  |  | Tenant config override future |
+| J66C-006 | finance | Phase J-6.6C: Payment/bank visibility (draft hidden unless override) | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | finance-document-preview-sections.test.ts | J-6.6C |  |  | Owner decision: draft preview payment override policy |
+| J66C-007 | finance | Phase J-6.6C: Yoco payment link conditional render | PARTIALLY IMPLEMENTED | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | sanitizeFinancePreviewPaymentUrl; yoco HTML tests | J-6.6C |  | BLOCKED — finance preview has no auto source from invoice_payment_links | Wire document-engine Yoco link into finance preview |
+| J66C-008 | finance | Phase J-6.6C: Google review stars + optional QR | PARTIALLY IMPLEMENTED | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | review section lifecycle tests | J-6.6C |  | BLOCKED — VERIFIED URL NOT FOUND in tenant config | Add tenant googleReviewUrl configuration |
+| J66C-009 | finance | Phase J-6.6C: Document number/status honesty (Xero pending, no UUID) | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | finance-document-preview.test.ts | J-6.6C |  |  |  |
+| J66C-010 | finance | Phase J-6.6C: Multi-page print CSS (break-inside, table headers) | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | finance-document-preview-html.test.ts 30-line table | J-6.6C |  | NOT VISUALLY VERIFIED | Puppeteer multi-page render audit pending |
+| J66C-011 | finance | Phase J-6.6C: Quote vs invoice section visibility contract tests | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | finance-document-preview-sections.test.ts; html tests | J-6.6C |  |  |  |
+| J66C-012 | repo | Phase J-6.6C: Authoritative checklist update (this document) | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | docs/TITAN_MASTER_COMPLETION_CHECKLIST.md | J-6.6C |  |  | Maintain register each phase |
 | XERO-001 | Xero | OAuth connect + tenant isolation | DEPLOYED TO STAGING | YES | NO | YES | NO | NO | YES | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_FRZ018_XERO_STAGING_REPORT.md | f8cc0c4 |  |  |  |
 | XERO-002 | Xero | Background historical import (contacts/invoices/payments) | PARTIALLY IMPLEMENTED | YES | NO | YES | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 | Xero OAuth | Import job running; last_sync_at null |  |
 | XERO-003 | Xero | Xero as sole official quote/invoice numbering authority | BUILT LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | finance-document-preview.test.ts | f8cc0c4 |  |  |  |
@@ -318,6 +330,29 @@ These phases are **documented and visible in backlog/plans** but must **not** be
 
 ---
 
+## Phase J-6.6C scope (completed locally)
+
+Items **J66C-001 … J66C-012** in the register above were completed in **Phase J-6.6C**. Boolean columns marked **YES** only where proven locally — not deployed, Owner-verified, or production-ready.
+
+| ID | Deliverable | J-6.6C outcome |
+|----|-------------|----------------|
+| J66C-001 | Work Completed | Invoice-only section from genuine preview input; hidden on quotes |
+| J66C-002 | Warranty | Conditional heading + body; no default promises |
+| J66C-003 | COC support | Attached state only; filename shown; no internal paths |
+| J66C-004 | Photos/attachments | Before/after grouping; PDFs as file references |
+| J66C-005 | Contact/help | Phone, email, location, verified website from YOUNG_GUNS_CONTACT |
+| J66C-006 | Payment/bank | Hidden on draft invoices; large readable bank fields when visible |
+| J66C-007 | Yoco link | Renders when genuine HTTPS pay.yoco.com URL passed; auto-source BLOCKED |
+| J66C-008 | Google review | Stars + text on sent invoices; QR BLOCKED without tenant review URL |
+| J66C-009 | Number/status | Xero pending labels; dynamic status text + colour |
+| J66C-010 | Multi-page CSS | break-inside, thead repeat, 30-line table contract test |
+| J66C-011 | Visibility tests | Quote/invoice section matrix covered in shared tests |
+| J66C-012 | Checklist | This document updated to 183 requirement rows |
+
+**Owner decisions still required:** draft preview bank-detail visibility policy; tenant `googleReviewUrl` configuration; finance-editor wiring for workCompleted/warranty/COC from job evidence.
+
+---
+
 ## Phase J-6.6B scope (completed locally)
 
 Items **J66B-001 … J66B-005** in the register above were completed in **Phase J-6.6B**. Boolean columns marked **YES** only where proven locally — not deployed, Owner-verified, or production-ready.
@@ -359,4 +394,4 @@ Items **J66A-001 … J66A-005** in the register above are targeted for completio
 
 ---
 
-*Generated requirement count: **171** rows. Update this document when any row changes classification; do not maintain competing checklists elsewhere.*
+*Generated requirement count: **183** rows. Update this document when any row changes classification; do not maintain competing checklists elsewhere.*

@@ -100,3 +100,157 @@ test('isValidPdfBuffer accepts genuine PDF signatures only', () => {
   assert.equal(isValidPdfBuffer(Buffer.from('%PDF-1.7\n')), true);
   assert.equal(isValidPdfBuffer(Buffer.from('not-a-pdf')), false);
 });
+
+test('invoice work completed and warranty sections render in HTML', () => {
+  const model = buildFinanceDocumentPreviewModel({
+    kind: 'invoice',
+    status: 'sent',
+    showPaymentDetails: true,
+    workCompleted: 'Installed new mixer and tested all outlets.',
+    warranty: { text: 'Workmanship warranty applies to installed fittings only.', months: 12 },
+    recommendedMaintenance: {
+      text: 'Annual geyser service recommended.',
+      items: [{ label: 'Geyser anode inspection' }],
+    },
+    lines: [{ description: 'Labour', quantity: 1, unitPriceCents: 65000, vatRateBps: 1500 }],
+  });
+  const html = buildFinanceDocumentPreviewHtml(model);
+  assert.match(html, /Installed new mixer/);
+  assert.match(html, /Workmanship warranty applies/);
+  assert.match(html, /Annual geyser service/);
+  assert.match(html, /Geyser anode inspection/);
+});
+
+test('work completed hidden on quotes even when text supplied', () => {
+  const model = buildFinanceDocumentPreviewModel({
+    kind: 'quote',
+    workCompleted: 'Should not appear on quote PDF',
+    lines: [{ description: 'Line', quantity: 1, unitPriceCents: 100, vatRateBps: 0 }],
+  });
+  const html = buildFinanceDocumentPreviewHtml(model);
+  assert.doesNotMatch(html, /Should not appear on quote PDF/);
+});
+
+test('yoco payment link renders when genuine URL supplied', () => {
+  const model = buildFinanceDocumentPreviewModel({
+    kind: 'invoice',
+    status: 'sent',
+    showPaymentDetails: true,
+    paymentUrl: 'https://pay.yoco.com/checkout/test-invoice',
+    lines: [{ description: 'Line', quantity: 1, unitPriceCents: 10000, vatRateBps: 1500 }],
+  });
+  const html = buildFinanceDocumentPreviewHtml(model);
+  assert.match(html, /pay\.yoco\.com/);
+  assert.match(html, /Pay securely with Yoco/);
+});
+
+test('unsafe yoco URL rejected from preview model', () => {
+  const model = buildFinanceDocumentPreviewModel({
+    kind: 'invoice',
+    status: 'sent',
+    showPaymentDetails: true,
+    paymentUrl: 'https://evil.example/phish',
+    lines: [{ description: 'Line', quantity: 1, unitPriceCents: 100, vatRateBps: 0 }],
+  });
+  assert.equal(model.paymentUrl, null);
+});
+
+test('before and after photos render in separate subsections', () => {
+  const model = buildFinanceDocumentPreviewModel({
+    kind: 'invoice',
+    lines: [{ description: 'Line', quantity: 1, unitPriceCents: 100, vatRateBps: 0 }],
+  });
+  model.attachments = [
+    {
+      fileName: 'before.jpg',
+      mimeType: 'image/jpeg',
+      caption: 'Corroded pipe',
+      dataUrl: 'data:image/jpeg;base64,YmVmb3Jl',
+      role: 'before',
+    },
+    {
+      fileName: 'after.jpg',
+      mimeType: 'image/jpeg',
+      caption: 'New pipe',
+      dataUrl: 'data:image/jpeg;base64,YWZ0ZXI=',
+      role: 'after',
+    },
+  ];
+  const html = buildFinanceDocumentPreviewHtml(model);
+  assert.match(html, /Before/);
+  assert.match(html, /After/);
+  assert.match(html, /Corroded pipe/);
+});
+
+test('non-image attachments render as file references not broken images', () => {
+  const model = buildFinanceDocumentPreviewModel({
+    kind: 'invoice',
+    lines: [{ description: 'Line', quantity: 1, unitPriceCents: 100, vatRateBps: 0 }],
+  });
+  model.attachments = [
+    {
+      fileName: 'certificate.pdf',
+      mimeType: 'application/pdf',
+      caption: 'CoC scan',
+      dataUrl: null,
+      role: 'additional',
+    },
+  ];
+  const html = buildFinanceDocumentPreviewHtml(model);
+  assert.match(html, /certificate\.pdf/);
+  assert.doesNotMatch(html, /data:application\/pdf/);
+});
+
+test('long line item table serializes without truncation', () => {
+  const lines = Array.from({ length: 30 }, (_, index) => ({
+    description: `Line item ${index + 1} — extended description for wrap testing`,
+    quantity: 1,
+    unitPriceCents: 1000 + index,
+    vatRateBps: 1500,
+  }));
+  const model = buildFinanceDocumentPreviewModel({ kind: 'invoice', lines });
+  const html = buildFinanceDocumentPreviewHtml(model);
+  assert.match(html, /Line item 1/);
+  assert.match(html, /Line item 30/);
+});
+
+test('contact help section renders verified Young Guns contact details', () => {
+  const model = buildFinanceDocumentPreviewModel({
+    kind: 'quote',
+    lines: [{ description: 'Line', quantity: 1, unitPriceCents: 100, vatRateBps: 0 }],
+  });
+  const html = buildFinanceDocumentPreviewHtml(model);
+  assert.match(html, /066 234 6301/);
+  assert.match(html, /ygplumberswp@gmail\.com/);
+});
+
+test('coc section renders only when genuinely attached', () => {
+  const model = buildFinanceDocumentPreviewModel({
+    kind: 'invoice',
+    status: 'sent',
+    coc: {
+      status: 'attached',
+      documentId: 'doc-coc-1',
+      jobId: 'job-1',
+      fileName: 'coc-2026.pdf',
+      mimeType: 'application/pdf',
+      sizeBytes: 1024,
+      downloadPath: '/api/v1/jobs/job-1/evidence/doc-coc-1/content',
+    },
+    lines: [{ description: 'Line', quantity: 1, unitPriceCents: 100, vatRateBps: 0 }],
+  });
+  const html = buildFinanceDocumentPreviewHtml(model);
+  assert.match(html, /Certificate of Compliance: coc-2026\.pdf/);
+  assert.match(html, /attached to this job record/i);
+  assert.doesNotMatch(html, /\/api\/v1\/jobs/);
+});
+
+test('coc section hidden when status is not attached', () => {
+  const model = buildFinanceDocumentPreviewModel({
+    kind: 'invoice',
+    coc: { status: 'not_attached' },
+    lines: [{ description: 'Line', quantity: 1, unitPriceCents: 100, vatRateBps: 0 }],
+  });
+  const html = buildFinanceDocumentPreviewHtml(model);
+  assert.doesNotMatch(html, /Certificate attached/i);
+});

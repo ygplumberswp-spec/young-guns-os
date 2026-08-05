@@ -86,6 +86,50 @@ const financeDocumentPreviewSchema = z
     xeroInvoiceNumber: z.string().trim().max(60).nullable().optional(),
     jobReference: z.string().trim().max(200).nullable().optional(),
     status: z.string().trim().max(40).nullable().optional(),
+    workCompleted: z.string().trim().max(10000).nullable().optional(),
+    warranty: z
+      .object({
+        text: z.string().trim().min(1).max(10000),
+        months: z.number().int().positive().nullable().optional(),
+      })
+      .nullable()
+      .optional(),
+    recommendedMaintenance: z
+      .object({
+        text: z.string().trim().max(10000).nullable().optional(),
+        items: z
+          .array(
+            z.object({
+              label: z.string().trim().max(500).optional(),
+              description: z.string().trim().max(500).optional(),
+            }),
+          )
+          .optional(),
+      })
+      .nullable()
+      .optional(),
+    coc: z
+      .discriminatedUnion('status', [
+        z.object({ status: z.literal('not_attached') }),
+        z.object({
+          status: z.literal('attached'),
+          documentId: z.string().uuid(),
+          jobId: z.string().uuid(),
+          fileName: z.string().trim().min(1).max(500),
+          mimeType: z.string().trim().max(200),
+          sizeBytes: z.number().int().nullable().default(null),
+          downloadPath: z.string().trim().min(1).max(500),
+        }),
+      ])
+      .nullable()
+      .optional(),
+    jobTechnician: z.string().trim().max(200).nullable().optional(),
+    jobScheduledAt: z.string().trim().max(40).nullable().optional(),
+    showPaymentDetails: z.boolean().nullable().optional(),
+    paymentUrl: z.string().trim().max(2000).nullable().optional(),
+    reviewUrl: z.string().trim().max(2000).nullable().optional(),
+    amountPaidCents: z.number().int().min(0).nullable().optional(),
+    depositReceivedCents: z.number().int().min(0).nullable().optional(),
     photos: z
       .array(
         z.object({

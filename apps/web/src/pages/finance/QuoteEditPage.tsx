@@ -60,6 +60,9 @@ export function QuoteEditPage() {
   const [validUntil, setValidUntil] = useState('');
   const [customerReference, setCustomerReference] = useState('');
   const [message, setMessage] = useState('');
+  const [scopeOfWork, setScopeOfWork] = useState('');
+  const [exclusions, setExclusions] = useState('');
+  const [paymentTerms, setPaymentTerms] = useState('');
   const [addresses, setAddresses] = useState<FinanceDocumentAddresses>({
     billingAddress: '',
     siteAddress: '',
@@ -143,6 +146,9 @@ export function QuoteEditPage() {
         setValidUntil(toDateInputValue(quote.validUntil));
         setCustomerReference(quote.customerNotes ?? '');
         setMessage(quote.notes ?? '');
+        setScopeOfWork(quote.scopeOfWork ?? '');
+        setExclusions(quote.exclusions ?? '');
+        setPaymentTerms(quote.paymentTerms ?? '');
         setAddresses(addressesFromSnapshot(quote.addresses));
         setVatMode(inferVatModeFromLines(quote.lineItems));
         setLines(lineItemsToEditorLines(quote.lineItems));
@@ -274,6 +280,9 @@ export function QuoteEditPage() {
           vatMode,
           priceMode,
           notes: message,
+          scopeOfWork,
+          exclusions,
+          paymentTerms,
           xeroQuoteNumber,
           jobReference: job?.title ?? null,
           status,

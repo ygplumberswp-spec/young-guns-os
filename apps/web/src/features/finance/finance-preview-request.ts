@@ -28,10 +28,21 @@ export type FinanceEditorPreviewContext = {
   paymentTerms?: string | null;
   scopeOfWork?: string | null;
   exclusions?: string | null;
+  workCompleted?: string | null;
+  warranty?: FinanceDocumentPreviewInput['warranty'];
+  recommendedMaintenance?: FinanceDocumentPreviewInput['recommendedMaintenance'];
+  coc?: FinanceDocumentPreviewInput['coc'];
   xeroQuoteNumber?: string | null;
   xeroInvoiceNumber?: string | null;
   jobReference?: string | null;
+  jobTechnician?: string | null;
+  jobScheduledAt?: string | null;
   status?: string | null;
+  showPaymentDetails?: boolean | null;
+  paymentUrl?: string | null;
+  reviewUrl?: string | null;
+  amountPaidCents?: number | null;
+  depositReceivedCents?: number | null;
   photos?: DocumentPhoto[];
 };
 
@@ -74,10 +85,21 @@ export function buildFinanceEditorPreviewInput(
     paymentTerms: context.paymentTerms?.trim() || null,
     scopeOfWork: context.scopeOfWork?.trim() || null,
     exclusions: context.exclusions?.trim() || null,
+    workCompleted: context.workCompleted?.trim() || null,
+    warranty: context.warranty ?? null,
+    recommendedMaintenance: context.recommendedMaintenance ?? null,
+    coc: context.coc ?? null,
     xeroQuoteNumber: context.xeroQuoteNumber ?? null,
     xeroInvoiceNumber: context.xeroInvoiceNumber ?? null,
     jobReference: context.jobReference?.trim() || null,
+    jobTechnician: context.jobTechnician?.trim() || null,
+    jobScheduledAt: context.jobScheduledAt || null,
     status: context.status ?? 'draft',
+    showPaymentDetails: context.showPaymentDetails ?? null,
+    paymentUrl: context.paymentUrl ?? null,
+    reviewUrl: context.reviewUrl ?? null,
+    amountPaidCents: context.amountPaidCents ?? null,
+    depositReceivedCents: context.depositReceivedCents ?? null,
     photos: context.photos ?? [],
   };
 }

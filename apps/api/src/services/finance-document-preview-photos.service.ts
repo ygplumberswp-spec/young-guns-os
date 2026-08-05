@@ -31,7 +31,8 @@ export async function buildFinancePreviewAttachments(
           fileName: photo.fileName,
           mimeType,
           caption: photo.caption,
-          dataUrl: `data:${mimeType};base64,${buffer.toString('base64')}`,
+          dataUrl: mimeType.startsWith('image/') ? `data:${mimeType};base64,${buffer.toString('base64')}` : null,
+          role: photo.role,
         });
       } catch {
         continue;
@@ -60,7 +61,8 @@ export async function buildFinancePreviewAttachments(
       fileName: photo.fileName,
       mimeType,
       caption: photo.caption,
-      dataUrl: `data:${mimeType};base64,${buffer.toString('base64')}`,
+      dataUrl: mimeType.startsWith('image/') ? `data:${mimeType};base64,${buffer.toString('base64')}` : null,
+      role: photo.role,
     });
   }
 
