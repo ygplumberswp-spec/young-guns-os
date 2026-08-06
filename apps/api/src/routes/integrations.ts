@@ -29,6 +29,8 @@ import type { XeroGate2ReadonlyProofService } from '../services/xero-gate2-reado
 import { XeroGate2ReadonlyProofError } from '../services/xero-gate2-readonly-proof.service.js';
 import type { XeroGate3ControlledQuoteService } from '../services/xero-gate3-controlled-quote.service.js';
 import { XeroGate3ControlledQuoteError } from '../services/xero-gate3-controlled-quote.service.js';
+import type { XeroGate4ControlledInvoiceService } from '../services/xero-gate4-controlled-invoice.service.js';
+import { XeroGate4ControlledInvoiceError } from '../services/xero-gate4-controlled-invoice.service.js';
 import type { TeamService } from '../services/team.service.js';
 import { createAuthMiddleware, type AuthenticatedRequest } from '../middleware/auth.js';
 import { requireAnyPermission } from '../middleware/rbac.js';
@@ -192,6 +194,11 @@ const gate3ControlledQuoteSchema = z.object({
   quoteId: z.string().uuid(),
 });
 
+const gate4ControlledInvoiceSchema = z.object({
+  invoiceId: z.string().uuid(),
+  runTargetedRefresh: z.boolean().optional(),
+});
+
 const resolveXeroConflictSchema = z.object({
   entityType: z.enum(['invoice', 'contact', 'payment']),
   entityId: z.string().uuid(),
@@ -214,6 +221,7 @@ type IntegrationsRouterDeps = {
   xeroRealtimeIntersyncService?: XeroRealtimeIntersyncService;
   xeroGate2ReadonlyProofService?: XeroGate2ReadonlyProofService;
   xeroGate3ControlledQuoteService?: XeroGate3ControlledQuoteService;
+  xeroGate4ControlledInvoiceService?: XeroGate4ControlledInvoiceService;
   teamService: TeamService;
   appUrl: string;
   jwtSecret: string;
@@ -256,6 +264,7 @@ export function createIntegrationsRouter({
   xeroRealtimeIntersyncService,
   xeroGate2ReadonlyProofService,
   xeroGate3ControlledQuoteService,
+  xeroGate4ControlledInvoiceService,
   teamService,
   appUrl,
   jwtSecret,
@@ -672,6 +681,54 @@ export function createIntegrationsRouter({
               : error.code === 'WRITE_NOT_APPROVED' || error.code === 'APPROVAL_EXPIRED'
                 ? 403
                 : error.code === 'QUOTE_NOT_DRAFT'
+                  ? 409
+                  : 502;
+          res.status(status).json({ error: { code: error.code, message: error.message } });
+          return;
+        }
+        handleXeroSyncError(res, error);
+      }
+    },
+  );
+
+  router.post(
+    '/xero/gate4-controlled-invoice',
+    requireAnyPermission('integrations:manage'),
+    async (req, res) => {
+      const auth = getAuth(req);
+      const { companyId, userId } = auth;
+
+      if (!xeroGate4ControlledInvoiceService) {
+        res.status(503).json({
+          error: { code: 'NOT_CONFIGURED', message: 'Gate 4 controlled invoice proof is not configured.' },
+        });
+        return;
+      }
+
+      const parsed = gate4ControlledInvoiceSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({
+          error: { code: 'VALIDATION_ERROR', message: parsed.error.issues[0]?.message ?? 'Invalid body' },
+        });
+        return;
+      }
+
+      try {
+        const result = await xeroGate4ControlledInvoiceService.pushApprovedDraftInvoice({
+          companyId,
+          invoiceId: parsed.data.invoiceId,
+          actorUserId: userId,
+          runTargetedRefresh: parsed.data.runTargetedRefresh ?? false,
+        });
+        res.json({ data: { result } });
+      } catch (error) {
+        if (error instanceof XeroGate4ControlledInvoiceError) {
+          const status =
+            error.code === 'ORG_MISMATCH'
+              ? 409
+              : error.code === 'WRITE_NOT_APPROVED' || error.code === 'APPROVAL_EXPIRED'
+                ? 403
+                : error.code === 'INVOICE_NOT_DRAFT' || error.code === 'OFFICIAL_NUMBER_MISSING'
                   ? 409
                   : 502;
           res.status(status).json({ error: { code: error.code, message: error.message } });

@@ -3,7 +3,7 @@
 **Status:** PREPARED — **DO NOT EXECUTE** until Owner explicitly approves each gate  
 **Preflight (2026-08-06):** [TITAN_XERO_002A_LIVE_PROOF_PREFLIGHT.md](./TITAN_XERO_002A_LIVE_PROOF_PREFLIGHT.md)  
 **Gate 2 (2026-08-06):** [TITAN_XERO_002_GATE_2_READONLY_PROOF.md](./TITAN_XERO_002_GATE_2_READONLY_PROOF.md) — **PASS**  
-**Gate 3 (2026-08-06):** [TITAN_XERO_002_GATE_3_CONTROLLED_QUOTE_PROOF.md](./TITAN_XERO_002_GATE_3_CONTROLLED_QUOTE_PROOF.md) — **PASS**
+**Gate 4 (2026-08-06):** [TITAN_XERO_002_GATE_4_CONTROLLED_INVOICE_PROOF.md](./TITAN_XERO_002_GATE_4_CONTROLLED_INVOICE_PROOF.md) — **PASS**
 **Sequencing (2026-08-06):** DASH-001 **approved and closed**. Live proof remains gated per section **G1–G7** below.
 **Prepared (UTC):** 2026-08-06  
 **Environment:** Staging only  
@@ -56,13 +56,7 @@
 
 ### GATE 4 — Controlled invoice proof
 
-| | |
-|---|---|
-| **Prerequisites** | Gate 3 pass; separate Owner approval |
-| **Owner action** | Convert to one **DRAFT** invoice; approve; push once; wait for webhook refresh |
-| **Expected result** | Official Xero invoice number; targeted refresh updates TITAN |
-| **Rollback** | Void draft invoice in Xero |
-| **Forbidden** | Email invoice; authorise unless separately approved |
+**Execution (2026-08-06):** **PASS** — DRAFT invoice **TITAN-INV-000589** pushed; official Xero number **INV-0586** stored; retry `ALREADY_EXECUTED`. Evidence: `diagnostic-output/xero-002-gate4-controlled-invoice.json`.
 
 ### GATE 5 — Controlled payment proof
 
@@ -171,8 +165,8 @@ Replace timestamp at execution time.
 
 ## Single next Owner action
 
-**Approve Gate 4 (controlled DRAFT invoice)** on staging after reviewing Gate 3 evidence. Do not begin Gate 4+ until explicitly authorised.
+**Approve Gate 5 (controlled payment)** on staging after reviewing Gate 4 evidence. Do not begin Gate 5+ until explicitly authorised.
 
-Reply **"XERO-002 GATE 4 GO"** to authorise supervised Gate 4 only.
+Reply **"XERO-002 GATE 5 GO"** to authorise supervised Gate 5 only.
 
 **Do not mark Xero production-complete** until this proof succeeds.

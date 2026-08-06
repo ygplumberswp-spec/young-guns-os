@@ -96,6 +96,7 @@ import { XeroRateBudgetService } from './services/xero-rate-budget.service.js';
 import { XeroRealtimeIntersyncService } from './services/xero-realtime-intersync.service.js';
 import { XeroGate2ReadonlyProofService } from './services/xero-gate2-readonly-proof.service.js';
 import { XeroGate3ControlledQuoteService } from './services/xero-gate3-controlled-quote.service.js';
+import { XeroGate4ControlledInvoiceService } from './services/xero-gate4-controlled-invoice.service.js';
 import { createXeroWebhookRouter } from './routes/xero-webhook.js';
 import { WhatsappService } from './services/whatsapp.service.js';
 import { WhatsappContactEnrichmentService } from './services/whatsapp-contact-enrichment.service.js';
@@ -573,6 +574,12 @@ const xeroOAuthService = XeroOAuthService.create({
 });
 const xeroGate2ReadonlyProofService = new XeroGate2ReadonlyProofService(db, xeroOAuthService);
 const xeroGate3ControlledQuoteService = new XeroGate3ControlledQuoteService(
+  db,
+  xeroOAuthService,
+  xeroSyncService,
+  xeroWriteApprovalGate,
+);
+const xeroGate4ControlledInvoiceService = new XeroGate4ControlledInvoiceService(
   db,
   xeroOAuthService,
   xeroSyncService,
@@ -1968,6 +1975,7 @@ app.use(
     xeroRealtimeIntersyncService,
     xeroGate2ReadonlyProofService,
     xeroGate3ControlledQuoteService,
+    xeroGate4ControlledInvoiceService,
     teamService,
     appUrl: env.APP_URL,
     jwtSecret: env.JWT_SECRET,

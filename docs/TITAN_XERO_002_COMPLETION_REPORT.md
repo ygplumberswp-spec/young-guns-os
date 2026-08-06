@@ -1,10 +1,11 @@
 # TITAN XERO-002 — Completion Report (Implementation vs Live Proof)
 
-**Status:** Implementation complete · Gate 2 **PASS** · Gate 3 **PASS**  
+**Status:** Implementation complete · Gate 2 **PASS** · Gate 3 **PASS** · Gate 4 **PASS**  
 **Last updated (UTC):** 2026-08-06  
 **Preflight:** [TITAN_XERO_002A_LIVE_PROOF_PREFLIGHT.md](./TITAN_XERO_002A_LIVE_PROOF_PREFLIGHT.md)  
 **Gate 2:** [TITAN_XERO_002_GATE_2_READONLY_PROOF.md](./TITAN_XERO_002_GATE_2_READONLY_PROOF.md)  
-**Gate 3:** [TITAN_XERO_002_GATE_3_CONTROLLED_QUOTE_PROOF.md](./TITAN_XERO_002_GATE_3_CONTROLLED_QUOTE_PROOF.md)
+**Gate 3:** [TITAN_XERO_002_GATE_3_CONTROLLED_QUOTE_PROOF.md](./TITAN_XERO_002_GATE_3_CONTROLLED_QUOTE_PROOF.md)  
+**Gate 4:** [TITAN_XERO_002_GATE_4_CONTROLLED_INVOICE_PROOF.md](./TITAN_XERO_002_GATE_4_CONTROLLED_INVOICE_PROOF.md)
 
 ---
 
@@ -32,8 +33,8 @@
 | G1 Reconnect / scope | **Not required** — scope granted 2026-08-06 |
 | G2 Read-only proof | **PASS** — contact/invoice/attachment metadata verified on staging |
 | G3 Controlled quote | **PASS** — one DRAFT quote pushed; retry idempotent (Q-0253) |
-| G4 Controlled invoice | Blocked — awaiting separate Owner approval |
-| G5 Payment | Blocked |
+| G4 Controlled invoice | **PASS** — one DRAFT invoice pushed; official number **INV-0586** |
+| G5 Payment | Blocked — awaiting separate Owner approval |
 | G6 Attachment read | Blocked |
 | G7 Reconciliation observe | Blocked |
 
@@ -61,8 +62,8 @@
 
 ## Single next action
 
-**Approve Gate 4 separately** for one controlled DRAFT invoice on staging.
+**Approve Gate 5 separately** for controlled payment proof on staging.
 
-Reply **`XERO-002 GATE 4 GO`** to authorise supervised Gate 4 only. Do **not** auto-execute.
+Reply **`XERO-002 GATE 5 GO`** to authorise supervised Gate 5 only. Do **not** auto-execute.
 
-**Do not mark Xero production-complete until Gates 4–7 succeed.**
+**Do not mark Xero production-complete until Gates 5–7 succeed.**
