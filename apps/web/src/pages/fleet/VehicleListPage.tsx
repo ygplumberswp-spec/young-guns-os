@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { useMemo } from 'react';
 import { Link } from 'wouter';
-import { Button, PageHeader, PageLoadState } from '@titan/ui';
+import { Button, PageLoadState } from '@titan/ui';
 import { fetchVehicles } from '../../lib/fleet-api';
 import { useAuth } from '../../lib/auth-context';
 import { useCachedQuery } from '../../lib/use-cached-query';
@@ -37,11 +38,11 @@ export function VehicleListPage() {
     <div className="fleet-page">
       <PageHeader
         title="Fleet"
-        description="Manage company vehicles and today's dispatch board (stored data only — live Maps/Cartrack deferred)."
+        description="Company vehicles, driver assignments, and Cartrack positions when connected — never fake live GPS."
         actions={
           canWrite ? (
             <Link href="/fleet/new">
-              <Button>Add vehicle</Button>
+              <Button>Add Vehicle</Button>
             </Link>
           ) : undefined
         }
@@ -53,7 +54,7 @@ export function VehicleListPage() {
         isLoading={isLoading}
         error={error}
         isEmpty={(vehicles?.length ?? 0) === 0}
-        emptyTitle="No vehicles yet"
+        emptyTitle="No Vehicles Yet"
         emptyDescription="Add a vehicle to start tracking your fleet."
         loadingLabel="Loading vehicles…"
       >

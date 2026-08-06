@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'wouter';
-import { Button, EmptyState, PageHeader, Panel, StatCard } from '@titan/ui';
+import { Button, EmptyState, Panel, StatCard } from '@titan/ui';
 import type { EnterpriseServiceDeliveryDashboard } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import {
@@ -276,7 +277,7 @@ export function ServiceDeliveryPage() {
         >
           {dashboard.recentSlaRecords.length === 0 ? (
             <EmptyState
-              title="No SLA records"
+              title="No SLA Records"
               description="SLA records appear when tracked against real jobs."
             />
           ) : (
@@ -300,7 +301,7 @@ export function ServiceDeliveryPage() {
         >
           {dashboard.recentDefects.length === 0 ? (
             <EmptyState
-              title="No defects"
+              title="No Defects"
               description="Quality records appear from real inspections and jobs."
             />
           ) : (
@@ -335,7 +336,7 @@ export function ServiceDeliveryPage() {
         >
           {dashboard.recentInspections.length === 0 ? (
             <EmptyState
-              title="No inspections"
+              title="No Inspections"
               description="Inspections appear when created from configurable templates."
             />
           ) : (
@@ -367,7 +368,7 @@ export function ServiceDeliveryPage() {
         >
           {dashboard.recentCallbacks.length === 0 ? (
             <EmptyState
-              title="No callbacks"
+              title="No Callbacks"
               description="Callback records appear from real repeat visits and quality data."
             />
           ) : (
@@ -418,7 +419,7 @@ export function ServiceDeliveryPage() {
         >
           {dashboard.recentAlerts.length === 0 ? (
             <EmptyState
-              title="No open alerts"
+              title="No Open Alerts"
               description="Alerts are generated from real tenant activity."
             />
           ) : (

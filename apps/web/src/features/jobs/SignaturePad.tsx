@@ -97,7 +97,7 @@ export function SignaturePad({ disabled, onChange }: SignaturePadProps) {
         onPointerMove={move}
         onPointerUp={end}
         onPointerCancel={end}
-        aria-label="Signature pad"
+        aria-label="Signature Pad"
       />
       <div className="signature-pad__actions">
         <button type="button" className="mobile-action-btn" disabled={disabled || !hasInk} onClick={clear}>

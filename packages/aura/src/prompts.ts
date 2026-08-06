@@ -224,7 +224,7 @@ function formatFinanceContext(context: AuraGenerateContext): string | null {
 
     for (const quote of finance.recentQuotes) {
       lines.push(
-        `  - ${quote.quoteNumber} ${quote.title} (${quote.status}) · ${quote.customerName} · ${formatMoney(quote.amountCents, quote.currency)}`,
+        `  - ${quote.quoteNumber} (${quote.status}) · ${quote.customerName} · ${formatMoney(quote.amountCents, quote.currency)}`,
       );
     }
   } else {
@@ -236,7 +236,7 @@ function formatFinanceContext(context: AuraGenerateContext): string | null {
 
     for (const invoice of finance.recentInvoices) {
       lines.push(
-        `  - ${invoice.invoiceNumber} ${invoice.title} (${invoice.status}) · ${invoice.customerName} · ${formatMoney(invoice.amountCents, invoice.currency)} paid ${formatMoney(invoice.amountPaidCents, invoice.currency)}`,
+        `  - ${invoice.invoiceNumber} (${invoice.status}) · ${invoice.customerName} · ${formatMoney(invoice.amountCents, invoice.currency)} paid ${formatMoney(invoice.amountPaidCents, invoice.currency)}`,
       );
     }
   } else {
@@ -1693,6 +1693,65 @@ function formatMemoryContext(context: AuraGenerateContext): string | null {
   return lines.join('\n');
 }
 
+function formatDayPlanContext(context: AuraGenerateContext): string | null {
+  const dayPlan = context.dayPlan;
+  const dayPlanning = context.dayPlanning;
+
+  if (dayPlan && dayPlan.priorities.length > 0) {
+    const lines = [
+      `- Owner daily priorities for ${dayPlan.planDate}: ${dayPlan.priorityCount} active item(s)`,
+      `- Use only these stored priorities — never invent daily focus items or mark them complete`,
+    ];
+
+    for (const entry of dayPlan.priorities) {
+      const department = entry.department ? `, ${entry.department}` : '';
+      lines.push(`  - [${entry.status}${department}] ${entry.priorityText}`);
+    }
+
+    return lines.join('\n');
+  }
+
+  if (!dayPlanning || dayPlanning.plans.length === 0) {
+    return null;
+  }
+
+  const lines = [
+    `- Owner daily priorities for ${dayPlanning.planDate}: ${dayPlanning.planCount} active item(s)`,
+    `- Use only these stored priorities — never invent daily focus items or mark them complete`,
+  ];
+
+  for (const entry of dayPlanning.plans) {
+    const category = entry.category ? `, ${entry.category}` : '';
+    lines.push(`  - [${entry.status}${category}] ${entry.content}`);
+  }
+
+  return lines.join('\n');
+}
+
+function formatBusinessRulesContext(context: AuraGenerateContext): string | null {
+  const businessRules = context.businessRules;
+
+  if (!businessRules || businessRules.rules.length === 0) {
+    return null;
+  }
+
+  const lines = [
+    `- Active company business rules: ${businessRules.ruleCount}`,
+    `- Follow these rules when relevant — agents cannot modify rules without owner approval`,
+    `- Scheduled and approval rules never auto-pay or auto-send communications`,
+  ];
+
+  for (const rule of businessRules.rules) {
+    const department = rule.department ? `, ${rule.department}` : '';
+    const agent = rule.assignedAgentRole ? ` → ${rule.assignedAgentRole}` : '';
+    lines.push(
+      `  - [${rule.ruleType}/${rule.category}${department}] ${rule.name}: ${rule.instruction}${agent}`,
+    );
+  }
+
+  return lines.join('\n');
+}
+
 function formatRecommendationsContext(context: AuraGenerateContext): string | null {
   const recommendations = context.recommendations;
 
@@ -2133,6 +2192,8 @@ export function buildSystemPrompt(context: AuraGenerateContext): string {
   const recruitingSection = formatRecruitingContext(context);
   const intelligenceSection = formatIntelligenceContext(context);
   const memorySection = formatMemoryContext(context);
+  const businessRulesSection = formatBusinessRulesContext(context);
+  const dayPlanSection = formatDayPlanContext(context);
   const recommendationsSection = formatRecommendationsContext(context);
   const analyticsSection = formatAnalyticsContext(context);
   const mobileSection = formatMobileContext(context);
@@ -2237,7 +2298,7 @@ export function buildSystemPrompt(context: AuraGenerateContext): string {
       `If Cartrack is disconnected, do not invent live GPS locations. ` +
       `Document records include metadata only — do not claim to read file contents, perform OCR, or run AI document processing unless that capability is explicitly listed. ` +
       `When automation context shows engineActive, workflows execute on business events via the TITAN automation engine. Actions that send messages or modify financial/customer/job data create approval drafts — never claim messages were sent or records were changed without explicit approval. AURA may propose workflow drafts for user review in /automation. ` +
-      `When Intelligence context is present, AURA acts as a business intelligence command centre — use the greeting, KPIs, and recommendations shown below. Propose actions but never execute mutating changes without approval. Company memory records are saved business rules — follow them when relevant. ` +
+      `When Intelligence context is present, AURA acts as a business intelligence command centre — use the greeting, KPIs, and recommendations shown below. Propose actions but never execute mutating changes without approval. Company memory records are saved business rules — follow them when relevant. Today's plan priorities are owner-set operational focus for the day — reference them when relevant but never invent priorities or change their status. ` +
       `When Analytics context is present, use only the real performance metrics shown below for revenue, jobs, customers, and outstanding balances. For profitability, technician workload, and detailed reports, explain that users can view /analytics or ask you to load analytics tools. Never invent metrics or scores. ` +
       `When Mobile context is present, AURA is assisting a mobile user in owner, technician, or customer mode — use only the mobile summary and details shown below. For owners, provide business updates from real data. For technicians, answer schedule and next-job questions from assigned job data only. For customers, explain repair status from their job records only. Never invent mobile actions or claim uploads, messages, or payments were completed without confirmation. ` +
       `When Agent Orchestration context is present, use only the active orchestration, run, and approval counts shown below. Multi-agent workflows coordinate specialist agents sequentially or in parallel — steps requiring approval pause until a human approves. Never claim orchestrations ran, agents collaborated, or approvals were granted without confirmation. Users can manage orchestrations and review the approval queue in agent orchestration settings. ` +
@@ -2371,6 +2432,8 @@ export function buildSystemPrompt(context: AuraGenerateContext): string {
     (recruitingSection ? `Recruiting context:\n${recruitingSection}\n\n` : '') +
     (intelligenceSection ? `Business intelligence:\n${intelligenceSection}\n\n` : '') +
     (memorySection ? `Company memory:\n${memorySection}\n\n` : '') +
+    (businessRulesSection ? `Business rules:\n${businessRulesSection}\n\n` : '') +
+    (dayPlanSection ? `Today's plan:\n${dayPlanSection}\n\n` : '') +
     (recommendationsSection ? `Recommendations:\n${recommendationsSection}\n\n` : '') +
     (analyticsSection ? `Analytics:\n${analyticsSection}\n\n` : '') +
     (mobileSection ? `Mobile context:\n${mobileSection}\n\n` : '') +

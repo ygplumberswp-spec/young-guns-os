@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Link } from 'wouter';
-import { Button, EmptyState, Input, PageHeader, Panel } from '@titan/ui';
+import { Button, EmptyState, Input, Panel } from '@titan/ui';
 import type { CustomerSummary, PortalStats, PortalUserSummary } from '@titan/shared';
 import type { PortalAccessPermission } from '@titan/shared';
 import { DEFAULT_PORTAL_ACCESS_PERMISSIONS, PORTAL_ACCESS_PERMISSION_OPTIONS } from '@titan/shared';
@@ -165,7 +166,7 @@ export function PortalSettingsPage() {
         description="Provision portal users linked to customers and manage customer access permissions."
         actions={
           <Link href="/my/login">
-            <Button variant="secondary">Open portal login</Button>
+            <Button variant="secondary">Open Portal Login</Button>
           </Link>
         }
       />
@@ -175,14 +176,14 @@ export function PortalSettingsPage() {
 
       {stats ? (
         <div className="portal-stats-grid">
-          <Panel title="Portal users">{stats.portalUserCount}</Panel>
-          <Panel title="Active users">{stats.activePortalUserCount}</Panel>
-          <Panel title="Linked customers">{stats.linkedCustomerCount}</Panel>
+          <Panel title="Portal Users">{stats.portalUserCount}</Panel>
+          <Panel title="Active Users">{stats.activePortalUserCount}</Panel>
+          <Panel title="Linked Customers">{stats.linkedCustomerCount}</Panel>
         </div>
       ) : null}
 
       {canWrite ? (
-        <Panel title="Create portal user">
+        <Panel title="Create Portal User">
           {customers.length === 0 ? (
             <p className="page-muted">
               <Link href="/crm/new" className="portal-link">
@@ -224,13 +225,13 @@ export function PortalSettingsPage() {
                 required
               />
               <Input
-                label="First name"
+                label="First Name"
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
                 required
               />
               <Input
-                label="Last name"
+                label="Last Name"
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
                 required
@@ -257,11 +258,11 @@ export function PortalSettingsPage() {
 
       {portalUsers.length === 0 ? (
         <EmptyState
-          title="No portal users yet"
+          title="No Portal Users Yet"
           description="Create a portal user to give a customer access to the portal dashboard."
         />
       ) : (
-        <Panel title="Portal users">
+        <Panel title="Portal Users">
           <div className="portal-table-wrap">
             <table className="portal-table">
               <thead>

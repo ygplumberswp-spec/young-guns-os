@@ -102,7 +102,8 @@ export function useCachedQuery<T>({
         setData(next);
         setIsStale(false);
       } catch (err) {
-        if (err instanceof DOMException && err.name === 'AbortError') {
+        if (err instanceof Error && err.name === 'AbortError') {
+          // Cancelled by effect cleanup / query-cache abort — do not surface as page error.
           return;
         }
 
@@ -162,7 +163,8 @@ export function useCachedQuery<T>({
           return;
         }
 
-        if (err instanceof DOMException && err.name === 'AbortError') {
+        if (err instanceof Error && err.name === 'AbortError') {
+          // Cancelled by effect cleanup / query-cache abort — do not surface as page error.
           return;
         }
 

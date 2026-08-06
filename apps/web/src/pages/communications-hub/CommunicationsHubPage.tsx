@@ -1,7 +1,11 @@
+import { PageHeader } from '../../components/ux';
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'wouter';
-import { Button, EmptyState, PageHeader, Panel, StatCard } from '@titan/ui';
-import type { EnterpriseUnifiedCommunicationsDashboard } from '@titan/shared';
+import { Button, EmptyState, Panel, StatCard } from '@titan/ui';
+import {
+  canConnectBusinessGmail,
+  type EnterpriseUnifiedCommunicationsDashboard,
+} from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import {
   captureCommunicationsAnalytics,
@@ -10,6 +14,7 @@ import {
   fetchUnifiedCommunicationsDashboard,
   syncCommunicationTimeline,
 } from '../../lib/enterprise-communications-api-client';
+import { startGmailOAuth } from '../../lib/communications-platform-api';
 import { useAuth } from '../../lib/auth-context';
 import { AuraComposer } from '../../features/aura/AuraComposer';
 import { AuraMessageList } from '../../features/aura/AuraMessageList';
@@ -21,20 +26,51 @@ import {
   formatProviderChannel,
   formatProviderStatus,
 } from '../../features/communications-hub/utils';
+import { CommunicationsPlatformPanel } from '../../features/communications-hub/CommunicationsPlatformPanel';
 
-type CommsHubTab =
-  | 'overview'
+type PrimaryHubTab = 'inbox' | 'channels' | 'assistant';
+
+type AdvancedHubTab =
   | 'providers'
-  | 'voice'
-  | 'timeline'
+  | 'analytics'
   | 'outbound'
   | 'dispatch'
-  | 'analytics'
-  | 'assistant';
+  | 'voice'
+  | 'timeline'
+  | 'diagnostics';
+
+type CommsHubTab = PrimaryHubTab | AdvancedHubTab;
+
+const PRIMARY_TABS: Array<{ id: PrimaryHubTab; label: string }> = [
+  { id: 'inbox', label: 'Inbox' },
+  { id: 'channels', label: 'Business Channels' },
+  { id: 'assistant', label: 'AURA Communications' },
+];
+
+const ADVANCED_TABS: Array<{ id: AdvancedHubTab; label: string }> = [
+  { id: 'providers', label: 'Providers' },
+  { id: 'analytics', label: 'Analytics' },
+  { id: 'outbound', label: 'Outbound Calling' },
+  { id: 'dispatch', label: 'Dispatch Communications' },
+  { id: 'voice', label: 'Voice Configuration' },
+  { id: 'timeline', label: 'Sync Timeline' },
+  { id: 'diagnostics', label: 'Diagnostics' },
+];
+
+const ADVANCED_TAB_IDS = new Set<CommsHubTab>(ADVANCED_TABS.map((tab) => tab.id));
+
+function isAdvancedTab(tab: CommsHubTab): tab is AdvancedHubTab {
+  return ADVANCED_TAB_IDS.has(tab);
+}
+
+function isPlatformTab(tab: CommsHubTab): tab is 'inbox' | 'channels' {
+  return tab === 'inbox' || tab === 'channels';
+}
 
 export function CommunicationsHubPage() {
   const { accessToken, user } = useAuth();
-  const [activeTab, setActiveTab] = useState<CommsHubTab>('overview');
+  const [activeTab, setActiveTab] = useState<CommsHubTab>('inbox');
+  const [advancedOpen, setAdvancedOpen] = useState(false);
   const [dashboard, setDashboard] = useState<EnterpriseUnifiedCommunicationsDashboard | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isWorking, setIsWorking] = useState(false);
@@ -58,12 +94,30 @@ export function CommunicationsHubPage() {
     () => (user ? canManageCommunicationsHub(user.permissions) : false),
     [user],
   );
+  const canManageGmailConnection = useMemo(
+    () =>
+      user
+        ? canConnectBusinessGmail({ roleName: user.roleName, permissions: user.permissions })
+        : false,
+    [user],
+  );
+
+  const showAdvanced = advancedOpen || isAdvancedTab(activeTab);
+  const needsEnterpriseDashboard = !isPlatformTab(activeTab) && activeTab !== 'assistant';
 
   async function loadDashboard() {
     if (!accessToken) return;
     const data = await fetchUnifiedCommunicationsDashboard(accessToken);
     setDashboard(data);
   }
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('channelSettings') === '1' || params.get('gmail')) {
+      setActiveTab('channels');
+      setAdvancedOpen(false);
+    }
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -106,6 +160,34 @@ export function CommunicationsHubPage() {
     }
   }
 
+  async function connectBusinessGmailFromProviders() {
+    if (!accessToken) return;
+    setIsWorking(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const url = await startGmailOAuth(accessToken, '/communications-hub');
+      window.location.assign(url);
+    } catch (err) {
+      setError(
+        err instanceof ApiClientError
+          ? err.message
+          : 'Unable to start Google OAuth for Business Gmail',
+      );
+      setIsWorking(false);
+    }
+  }
+
+  function selectPrimaryTab(tab: PrimaryHubTab) {
+    setActiveTab(tab);
+    setAdvancedOpen(false);
+  }
+
+  function selectAdvancedTab(tab: AdvancedHubTab) {
+    setActiveTab(tab);
+    setAdvancedOpen(true);
+  }
+
   if (!canView) {
     return (
       <div className="automation-page">
@@ -117,69 +199,123 @@ export function CommunicationsHubPage() {
     );
   }
 
-  const tabs: Array<{ id: CommsHubTab; label: string }> = [
-    { id: 'overview', label: 'Overview' },
-    { id: 'providers', label: 'Providers' },
-    { id: 'voice', label: 'AI Voice' },
-    { id: 'timeline', label: 'Timeline' },
-    { id: 'outbound', label: 'Outbound Calling' },
-    { id: 'dispatch', label: 'Dispatch Comms' },
-    { id: 'analytics', label: 'Analytics' },
-    { id: 'assistant', label: 'AI Assistant' },
-  ];
-
   return (
     <div className="automation-page">
       <PageHeader
         title="Communications Hub"
-        description="Unified voice, calls, and multi-channel communications — real data only, vendor-agnostic providers."
-        actions={
-          <div className="page-header-actions">
-            <Link href="/communications-intelligence">
-              <Button variant="secondary">Comms Intelligence</Button>
-            </Link>
-            <Link href="/portal/communications">
-              <Button variant="secondary">Customer Center</Button>
-            </Link>
-            {canWrite ? (
-              <Button
-                variant="secondary"
-                disabled={isWorking}
-                onClick={() =>
-                  void runAction(
-                    () => syncCommunicationTimeline(accessToken!),
-                    'Timeline synced from real modules.',
-                  )
-                }
-              >
-                Sync Timeline
-              </Button>
-            ) : null}
-          </div>
-        }
+        description="Business Gmail, Business WhatsApp, and optional Personal WhatsApp (Owner only) — real data only; send requires approval."
       />
+
+      <p className="muted">
+        <Link href="/email-centre">Email Centre</Link>
+        {' · '}
+        <Link href="/communication-timeline">Communication Timeline</Link>
+        {' · '}
+        <Link href="/communication-aura-intelligence">Communication AURA Intelligence</Link>
+      </p>
 
       {error ? <p className="form-error">{error}</p> : null}
       {success ? <p className="form-success">{success}</p> : null}
 
-      <div className="tab-row">
-        {tabs.map((tab) => (
+      <div className="tab-row" role="tablist" aria-label="Communications Hub">
+        {PRIMARY_TABS.map((tab) => (
           <button
             key={tab.id}
             type="button"
+            role="tab"
+            aria-selected={activeTab === tab.id}
             className={activeTab === tab.id ? 'tab-button active' : 'tab-button'}
-            onClick={() => setActiveTab(tab.id)}
+            onClick={() => selectPrimaryTab(tab.id)}
           >
             {tab.label}
           </button>
         ))}
       </div>
 
-      {isLoading ? (
+      <section className="integrations-advanced">
+        <button
+          type="button"
+          className="integrations-advanced__toggle"
+          onClick={() => {
+            if (showAdvanced) {
+              setAdvancedOpen(false);
+              if (isAdvancedTab(activeTab)) {
+                setActiveTab('inbox');
+              }
+            } else {
+              setAdvancedOpen(true);
+            }
+          }}
+          aria-expanded={showAdvanced}
+        >
+          {showAdvanced ? 'Hide Advanced' : 'Show Advanced'}
+        </button>
+
+        {showAdvanced ? (
+          <div className="integrations-advanced__content">
+            <div className="tab-row" role="tablist" aria-label="Advanced Settings">
+              {ADVANCED_TABS.map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={activeTab === tab.id}
+                  className={activeTab === tab.id ? 'tab-button active' : 'tab-button'}
+                  onClick={() => selectAdvancedTab(tab.id)}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+            <div className="page-header-actions">
+              <Link href="/communications-intelligence">
+                <Button variant="secondary">Comms Intelligence</Button>
+              </Link>
+              <Link href="/communication-aura-intelligence">
+                <Button variant="secondary">Communication AURA</Button>
+              </Link>
+              <Link href="/integrations/whatsapp">
+                <Button variant="secondary">Business WhatsApp</Button>
+              </Link>
+              <Link href="/portal/communications">
+                <Button variant="secondary">Customer Center</Button>
+              </Link>
+            </div>
+          </div>
+        ) : null}
+      </section>
+
+      {isPlatformTab(activeTab) ? <CommunicationsPlatformPanel view={activeTab} /> : null}
+
+      {activeTab === 'assistant' ? (
+        <Panel title="AURA Communications Agent">
+          <p>
+            Ask about communication history, draft replies, call summaries, and customer updates.
+            Recommendations only — business channels; personal data not exposed.
+          </p>
+          {assistantError ? <p className="form-error">{assistantError}</p> : null}
+          <AuraMessageList messages={agentMessages} isSending={isSending} />
+          {pendingTasks.map((task) => (
+            <AuraTaskApprovalCard
+              key={task.id}
+              task={task}
+              accessToken={accessToken ?? ''}
+              onUpdated={updateTask}
+            />
+          ))}
+          <AuraComposer
+            disabled={isSending}
+            onSend={(content) => void sendAgentMessage(content, 'communications')}
+            placeholder="Ask about calls, WhatsApp, SMS, email, or draft a reply…"
+          />
+        </Panel>
+      ) : null}
+
+      {needsEnterpriseDashboard && isLoading ? (
         <Panel title="Loading">Loading communications hub…</Panel>
-      ) : !dashboard ? (
+      ) : needsEnterpriseDashboard && !dashboard ? (
         <EmptyState title="No data" description="Communications hub is unavailable." />
-      ) : (
+      ) : needsEnterpriseDashboard && dashboard ? (
         <>
           <Panel title="Platform Summary">
             <p>{dashboard.summary}</p>
@@ -190,7 +326,7 @@ export function CommunicationsHubPage() {
             ) : null}
           </Panel>
 
-          {activeTab === 'overview' ? (
+          {activeTab === 'diagnostics' ? (
             <div className="stat-grid">
               <StatCard label="Active Providers" value={String(dashboard.activeProviderCount)} />
               <StatCard
@@ -206,8 +342,8 @@ export function CommunicationsHubPage() {
                 value={String(dashboard.intelligence.pendingDrafts.length)}
               />
               <StatCard
-                label="WhatsApp"
-                value={dashboard.whatsappConnected ? 'Connected' : 'Not connected'}
+                label="Business WhatsApp"
+                value={dashboard.whatsappConnected ? 'Connected' : 'Not Connected'}
               />
               <StatCard
                 label="Voice Sessions"
@@ -253,16 +389,52 @@ export function CommunicationsHubPage() {
                 />
               ) : (
                 <div className="data-list">
-                  {dashboard.providerAdapters.map((provider) => (
-                    <div key={provider.id} className="data-list-item">
-                      <strong>{provider.name}</strong>
-                      <span className="status-pill">{formatProviderStatus(provider.status)}</span>
-                      <p>
-                        {formatProviderChannel(provider.channel)} · {provider.providerKey} ·{' '}
-                        {provider.lastTestStatus ?? 'not tested'}
-                      </p>
-                    </div>
-                  ))}
+                  {dashboard.providerAdapters.map((provider) => {
+                    const isGmail = provider.providerKey === 'gmail';
+                    const gmailConnected = isGmail && provider.status === 'active';
+                    const gmailOauthReady = !isGmail || provider.oauthConfigured !== false;
+                    return (
+                      <div key={provider.id} className="data-list-item">
+                        <strong>{provider.name}</strong>
+                        <span className="status-pill">
+                          {formatProviderStatus(provider.status)}
+                        </span>
+                        <p>
+                          {formatProviderChannel(provider.channel)} · {provider.providerKey}
+                          {provider.emailAddress ? ` · ${provider.emailAddress}` : ''}
+                          {provider.lastTestMessage ? ` · ${provider.lastTestMessage}` : ''}
+                        </p>
+                        {isGmail && canManageGmailConnection ? (
+                          <div className="page-header-actions" style={{ marginTop: '0.5rem' }}>
+                            {gmailConnected ? (
+                              <Button
+                                onClick={() => {
+                                  const url = new URL(window.location.href);
+                                  url.searchParams.set('channelSettings', '1');
+                                  window.history.replaceState({}, '', url.toString());
+                                  selectPrimaryTab('channels');
+                                }}
+                              >
+                                Manage
+                              </Button>
+                            ) : (
+                              <Button
+                                disabled={isWorking || !gmailOauthReady}
+                                onClick={() => void connectBusinessGmailFromProviders()}
+                                title={
+                                  !gmailOauthReady
+                                    ? 'Business Gmail is not set up on this system yet. Ask your Platform Owner to finish setup.'
+                                    : undefined
+                                }
+                              >
+                                Connect
+                              </Button>
+                            )}
+                          </div>
+                        ) : null}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </Panel>
@@ -298,6 +470,22 @@ export function CommunicationsHubPage() {
 
           {activeTab === 'timeline' ? (
             <Panel title="Unified Communication Timeline">
+              {canWrite ? (
+                <div className="page-header-actions" style={{ marginBottom: '0.75rem' }}>
+                  <Button
+                    variant="secondary"
+                    disabled={isWorking}
+                    onClick={() =>
+                      void runAction(
+                        () => syncCommunicationTimeline(accessToken!),
+                        'Timeline synced from real modules.',
+                      )
+                    }
+                  >
+                    Sync Timeline
+                  </Button>
+                </div>
+              ) : null}
               {dashboard.recentTimeline.length === 0 &&
               dashboard.intelligence.recentTimeline.length === 0 ? (
                 <EmptyState
@@ -377,7 +565,8 @@ export function CommunicationsHubPage() {
             <Panel title="Dispatch Customer Notifications">
               <p>
                 Technician dispatch notifications use configured providers — no assumed SMS or
-                tracking provider.
+                tracking provider. Appointment confirmation, technician en route, and job completed
+                drafts use draft→approve→queue (UC dispatch-notifications). TITAN never auto-sends.
               </p>
               {dashboard.dispatchNotifications.length === 0 ? (
                 <EmptyState
@@ -440,32 +629,8 @@ export function CommunicationsHubPage() {
               )}
             </Panel>
           ) : null}
-
-          {activeTab === 'assistant' ? (
-            <Panel title="AURA Communications Agent">
-              <p>
-                Ask about communication history, draft replies, call summaries, and customer
-                updates. Recommendations only.
-              </p>
-              {assistantError ? <p className="form-error">{assistantError}</p> : null}
-              <AuraMessageList messages={agentMessages} isSending={isSending} />
-              {pendingTasks.map((task) => (
-                <AuraTaskApprovalCard
-                  key={task.id}
-                  task={task}
-                  accessToken={accessToken ?? ''}
-                  onUpdated={updateTask}
-                />
-              ))}
-              <AuraComposer
-                disabled={isSending}
-                onSend={(content) => void sendAgentMessage(content, 'communications')}
-                placeholder="Ask about calls, WhatsApp, SMS, email, or draft a reply…"
-              />
-            </Panel>
-          ) : null}
         </>
-      )}
+      ) : null}
     </div>
   );
 }

@@ -24,6 +24,7 @@ export const workflowActionTypeEnum = pgEnum('workflow_action_type', [
   'create_purchase_order_draft',
   'generate_report',
   'create_follow_up',
+  'trigger_aura_suggestion',
   'run_ai_agent',
   'update_record',
   'create_approval_request',

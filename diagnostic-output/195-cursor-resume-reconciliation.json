@@ -1,0 +1,89 @@
+{
+  "schemaVersion": "cursor-resume-reconciliation-v1",
+  "generatedAt": "2026-08-01T12:31:30.000Z",
+  "repository": "/Users/keanuventer/Downloads/Titan Aura V1",
+  "workspaceNote": "titan-os-source has no git history; Titan Aura V1 is the active repo",
+  "branch": "cursor/titan-frozen-scope-completion",
+  "headCommit": "4a24b89",
+  "productionTouched": false,
+  "stagingRef": "cpkuwtaipjxeipvbssvn",
+  "forbiddenProductionRef": "rshuiaghmtrvvilhqpwm",
+  "git": {
+    "syncWithRemote": "up to date",
+    "worktrees": [
+      {
+        "path": "/Users/keanuventer/Downloads/Titan Aura V1",
+        "commit": "4a24b89",
+        "branch": "cursor/titan-frozen-scope-completion"
+      }
+    ],
+    "mergeConflicts": false,
+    "commitsTodayPreserved": [
+      "4a24b89 Record commit hash in payments SQL fix diagnostic note.",
+      "162cbf4 Fix Xero payments stage invoice-mapping lateral join SQL error.",
+      "91aa56d Reconcile Titan current state and extend auto pipeline through launch.",
+      "e4d18b7 Document Sprint 192 safe resume after Cursor close.",
+      "1ebd09f Add PRN-001 complete-app printing to auto work pipeline.",
+      "c7cea86 Add JOB-DEL-001 to auto work pipeline after pricing phases.",
+      "00fbd31 Update auto work pipeline status with phase commit hashes.",
+      "0b6b911 Add SPI-001 supplier price intelligence scaffold.",
+      "1e87410 Fix staging session verify script API health paths.",
+      "4410a02 Implement secure persistent session across staff auth surfaces.",
+      "9bec8c3 Fix Xero import heartbeat recovery and checkpoint auto-resume.",
+      "0dd0643 Add Xero two-way sync binding scaffold (Sprint 186).",
+      "0e86821 Add CV-001b post-Xero-import customer value recalculation automation.",
+      "4f665d1 Add WhatsApp customer contact enrichment scaffold (COM-013).",
+      "eb60e06 Add binding customer value classification foundation (CV-001).",
+      "fb04a51 Add global binding acceptance rule and complete-app audit."
+    ],
+    "uncommittedTracked": [
+      "diagnostic-output/187-xero-import-recovery-verify.json",
+      "diagnostic-output/182-customer-value-classification-staging-probe.json",
+      "storage/company-media/.gitkeep"
+    ]
+  },
+  "stagingHealth": {
+    "apiBase": "https://young-guns-os-staging.up.railway.app",
+    "health": "ok v0.2.0",
+    "ready": "ready database=connected providersEnabled=true workersEnabled=false",
+    "railwayCli": "not available",
+    "railwayToken": "unset",
+    "deployVerification": {
+      "xeroRecovery9bec8c3": "CONFIRMED — active job heartbeat updating",
+      "paymentsFix162cbf4": "UNVERIFIED — code pushed; no commit hash on /health; Railway redeploy from runner blocked"
+    }
+  },
+  "xeroImport": {
+    "activeJobId": "81c5b8d8-839b-4875-b106-2ecece11a966",
+    "status": "running",
+    "stage": "contacts",
+    "contactsPage": 5,
+    "heartbeatAt": "2026-08-01T12:29:39.941Z",
+    "lastSyncAt": null,
+    "mappings": {
+      "customers": 673,
+      "invoices": 5,
+      "payments": 0,
+      "duplicateCustomerContactIds": 0
+    },
+    "priorFailedJob": {
+      "id": "8e6aec9b-2d99-493c-85b8-75f61d7f414b",
+      "failedStage": "payments",
+      "cause": "Drizzle lateral join on invoice mappings"
+    },
+    "verdict": "IN_PROGRESS"
+  },
+  "migrationsPending": [
+    "0107_whatsapp_contact_enrichment",
+    "0108_secure_session_enhancements",
+    "0109_xero_two_way_sync_scaffolding",
+    "0110_supplier_price_intelligence"
+  ],
+  "stagingMigrationsApplied": 106,
+  "unitTests": {
+    "command": "pnpm test -- --run xero-import",
+    "result": "336 pass / 0 fail",
+    "includesPaymentsFix": true
+  },
+  "nextAutomaticAction": "Read-only poll Xero GO gate until completed; confirm payments fix live before job reaches payments stage; hold migrations 0107-0110 until quiescent"
+}

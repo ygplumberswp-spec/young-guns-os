@@ -1,9 +1,12 @@
-import { useMemo, useState } from 'react';
-import { Link } from 'wouter';
-import { Button, EmptyState, LoadingState, PageHeader, Panel, StatCard } from '@titan/ui';
-import type { IntegrationProviderStatus } from '@titan/shared';
+import { PageHeader } from '../../components/ux';
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useLocation } from 'wouter';
+import { Button, EmptyState, LoadingState, Panel, StatCard } from '@titan/ui';
+import type { IntegrationProviderAutoSyncStatus, IntegrationProviderStatus } from '@titan/shared';
+import { FACEBOOK_PAGE_SELECTION_WORKSPACE_PATH } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import { invalidateStaffQueryPrefixes } from '../../lib/cache-invalidation';
+import { fetchIntegrationAutoSyncStatuses } from '../../lib/integration-auto-sync-api-client';
 import { fetchIntegrationHubDashboard } from '../../lib/integration-hub-api';
 import {
   fetchIntegrationPlatformDashboard,
@@ -15,6 +18,7 @@ import { useAuth } from '../../lib/auth-context';
 import { useStaffCachedQuery, useStaffCacheScope } from '../../lib/use-scoped-cached-query';
 import { useCachedQuery } from '../../lib/use-cached-query';
 import { SimpleAdvancedToggle } from '../../components/SimpleAdvancedToggle';
+import { SocialConnectionsSection } from '../../features/integrations/SocialConnectionsSection';
 import { canAccessIntegrations, canManageIntegrations } from '../../features/integrations/utils';
 import {
   capabilityStateToPillModifier,
@@ -31,12 +35,59 @@ const PROVIDER_GROUPS: Array<{ id: string; label: string; providers: string[] }>
   { id: 'automation', label: 'Automation', providers: ['n8n'] },
 ];
 
+/** Social publishing providers (Facebook, Instagram, TikTok) render in SocialConnectionsSection only. */
+
+function IntegrationCategoryLinks() {
+  return (
+    <>
+      <Panel className="integrations-category-section" title="Business Profile integrations">
+        <p className="page-muted">
+          Google Business Profile location and reputation monitoring — separate from social publishing
+          connections.
+        </p>
+        <div className="panel-actions">
+          <Link href="/social-media-integrations">
+            <Button size="sm" variant="secondary">
+              Open Business Profile integrations
+            </Button>
+          </Link>
+        </div>
+      </Panel>
+
+      <Panel className="integrations-category-section" title="Communications integrations">
+        <p className="page-muted">
+          WhatsApp Business customer messaging, email and Gmail — operational communications, not social
+          publishing.
+        </p>
+        <div className="panel-actions">
+          <Link href="/integrations/whatsapp">
+            <Button size="sm" variant="secondary">
+              Open WhatsApp Business settings
+            </Button>
+          </Link>
+          <Link href="/integrations/email">
+            <Button size="sm" variant="secondary">
+              Email integrations
+            </Button>
+          </Link>
+        </div>
+      </Panel>
+    </>
+  );
+}
+
 /**
  * Decision 4 / UX-G — status pill and action are always derived from the
  * backend-computed capabilityState, never from connectionStatus alone. A
  * "not_implemented" provider must never render a working Connect button.
  */
-function SimpleProviderRow({ provider }: { provider: IntegrationProviderStatus }) {
+function SimpleProviderRow({
+  provider,
+  autoSync,
+}: {
+  provider: IntegrationProviderStatus;
+  autoSync?: IntegrationProviderAutoSyncStatus;
+}) {
   const isNotImplemented = provider.capabilityState === 'not_implemented';
   const actionLabel =
     provider.capabilityState === 'connected_usable'
@@ -55,13 +106,21 @@ function SimpleProviderRow({ provider }: { provider: IntegrationProviderStatus }
             Last sync: {new Date(provider.lastSyncAt).toLocaleString()}
           </p>
         ) : null}
+        {autoSync?.nextScheduledSyncAt ? (
+          <p className="integrations-simple-row__meta">
+            Next auto-sync: {new Date(autoSync.nextScheduledSyncAt).toLocaleString()}
+          </p>
+        ) : null}
+        {autoSync?.correctiveAction ? (
+          <p className="integrations-simple-row__meta">{autoSync.correctiveAction}</p>
+        ) : null}
         {provider.lastError ? <p className="form-error">{provider.lastError}</p> : null}
       </div>
       <div className="integrations-simple-row__aside">
         <span
           className={`status-pill status-pill--${capabilityStateToPillModifier(provider.capabilityState)}`}
         >
-          {provider.capabilityLabel}
+          {autoSync?.uiStateLabel ?? provider.capabilityLabel}
         </span>
         {provider.canConnect && provider.settingsPath ? (
           <Link href={provider.settingsPath}>
@@ -89,6 +148,7 @@ function SimpleProviderRow({ provider }: { provider: IntegrationProviderStatus }
 
 export function IntegrationsDashboardPage() {
   const { accessToken, user } = useAuth();
+  const [, navigate] = useLocation();
   const cacheScope = useStaffCacheScope();
   const [viewMode, setViewMode] = useState<'simple' | 'advanced'>('simple');
   const [isSyncingConnectors, setIsSyncingConnectors] = useState(false);
@@ -96,9 +156,35 @@ export function IntegrationsDashboardPage() {
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
   const [advancedOpen, setAdvancedOpen] = useState(false);
 
+  // Legacy OAuth returns may land here; Page selection completes in Facebook Business.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('facebook') === 'select-page') {
+      navigate(FACEBOOK_PAGE_SELECTION_WORKSPACE_PATH, { replace: true });
+    }
+  }, [navigate]);
+
   const canView = useMemo(() => (user ? canAccessIntegrations(user.permissions) : false), [user]);
   const canManage = useMemo(() => (user ? canManageIntegrations(user.permissions) : false), [user]);
   const canAdvanced = canManage;
+
+  const { data: autoSyncStatuses, refetch: refetchAutoSync } = useStaffCachedQuery({
+    queryKey: 'integrations/auto-sync-statuses',
+    enabled: canView,
+    staleTimeMs: 30_000,
+    fetcher: (signal) => fetchIntegrationAutoSyncStatuses(accessToken!, { signal }),
+  });
+
+  const autoSyncByProvider = useMemo(() => {
+    const map = new Map<string, IntegrationProviderAutoSyncStatus>();
+    for (const entry of autoSyncStatuses ?? []) {
+      if (entry.integrationProvider) {
+        map.set(entry.integrationProvider, entry);
+      }
+      map.set(entry.provider, entry);
+    }
+    return map;
+  }, [autoSyncStatuses]);
 
   const {
     data: hubDashboard,
@@ -222,7 +308,7 @@ export function IntegrationsDashboardPage() {
         ]);
       }
 
-      await Promise.all([refetchHub(), refetchPlatform()]);
+      await Promise.all([refetchHub(), refetchPlatform(), refetchAutoSync()]);
     } catch (err) {
       if (
         err instanceof DOMException &&
@@ -275,7 +361,7 @@ export function IntegrationsDashboardPage() {
                 aria-busy={isSyncingConnectors}
                 onClick={() => void handleRefreshConnectors()}
               >
-                {isSyncingConnectors ? 'Syncing…' : 'Sync now'}
+                {isSyncingConnectors ? 'Syncing…' : 'Sync now (recovery)'}
               </Button>
             ) : null}
           </div>
@@ -290,11 +376,11 @@ export function IntegrationsDashboardPage() {
         <section className="integrations-section">
           <div className="stat-grid">
             <StatCard label="Connected" value={String(monitoring.connectedServiceCount)} />
-            <StatCard label="Needs attention" value={String(monitoring.errorServiceCount)} />
-            <StatCard label="Active sync jobs" value={String(monitoring.activeSyncJobCount)} />
+            <StatCard label="Needs Attention" value={String(monitoring.errorServiceCount)} />
+            <StatCard label="Active Sync Jobs" value={String(monitoring.activeSyncJobCount)} />
             {platformDashboard ? (
               <StatCard
-                label="Pending approvals"
+                label="Pending Approvals"
                 value={String(platformDashboard.pendingActionCount)}
               />
             ) : null}
@@ -302,18 +388,18 @@ export function IntegrationsDashboardPage() {
           {platformDashboard ? (
             <p className="page-muted">{platformDashboard.summary}</p>
           ) : platformLoading ? (
-            <LoadingState label="Loading connection summary…" />
+            <LoadingState label="Loading Connection Summary…" />
           ) : null}
         </section>
       ) : null}
 
       {hubLoading && !hubDashboard ? (
-        <LoadingState label="Loading providers…" />
+        <LoadingState label="Loading Providers…" />
       ) : hubDashboard ? (
         <>
           {groupedProviders.length === 0 ? (
             <EmptyState
-              title="No integrations configured yet"
+              title="No Integrations Configured Yet"
               description="Connect accounting, communications, fleet or payment providers to sync data with TITAN."
             />
           ) : (
@@ -322,7 +408,11 @@ export function IntegrationsDashboardPage() {
                 <h2 className="integrations-section__title">{group.label}</h2>
                 <div className="integrations-simple-list">
                   {group.providers.map((provider) => (
-                    <SimpleProviderRow key={provider.provider} provider={provider} />
+                    <SimpleProviderRow
+                      key={provider.provider}
+                      provider={provider}
+                      autoSync={autoSyncByProvider.get(provider.provider)}
+                    />
                   ))}
                 </div>
               </section>
@@ -330,20 +420,24 @@ export function IntegrationsDashboardPage() {
           )}
 
           {viewMode === 'simple' && hubDashboard.stats.connectedCount === 0 ? (
-            <Panel title="Get started">
+            <Panel title="Get Started">
               <p className="page-muted">
-                Connect Xero for accounting, WhatsApp for customer messaging, or Cartrack for fleet
+                Connect Xero for accounting, Business WhatsApp for customer messaging, or Cartrack for fleet
                 tracking. AURA can guide you through each setup.
               </p>
               <div className="panel-actions">
                 <Link href="/aura">
-                  <Button variant="secondary">Ask AURA for help</Button>
+                  <Button variant="secondary">Ask AURA For Help</Button>
                 </Link>
               </div>
             </Panel>
           ) : null}
         </>
       ) : null}
+
+      <SocialConnectionsSection />
+
+      <IntegrationCategoryLinks />
 
       {viewMode === 'advanced' ? (
         <section className="integrations-advanced">
@@ -358,10 +452,10 @@ export function IntegrationsDashboardPage() {
 
           {advancedOpen ? (
             <div className="integrations-advanced__content">
-              <Panel title="Recent sync jobs">
+              <Panel title="Recent Sync Jobs">
                 {hubDashboard?.recentSyncJobs.length === 0 ? (
                   <EmptyState
-                    title="No sync jobs yet"
+                    title="No Sync Jobs Yet"
                     description="Sync jobs appear when a provider sync runs."
                   />
                 ) : (
@@ -382,10 +476,10 @@ export function IntegrationsDashboardPage() {
                 </div>
               </Panel>
 
-              <Panel title="Recent webhook events">
+              <Panel title="Recent Webhook Events">
                 {hubDashboard?.recentWebhookEvents.length === 0 ? (
                   <EmptyState
-                    title="No webhook events yet"
+                    title="No Webhook Events Yet"
                     description="Events appear when inbound webhooks are received."
                   />
                 ) : (
@@ -410,9 +504,9 @@ export function IntegrationsDashboardPage() {
               </Panel>
 
               {tracesLoading ? (
-                <LoadingState label="Loading API gateway traces…" />
+                <LoadingState label="Loading API Gateway Traces…" />
               ) : traces && traces.length > 0 ? (
-                <Panel title="Recent API gateway traces">
+                <Panel title="Recent API Gateway Traces">
                   <ul className="integrations-list">
                     {traces.slice(0, 10).map((trace) => (
                       <li key={trace.id}>
@@ -428,9 +522,9 @@ export function IntegrationsDashboardPage() {
               ) : null}
 
               {vaultLoading ? (
-                <LoadingState label="Loading credential metadata…" />
+                <LoadingState label="Loading Credential Metadata…" />
               ) : vaultEntries && vaultEntries.length > 0 ? (
-                <Panel title="Credential metadata">
+                <Panel title="Credential Metadata">
                   <ul className="integrations-list">
                     {vaultEntries.map((entry) => (
                       <li key={entry.id}>
@@ -447,7 +541,7 @@ export function IntegrationsDashboardPage() {
               ) : null}
 
               {platformDashboard && platformDashboard.connectors.length > 0 ? (
-                <Panel title="Universal connectors">
+                <Panel title="Universal Connectors">
                   <ul className="integrations-list">
                     {platformDashboard.connectors.map((connector) => (
                       <li key={connector.id}>

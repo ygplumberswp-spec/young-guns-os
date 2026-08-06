@@ -49,7 +49,7 @@ function SignupForm() {
         </p>
         <form className="auth-form" onSubmit={handleSubmit}>
           <Input
-            label="Company name"
+            label="Company Name"
             name="companyName"
             placeholder="Acme Services"
             value={companyName}
@@ -58,14 +58,14 @@ function SignupForm() {
           />
           <div className="auth-form__row">
             <Input
-              label="First name"
+              label="First Name"
               name="firstName"
               value={firstName}
               onChange={(event) => setFirstName(event.target.value)}
               required
             />
             <Input
-              label="Last name"
+              label="Last Name"
               name="lastName"
               value={lastName}
               onChange={(event) => setLastName(event.target.value)}
@@ -73,7 +73,7 @@ function SignupForm() {
             />
           </div>
           <Input
-            label="Work email"
+            label="Work Email"
             name="email"
             type="email"
             placeholder="you@company.com"
