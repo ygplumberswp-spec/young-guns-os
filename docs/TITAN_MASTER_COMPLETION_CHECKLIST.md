@@ -37,6 +37,8 @@
 
 **JOB-COST-001 (2026-08-06):** Intelligent Job Costing & Profit Engine — **documented only**, not implemented. Sequenced **after PRICEBOOK-001** and **before DASH-002**. **Do not implement during active Xero proof.** See [TITAN_JOB_COSTING_PROFIT_ENGINE_SPECIFICATION.md](./TITAN_JOB_COSTING_PROFIT_ENGINE_SPECIFICATION.md), [TITAN_ROADMAP.md](./TITAN_ROADMAP.md).
 
+**OCC-001 (2026-08-06):** Owner Command Center & AURA Business Coach — **documented only**, not implemented. Sequenced **after DASH-002** and **JOB-COST-001C** minimum. Extends **DASH-001** (approved). **Do not implement during active Xero proof.** See [TITAN_OWNER_COMMAND_CENTER_AURA_COACH_SPECIFICATION.md](./TITAN_OWNER_COMMAND_CENTER_AURA_COACH_SPECIFICATION.md), [TITAN_ROADMAP.md](./TITAN_ROADMAP.md).
+
 **Integrations overview (2026-08-06):** Enterprise polish on PR #10 — unified cards, enterprise status lines, fine-details finishing. **Pending Owner approval** — not complete until signed off.
 
 ---
@@ -222,6 +224,17 @@ Boolean columns use **YES** / **NO** / **—** (not applicable).
 | JC-001F | job-cost | Job financial dashboard and reporting | **DOCUMENTED ONLY** | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_JOB_COSTING_PROFIT_ENGINE_SPECIFICATION.md §7 | 2026-08-06 | JC-001C | Phase F |
 | JC-001G | job-cost | Estimate-versus-actual learning integration | **DOCUMENTED ONLY** | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_JOB_COSTING_PROFIT_ENGINE_SPECIFICATION.md §11 | 2026-08-06 | AI-EST-LEARN-001 | Phase G |
 | DASH-002 | dashboard | Customisable no-gap Dashboard grid | **PLANNED** | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_ROADMAP.md | 2026-08-06 | JOB-COST-001 | After job costing foundation |
+| OCC-001 | executive | Owner Command Center & AURA Business Coach | **DOCUMENTED ONLY** | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_OWNER_COMMAND_CENTER_AURA_COACH_SPECIFICATION.md | 2026-08-06 | DASH-002 | After dashboard grid + job costing |
+| OCC-001A | executive | Owner Command Center daily dashboard | **DOCUMENTED ONLY** | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_OWNER_COMMAND_CENTER_ARCHITECTURE.md | 2026-08-06 | DASH-001 | Phase A |
+| OCC-001B | executive | AURA Daily CEO Briefing | **DOCUMENTED ONLY** | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_OWNER_COMMAND_CENTER_AURA_COACH_SPECIFICATION.md §2 | 2026-08-06 | OCC-001A | Phase B |
+| OCC-001C | executive | Business Health Score engine | **DOCUMENTED ONLY** | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_OWNER_COMMAND_CENTER_AURA_COACH_SPECIFICATION.md §3 | 2026-08-06 | OCC-001A | Phase C |
+| OCC-001D | executive | Weekly CEO Review and Monthly Board Report | **DOCUMENTED ONLY** | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_OWNER_COMMAND_CENTER_AURA_COACH_SPECIFICATION.md §4 | 2026-08-06 | OCC-001C | Phase D |
+| OCC-001E | executive | Business Coach lessons (EXEC-009) | **DOCUMENTED ONLY** | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_OWNER_COMMAND_CENTER_AURA_COACH_SPECIFICATION.md §5 | 2026-08-06 | JOB-COST-001 | Phase E |
+| OCC-001F | executive | What-If Simulator | **DOCUMENTED ONLY** | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_OWNER_COMMAND_CENTER_AURA_COACH_SPECIFICATION.md §6 | 2026-08-06 | PRICEBOOK-001 | Phase F |
+| OCC-001G | executive | Business DNA learning store | **DOCUMENTED ONLY** | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_OWNER_COMMAND_CENTER_AURA_COACH_SPECIFICATION.md §7 | 2026-08-06 | OCC-001E | Phase G |
+| OCC-001H | executive | Money Leak Detector | **DOCUMENTED ONLY** | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_OWNER_COMMAND_CENTER_AURA_COACH_SPECIFICATION.md §8 | 2026-08-06 | JOB-COST-001C | Phase H |
+| OCC-001I | executive | Opportunity Finder | **DOCUMENTED ONLY** | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_OWNER_COMMAND_CENTER_AURA_COACH_SPECIFICATION.md §9 | 2026-08-06 | JOB-COST-001C | Phase I |
+| OCC-001J | executive | AI Business Advisor narrative layer | **DOCUMENTED ONLY** | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_OWNER_COMMAND_CENTER_AURA_COACH_SPECIFICATION.md §10 | 2026-08-06 | OCC-001B | Phase J |
 | J66A-001 | finance | Phase J-6.6A: Finance RBAC hardening (cost strip, catalogue, document routes) | TESTED LOCALLY | YES | YES | NO | YES | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | finance-tenant-pricebook.test.ts; finance.service.ts sanitize | J-6.6A |  |  | Staging apply 0176–0178 |
 | J66A-002 | finance | Phase J-6.6A: Save semantics (Save vs Save Draft vs Save & New) | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | finance-document-save.test.ts | J-6.6A |  |  | Owner finance E2E |
 | J66A-003 | finance | Phase J-6.6A: Five reproducible test fixes (Cartrack TZ, doc-engine, merge heading) | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | shared 909/909; web 303/303; api 1046/1046 | J-6.6A |  |  |  |
@@ -728,12 +741,13 @@ See [TITAN_ROADMAP.md](./TITAN_ROADMAP.md) for authoritative order:
 | 1 | **PRICEBOOK-001** | Master Pricebook foundation |
 | 2 | **JOB-COST-001** | Intelligent Job Costing & Profit Engine |
 | 3 | **DASH-002** | Customisable no-gap Dashboard grid |
-| 4 | **AI-FIN-DOC-001** | AI Financial Capture Engine (+ AP-DOC-001, EXP-REC-001, INV-PRICE-001) |
-| 5 | — | Full BrowserStack role and journey audit |
-| 6 | — | Remaining integration and platform roadmap |
-| 7 | **UI-THEME-001** | App-wide visual finishing |
-| 8 | — | Young Guns controlled pilot |
-| 9 | — | Production hardening and launch |
+| 4 | **OCC-001** | Owner Command Center & AURA Business Coach |
+| 5 | **AI-FIN-DOC-001** | AI Financial Capture Engine (+ AP-DOC-001, EXP-REC-001, INV-PRICE-001) |
+| 6 | — | Full BrowserStack role and journey audit |
+| 7 | — | Remaining integration and platform roadmap |
+| 8 | **UI-THEME-001** | App-wide visual finishing |
+| 9 | — | Young Guns controlled pilot |
+| 10 | — | Production hardening and launch |
 
 After **INT-OVERVIEW-001** (Integrations overview) receives Owner approval, the completed prerequisite sequence was:
 

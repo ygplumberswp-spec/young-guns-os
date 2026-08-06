@@ -10,7 +10,7 @@
 ## Active work (do not interrupt)
 
 **XERO-002** — Controlled live proof gate sequence (Gates 5B–7 remaining).  
-**Do not implement PRICEBOOK-001, JOB-COST-001, DASH-002, or other major features during active Xero proof.**
+**Do not implement PRICEBOOK-001, JOB-COST-001, DASH-002, OCC-001, or other major features during active Xero proof.**
 
 See: [TITAN_XERO_002_LIVE_PROOF_PLAN.md](./TITAN_XERO_002_LIVE_PROOF_PLAN.md)
 
@@ -26,15 +26,38 @@ Execute in order after prior gates close. Production forbidden until explicit pr
 | 1 | **PRICEBOOK-001** | **Master Pricebook foundation** | **RECORDED** — not implemented |
 | 2 | **JOB-COST-001** | **Intelligent Job Costing & Profit Engine** | **RECORDED** — not implemented |
 | 3 | **DASH-002** | **Customisable no-gap Dashboard grid** | Planned |
-| 4 | **AI-FIN-DOC-001** | **AI Financial Capture Engine** | Recorded only |
-| 4a | AP-DOC-001 | Supplier Invoice Import | Child — recorded |
-| 4b | EXP-REC-001 | Receipt and Till-Slip Capture | Child — recorded |
-| 4c | INV-PRICE-001 | Supplier Price List Import | Child — recorded |
-| 5 | — | Full BrowserStack role and journey audit | Planned |
-| 6 | — | Remaining integration and platform roadmap | Ongoing |
-| 7 | **UI-THEME-001** | **App-wide visual finishing (Premium Dark Mode)** | Recorded only |
-| 8 | — | Young Guns controlled pilot | Gate |
-| 9 | — | Production hardening and launch | Gate |
+| 4 | **OCC-001** | **Owner Command Center & AURA Business Coach** | **RECORDED** — not implemented |
+| 5 | **AI-FIN-DOC-001** | **AI Financial Capture Engine** | Recorded only |
+| 5a | AP-DOC-001 | Supplier Invoice Import | Child — recorded |
+| 5b | EXP-REC-001 | Receipt and Till-Slip Capture | Child — recorded |
+| 5c | INV-PRICE-001 | Supplier Price List Import | Child — recorded |
+| 6 | — | Full BrowserStack role and journey audit | Planned |
+| 7 | — | Remaining integration and platform roadmap | Ongoing |
+| 8 | **UI-THEME-001** | **App-wide visual finishing (Premium Dark Mode)** | Recorded only |
+| 9 | — | Young Guns controlled pilot | Gate |
+| 10 | — | Production hardening and launch | Gate |
+
+---
+
+## OCC-001 phased delivery (after DASH-002 + JOB-COST-001 foundation)
+
+| Phase | ID | Scope |
+|-------|-----|-------|
+| A | OCC-001A | Owner Command Center daily dashboard (extends DASH-001) |
+| B | OCC-001B | AURA Daily CEO Briefing |
+| C | OCC-001C | Business Health Score engine |
+| D | OCC-001D | Weekly CEO Review and Monthly Board Report |
+| E | OCC-001E | Business Coach lessons (EXEC-009) |
+| F | OCC-001F | What-If Simulator |
+| G | OCC-001G | Business DNA learning store |
+| H | OCC-001H | Money Leak Detector |
+| I | OCC-001I | Opportunity Finder |
+| J | OCC-001J | AI Business Advisor narrative layer |
+
+**Documentation:**
+
+- [TITAN_OWNER_COMMAND_CENTER_AURA_COACH_SPECIFICATION.md](./TITAN_OWNER_COMMAND_CENTER_AURA_COACH_SPECIFICATION.md)
+- [TITAN_OWNER_COMMAND_CENTER_ARCHITECTURE.md](./TITAN_OWNER_COMMAND_CENTER_ARCHITECTURE.md)
 
 ---
 
@@ -113,9 +136,9 @@ Execute in order after prior gates close. Production forbidden until explicit pr
 1. **No duplicate pricing systems** — PRICEBOOK-001 is the sole pricing authority when implemented
 2. **No duplicate costing formulas** — JOB-COST-001 is the sole job-cost and profit truth when implemented
 3. **No implementation during XERO-002 proof** — record and sequence only
-4. **PRICEBOOK-001 → JOB-COST-001 → DASH-002** — pricebook, then job costing, then dashboard grid
+4. **PRICEBOOK-001 → JOB-COST-001 → DASH-002 → OCC-001** — financial truth before AI coaching
 5. **Production** — `rshuiaghmtrvvilhqpwm` forbidden until explicit Owner production GO
 
 ---
 
-*Roadmap updated 2026-08-06 to register JOB-COST-001. No code changes.*
+*Roadmap updated 2026-08-06 to register OCC-001. No code changes.*

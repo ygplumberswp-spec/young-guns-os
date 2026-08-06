@@ -2,7 +2,7 @@
 
 **Audit type:** READ-ONLY planning artifact — no new features  
 **Generated (UTC):** 2026-08-05  
-**Last updated (UTC):** 2026-08-06 — JOB-COST-001 recorded (not implemented); XERO-002 Gate sequence remains active  
+**Last updated (UTC):** 2026-08-06 — OCC-001 recorded (not implemented); XERO-002 Gate sequence remains active  
 **Base HEAD:** `cc0abbcde96902711fc0e141590144470abc5444` → task branch `cursor/titan-xero-002-p0-finance`  
 **Branch:** `cursor/titan-v1-integration`  
 **Scope:** Unmet **accepted** requirements only — deferred items at end  
@@ -190,6 +190,44 @@ Photo, PDF, spreadsheet or authorised email attachment → secure validation →
 **Governance:** No duplicate costing formulas. Immutable estimate baselines from approved quotes. Cost state machine enforced. AURA may suggest; Owner must approve. No silent budget, price or reconciliation changes.
 
 **Implementation gate:** Forbidden during active XERO-002 Gate proof sequence. Requires PRICEBOOK-001A minimum before JOB-COST-001A.
+
+---
+
+### OCC-001 — Owner Command Center & AURA Business Coach (RECORD ONLY — do not implement during XERO-002)
+
+**Status:** Documented only. **Not implemented.**
+
+**Recorded (UTC):** 2026-08-06
+
+**Placement:** After **DASH-002** and **JOB-COST-001C** minimum — extends **DASH-001** (approved).
+
+| ID | Name | Phase |
+|----|------|-------|
+| **OCC-001** | Owner Command Center & AURA Business Coach | Parent |
+| OCC-001A | Owner Command Center daily dashboard | A |
+| OCC-001B | AURA Daily CEO Briefing | B |
+| OCC-001C | Business Health Score engine | C |
+| OCC-001D | Weekly CEO Review and Monthly Board Report | D |
+| OCC-001E | Business Coach lessons (EXEC-009) | E |
+| OCC-001F | What-If Simulator | F |
+| OCC-001G | Business DNA learning store | G |
+| OCC-001H | Money Leak Detector | H |
+| OCC-001I | Opportunity Finder | I |
+| OCC-001J | AI Business Advisor narrative layer | J |
+
+**Documentation:**
+
+- [TITAN_OWNER_COMMAND_CENTER_AURA_COACH_SPECIFICATION.md](./TITAN_OWNER_COMMAND_CENTER_AURA_COACH_SPECIFICATION.md)
+- [TITAN_OWNER_COMMAND_CENTER_ARCHITECTURE.md](./TITAN_OWNER_COMMAND_CENTER_ARCHITECTURE.md)
+- [TITAN_ROADMAP.md](./TITAN_ROADMAP.md)
+
+**Objective:** Transform TITAN into an AI Business Operating System — Owner-first command center, daily CEO briefing, health score, CEO meetings, business coach, what-if simulator, business DNA, money leak detector, opportunity finder, AI advisor.
+
+**Cross-links:** DASH-001 · DASH-002 · JOB-COST-001 · PRICEBOOK-001 · AI-FIN-DOC-001 · EXEC-009 · UI-THEME-001
+
+**Governance:** Owner/Company Owner only. Real data only. AURA advises; Owner approves all financial and pricing decisions. No automatic data changes.
+
+**Implementation gate:** Forbidden during active XERO-002 Gate proof sequence.
 
 ---
 
