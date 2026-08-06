@@ -39,10 +39,26 @@ Malformed input creates **no** `xero_webhook_events` row and **no** targeted ref
 
 ---
 
-## Tests added
+## Staging deployment
 
-- `apps/api/src/lib/xero-webhook-payload.test.ts` (7 tests)
-- `apps/api/src/services/xero-realtime-intersync.service.test.ts` (10 tests)
-- `apps/api/src/routes/xero-webhook.test.ts` (3 HTTP integration tests)
+| Item | Status |
+|------|--------|
+| Canonical commit | `099f172` pushed |
+| Staging API redeploy | **BLOCKED** — Railway CLI unauthorized on runner; Owner redeploy required |
+| Live probe (pre-redeploy) | malformed body still **500** on current deploy; fix verified locally via route tests |
+
+After Owner redeploy, re-run `diagnostic-output/xero-003d-staging-webhook-probe.mjs` — expect malformed+invalid-sig **401** (not 500).
+
+---
+
+## Tests
+
+| Suite | Tests | Pass |
+|-------|------:|-----:|
+| Focused webhook (payload + signing + service + route) | 24 | 24 |
+| @titan/api (full) | 1236 | 1236 |
+| @titan/shared | 1130 | 1130 |
+
+Typecheck + API build: PASS
 
 **STOP FOR OWNER APPROVAL**
