@@ -288,6 +288,17 @@ export function createFacebookBusinessRouter({
     );
   });
 
+  router.post('/oauth/start-reconnect-wizard', (req, res, next) => {
+    const parsed = startOAuthSchema.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      res.status(400).json({ error: { code: 'INVALID_REQUEST', message: 'Invalid payload.' } });
+      return;
+    }
+    wrap(res, next, () =>
+      facebookBusinessService.startReconnectWizardOAuth(toActor(req), parsed.data.returnPath ?? null),
+    );
+  });
+
   router.post('/oauth/start-business-portfolio', (req, res, next) => {
     const parsed = startOAuthSchema.safeParse(req.body ?? {});
     if (!parsed.success) {
@@ -308,6 +319,7 @@ export function createFacebookBusinessRouter({
       return {
         ...discovery,
         pendingPageCandidate: discovery.pendingPageCandidate,
+        historicalPageReference: discovery.historicalPageReference,
         directLookup: discovery.directLookup,
         businessPortfolio: discovery.businessPortfolio,
         needsBusinessPortfolioAccess: discovery.needsBusinessPortfolioAccess,

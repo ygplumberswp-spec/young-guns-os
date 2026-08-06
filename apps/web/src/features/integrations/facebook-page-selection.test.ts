@@ -32,7 +32,7 @@ const instagramSource = readFileSync(
 
 const OLD_WRONG_PAGE_ID = '394603137072407';
 
-describe('Facebook Use this Page selection path (J-6.7F9)', () => {
+describe('Facebook Page selection path (J-6.7F9 / J-6.7F10 reconnect wizard)', () => {
   it('Use this Page button has explicit onClick and type="button"', () => {
     assert.ok(pageSource.includes('function UseThisPageButton'));
     assert.ok(pageSource.includes('onClick={() => onSelectPage(pageId)}'));
@@ -60,12 +60,24 @@ describe('Facebook Use this Page selection path (J-6.7F9)', () => {
     assert.ok(pageSource.includes('isLoadingPages || (isSelectingPage'));
   });
 
-  it('client rejects non-verified Page id during mismatch with visible error', () => {
-    assert.ok(pageSource.includes('Only the verified Young Guns Plumbing Page can be selected'));
-    assert.ok(pageSource.includes('pageDiscovery?.pendingPageCandidate?.pageId'));
+  it('client does not gate selection on hardcoded verified Page id (J-6.7F10)', () => {
+    assert.equal(
+      pageSource.includes('Only the verified Young Guns Plumbing Page can be selected'),
+      false,
+    );
+    assert.equal(pageSource.includes('pendingPageCandidate?.pageId ?? null;\n    if (verifiedPageId'), false);
     assert.ok(pageSource.includes('pageSelectionError'));
     assert.ok(pageSource.includes('role="alert"'));
     assert.ok(pageSource.includes('pageDiscoveryRowSelectable'));
+  });
+
+  it('reconnect uses controlled wizard OAuth — not plain connect OAuth', () => {
+    assert.ok(pageSource.includes('startFacebookReconnectWizardOAuth'));
+    assert.ok(pageSource.includes('onReconnect={handleReconnect}'));
+    assert.ok(pageSource.includes("outcome === 'reconnect-wizard'"));
+    assert.ok(apiClientSource.includes('/oauth/start-reconnect-wizard'));
+    assert.ok(routeSource.includes("router.post('/oauth/start-reconnect-wizard'"));
+    assert.ok(serviceSource.includes('startReconnectWizardOAuth'));
   });
 
   it('API client posts authenticated pageId only — never Page tokens', () => {
@@ -81,19 +93,22 @@ describe('Facebook Use this Page selection path (J-6.7F9)', () => {
     assert.ok(routeSource.includes('facebookBusinessService.selectPage'));
   });
 
-  it('verified Young Guns Page id is server constant', () => {
+  it('historical Young Guns Page id remains diagnostic constant only', () => {
     assert.equal(YOUNG_GUNS_FACEBOOK_PAGE_ID, '61564442420962');
     assert.equal(YOUNG_GUNS_FACEBOOK_PAGE_NAME, 'Young Guns Plumbing – Cape Town');
     assert.notEqual(YOUNG_GUNS_FACEBOOK_PAGE_ID, OLD_WRONG_PAGE_ID);
   });
 
-  it('selectPage validates provider row and writes atomically', () => {
-    assert.ok(serviceSource.includes('assertPageIdMatchesVerifiedCandidate'));
+  it('selectPage validates Meta discovery, Page-token /me identity, and writes atomically', () => {
+    assert.ok(serviceSource.includes('assertClientPageIdInMetaDiscovery'));
+    assert.ok(serviceSource.includes('assertFacebookPageIdentityAgreement'));
+    assert.ok(serviceSource.includes('verifyPageTokenViaMe'));
     assert.ok(serviceSource.includes('assertProviderPageRowMatchesSelection'));
     assert.ok(serviceSource.includes('await this.db.transaction'));
-    assert.ok(serviceSource.includes('pageAccessToken: page.accessToken'));
+    assert.ok(serviceSource.includes('providerVerifiedPageId: page.id'));
     assert.ok(serviceSource.includes('encryptFacebookCredentials'));
     assert.ok(serviceSource.includes('identityAfterWrite.mismatch'));
+    assert.equal(serviceSource.includes('assertPageIdMatchesVerifiedCandidate({'), false);
   });
 
   it('success path refreshes connection and clears discovery panel', () => {

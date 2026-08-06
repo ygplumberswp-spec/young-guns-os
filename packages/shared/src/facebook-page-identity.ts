@@ -1,10 +1,10 @@
-import type { FacebookPendingPageCandidate } from './facebook-direct-page-lookup.js';
+import type { FacebookHistoricalPageReference } from './facebook-direct-page-lookup.js';
 
-/** Machine-readable reason when stored Page id differs from the verified tenant Page. */
+/** Machine-readable reason when stored Page id differs from provider-verified or historical reference. */
 export const FACEBOOK_SELECTED_PAGE_MISMATCH = 'FACEBOOK_SELECTED_PAGE_MISMATCH';
 
 export const FACEBOOK_SELECTED_PAGE_MISMATCH_MESSAGE =
-  'TITAN found a different stored Facebook Page than the verified Young Guns Plumbing Page. Select the correct Page before granting additional permissions.';
+  'TITAN found a different stored Facebook Page than Meta currently authorises. Use Reconnect Facebook to select the Page returned by Meta.';
 
 /** Masks a Meta Page id for Owner-facing UI — shows suffix only. */
 export function maskFacebookPageId(pageId: string | null | undefined): string | null {
@@ -42,14 +42,16 @@ export type FacebookPageIdentityDisplay = {
 export function resolveFacebookPageIdentity(input: {
   storedPageId: string | null | undefined;
   storedPageName: string | null | undefined;
-  verifiedCandidate: FacebookPendingPageCandidate | null;
+  historicalReference: FacebookHistoricalPageReference | null;
+  providerVerifiedPageId?: string | null | undefined;
   hasStoredCredentials: boolean;
   pageAccessToken: string | null | undefined;
 }): FacebookPageIdentityDiagnosis {
   const storedPageId = input.storedPageId?.trim() || null;
   const storedPageName = input.storedPageName?.trim() || null;
-  const verifiedCandidatePageId = input.verifiedCandidate?.pageId?.trim() || null;
-  const verifiedCandidatePageName = input.verifiedCandidate?.pageName?.trim() || null;
+  const providerVerifiedPageId = input.providerVerifiedPageId?.trim() || null;
+  const historicalPageId = input.historicalReference?.pageId?.trim() || null;
+  const historicalPageName = input.historicalReference?.pageName?.trim() || null;
 
   const pageAccessTokenPending = Boolean(
     input.pageAccessToken?.startsWith('pending:') || input.pageAccessToken === '',
@@ -59,7 +61,11 @@ export function resolveFacebookPageIdentity(input: {
   );
 
   const mismatch = Boolean(
-    storedPageId && verifiedCandidatePageId && storedPageId !== verifiedCandidatePageId,
+    storedPageId &&
+      ((providerVerifiedPageId && storedPageId !== providerVerifiedPageId) ||
+        (!providerVerifiedPageId &&
+          historicalPageId &&
+          storedPageId !== historicalPageId)),
   );
 
   const internallyConsistent = Boolean(storedPageId && storedPageName && hasPageAccessToken);
@@ -67,10 +73,10 @@ export function resolveFacebookPageIdentity(input: {
   return {
     storedPageId,
     storedPageName,
-    verifiedCandidatePageId,
-    verifiedCandidatePageName,
+    verifiedCandidatePageId: historicalPageId,
+    verifiedCandidatePageName: historicalPageName,
     storedPageIdMasked: maskFacebookPageId(storedPageId),
-    verifiedCandidatePageIdMasked: maskFacebookPageId(verifiedCandidatePageId),
+    verifiedCandidatePageIdMasked: maskFacebookPageId(historicalPageId),
     idsMatch: !mismatch,
     hasUserAccessToken: input.hasStoredCredentials,
     hasPageAccessToken,
@@ -110,17 +116,11 @@ export function facebookPageIdentityAllowsPageReadOAuth(
   return facebookPageIdentityAllowsConnectedLimited(identity) && identity.idsMatch;
 }
 
-export function assertPageIdMatchesVerifiedCandidate(input: {
+/** @deprecated J-6.7F10 — selection uses Meta discovery + Page-token identity agreement only. */
+export function assertPageIdMatchesVerifiedCandidate(_input: {
   pageId: string;
-  candidate: FacebookPendingPageCandidate | null;
+  candidate: { pageId: string } | null;
 }): { ok: true } | { ok: false; reason: string } {
-  if (!input.candidate) return { ok: true };
-  if (input.pageId.trim() !== input.candidate.pageId) {
-    return {
-      ok: false,
-      reason: `Only the verified Page (${maskFacebookPageId(input.candidate.pageId)}) can be selected for this company.`,
-    };
-  }
   return { ok: true };
 }
 

@@ -149,7 +149,6 @@ describe('facebook business portfolio discovery (J-6.7F5)', () => {
   it('rejects arbitrary business Page ids from browser', () => {
     const result = assertClientPageIdMatchesBusinessDiscovery({
       clientPageId: '999999',
-      candidate: CANDIDATE,
       businessPages: [],
       listedPageIds: [],
     });
@@ -159,7 +158,6 @@ describe('facebook business portfolio discovery (J-6.7F5)', () => {
   it('allows server-fetched business Page rows', () => {
     const result = assertClientPageIdMatchesBusinessDiscovery({
       clientPageId: YOUNG_GUNS_FACEBOOK_PAGE_ID,
-      candidate: CANDIDATE,
       businessPages: [
         {
           id: YOUNG_GUNS_FACEBOOK_PAGE_ID,

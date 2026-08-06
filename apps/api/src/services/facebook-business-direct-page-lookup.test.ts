@@ -34,8 +34,8 @@ describe('Facebook direct page validation fallback (J-6.7F2 / J-6.7F3)', () => {
     assert.ok(serviceSource.includes('connection.direct_page_lookup'));
   });
 
-  it('selectPage rejects arbitrary client Page id', () => {
-    assert.ok(serviceSource.includes('assertClientPageIdMatchesBusinessDiscovery'));
+  it('selectPage rejects arbitrary client Page id not returned by Meta', () => {
+    assert.ok(serviceSource.includes('assertClientPageIdInMetaDiscovery'));
     assert.ok(serviceSource.includes("'PAGE_NOT_AUTHORISED'"));
   });
 
@@ -81,9 +81,10 @@ describe('Facebook direct page validation fallback (J-6.7F2 / J-6.7F3)', () => {
     assert.equal(FACEBOOK_OAUTH_BASIC_SCOPES.includes('business_management'), false);
   });
 
-  it('known Young Guns Page id is server constant not browser input', () => {
+  it('known Young Guns Page id is historical diagnostic constant — not selection authority', () => {
     assert.equal(YOUNG_GUNS_FACEBOOK_PAGE_ID, '61564442420962');
-    assert.ok(serviceSource.includes('resolvePendingPageCandidate'));
+    assert.ok(serviceSource.includes('resolveFacebookHistoricalPageReference'));
+    assert.ok(serviceSource.includes('historicalPageReference'));
   });
 
   it('Instagram/TikTok social connection service unchanged for direct lookup', () => {

@@ -13,6 +13,7 @@ import type {
   FacebookPageDiscoveryRow,
   FacebookDirectPageLookupSanitized,
   FacebookPendingPageCandidate,
+  FacebookHistoricalPageReference,
   FacebookBusinessPortfolioDiscoveryResult,
   FacebookPageIdentityDisplay,
   FacebookPermission,
@@ -79,6 +80,7 @@ export type FacebookPagesDiscoveryResponse = FacebookCombinedPageDiscoveryResult
   pages: FacebookPageDiscoveryRow[];
   diagnosis: FacebookPageDiscoveryDiagnosis;
   pendingPageCandidate: FacebookPendingPageCandidate | null;
+  historicalPageReference: FacebookHistoricalPageReference | null;
   directLookup: FacebookDirectPageLookupSanitized | null;
   businessPortfolio: FacebookBusinessPortfolioDiscoveryResult | null;
   needsBusinessPortfolioAccess: boolean;
@@ -203,6 +205,14 @@ export function startFacebookOAuth(accessToken: string, returnPath?: string) {
 
 export function startFacebookBusinessPortfolioOAuth(accessToken: string, returnPath?: string) {
   return request<{ authorizationUrl: string }>(`${BASE}/oauth/start-business-portfolio`, {
+    method: 'POST',
+    accessToken,
+    body: { returnPath },
+  });
+}
+
+export function startFacebookReconnectWizardOAuth(accessToken: string, returnPath?: string) {
+  return request<{ authorizationUrl: string }>(`${BASE}/oauth/start-reconnect-wizard`, {
     method: 'POST',
     accessToken,
     body: { returnPath },

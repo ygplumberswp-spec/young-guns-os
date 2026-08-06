@@ -23,10 +23,10 @@ import {
 const OLD_WRONG_PAGE_ID = '394603137072407';
 const NOW = new Date('2026-08-04T10:00:00.000Z');
 
-const verifiedCandidate = {
+const historicalReference = {
   pageId: YOUNG_GUNS_FACEBOOK_PAGE_ID,
   pageName: YOUNG_GUNS_FACEBOOK_PAGE_NAME,
-  source: 'tenant_known_page' as const,
+  source: 'historical_diagnostic' as const,
 };
 
 function connectionInput(
@@ -46,17 +46,17 @@ function connectionInput(
   };
 }
 
-describe('facebook page identity (J-6.7F7)', () => {
+describe('facebook page identity (J-6.7F7 / J-6.7F10)', () => {
   it('masks Page id suffix for Owner-facing UI', () => {
     assert.equal(maskFacebookPageId(YOUNG_GUNS_FACEBOOK_PAGE_ID), '···420962');
     assert.equal(maskFacebookPageId(OLD_WRONG_PAGE_ID), '···072407');
   });
 
-  it('detects mismatch between stored and verified Page ids', () => {
+  it('detects mismatch between stored and historical Page ids when no provider binding', () => {
     const identity = resolveFacebookPageIdentity({
       storedPageId: OLD_WRONG_PAGE_ID,
       storedPageName: 'Young Guns Plumbing - Cape Town',
-      verifiedCandidate,
+      historicalReference,
       hasStoredCredentials: true,
       pageAccessToken: 'page-token',
     });
@@ -66,11 +66,24 @@ describe('facebook page identity (J-6.7F7)', () => {
     assert.equal(identity.internallyConsistent, true);
   });
 
+  it('provider-verified Page id clears historical mismatch after reconnect wizard selection', () => {
+    const identity = resolveFacebookPageIdentity({
+      storedPageId: OLD_WRONG_PAGE_ID,
+      storedPageName: 'Young Guns Plumbing - Cape Town',
+      historicalReference,
+      providerVerifiedPageId: OLD_WRONG_PAGE_ID,
+      hasStoredCredentials: true,
+      pageAccessToken: 'page-token',
+    });
+    assert.equal(identity.mismatch, false);
+    assert.equal(identity.idsMatch, true);
+  });
+
   it('stored mismatch resolves to partial — never connected_limited', () => {
     const pageIdentity = resolveFacebookPageIdentity({
       storedPageId: OLD_WRONG_PAGE_ID,
       storedPageName: 'Young Guns Plumbing - Cape Town',
-      verifiedCandidate,
+      historicalReference,
       hasStoredCredentials: true,
       pageAccessToken: 'page-token',
     });
@@ -93,7 +106,7 @@ describe('facebook page identity (J-6.7F7)', () => {
     const identity = resolveFacebookPageIdentity({
       storedPageId: OLD_WRONG_PAGE_ID,
       storedPageName: 'Young Guns Plumbing - Cape Town',
-      verifiedCandidate,
+      historicalReference,
       hasStoredCredentials: true,
       pageAccessToken: 'page-token',
     });
@@ -103,15 +116,16 @@ describe('facebook page identity (J-6.7F7)', () => {
 
   it('correct Page with missing pages_read_engagement resolves to connected_limited', () => {
     const pageIdentity = resolveFacebookPageIdentity({
-      storedPageId: YOUNG_GUNS_FACEBOOK_PAGE_ID,
-      storedPageName: YOUNG_GUNS_FACEBOOK_PAGE_NAME,
-      verifiedCandidate,
+      storedPageId: OLD_WRONG_PAGE_ID,
+      storedPageName: 'Young Guns Plumbing - Cape Town',
+      historicalReference,
+      providerVerifiedPageId: OLD_WRONG_PAGE_ID,
       hasStoredCredentials: true,
       pageAccessToken: 'page-token',
     });
     const result = resolveFacebookConnectionState(
       connectionInput({
-        pageName: YOUNG_GUNS_FACEBOOK_PAGE_NAME,
+        pageName: 'Young Guns Plumbing - Cape Town',
         pageIdentity,
         grantedPermissions: ['pages_show_list', 'business_management'],
       }),
@@ -122,15 +136,16 @@ describe('facebook page identity (J-6.7F7)', () => {
 
   it('correct Page with read permission and successful verification resolves to connected', () => {
     const pageIdentity = resolveFacebookPageIdentity({
-      storedPageId: YOUNG_GUNS_FACEBOOK_PAGE_ID,
-      storedPageName: YOUNG_GUNS_FACEBOOK_PAGE_NAME,
-      verifiedCandidate,
+      storedPageId: OLD_WRONG_PAGE_ID,
+      storedPageName: 'Young Guns Plumbing - Cape Town',
+      historicalReference,
+      providerVerifiedPageId: OLD_WRONG_PAGE_ID,
       hasStoredCredentials: true,
       pageAccessToken: 'page-token',
     });
     const result = resolveFacebookConnectionState(
       connectionInput({
-        pageName: YOUNG_GUNS_FACEBOOK_PAGE_NAME,
+        pageName: 'Young Guns Plumbing - Cape Town',
         pageIdentity,
         grantedPermissions: [
           'pages_show_list',
@@ -155,7 +170,7 @@ describe('facebook page identity (J-6.7F7)', () => {
     const identity = resolveFacebookPageIdentity({
       storedPageId: OLD_WRONG_PAGE_ID,
       storedPageName: 'Young Guns Plumbing - Cape Town',
-      verifiedCandidate,
+      historicalReference,
       hasStoredCredentials: true,
       pageAccessToken: 'page-token',
     });
@@ -169,16 +184,12 @@ describe('facebook page identity (J-6.7F7)', () => {
     assert.equal(JSON.stringify(display).includes('page-token'), false);
   });
 
-  it('assertPageIdMatchesVerifiedCandidate rejects non-verified Page id', () => {
+  it('assertPageIdMatchesVerifiedCandidate is deprecated and always allows (J-6.7F10)', () => {
     const result = assertPageIdMatchesVerifiedCandidate({
       pageId: OLD_WRONG_PAGE_ID,
-      candidate: verifiedCandidate,
+      candidate: { pageId: YOUNG_GUNS_FACEBOOK_PAGE_ID },
     });
-    assert.equal(result.ok, false);
-    if (!result.ok) {
-      assert.match(result.reason, /verified Page/);
-      assert.equal(result.reason.includes(OLD_WRONG_PAGE_ID), false);
-    }
+    assert.equal(result.ok, true);
   });
 
   it('assertProviderPageRowMatchesSelection rejects cross-assigned Page token', () => {

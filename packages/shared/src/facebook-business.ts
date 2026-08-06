@@ -1918,6 +1918,7 @@ export type FacebookAuditAction =
   | 'connection.oauth_completed'
   | 'connection.business_portfolio_discovery'
   | 'connection.direct_page_lookup'
+  | 'connection.page_identity_mismatch'
   | 'connection.page_selected'
   | 'connection.verified'
   | 'connection.disconnected'

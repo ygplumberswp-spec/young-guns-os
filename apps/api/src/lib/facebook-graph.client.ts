@@ -836,6 +836,25 @@ export class FacebookGraphClient {
     return summaries;
   }
 
+  /** Page-token identity probe — GET /me?fields=id,name (J-6.7F10). */
+  async verifyPageTokenViaMe(
+    pageAccessToken: string,
+  ): Promise<{ id: string; name: string }> {
+    const body = await this.request<{ id?: string; name?: string }>('/me', {
+      accessToken: pageAccessToken,
+      searchParams: { fields: 'id,name' },
+    });
+
+    if (!body.id) {
+      throw new FacebookGraphError('unknown', 'Facebook returned no Page id for the Page access token.');
+    }
+
+    return {
+      id: body.id,
+      name: body.name ?? '',
+    };
+  }
+
   /** The real request that proves the connection works. */
   async verifyPage(
     pageId: string,

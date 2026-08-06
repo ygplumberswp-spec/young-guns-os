@@ -2,6 +2,7 @@ import { FACEBOOK_GRAPH_VERSION } from './facebook-business.js';
 import { resolveFacebookTokenExpiryDiagnosis } from './facebook-connection-health.js';
 import type {
   FacebookDirectPageLookupSanitized,
+  FacebookHistoricalPageReference,
   FacebookPendingPageCandidate,
 } from './facebook-direct-page-lookup.js';
 
@@ -69,6 +70,8 @@ export type FacebookPageDiscoveryResult = {
   diagnosis: FacebookPageDiscoveryDiagnosis;
   /** Server-controlled candidate used for Meta GET /{page-id} fallback (J-6.7F2). */
   pendingPageCandidate: FacebookPendingPageCandidate | null;
+  /** Historical Owner reference — diagnostic only, never selection authority (J-6.7F10). */
+  historicalPageReference: FacebookHistoricalPageReference | null;
   /** Sanitized direct Page lookup when /me/accounts is empty or unusable. */
   directLookup: FacebookDirectPageLookupSanitized | null;
 };

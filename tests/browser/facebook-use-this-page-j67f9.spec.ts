@@ -34,12 +34,13 @@ test.describe('Facebook Use this Page selection regression (J-6.7F9)', () => {
     expect(routeSource).toMatch(/selectPageSchema/);
   });
 
-  test('mismatch validates Page id in handleSelectPage, not discovery display', async () => {
+  test('selection is not gated by hardcoded verified Page id (J-6.7F10)', async () => {
     const pageSource = readFileSync(
       join(repoRoot, 'apps/web/src/pages/facebook-business/FacebookBusinessPage.tsx'),
       'utf8',
     );
-    expect(pageSource).toMatch(/Only the verified Young Guns Plumbing Page can be selected/);
+    expect(pageSource).not.toMatch(/Only the verified Young Guns Plumbing Page can be selected/);
+    expect(pageSource).toMatch(/startFacebookReconnectWizardOAuth/);
     expect(pageSource).toMatch(/pageSelectionError/);
     expect(pageSource).toMatch(/fetchFacebookPages/);
   });
@@ -58,9 +59,10 @@ test.describe('Facebook Use this Page selection regression (J-6.7F9)', () => {
       join(repoRoot, 'apps/api/src/services/facebook-business.service.ts'),
       'utf8',
     );
-    expect(serviceSource).toMatch(/assertPageIdMatchesVerifiedCandidate/);
+    expect(serviceSource).toMatch(/assertFacebookPageIdentityAgreement/);
+    expect(serviceSource).toMatch(/verifyPageTokenViaMe/);
     expect(serviceSource).toMatch(/assertProviderPageRowMatchesSelection/);
     expect(serviceSource).toMatch(/await this\.db\.transaction/);
-    expect(serviceSource).toMatch(/resolvePendingPageCandidate/);
+    expect(serviceSource).toMatch(/startReconnectWizardOAuth/);
   });
 });

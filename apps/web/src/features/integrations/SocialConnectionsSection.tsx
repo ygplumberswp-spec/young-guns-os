@@ -13,6 +13,7 @@ import {
   disconnectFacebook,
   startFacebookOAuth,
   startFacebookPageReadOAuth,
+  startFacebookReconnectWizardOAuth,
 } from '../../lib/facebook-business-api-client';
 import {
   checkSocialConnectionHealth,
@@ -91,7 +92,7 @@ function SocialConnectionCard({
     setSuccess(null);
     try {
       if (card.delegatedTo === 'facebook_business') {
-        const result = await startFacebookOAuth(accessToken, '/facebook-business');
+        const result = await startFacebookReconnectWizardOAuth(accessToken, '/facebook-business');
         window.location.assign(result.authorizationUrl);
         return;
       }

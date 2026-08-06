@@ -335,40 +335,23 @@ export function buildFacebookBusinessPortfolioDiscoveryDiagnosis(input: {
 
 export function assertClientPageIdMatchesBusinessDiscovery(input: {
   clientPageId: string;
-  candidate: FacebookPendingPageCandidate | null;
   businessPages: readonly FacebookBusinessPortfolioPageRow[];
   listedPageIds: string[];
 }): { allowed: true } | { allowed: false; reason: string } {
-  if (input.listedPageIds.includes(input.clientPageId)) {
+  if (input.listedPageIds.includes(input.clientPageId.trim())) {
     return { allowed: true };
   }
 
   const businessPage = input.businessPages.find(
-    (page) => page.id === input.clientPageId && page.selectable,
+    (page) => page.id === input.clientPageId.trim() && page.selectable,
   );
   if (businessPage) {
-    if (
-      input.candidate &&
-      (businessPage.id !== input.candidate.pageId ||
-        !facebookPageNamesMatch(input.candidate.pageName, businessPage.name))
-    ) {
-      return {
-        allowed: false,
-        reason:
-          'That Page id does not match the server-controlled pending Page candidate id and name.',
-      };
-    }
-    return { allowed: true };
-  }
-
-  if (input.candidate && input.clientPageId === input.candidate.pageId) {
     return { allowed: true };
   }
 
   return {
     allowed: false,
-    reason:
-      'That Page id is not among the Pages Meta returned for this account and no server-controlled Page candidate matches.',
+    reason: 'That Page id is not among the Pages Meta returned for this Facebook account.',
   };
 }
 

@@ -152,3 +152,29 @@ describe('FacebookGraphClient direct page lookup (J-6.7F3)', () => {
     assert.equal(token, 'resolved-token');
   });
 });
+
+describe('FacebookGraphClient Page-token identity (J-6.7F10)', () => {
+  it('verifyPageTokenViaMe requests GET /me?fields=id,name with Page token', async () => {
+    let requestedPath = '';
+    let requestedFields = '';
+    const client = new FacebookGraphClient(TEST_CONFIG, async (url) => {
+      const href = typeof url === 'string' ? url : url.toString();
+      const parsed = new URL(href);
+      requestedPath = parsed.pathname;
+      requestedFields = parsed.searchParams.get('fields') ?? '';
+      return new Response(
+        JSON.stringify({
+          id: '394603137072407',
+          name: 'Young Guns Plumbing - Cape Town',
+        }),
+        { status: 200 },
+      );
+    });
+
+    const identity = await client.verifyPageTokenViaMe('page-access-token');
+    assert.match(requestedPath, /\/me$/);
+    assert.equal(requestedFields, 'id,name');
+    assert.equal(identity.id, '394603137072407');
+    assert.equal(identity.name, 'Young Guns Plumbing - Cape Town');
+  });
+});

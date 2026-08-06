@@ -9,6 +9,7 @@ import {
   FACEBOOK_DIRECT_PAGE_TOKEN_FIELDS,
   resolveFacebookDirectPageLookupStatus,
   resolveFacebookPendingPageCandidate,
+  resolveFacebookHistoricalPageReference,
   YOUNG_GUNS_FACEBOOK_PAGE_ID,
   YOUNG_GUNS_FACEBOOK_PAGE_NAME,
 } from './facebook-direct-page-lookup.js';
@@ -69,15 +70,19 @@ describe('facebook direct page lookup (J-6.7F3 / J-6.7F5)', () => {
     assert.equal(FACEBOOK_DIRECT_PAGE_IDENTITY_FIELDS.includes('tasks'), false);
   });
 
-  it('resolves Young Guns pending candidate for verified tenant', () => {
+  it('resolves historical reference for Young Guns tenant — not a pending candidate', () => {
     const candidate = resolveFacebookPendingPageCandidate({
       companyId: '095aef76-fef5-4139-af37-a42f2d7e2faf',
       connectionMetadata: null,
       isYoungGunsTenant: true,
     });
-    assert.ok(candidate);
-    assert.equal(candidate?.pageId, YOUNG_GUNS_FACEBOOK_PAGE_ID);
-    assert.equal(candidate?.pageName, YOUNG_GUNS_FACEBOOK_PAGE_NAME);
+    assert.equal(candidate, null);
+
+    const historical = resolveFacebookHistoricalPageReference({ isYoungGunsTenant: true });
+    assert.ok(historical);
+    assert.equal(historical?.pageId, YOUNG_GUNS_FACEBOOK_PAGE_ID);
+    assert.equal(historical?.pageName, YOUNG_GUNS_FACEBOOK_PAGE_NAME);
+    assert.equal(historical?.source, 'historical_diagnostic');
   });
 
   it('classifies direct lookup success with Page token', () => {
@@ -278,32 +283,29 @@ describe('facebook direct page lookup (J-6.7F3 / J-6.7F5)', () => {
     );
   });
 
-  it('rejects arbitrary client Page id when not listed and not candidate', () => {
+  it('rejects arbitrary client Page id when not listed by Meta', () => {
     const result = assertClientPageIdMatchesPendingCandidate({
       clientPageId: '999999',
-      candidate: CANDIDATE,
       listedPageIds: [],
     });
     assert.equal(result.allowed, false);
     if (!result.allowed) {
-      assert.match(result.reason, /does not accept arbitrary Page ids/i);
+      assert.match(result.reason, /Pages Meta returned/);
     }
   });
 
-  it('allows listed Page id without matching candidate', () => {
+  it('allows listed Page id from Meta discovery', () => {
     const result = assertClientPageIdMatchesPendingCandidate({
       clientPageId: 'listed-page',
-      candidate: CANDIDATE,
       listedPageIds: ['listed-page'],
     });
     assert.equal(result.allowed, true);
   });
 
-  it('allows candidate Page id for direct lookup path', () => {
+  it('allows Meta-listed Page id even when not a historical diagnostic reference', () => {
     const result = assertClientPageIdMatchesPendingCandidate({
       clientPageId: YOUNG_GUNS_FACEBOOK_PAGE_ID,
-      candidate: CANDIDATE,
-      listedPageIds: [],
+      listedPageIds: [YOUNG_GUNS_FACEBOOK_PAGE_ID],
     });
     assert.equal(result.allowed, true);
   });

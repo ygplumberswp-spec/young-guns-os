@@ -23,6 +23,7 @@ export const FACEBOOK_PAGE_READ_OAUTH_EXPLANATION =
   'TITAN needs Page read access to verify your Page and read Page content needed for connection health. This does not allow TITAN to publish posts, reply to messages, manage advertising or make payments.';
 
 export const FACEBOOK_OAUTH_TIER_PAGE_READ_PREFIX = '__titan_oauth_tier=page_read__';
+export const FACEBOOK_OAUTH_TIER_RECONNECT_WIZARD_PREFIX = '__titan_oauth_tier=reconnect_wizard__';
 
 /** @deprecated Use buildFacebookConnectedLimitedDetail for tenant-specific Page names. */
 export const FACEBOOK_CONNECTED_LIMITED_DETAIL =
@@ -143,7 +144,12 @@ export function encodeFacebookPageReadOAuthReturnPath(returnPath: string): strin
   return `${FACEBOOK_OAUTH_TIER_PAGE_READ_PREFIX}${normalised}`;
 }
 
-export type FacebookOAuthTier = 'basic' | 'business_portfolio' | 'page_read';
+export function encodeFacebookReconnectWizardOAuthReturnPath(returnPath: string): string {
+  const normalised = returnPath.startsWith('/') ? returnPath : '/facebook-business';
+  return `${FACEBOOK_OAUTH_TIER_RECONNECT_WIZARD_PREFIX}${normalised}`;
+}
+
+export type FacebookOAuthTier = 'basic' | 'business_portfolio' | 'page_read' | 'reconnect_wizard';
 
 export function decodeFacebookOAuthTierFromReturnPath(storedReturnPath: string | null | undefined): {
   oauthTier: FacebookOAuthTier;
@@ -158,6 +164,14 @@ export function decodeFacebookOAuthTierFromReturnPath(storedReturnPath: string |
     const path = storedReturnPath.slice('__titan_oauth_tier=business_portfolio__'.length);
     return {
       oauthTier: 'business_portfolio',
+      returnPath: path.startsWith('/') ? path : fallback,
+    };
+  }
+
+  if (storedReturnPath.startsWith(FACEBOOK_OAUTH_TIER_RECONNECT_WIZARD_PREFIX)) {
+    const path = storedReturnPath.slice(FACEBOOK_OAUTH_TIER_RECONNECT_WIZARD_PREFIX.length);
+    return {
+      oauthTier: 'reconnect_wizard',
       returnPath: path.startsWith('/') ? path : fallback,
     };
   }

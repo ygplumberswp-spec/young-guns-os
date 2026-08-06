@@ -22,7 +22,7 @@ import {
   isYoungGunsFinanceTenant,
   resolveFacebookConnectionState,
   resolveFacebookPageIdentity,
-  resolveFacebookPendingPageCandidate,
+  resolveFacebookHistoricalPageReference,
   type SelectSocialConnectionAccountRequest,
   type SocialAccountSelection,
   type SocialConnectionHealthResult,
@@ -271,11 +271,14 @@ export class SocialConnectionService {
       .from(companies)
       .where(eq(companies.id, companyId))
       .limit(1);
-    const candidate = resolveFacebookPendingPageCandidate({
-      companyId,
-      connectionMetadata: row.metadata as Record<string, unknown> | null,
+    const historicalReference = resolveFacebookHistoricalPageReference({
       isYoungGunsTenant: isYoungGunsFinanceTenant(companyId, company ?? null),
     });
+    const metadata = row.metadata as Record<string, unknown> | null;
+    const providerVerifiedPageId =
+      typeof metadata?.providerVerifiedPageId === 'string'
+        ? metadata.providerVerifiedPageId
+        : null;
     let pageAccessToken: string | null = null;
     if (row.credentialsEncrypted && this.encryptionKey) {
       try {
@@ -289,7 +292,8 @@ export class SocialConnectionService {
     return resolveFacebookPageIdentity({
       storedPageId: row.pageId,
       storedPageName: row.pageName,
-      verifiedCandidate: candidate,
+      historicalReference,
+      providerVerifiedPageId,
       hasStoredCredentials: Boolean(row.credentialsEncrypted),
       pageAccessToken,
     });

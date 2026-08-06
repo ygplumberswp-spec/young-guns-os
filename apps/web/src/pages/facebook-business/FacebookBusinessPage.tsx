@@ -51,6 +51,7 @@ import {
   startFacebookOAuth,
   startFacebookBusinessPortfolioOAuth,
   startFacebookPageReadOAuth,
+  startFacebookReconnectWizardOAuth,
   transitionFacebookContent,
   type FacebookCommentView,
   type FacebookConnectionView,
@@ -184,7 +185,12 @@ export function FacebookBusinessPage() {
     const params = new URLSearchParams(window.location.search);
     const outcome = params.get('facebook');
     if (outcome === 'select-page') {
-      setSuccess('Facebook authorisation completed. Select the Young Guns Plumbing Page to finish.');
+      setSuccess('Facebook authorisation completed. Select a Page returned by Meta to finish.');
+      setTab('connection');
+    } else if (outcome === 'reconnect-wizard') {
+      setSuccess(
+        'Facebook reconnect authorisation completed. Select the Page returned by Meta to finish rebinding.',
+      );
       setTab('connection');
     } else if (outcome === 'page-read-granted') {
       setSuccess('Page read access granted. TITAN can now verify and read Page content from Meta.');
@@ -217,6 +223,14 @@ export function FacebookBusinessPage() {
     } finally {
       setIsBusy(false);
     }
+  }
+
+  async function handleReconnect() {
+    if (!accessToken || !canManage) return;
+    await withAction(async () => {
+      const result = await startFacebookReconnectWizardOAuth(accessToken, '/facebook-business');
+      window.location.assign(result.authorizationUrl);
+    });
   }
 
   async function handleConnect() {
@@ -252,7 +266,7 @@ export function FacebookBusinessPage() {
           `Verified Page found: ${verified.pageName} (ID ending ${maskFacebookPageId(verified.pageId)?.replace(/^···/, '') ?? 'unknown'}). Select it below to finish binding.`,
         );
       } else if (discovery.pages.some((page) => page.selectable)) {
-        setSuccess('Selectable Pages loaded from Meta. Choose Young Guns Plumbing – Cape Town.');
+        setSuccess('Selectable Pages loaded from Meta. Choose the Page you want to connect.');
       } else {
         setError(`${FACEBOOK_PAGE_DISCOVERY_STATUS_LABELS[discovery.status]}: ${discovery.detail}`);
       }
@@ -286,8 +300,9 @@ export function FacebookBusinessPage() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+    const outcome = params.get('facebook');
     if (
-      params.get('facebook') === 'select-page' &&
+      (outcome === 'select-page' || outcome === 'reconnect-wizard') &&
       accessToken &&
       canManage &&
       !pageDiscovery &&
@@ -307,14 +322,6 @@ export function FacebookBusinessPage() {
     if (!normalizedPageId) {
       setPageSelectionError(
         'The selected Page row is missing an id. Reload Pages from Meta and try again.',
-      );
-      return;
-    }
-
-    const verifiedPageId = pageDiscovery?.pendingPageCandidate?.pageId ?? null;
-    if (verifiedPageId && normalizedPageId !== verifiedPageId) {
-      setPageSelectionError(
-        'Only the verified Young Guns Plumbing Page can be selected for this company.',
       );
       return;
     }
@@ -612,7 +619,7 @@ export function FacebookBusinessPage() {
               onSelectPage={handleSelectPage}
               onCheck={handleCheck}
               onDisconnect={handleDisconnect}
-              onReconnect={handleConnect}
+              onReconnect={handleReconnect}
             />
           ) : null}
 

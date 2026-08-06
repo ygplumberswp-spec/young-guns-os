@@ -33,9 +33,12 @@ import {
   buildFacebookPageDiscoveryDiagnosis,
   mapRawFacebookAccountRow,
   resolveFacebookPageDiscoveryStatus,
-  assertClientPageIdMatchesBusinessDiscovery,
-  assertPageIdMatchesVerifiedCandidate,
+  assertClientPageIdInMetaDiscovery,
+  assertFacebookPageIdentityAgreement,
   assertProviderPageRowMatchesSelection,
+  encodeFacebookReconnectWizardOAuthReturnPath,
+  resolveFacebookHistoricalPageReference,
+  sanitizeFacebookPageIdentityAgreement,
   buildFacebookDirectPageLookupSanitized,
   buildFacebookPageIdentityDisplay,
   buildFacebookBusinessPortfolioDiscoveryDiagnosis,
@@ -59,6 +62,7 @@ import {
   type FacebookCombinedPageDiscoveryResult,
   type FacebookBusinessPortfolioDiscoveryResult,
   type FacebookBusinessPortfolioPageRow,
+  type FacebookHistoricalPageReference,
   type FacebookPendingPageCandidate,
   type FacebookPageDiscoveryRow,
   isYoungGunsFinanceTenant,
@@ -265,6 +269,13 @@ export class FacebookBusinessService {
     return isYoungGunsFinanceTenant(companyId, company ?? null);
   }
 
+  private async resolveHistoricalPageReferenceForCompany(
+    companyId: string,
+  ): Promise<FacebookHistoricalPageReference | null> {
+    const isYoungGuns = await this.isYoungGunsTenant(companyId);
+    return resolveFacebookHistoricalPageReference({ isYoungGunsTenant: isYoungGuns });
+  }
+
   private async resolvePendingPageCandidateForCompany(input: {
     companyId: string;
     connectionMetadata?: Record<string, unknown> | null;
@@ -340,14 +351,17 @@ export class FacebookBusinessService {
 
   private async buildPageIdentity(row: ConnectionRow): Promise<FacebookPageIdentityDiagnosis> {
     const credentials = this.decryptCredentials(row);
-    const candidate = await this.resolvePendingPageCandidateForCompany({
-      companyId: row.companyId,
-      connectionMetadata: row.metadata as Record<string, unknown> | null,
-    });
+    const metadata = row.metadata as Record<string, unknown> | null;
+    const historicalReference = await this.resolveHistoricalPageReferenceForCompany(row.companyId);
+    const providerVerifiedPageId =
+      typeof metadata?.providerVerifiedPageId === 'string'
+        ? metadata.providerVerifiedPageId
+        : null;
     return resolveFacebookPageIdentity({
       storedPageId: row.pageId,
       storedPageName: row.pageName,
-      verifiedCandidate: candidate,
+      historicalReference,
+      providerVerifiedPageId,
       hasStoredCredentials: Boolean(row.credentialsEncrypted),
       pageAccessToken: credentials?.pageAccessToken ?? null,
     });
@@ -523,6 +537,46 @@ export class FacebookBusinessService {
     await this.audit(actor, 'connection.oauth_started', row.id, {
       oauthFlow: 'business_portfolio_scopes',
       requestedOAuthTier: 'business_portfolio',
+      requestedScopes: ['pages_show_list', 'business_management'],
+    });
+
+    return { authorizationUrl: this.graph().buildBusinessPortfolioAuthorizeUrl(state) };
+  }
+
+  /**
+   * Reconnect wizard — refreshes the user token via Meta OAuth while preserving
+   * the existing Page binding until the Owner completes verified Page selection.
+   */
+  async startReconnectWizardOAuth(
+    actor: FacebookActor,
+    returnPath?: string | null,
+  ): Promise<{ authorizationUrl: string }> {
+    this.assertManageConnection(actor);
+    this.requireAppConfig();
+    this.requireEncryptionKey();
+
+    const row = await this.loadConnection(actor.companyId);
+    if (!row?.credentialsEncrypted) {
+      throw new FacebookBusinessError(
+        'NOT_AUTHORISED',
+        'Connect Facebook before using the reconnect wizard.',
+      );
+    }
+
+    const state = randomBytes(32).toString('base64url');
+    const sanitisedPath = sanitiseReturnPath(returnPath);
+    await this.db.insert(fbOauthStates).values({
+      companyId: actor.companyId,
+      userId: actor.userId,
+      stateHash: hashOAuthState(state),
+      returnPath: encodeFacebookReconnectWizardOAuthReturnPath(sanitisedPath),
+      initiatorRoleName: actor.roleName,
+      expiresAt: new Date(Date.now() + OAUTH_STATE_TTL_MS),
+    });
+
+    await this.audit(actor, 'connection.oauth_started', row.id, {
+      oauthFlow: 'reconnect_wizard_scopes',
+      requestedOAuthTier: 'reconnect_wizard',
       requestedScopes: ['pages_show_list', 'business_management'],
     });
 
@@ -737,6 +791,71 @@ export class FacebookBusinessService {
       return { redirectUrl: `${this.appUrl.replace(/\/$/, '')}${browserReturnPath}?${query}` };
     }
 
+    if (oauthTier === 'reconnect_wizard') {
+      if (!existing?.credentialsEncrypted) {
+        throw new FacebookBusinessError(
+          'NOT_AUTHORISED',
+          'Reconnect wizard requires an existing Facebook connection.',
+        );
+      }
+
+      const existingCredentials = decryptFacebookCredentials(
+        existing.credentialsEncrypted,
+        encryptionKey,
+      );
+      const mergedCredentials: FacebookStoredCredentials = {
+        version: 1,
+        pageAccessToken: existingCredentials.pageAccessToken,
+        userAccessToken: longLived.accessToken,
+        expiresAt: expiresAt?.toISOString() ?? existingCredentials.expiresAt,
+        grantedScopes: grantedPermissions,
+      };
+
+      const priorMetadata = (existing.metadata as Record<string, unknown> | null) ?? {};
+      await this.db
+        .update(fbConnections)
+        .set({
+          grantedPermissions,
+          tokenExpiresAt: expiresAt,
+          credentialsEncrypted: encryptFacebookCredentials(mergedCredentials, encryptionKey),
+          metadata: {
+            ...priorMetadata,
+            reconnectWizardActive: true,
+            reconnectWizardStartedAt: new Date().toISOString(),
+          },
+          updatedAt: new Date(),
+        })
+        .where(eq(fbConnections.id, existing.id));
+
+      await this.recordConnectionEvent({
+        companyId: stateRow.companyId,
+        connectionId: existing.id,
+        eventType: 'oauth_reconnect_wizard_completed',
+        stateBefore,
+        stateAfter: existing.state,
+        message:
+          'Facebook reconnect authorisation completed. Select the Page returned by Meta to finish rebinding.',
+        actorUserId: stateRow.userId,
+        metadata: { grantedPermissions, oauthTier: 'reconnect_wizard' },
+      });
+
+      await this.audit(
+        {
+          companyId: stateRow.companyId,
+          userId: stateRow.userId,
+          roleName: stateRow.initiatorRoleName ?? 'Company Owner',
+          permissions: [],
+        },
+        'connection.oauth_completed',
+        existing.id,
+        { oauthTier: 'reconnect_wizard' },
+      );
+
+      return {
+        redirectUrl: `${this.appUrl.replace(/\/$/, '')}${browserReturnPath}?facebook=reconnect-wizard`,
+      };
+    }
+
     const isBusinessPortfolioOAuth = oauthTier === 'business_portfolio';
     const businessManagementGranted = grantedPermissions.includes('business_management');
 
@@ -891,6 +1010,9 @@ export class FacebookBusinessService {
       companyId: actor.companyId,
       connectionMetadata: row?.metadata as Record<string, unknown> | null,
     });
+    const historicalPageReference = await this.resolveHistoricalPageReferenceForCompany(
+      actor.companyId,
+    );
 
     let directLookup = null;
     const shouldAttemptDirectLookup =
@@ -990,8 +1112,8 @@ export class FacebookBusinessService {
               businessPortfolio?.status === 'BUSINESS_PAGE_DISCOVERED'
                 ? businessPortfolio.detail
                 : directLookup?.selectable === true
-                  ? 'Meta confirmed Young Guns Plumbing – Cape Town via direct Page lookup. Confirm this Page to finish the connection.'
-                  : 'Select the Young Guns Plumbing Page to finish the connection.',
+                  ? 'Meta confirmed a Page via direct lookup. Confirm this Page to finish the connection.'
+                  : 'Select the Facebook Page returned by Meta to finish the connection.',
           }
         : status;
 
@@ -1017,6 +1139,7 @@ export class FacebookBusinessService {
         appliedFilters,
       }),
       pendingPageCandidate,
+      historicalPageReference,
       directLookup,
       businessPortfolio,
       needsBusinessPortfolioAccess: needsBusinessPortfolioAccessFlag,
@@ -1130,20 +1253,14 @@ export class FacebookBusinessService {
     const pages = await graph.listPages(userToken);
     const pendingPageCandidate = discovery.pendingPageCandidate;
     const businessPages = discovery.businessPortfolio?.pages ?? [];
+    const historicalReference = discovery.historicalPageReference;
 
-    const verifiedPageCheck = assertPageIdMatchesVerifiedCandidate({
-      pageId,
-      candidate: pendingPageCandidate,
-    });
-    if (!verifiedPageCheck.ok) {
-      throw new FacebookBusinessError('PAGE_NOT_AUTHORISED', verifiedPageCheck.reason);
-    }
-
-    const pageIdCheck = assertClientPageIdMatchesBusinessDiscovery({
+    const pageIdCheck = assertClientPageIdInMetaDiscovery({
       clientPageId: pageId,
-      candidate: pendingPageCandidate,
-      businessPages,
       listedPageIds: pages.map((entry) => entry.id),
+      businessPortfolioPageIds: businessPages
+        .filter((entry) => entry.selectable)
+        .map((entry) => entry.id),
     });
     if (!pageIdCheck.allowed) {
       throw new FacebookBusinessError('PAGE_NOT_AUTHORISED', pageIdCheck.reason);
@@ -1232,6 +1349,30 @@ export class FacebookBusinessService {
       tasks: page.tasks,
     };
 
+    const tokenMeIdentity = await this.probe(() =>
+      graph.verifyPageTokenViaMe(page.accessToken),
+    );
+    if (!tokenMeIdentity.outcome.ok || !tokenMeIdentity.value) {
+      throw new FacebookBusinessError(
+        'PAGE_IDENTITY_MISMATCH',
+        tokenMeIdentity.outcome.message ||
+          'Meta did not return a complete Page identity for the Page access token.',
+      );
+    }
+
+    const identityAgreement = assertFacebookPageIdentityAgreement({
+      accountsPageId: page.id,
+      accountsPageName: page.name,
+      tokenMePageId: tokenMeIdentity.value.id,
+      tokenMePageName: tokenMeIdentity.value.name,
+    });
+    if (!identityAgreement.ok) {
+      await this.audit(actor, 'connection.page_identity_mismatch', row.id, {
+        agreement: sanitizeFacebookPageIdentityAgreement(identityAgreement.agreement),
+      });
+      throw new FacebookBusinessError('PAGE_IDENTITY_MISMATCH', identityAgreement.reason);
+    }
+
     const verification = await this.probe(() => graph.verifyPage(page.id, page.accessToken));
     const priorMetadata = row.metadata as Record<string, unknown> | null;
     const verificationUpdate = this.verificationColumns(
@@ -1243,6 +1384,10 @@ export class FacebookBusinessService {
       ...(verificationUpdate.metadata ?? priorMetadata ?? {}),
       pageSelectedAt,
       pageIdentityVerified: true,
+      providerVerifiedPageId: page.id,
+      providerVerifiedPageName: verification.value?.name || page.name,
+      pageIdentityAgreement: sanitizeFacebookPageIdentityAgreement(identityAgreement.agreement),
+      reconnectWizardActive: false,
     };
 
     await this.db.transaction(async (tx) => {
@@ -1275,7 +1420,8 @@ export class FacebookBusinessService {
       const identityAfterWrite = resolveFacebookPageIdentity({
         storedPageId: page.id,
         storedPageName: verification.value?.name || page.name,
-        verifiedCandidate: pendingPageCandidate,
+        historicalReference,
+        providerVerifiedPageId: page.id,
         hasStoredCredentials: true,
         pageAccessToken: page.accessToken,
       });
@@ -1323,6 +1469,7 @@ export class FacebookBusinessService {
       pageId: page.id,
       pageName: page.name,
       state: state.state,
+      identityAgreement: sanitizeFacebookPageIdentityAgreement(identityAgreement.agreement),
     });
 
     // Webhook delivery is best effort: a missing subscription degrades to

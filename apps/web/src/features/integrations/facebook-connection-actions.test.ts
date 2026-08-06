@@ -33,7 +33,10 @@ describe('facebook connection actions click path (J-6.7F8)', () => {
     assert.ok(pageSource.includes('pagesLoadInFlight'));
     assert.ok(pageSource.includes('fetchFacebookPages'));
     assert.equal(pageSource.includes('choosePageHref="/facebook-business"'), false);
-    assert.ok(pageSource.includes("params.get('facebook') === 'select-page'"));
+    assert.ok(
+      pageSource.includes("outcome === 'select-page'") &&
+        pageSource.includes("outcome === 'reconnect-wizard'"),
+    );
     assert.ok(pageSource.includes('pageSelectionMismatch || !isConnectedLimited'));
   });
 

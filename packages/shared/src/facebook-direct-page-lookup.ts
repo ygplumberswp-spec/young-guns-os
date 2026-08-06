@@ -14,6 +14,13 @@ import { rowMatchesYoungGunsPageName } from './facebook-page-discovery.js';
 export const YOUNG_GUNS_FACEBOOK_PAGE_ID = '61564442420962';
 export const YOUNG_GUNS_FACEBOOK_PAGE_NAME = 'Young Guns Plumbing – Cape Town';
 
+/** Historical Owner reference — diagnostic only, never selection authority (J-6.7F10). */
+export type FacebookHistoricalPageReference = {
+  pageId: string;
+  pageName: string;
+  source: 'historical_diagnostic';
+};
+
 /** Stage 1 — confirm Page object identity only. */
 export const FACEBOOK_DIRECT_PAGE_IDENTITY_FIELDS = 'id,name';
 
@@ -103,6 +110,17 @@ export type FacebookDirectPageLookupRaw = {
   tasks?: string[];
 };
 
+export function resolveFacebookHistoricalPageReference(input: {
+  isYoungGunsTenant: boolean;
+}): FacebookHistoricalPageReference | null {
+  if (!input.isYoungGunsTenant) return null;
+  return {
+    pageId: YOUNG_GUNS_FACEBOOK_PAGE_ID,
+    pageName: YOUNG_GUNS_FACEBOOK_PAGE_NAME,
+    source: 'historical_diagnostic',
+  };
+}
+
 export function resolveFacebookPendingPageCandidate(input: {
   companyId: string;
   connectionMetadata?: Record<string, unknown> | null;
@@ -122,14 +140,6 @@ export function resolveFacebookPendingPageCandidate(input: {
     }
   }
 
-  if (input.isYoungGunsTenant) {
-    return {
-      pageId: YOUNG_GUNS_FACEBOOK_PAGE_ID,
-      pageName: YOUNG_GUNS_FACEBOOK_PAGE_NAME,
-      source: 'tenant_known_page',
-    };
-  }
-
   return null;
 }
 
@@ -141,30 +151,16 @@ export function facebookPageNamesMatch(expected: string, actual: string | undefi
 
 export function assertClientPageIdMatchesPendingCandidate(input: {
   clientPageId: string;
-  candidate: FacebookPendingPageCandidate | null;
   listedPageIds: string[];
 }): { allowed: true } | { allowed: false; reason: string } {
-  if (input.listedPageIds.includes(input.clientPageId)) {
+  if (input.listedPageIds.includes(input.clientPageId.trim())) {
     return { allowed: true };
   }
 
-  if (!input.candidate) {
-    return {
-      allowed: false,
-      reason:
-        'That Page id is not among the Pages Meta returned for this account and no server-controlled Page candidate is configured.',
-    };
-  }
-
-  if (input.clientPageId !== input.candidate.pageId) {
-    return {
-      allowed: false,
-      reason:
-        'That Page id does not match the server-controlled pending Page candidate. TITAN does not accept arbitrary Page ids from the browser.',
-    };
-  }
-
-  return { allowed: true };
+  return {
+    allowed: false,
+    reason: 'That Page id is not among the Pages Meta returned for this Facebook account.',
+  };
 }
 
 export function isFacebookPageObjectInaccessibleError(input: {
