@@ -49,7 +49,7 @@ const STAFF_ROUTE_REGISTRY: RoutePrefetchEntry[] = [
     load: () => import('../pages/dashboard/DashboardPage'),
     permissions: ['analytics:read', 'executive:read', 'jobs:read', '*'],
     priority: 1,
-    dataQueries: ['crm/stats', 'jobs/stats', 'finance/stats'],
+    dataQueries: ['dashboard/executive-summary'],
     safeToPreload: true,
   },
   {
@@ -708,11 +708,9 @@ export function scheduleDashboardBackgroundPrep(context: StaffPreloadContext): v
     async (signal) => {
       if (signal.aborted) return;
       const queries = [
-        'crm/customers',
-        'jobs/list',
-        'finance/quotes',
-        'finance/invoices',
-        'team/members',
+        'dashboard/executive-summary',
+        'integrations/hub-dashboard:simple',
+        'integrations/auto-sync-statuses',
       ];
       prefetchDataQueries(queries, context, signal);
     },

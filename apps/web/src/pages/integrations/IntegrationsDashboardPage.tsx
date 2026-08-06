@@ -112,7 +112,7 @@ export function IntegrationsDashboardPage() {
     isLoading: hubLoading,
     refetch: refetchHub,
   } = useStaffCachedQuery({
-    queryKey: 'integrations/hub-dashboard',
+    queryKey: `integrations/hub-dashboard:${viewMode === 'simple' ? 'simple' : 'full'}`,
     enabled: canView,
     fetcher: (signal) =>
       fetchIntegrationHubDashboard(accessToken!, { signal, simple: viewMode === 'simple' }),

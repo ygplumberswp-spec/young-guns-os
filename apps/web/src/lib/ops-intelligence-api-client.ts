@@ -10,9 +10,11 @@ import { request } from './api-client';
 
 export async function fetchOpsIntelligenceSnapshot(
   accessToken: string,
+  options?: { signal?: AbortSignal },
 ): Promise<OpsIntelligenceSnapshot> {
   const data = await request<{ snapshot: OpsIntelligenceSnapshot }>('/ops-intelligence/snapshot', {
     accessToken,
+    signal: options?.signal,
   });
   return data.snapshot;
 }
