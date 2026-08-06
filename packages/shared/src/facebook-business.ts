@@ -20,8 +20,11 @@
 import {
   buildFacebookConnectedLimitedDetail,
   FACEBOOK_PAGE_READ_FEATURE_PERMISSION,
+  FACEBOOK_PARTIAL_STATE_LABEL_ACCOUNT_SELECTION,
+  facebookMissingContentUpgradePermissions,
   hasFacebookBasicDiscoveryPermissions,
   hasFacebookPageReadEngagement,
+  resolveFacebookPartialStateLabel,
 } from './facebook-connection-health.js';
 import {
   FACEBOOK_SELECTED_PAGE_MISMATCH_MESSAGE,
@@ -351,7 +354,7 @@ export const FACEBOOK_CONNECTION_STATE_LABELS: Record<FacebookConnectionState, s
   disconnected: 'Disconnected',
   connected: 'Connected',
   connected_limited: 'Connected — limited permissions',
-  partial: 'Account selection required',
+  partial: FACEBOOK_PARTIAL_STATE_LABEL_ACCOUNT_SELECTION,
   missing_permission: 'Missing permission',
   reauthorisation_required: 'Reauthorisation required',
   expired: 'Expired',
@@ -432,9 +435,10 @@ export function resolveFacebookConnectionState(
     detail: string,
     requiredAction: string | null,
     mismatchReason: string | null = null,
+    labelOverride?: string,
   ): FacebookConnectionStateResult => ({
     state,
-    label: FACEBOOK_CONNECTION_STATE_LABELS[state],
+    label: labelOverride ?? FACEBOOK_CONNECTION_STATE_LABELS[state],
     usable: state === 'connected',
     detail,
     requiredAction,
@@ -442,6 +446,32 @@ export function resolveFacebookConnectionState(
     capabilities,
     missingPermissions,
   });
+
+  const partialResult = (
+    detail: string,
+    requiredAction: string | null,
+    mismatchReason: string | null = null,
+  ): FacebookConnectionStateResult =>
+    build(
+      'partial',
+      detail,
+      requiredAction,
+      mismatchReason,
+      resolveFacebookPartialStateLabel(input.pageSelected),
+    );
+
+  const connectedWithStoredPage = (detail: string, requiredAction: string | null = null) => {
+    const missingContent = facebookMissingContentUpgradePermissions(input.grantedPermissions);
+    if (missingContent.length > 0) {
+      return build(
+        'connected',
+        detail,
+        requiredAction ??
+          'Enable Facebook content features when you are ready to publish, moderate comments, subscribe webhooks or read insights.',
+      );
+    }
+    return build('connected', detail, requiredAction);
+  };
 
   const pageIdentity = input.pageIdentity ?? null;
   const identityBound = pageIdentity
@@ -514,16 +544,14 @@ export function resolveFacebookConnectionState(
   }
 
   if (!input.pageSelected) {
-    return build(
-      'partial',
+    return partialResult(
       'Facebook authorisation succeeded but no Page has been selected, so TITAN cannot read or publish anything.',
       'Select the Young Guns Plumbing Page to finish the connection.',
     );
   }
 
   if (pageIdentity?.mismatch) {
-    return build(
-      'partial',
+    return partialResult(
       FACEBOOK_SELECTED_PAGE_MISMATCH_MESSAGE,
       'Choose the correct Young Guns Plumbing Page to finish the connection.',
       pageIdentity.mismatchReason,
@@ -535,17 +563,36 @@ export function resolveFacebookConnectionState(
   }
 
   if (!input.lastVerification) {
+    if (basicPageLinked && !missingPageRead) {
+      const pageLabel = input.pageName?.trim() || 'Your Page';
+      return connectedWithStoredPage(
+        `${pageLabel} is connected. TITAN has not recorded a recent health check against Facebook yet.`,
+        'Run a connection check to confirm health against Facebook.',
+      );
+    }
     if (basicPageLinked) {
       return connectedLimited();
     }
-    return build(
-      'partial',
+    return partialResult(
       'Credentials and a Page are stored, but no successful Facebook request has been recorded yet.',
       'Run a connection check to verify the Page against Facebook.',
     );
   }
 
   if (!input.lastVerification.ok) {
+    if (
+      basicPageLinked &&
+      !missingPageRead &&
+      input.lastVerification.message &&
+      !input.lastVerification.authError &&
+      !input.lastVerification.permissionError
+    ) {
+      const pageLabel = input.pageName?.trim() || 'Your Page';
+      return connectedWithStoredPage(
+        `${pageLabel} is connected. The last health check reported: ${input.lastVerification.message}`,
+        'Run a connection check to refresh health against Facebook.',
+      );
+    }
     if (input.lastVerification.permissionError && basicPageLinked) {
       return connectedLimited();
     }
@@ -559,8 +606,7 @@ export function resolveFacebookConnectionState(
     if (basicPageLinked && missingPageRead) {
       return connectedLimited();
     }
-    return build(
-      'partial',
+    return partialResult(
       `The last Facebook request did not succeed: ${input.lastVerification.message}`,
       'Run a connection check for details.',
     );
@@ -583,10 +629,8 @@ export function resolveFacebookConnectionState(
   }
 
   if (missingPermissions.length > 0) {
-    return build(
-      'connected',
-      `Connected and verified against Facebook. Optional capabilities (publishing, Messenger, leads, insights) remain unavailable until Meta grants additional permissions — use Reconnect when your Meta app use case includes them.`,
-      null,
+    return connectedWithStoredPage(
+      `Connected and verified against Facebook. Optional capabilities (publishing, Messenger, leads, insights) remain unavailable until Meta grants additional permissions.`,
     );
   }
 
@@ -712,6 +756,51 @@ export function assertFacebookPageReadOAuthUrl(authorizeUrl: string): {
       violations.push(`missing required page read scope: ${required}`);
     }
   }
+  return { ok: violations.length === 0, violations };
+}
+
+/** Validates content-features OAuth URL requests only configured content scopes (J-6.7F13). */
+export function assertFacebookContentFeaturesOAuthUrl(authorizeUrl: string): {
+  ok: boolean;
+  violations: string[];
+} {
+  const violations: string[] = [];
+  if (usesFacebookLoginForBusinessConfig(authorizeUrl)) {
+    violations.push('content features flow must not use config_id');
+    return { ok: false, violations };
+  }
+
+  const scopes = parseFacebookOAuthScopesFromAuthorizeUrl(authorizeUrl);
+  const forbidden = [
+    'pages_messaging',
+    'leads_retrieval',
+    'ads_read',
+    'ads_management',
+    'instagram_basic',
+    'instagram_content_publish',
+  ] as const;
+
+  for (const scope of forbidden) {
+    if (scopes.includes(scope)) {
+      violations.push(`forbidden content features OAuth scope: ${scope}`);
+    }
+  }
+
+  for (const required of [
+    'pages_show_list',
+    'business_management',
+    'pages_read_engagement',
+    'pages_read_user_content',
+    'pages_manage_posts',
+    'pages_manage_engagement',
+    'pages_manage_metadata',
+    'read_insights',
+  ]) {
+    if (!scopes.includes(required)) {
+      violations.push(`missing required content features scope: ${required}`);
+    }
+  }
+
   return { ok: violations.length === 0, violations };
 }
 

@@ -48,8 +48,12 @@ import {
   buildFacebookVerificationTimestamps,
   decodeFacebookOAuthTierFromReturnPath,
   encodeFacebookBusinessPortfolioOAuthReturnPath,
+  encodeFacebookContentFeaturesOAuthReturnPath,
   encodeFacebookPageReadOAuthReturnPath,
+  FACEBOOK_CONTENT_FEATURES_OAUTH_EXPLANATION,
+  FACEBOOK_OAUTH_CONTENT_FEATURE_SCOPES,
   FACEBOOK_PAGE_READ_OAUTH_EXPLANATION,
+  resolveFacebookEffectiveVerification,
   FACEBOOK_SELECTED_PAGE_MISMATCH_MESSAGE,
   FACEBOOK_SYNC_INACTIVE_UNTIL_READ_PERMISSION,
   facebookPageIdentityAllowsPageReadOAuth,
@@ -388,30 +392,23 @@ export class FacebookBusinessService {
       lastSyncedAt: row?.lastSyncedAt ?? null,
     });
 
-    const verification: FacebookVerificationOutcome | null = timestamps.lastSuccessfulVerificationAt
-      ? {
-          ok: true,
-          authError: false,
-          permissionError: false,
-          providerUnavailable: false,
-          checkedAt: new Date(timestamps.lastSuccessfulVerificationAt),
-          message: row?.lastVerificationMessage ?? 'Facebook responded successfully.',
-        }
-      : timestamps.lastFailedVerificationAt
-        ? {
-            ok: false,
-            authError: row?.lastVerificationAuthError ?? false,
-            permissionError: row?.lastVerificationPermissionError ?? false,
-            providerUnavailable: row?.lastVerificationProviderUnavailable ?? false,
-            checkedAt: new Date(timestamps.lastFailedVerificationAt),
-            message:
-              ((row?.metadata as Record<string, unknown> | undefined)?.verification as
-                | { lastFailedVerificationMessage?: string }
-                | undefined)?.lastFailedVerificationMessage ??
-              row?.lastVerificationMessage ??
-              '',
-          }
-        : null;
+    const metadata = row?.metadata as Record<string, unknown> | null;
+    const verificationMeta = (metadata?.verification ?? metadata) as
+      | { lastFailedVerificationMessage?: string }
+      | undefined;
+
+    const verification = resolveFacebookEffectiveVerification({
+      timestamps,
+      lastVerificationOk: row?.lastVerificationOk ?? null,
+      lastVerifiedAt: row?.lastVerifiedAt ?? null,
+      lastVerificationMessage: row?.lastVerificationMessage ?? null,
+      lastVerificationAuthError: row?.lastVerificationAuthError ?? false,
+      lastVerificationPermissionError: row?.lastVerificationPermissionError ?? false,
+      lastVerificationProviderUnavailable: row?.lastVerificationProviderUnavailable ?? false,
+      pageSelected: Boolean(row?.pageId),
+      grantedPermissions: row?.grantedPermissions ?? [],
+      failedVerificationMessage: verificationMeta?.lastFailedVerificationMessage ?? null,
+    });
 
     return resolveFacebookConnectionState({
       appConfigured: this.isAppConfigured(),
@@ -476,6 +473,7 @@ export class FacebookBusinessService {
           }
         : FACEBOOK_SYNC_POLICY,
       pageReadOAuthExplanation: FACEBOOK_PAGE_READ_OAUTH_EXPLANATION,
+      contentFeaturesOAuthExplanation: FACEBOOK_CONTENT_FEATURES_OAUTH_EXPLANATION,
       brand: YOUNG_GUNS_BRAND,
       // Tokens are never included in any response shape.
       hasStoredCredentials: Boolean(row?.credentialsEncrypted),
@@ -637,6 +635,45 @@ export class FacebookBusinessService {
     });
 
     return { authorizationUrl: this.graph().buildPageReadAuthorizeUrl(state) };
+  }
+
+  /** Re-authorises with publishing/moderation/insights scopes after Page is connected (J-6.7F13). */
+  async startContentFeaturesOAuth(
+    actor: FacebookActor,
+    returnPath?: string | null,
+  ): Promise<{ authorizationUrl: string }> {
+    this.assertManageConnection(actor);
+    this.requireAppConfig();
+    this.requireEncryptionKey();
+
+    const row = await this.loadConnection(actor.companyId);
+    const credentials = this.decryptCredentials(row);
+    if (!row?.pageId || !credentials?.userAccessToken || !credentials?.pageAccessToken) {
+      throw new FacebookBusinessError(
+        'NOT_AUTHORISED',
+        'Connect and select a Facebook Page before enabling content features.',
+      );
+    }
+
+    const state = randomBytes(32).toString('base64url');
+    const sanitisedPath = sanitiseReturnPath(returnPath);
+    await this.db.insert(fbOauthStates).values({
+      companyId: actor.companyId,
+      userId: actor.userId,
+      stateHash: hashOAuthState(state),
+      returnPath: encodeFacebookContentFeaturesOAuthReturnPath(sanitisedPath),
+      initiatorRoleName: actor.roleName,
+      expiresAt: new Date(Date.now() + OAUTH_STATE_TTL_MS),
+    });
+
+    await this.audit(actor, 'connection.oauth_started', row.id, {
+      oauthFlow: 'content_features_scopes',
+      requestedOAuthTier: 'content_features',
+      requestedScopes: [...FACEBOOK_OAUTH_CONTENT_FEATURE_SCOPES, 'public_profile'],
+      pageId: row.pageId,
+    });
+
+    return { authorizationUrl: this.graph().buildContentFeaturesAuthorizeUrl(state) };
   }
 
   /**
@@ -827,6 +864,131 @@ export class FacebookBusinessService {
       );
 
       const query = verification.outcome.ok ? 'facebook=page-read-granted' : 'facebook=page-read-pending';
+      return { redirectUrl: `${this.appUrl.replace(/\/$/, '')}${browserReturnPath}?${query}` };
+    }
+
+    if (oauthTier === 'content_features') {
+      if (!existing?.pageId || !existing.credentialsEncrypted) {
+        throw new FacebookBusinessError(
+          'NOT_AUTHORISED',
+          'Content feature authorisation requires an existing connected Page.',
+        );
+      }
+
+      const existingCredentials = decryptFacebookCredentials(
+        existing.credentialsEncrypted!,
+        encryptionKey,
+      );
+      const mergedCredentials: FacebookStoredCredentials = {
+        version: 1,
+        pageAccessToken: existingCredentials.pageAccessToken,
+        userAccessToken: longLived.accessToken,
+        expiresAt: expiresAt?.toISOString() ?? existingCredentials.expiresAt,
+        grantedScopes: grantedPermissions,
+      };
+
+      const declinedScopes = FACEBOOK_OAUTH_CONTENT_FEATURE_SCOPES.filter(
+        (scope) => !grantedPermissions.includes(scope),
+      );
+
+      await this.db
+        .update(fbConnections)
+        .set({
+          grantedPermissions,
+          tokenExpiresAt: expiresAt,
+          credentialsEncrypted: encryptFacebookCredentials(mergedCredentials, encryptionKey),
+          updatedAt: new Date(),
+        })
+        .where(eq(fbConnections.id, existing.id));
+
+      const graph = this.graphClientFactory(config);
+      const verification = await this.probe(() =>
+        graph.verifyPage(existing.pageId as string, mergedCredentials.pageAccessToken),
+      );
+
+      const priorMetadata = (existing.metadata as Record<string, unknown> | null) ?? {};
+      await this.db
+        .update(fbConnections)
+        .set({
+          ...this.verificationColumns(
+            verification.outcome,
+            priorMetadata,
+          ),
+          pageName: verification.value?.name ?? existing.pageName,
+          pageUrl: verification.value?.link ?? existing.pageUrl,
+          pageCategory: verification.value?.category ?? existing.pageCategory,
+          metadata: {
+            ...priorMetadata,
+            pageDetailsVerificationPending: !verification.outcome.ok,
+            pageIdentityVerified: verification.outcome.ok,
+            declinedOAuthScopes: declinedScopes,
+            lastContentFeaturesOAuthAt: new Date().toISOString(),
+          },
+          updatedAt: new Date(),
+        })
+        .where(eq(fbConnections.id, existing.id));
+
+      if (verification.outcome.ok && grantedPermissions.includes('pages_manage_metadata')) {
+        try {
+          await graph.subscribePageWebhooks({
+            pageId: existing.pageId as string,
+            pageAccessToken: mergedCredentials.pageAccessToken,
+            fields: [...FACEBOOK_SUBSCRIBED_WEBHOOK_FIELDS],
+          });
+          await this.db
+            .update(fbConnections)
+            .set({ webhookSubscribedAt: new Date() })
+            .where(eq(fbConnections.id, existing.id));
+        } catch (error) {
+          await this.recordConnectionEvent({
+            companyId: stateRow.companyId,
+            connectionId: existing.id,
+            eventType: 'webhook_subscribe_failed',
+            stateBefore,
+            stateAfter: existing.state,
+            message: `Content features granted, but webhook subscription failed: ${describeGraphError(error)}.`,
+            actorUserId: stateRow.userId,
+          });
+        }
+      }
+
+      const refreshed = await this.loadConnection(stateRow.companyId);
+      const resolved = await this.resolveState(refreshed);
+      await this.db
+        .update(fbConnections)
+        .set({ state: persistFacebookConnectionState(resolved.state) })
+        .where(eq(fbConnections.id, existing.id));
+
+      await this.recordConnectionEvent({
+        companyId: stateRow.companyId,
+        connectionId: existing.id,
+        eventType: 'oauth_content_features_completed',
+        stateBefore,
+        stateAfter: persistFacebookConnectionState(resolved.state),
+        message:
+          declinedScopes.length > 0
+            ? `Facebook content features authorisation completed. Meta declined: ${declinedScopes.join(', ')}.`
+            : 'Facebook content features authorisation completed and verified against Facebook.',
+        actorUserId: stateRow.userId,
+        metadata: { grantedPermissions, declinedScopes, verified: verification.outcome.ok },
+      });
+
+      await this.audit(
+        {
+          companyId: stateRow.companyId,
+          userId: stateRow.userId,
+          roleName: stateRow.initiatorRoleName ?? 'Company Owner',
+          permissions: [],
+        },
+        'connection.oauth_completed',
+        existing.id,
+        { oauthTier: 'content_features', verified: verification.outcome.ok, declinedScopes },
+      );
+
+      const query =
+        declinedScopes.length > 0
+          ? `facebook=content-features-partial&declined=${encodeURIComponent(declinedScopes.join(','))}`
+          : 'facebook=content-features-granted';
       return { redirectUrl: `${this.appUrl.replace(/\/$/, '')}${browserReturnPath}?${query}` };
     }
 
@@ -1604,6 +1766,11 @@ export class FacebookBusinessService {
         ),
         pageName: verification.value?.name ?? row.pageName,
         updatedAt: new Date(),
+        metadata: {
+          ...((row.metadata as Record<string, unknown> | null) ?? {}),
+          pageDetailsVerificationPending: !verification.outcome.ok,
+          pageIdentityVerified: verification.outcome.ok,
+        },
       })
       .where(eq(fbConnections.id, row.id));
 

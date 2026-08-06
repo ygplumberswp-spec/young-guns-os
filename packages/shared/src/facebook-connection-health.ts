@@ -1,4 +1,5 @@
-import type { FacebookPermission } from './facebook-business.js';
+import type { FacebookPermission, FacebookVerificationOutcome } from './facebook-business.js';
+import { FACEBOOK_PAGE_DETAILS_VERIFICATION_PENDING_MESSAGE } from './facebook-page-discovery-session.js';
 
 /** Permissions required for full Page read / feature health after Page selection. */
 export const FACEBOOK_PAGE_READ_FEATURE_PERMISSION: FacebookPermission = 'pages_read_engagement';
@@ -34,6 +35,37 @@ export const FACEBOOK_OAUTH_RECONNECT_WIZARD_SCOPES = [
 
 export const FACEBOOK_OAUTH_TIER_PAGE_READ_PREFIX = '__titan_oauth_tier=page_read__';
 export const FACEBOOK_OAUTH_TIER_RECONNECT_WIZARD_PREFIX = '__titan_oauth_tier=reconnect_wizard__';
+export const FACEBOOK_OAUTH_TIER_CONTENT_FEATURES_PREFIX = '__titan_oauth_tier=content_features__';
+
+/**
+ * Tier 5 — Facebook content features (J-6.7F13). Requested only via explicit
+ * "Enable Facebook content features" after Page selection and read verification.
+ */
+export const FACEBOOK_OAUTH_CONTENT_FEATURE_SCOPES: FacebookPermission[] = [
+  'pages_show_list',
+  'business_management',
+  'pages_read_engagement',
+  'pages_read_user_content',
+  'pages_manage_posts',
+  'pages_manage_engagement',
+  'pages_manage_metadata',
+  'read_insights',
+];
+
+/** Content scopes beyond basic discovery/read — used to decide when upgrade OAuth is offered. */
+export const FACEBOOK_CONTENT_UPGRADE_PERMISSIONS: FacebookPermission[] = [
+  'pages_read_user_content',
+  'pages_manage_posts',
+  'pages_manage_engagement',
+  'pages_manage_metadata',
+  'read_insights',
+];
+
+export const FACEBOOK_CONTENT_FEATURES_OAUTH_EXPLANATION =
+  'TITAN will open Meta so you can grant publishing, comment moderation, webhook and insights permissions for your connected Page. Your stored Page remains connected if you decline any permission. Messenger and Lead Ads are not requested in this step.';
+
+export const FACEBOOK_PARTIAL_STATE_LABEL_ACCOUNT_SELECTION = 'Account selection required';
+export const FACEBOOK_PARTIAL_STATE_LABEL_VERIFICATION = 'Verification required';
 
 /** @deprecated Use buildFacebookConnectedLimitedDetail for tenant-specific Page names. */
 export const FACEBOOK_CONNECTED_LIMITED_DETAIL =
@@ -159,7 +191,111 @@ export function encodeFacebookReconnectWizardOAuthReturnPath(returnPath: string)
   return `${FACEBOOK_OAUTH_TIER_RECONNECT_WIZARD_PREFIX}${normalised}`;
 }
 
-export type FacebookOAuthTier = 'basic' | 'business_portfolio' | 'page_read' | 'reconnect_wizard';
+export function encodeFacebookContentFeaturesOAuthReturnPath(returnPath: string): string {
+  const normalised = returnPath.startsWith('/') ? returnPath : '/facebook-business';
+  return `${FACEBOOK_OAUTH_TIER_CONTENT_FEATURES_PREFIX}${normalised}`;
+}
+
+export type FacebookOAuthTier =
+  | 'basic'
+  | 'business_portfolio'
+  | 'page_read'
+  | 'reconnect_wizard'
+  | 'content_features';
+
+export function facebookMissingContentUpgradePermissions(
+  grantedPermissions: readonly string[],
+): FacebookPermission[] {
+  const granted = new Set(grantedPermissions);
+  return FACEBOOK_CONTENT_UPGRADE_PERMISSIONS.filter((permission) => !granted.has(permission));
+}
+
+export function isFacebookStalePendingVerificationFailure(input: {
+  message: string | null | undefined;
+  pageSelected: boolean;
+  grantedPermissions: readonly string[];
+}): boolean {
+  if (!input.pageSelected || !hasFacebookPageReadEngagement(input.grantedPermissions)) {
+    return false;
+  }
+  const message = input.message?.trim() ?? '';
+  return (
+    message === FACEBOOK_PAGE_DETAILS_VERIFICATION_PENDING_MESSAGE ||
+    message.includes('Grant Page read access to verify Page details')
+  );
+}
+
+export function resolveFacebookEffectiveVerification(input: {
+  timestamps: FacebookVerificationTimestamps;
+  lastVerificationOk: boolean | null;
+  lastVerifiedAt: Date | null;
+  lastVerificationMessage: string | null;
+  lastVerificationAuthError: boolean;
+  lastVerificationPermissionError: boolean;
+  lastVerificationProviderUnavailable: boolean;
+  pageSelected: boolean;
+  grantedPermissions: readonly string[];
+  failedVerificationMessage?: string | null;
+}): FacebookVerificationOutcome | null {
+  const successAt = input.timestamps.lastSuccessfulVerificationAt;
+  const failedAt = input.timestamps.lastFailedVerificationAt;
+  const failedMessage =
+    input.failedVerificationMessage ??
+    (input.lastVerificationOk === false ? input.lastVerificationMessage : null);
+
+  if (successAt && failedAt) {
+    if (new Date(successAt).getTime() >= new Date(failedAt).getTime()) {
+      return {
+        ok: true,
+        authError: false,
+        permissionError: false,
+        providerUnavailable: false,
+        checkedAt: new Date(successAt),
+        message: input.lastVerificationMessage ?? 'Facebook responded successfully.',
+      };
+    }
+  } else if (successAt || (input.lastVerificationOk === true && input.lastVerifiedAt)) {
+    const checkedAt = new Date(successAt ?? input.lastVerifiedAt!.toISOString());
+    return {
+      ok: true,
+      authError: false,
+      permissionError: false,
+      providerUnavailable: false,
+      checkedAt,
+      message: input.lastVerificationMessage ?? 'Facebook responded successfully.',
+    };
+  }
+
+  if (
+    failedAt &&
+    isFacebookStalePendingVerificationFailure({
+      message: failedMessage,
+      pageSelected: input.pageSelected,
+      grantedPermissions: input.grantedPermissions,
+    })
+  ) {
+    return null;
+  }
+
+  if (failedAt) {
+    return {
+      ok: false,
+      authError: input.lastVerificationAuthError,
+      permissionError: input.lastVerificationPermissionError,
+      providerUnavailable: input.lastVerificationProviderUnavailable,
+      checkedAt: new Date(failedAt),
+      message: failedMessage ?? input.lastVerificationMessage ?? 'Facebook verification failed.',
+    };
+  }
+
+  return null;
+}
+
+export function resolveFacebookPartialStateLabel(pageSelected: boolean): string {
+  return pageSelected
+    ? FACEBOOK_PARTIAL_STATE_LABEL_VERIFICATION
+    : FACEBOOK_PARTIAL_STATE_LABEL_ACCOUNT_SELECTION;
+}
 
 export function decodeFacebookOAuthTierFromReturnPath(storedReturnPath: string | null | undefined): {
   oauthTier: FacebookOAuthTier;
@@ -190,6 +326,14 @@ export function decodeFacebookOAuthTierFromReturnPath(storedReturnPath: string |
     const path = storedReturnPath.slice(FACEBOOK_OAUTH_TIER_PAGE_READ_PREFIX.length);
     return {
       oauthTier: 'page_read',
+      returnPath: path.startsWith('/') ? path : fallback,
+    };
+  }
+
+  if (storedReturnPath.startsWith(FACEBOOK_OAUTH_TIER_CONTENT_FEATURES_PREFIX)) {
+    const path = storedReturnPath.slice(FACEBOOK_OAUTH_TIER_CONTENT_FEATURES_PREFIX.length);
+    return {
+      oauthTier: 'content_features',
       returnPath: path.startsWith('/') ? path : fallback,
     };
   }

@@ -532,6 +532,30 @@ export class FacebookGraphClient {
     return this.buildAuthorizeUrl(state, [...FACEBOOK_OAUTH_PAGE_READ_SCOPES]);
   }
 
+  /** Builds OAuth URL for Facebook content features upgrade (J-6.7F13). */
+  buildContentFeaturesAuthorizeUrl(state: string): string {
+    const params = new URLSearchParams({
+      client_id: this.config.appId,
+      redirect_uri: this.config.redirectUri,
+      state,
+      response_type: 'code',
+      auth_type: 'rerequest',
+      scope: [
+        'pages_show_list',
+        'business_management',
+        'public_profile',
+        'pages_read_engagement',
+        'pages_read_user_content',
+        'pages_manage_posts',
+        'pages_manage_engagement',
+        'pages_manage_metadata',
+        'read_insights',
+      ].join(','),
+    });
+
+    return `${FACEBOOK_OAUTH_DIALOG_URL}?${params.toString()}`;
+  }
+
   /**
    * Lists Business Portfolios accessible to the authenticated user.
    * GET /me/businesses?fields=id,name

@@ -37,7 +37,8 @@ describe('facebook connection actions click path (J-6.7F8)', () => {
       pageSource.includes("outcome === 'select-page'") &&
         pageSource.includes("outcome === 'reconnect-wizard'"),
     );
-    assert.ok(pageSource.includes('pageSelectionMismatch || !isConnectedLimited'));
+    assert.ok(pageSource.includes('showPageDiscovery'));
+    assert.ok(pageSource.includes('pageStored={Boolean(connection.pageId)}'));
   });
 
   it('Integrations card navigates to the Page-selection workspace for choose correct Page', () => {

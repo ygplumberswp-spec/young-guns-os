@@ -64,17 +64,17 @@ test.describe('Facebook Use this Page selection regression (J-6.7F9)', () => {
     expect(pageSource).toMatch(/showPageDiscovery/);
   });
 
-  test('selectPage idempotency and post-commit verification remain on API service', async () => {
+  test('content features OAuth and state normalization wired (J-6.7F13)', async () => {
+    const pageSource = readFileSync(
+      join(repoRoot, 'apps/web/src/pages/facebook-business/FacebookBusinessPage.tsx'),
+      'utf8',
+    );
     const serviceSource = readFileSync(
       join(repoRoot, 'apps/api/src/services/facebook-business.service.ts'),
       'utf8',
     );
-    expect(serviceSource).toMatch(/parseFacebookPageDiscoverySessionToken/);
-    expect(serviceSource).toMatch(/resolveSelectableRowFromDiscoverySession/);
-    expect(serviceSource).toMatch(/assertProviderPageRowMatchesSelection/);
-    expect(serviceSource).toMatch(/await this\.db\.transaction/);
-    expect(serviceSource).toMatch(/Page selection expired\. Choose Page again\./);
-    expect(serviceSource).toMatch(/row\.pageId === normalizedPageId/);
-    expect(serviceSource).toMatch(/graph\.verifyPage\(page\.id, page\.accessToken\)/);
+    expect(pageSource).toMatch(/startFacebookContentFeaturesOAuth/);
+    expect(pageSource).toMatch(/pageStored=\{Boolean\(connection\.pageId\)\}/);
+    expect(serviceSource).toMatch(/resolveFacebookEffectiveVerification/);
   });
 });

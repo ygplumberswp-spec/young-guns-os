@@ -73,6 +73,7 @@ export type FacebookConnectionView = {
   };
   hasStoredCredentials: boolean;
   pageReadOAuthExplanation: string;
+  contentFeaturesOAuthExplanation: string;
 };
 
 export type FacebookPageOption = FacebookPageDiscoveryRow;
@@ -224,6 +225,14 @@ export function startFacebookReconnectWizardOAuth(accessToken: string, returnPat
 
 export function startFacebookPageReadOAuth(accessToken: string, returnPath?: string) {
   return request<{ authorizationUrl: string }>(`${BASE}/oauth/start-page-read`, {
+    method: 'POST',
+    accessToken,
+    body: { returnPath },
+  });
+}
+
+export function startFacebookContentFeaturesOAuth(accessToken: string, returnPath?: string) {
+  return request<{ authorizationUrl: string }>(`${BASE}/oauth/start-content-features`, {
     method: 'POST',
     accessToken,
     body: { returnPath },

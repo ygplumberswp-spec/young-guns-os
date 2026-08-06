@@ -18,6 +18,7 @@ export type FacebookConnectionUiAction =
   | 'choose_correct_page'
   | 'grant_business_portfolio'
   | 'grant_page_read'
+  | 'enable_content_features'
   | 'check_health'
   | 'reconnect'
   | 'disconnect'
@@ -35,6 +36,7 @@ export const FACEBOOK_CONNECTION_ACTION_LABELS: Record<FacebookConnectionUiActio
   choose_correct_page: 'Choose correct Page',
   grant_business_portfolio: 'Grant Business Portfolio access',
   grant_page_read: 'Grant Page read access',
+  enable_content_features: 'Enable Facebook content features',
   check_health: 'Check health',
   reconnect: 'Reconnect',
   disconnect: 'Disconnect',
@@ -90,6 +92,12 @@ export type FacebookConnectionActionPlanContext = {
   needsBusinessPortfolioAccess?: boolean;
   /** When true, stored Page id does not match the verified tenant Page. */
   pageSelectionMismatch?: boolean;
+  /** When true, a Page is already stored — Choose Page must not be the primary action. */
+  pageStored?: boolean;
+  /** When true, pages_read_engagement is already granted. */
+  hasPageReadEngagement?: boolean;
+  /** When true, at least one content-upgrade permission is still missing from the token. */
+  missingContentFeatures?: boolean;
 };
 
 /**
@@ -108,11 +116,41 @@ export function resolveFacebookConnectionActionPlan(
       if (context.needsBusinessPortfolioAccess) {
         return { primary: 'grant_business_portfolio', secondary: ['disconnect'], tertiary: [] };
       }
+      if (context.pageStored) {
+        return {
+          primary: 'check_health',
+          secondary: [
+            ...(context.missingContentFeatures ? (['enable_content_features'] as const) : []),
+            'reconnect',
+            'disconnect',
+          ],
+          tertiary: [],
+        };
+      }
       return { primary: 'choose_page', secondary: ['disconnect'], tertiary: [] };
     case 'connected_limited':
+      if (context.hasPageReadEngagement && context.pageStored) {
+        return {
+          primary: 'check_health',
+          secondary: [
+            ...(context.missingContentFeatures ? (['enable_content_features'] as const) : []),
+            'reconnect',
+            'disconnect',
+          ],
+          tertiary: [],
+        };
+      }
       return { primary: 'grant_page_read', secondary: ['disconnect'], tertiary: [] };
     case 'connected':
-      return { primary: 'check_health', secondary: ['reconnect', 'disconnect'], tertiary: [] };
+      return {
+        primary: 'check_health',
+        secondary: [
+          ...(context.missingContentFeatures ? (['enable_content_features'] as const) : []),
+          'reconnect',
+          'disconnect',
+        ],
+        tertiary: [],
+      };
     case 'disconnected':
       return { primary: 'connect', secondary: [], tertiary: [] };
     case 'reconnect_required':

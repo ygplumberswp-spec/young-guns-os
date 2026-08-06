@@ -12,6 +12,7 @@ import {
   FACEBOOK_BUSINESS_PORTFOLIO_STATUS_LABELS,
   FACEBOOK_BUSINESS_PORTFOLIO_OAUTH_EXPLANATION,
   FACEBOOK_PAGE_READ_OAUTH_EXPLANATION,
+  FACEBOOK_CONTENT_FEATURES_OAUTH_EXPLANATION,
   FACEBOOK_RECONNECT_WIZARD_OAUTH_EXPLANATION,
   FACEBOOK_SYNC_INACTIVE_UNTIL_READ_PERMISSION,
   hasFacebookPageReadEngagement,
@@ -52,6 +53,7 @@ import {
   startFacebookOAuth,
   startFacebookBusinessPortfolioOAuth,
   startFacebookPageReadOAuth,
+  startFacebookContentFeaturesOAuth,
   startFacebookReconnectWizardOAuth,
   transitionFacebookContent,
   type FacebookCommentView,
@@ -86,6 +88,7 @@ function clearFacebookOAuthReturnParams() {
   if (!params.has('facebook') && !params.has('reason')) return;
   params.delete('facebook');
   params.delete('reason');
+  params.delete('declined');
   const query = params.toString();
   const nextUrl = `${window.location.pathname}${query ? `?${query}` : ''}${window.location.hash}`;
   window.history.replaceState(null, '', nextUrl);
@@ -206,7 +209,23 @@ export function FacebookBusinessPage() {
       );
       setTab('connection');
     } else if (outcome === 'page-read-granted') {
+      clearFacebookOAuthReturnParams();
       setSuccess('Page read access granted. TITAN can now verify and read Page content from Meta.');
+      setTab('connection');
+    } else if (outcome === 'content-features-granted') {
+      clearFacebookOAuthReturnParams();
+      setSuccess(
+        'Facebook content features enabled. Publishing, comment moderation, webhooks and insights are now available where Meta granted the permissions.',
+      );
+      setTab('connection');
+    } else if (outcome === 'content-features-partial') {
+      clearFacebookOAuthReturnParams();
+      const declined = params.get('declined');
+      setSuccess(
+        declined
+          ? `Facebook content authorisation completed. Meta declined: ${declined}. Your connected Page and working permissions were preserved.`
+          : 'Facebook content authorisation completed with partial permissions. Your connected Page was preserved.',
+      );
       setTab('connection');
     } else if (outcome === 'error') {
       const reason = params.get('reason');
@@ -299,6 +318,14 @@ export function FacebookBusinessPage() {
     if (!accessToken || !canManage) return;
     await withAction(async () => {
       const result = await startFacebookPageReadOAuth(accessToken, '/facebook-business');
+      window.location.assign(result.authorizationUrl);
+    });
+  }
+
+  async function handleEnableContentFeatures() {
+    if (!accessToken || !canManage) return;
+    await withAction(async () => {
+      const result = await startFacebookContentFeaturesOAuth(accessToken, '/facebook-business');
       window.location.assign(result.authorizationUrl);
     });
   }
@@ -652,6 +679,7 @@ export function FacebookBusinessPage() {
               onLoadPages={handleLoadPages}
               onGrantBusinessPortfolio={handleGrantBusinessPortfolio}
               onGrantPageRead={handleGrantPageRead}
+              onEnableContentFeatures={handleEnableContentFeatures}
               onSelectPage={handleSelectPage}
               onCheck={handleCheck}
               onDisconnect={handleDisconnect}
@@ -870,6 +898,7 @@ function ConnectionTab({
   onLoadPages,
   onGrantBusinessPortfolio,
   onGrantPageRead,
+  onEnableContentFeatures,
   onSelectPage,
   onCheck,
   onDisconnect,
@@ -887,6 +916,7 @@ function ConnectionTab({
   onLoadPages: () => void;
   onGrantBusinessPortfolio: () => void;
   onGrantPageRead: () => void;
+  onEnableContentFeatures: () => void;
   onSelectPage: (pageId: string) => void;
   onCheck: () => void;
   onDisconnect: () => Promise<void>;
@@ -927,6 +957,12 @@ function ConnectionTab({
           <strong>{connection.stateLabel}</strong> — {connection.detail}
         </p>
         {connection.requiredAction ? <p>Next step: {connection.requiredAction}</p> : null}
+        {connection.pageId ? (
+          <p className="page-muted">
+            Connected Page ID ending{' '}
+            {maskFacebookPageId(connection.pageId)?.replace(/^···/, '') ?? 'unknown'}
+          </p>
+        ) : null}
         {connection.pageIdentity ? (
           <dl className="facebook-page-identity-mismatch">
             <dt>Currently stored</dt>
@@ -1027,9 +1063,25 @@ function ConnectionTab({
           {pageDiscovery?.needsBusinessPortfolioAccess && !isConnectedLimited && !pageSelectionMismatch ? (
             <p className="page-muted">{FACEBOOK_BUSINESS_PORTFOLIO_OAUTH_EXPLANATION}</p>
           ) : null}
-          {isConnectedLimited ? (
+          {isConnectedLimited && !connection.grantedPermissions.includes('pages_read_engagement') ? (
             <p className="page-muted">
               {connection.pageReadOAuthExplanation ?? FACEBOOK_PAGE_READ_OAUTH_EXPLANATION}
+            </p>
+          ) : null}
+          {connection.pageId &&
+          connection.grantedPermissions.includes('pages_read_engagement') &&
+          connection.missingPermissions.some((permission) =>
+            [
+              'pages_manage_posts',
+              'pages_manage_engagement',
+              'pages_manage_metadata',
+              'read_insights',
+              'pages_read_user_content',
+            ].includes(permission),
+          ) ? (
+            <p className="page-muted">
+              {connection.contentFeaturesOAuthExplanation ??
+                FACEBOOK_CONTENT_FEATURES_OAUTH_EXPLANATION}
             </p>
           ) : null}
           <FacebookConnectionActions
@@ -1039,11 +1091,14 @@ function ConnectionTab({
             needsConfiguration={needsConfiguration}
             needsBusinessPortfolioAccess={needsBusinessPortfolioAccess}
             pageSelectionMismatch={pageSelectionMismatch}
+            pageStored={Boolean(connection.pageId)}
+            grantedPermissions={connection.grantedPermissions}
             confirmDisconnect={confirmDisconnect}
             onConnect={onConnect}
             onChoosePage={onLoadPages}
             onGrantBusinessPortfolio={onGrantBusinessPortfolio}
             onGrantPageRead={onGrantPageRead}
+            onEnableContentFeatures={onEnableContentFeatures}
             onCheckHealth={onCheck}
             onReconnect={onReconnect}
             onDisconnect={() => void handleDisconnectConfirmed()}

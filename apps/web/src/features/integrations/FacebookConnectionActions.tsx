@@ -3,6 +3,8 @@ import { Button } from '@titan/ui';
 import {
   FACEBOOK_CONNECTION_ACTION_LABELS,
   facebookConnectionActionAllowed,
+  facebookMissingContentUpgradePermissions,
+  hasFacebookPageReadEngagement,
   normalizeFacebookConnectionUiStatus,
   resolveFacebookConnectionActionPlan,
   type FacebookConnectionState,
@@ -21,10 +23,13 @@ export type FacebookConnectionActionsProps = {
   showViewSetup?: boolean;
   needsBusinessPortfolioAccess?: boolean;
   pageSelectionMismatch?: boolean;
+  pageStored?: boolean;
+  grantedPermissions?: string[];
   onConnect: () => void;
   onChoosePage: () => void;
   onGrantBusinessPortfolio?: () => void;
   onGrantPageRead?: () => void;
+  onEnableContentFeatures?: () => void;
   onCheckHealth: () => void;
   onReconnect: () => void;
   onDisconnect: () => void;
@@ -99,6 +104,7 @@ function renderActionButton(
     choose_correct_page: props.onChoosePage,
     grant_business_portfolio: props.onGrantBusinessPortfolio ?? props.onChoosePage,
     grant_page_read: props.onGrantPageRead ?? props.onConnect,
+    enable_content_features: props.onEnableContentFeatures ?? props.onReconnect,
     check_health: props.onCheckHealth,
     reconnect: props.onReconnect,
     disconnect: props.onRequestDisconnect,
@@ -127,6 +133,10 @@ export function FacebookConnectionActions(props: FacebookConnectionActionsProps)
   const plan = resolveFacebookConnectionActionPlan(uiStatus, {
     needsBusinessPortfolioAccess: props.needsBusinessPortfolioAccess,
     pageSelectionMismatch: props.pageSelectionMismatch,
+    pageStored: props.pageStored,
+    hasPageReadEngagement: hasFacebookPageReadEngagement(props.grantedPermissions ?? []),
+    missingContentFeatures:
+      facebookMissingContentUpgradePermissions(props.grantedPermissions ?? []).length > 0,
   });
 
   const actions: FacebookConnectionUiAction[] = [];
