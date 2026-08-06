@@ -3,7 +3,8 @@
 **Document ID:** AGENT-004  
 **Document type:** Permanent activation plan — documentation only (no activation performed by this document)  
 **Generated (UTC):** 2026-08-06  
-**Register:** [TITAN_MASTER_AGENT_REGISTER.md](./TITAN_MASTER_AGENT_REGISTER.md) (191 minimum roles; extensible)  
+**Register:** [TITAN_MASTER_AGENT_REGISTER.md](./TITAN_MASTER_AGENT_REGISTER.md) (307 approved agents; extensible)  
+**Reconciliation:** [TITAN_AGENT001_ROLE_RECONCILIATION.md](./TITAN_AGENT001_ROLE_RECONCILIATION.md) (AGENT-001B)  
 **Governance:** [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md)  
 **Capability matrix:** [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md)  
 
@@ -42,7 +43,7 @@ Activation order reflects real operational value:
 
 | Item | Deliverable |
 |------|-------------|
-| Register | AGENT-001 master register approved by Owner |
+| Register | AGENT-001 master register (307 approved agents) approved by Owner |
 | Matrix | AGENT-002 capability matrix maintained |
 | Governance | AGENT-003 learning standard adopted |
 | Integration standard | INT-UNIVERSAL-001 in integration register |
@@ -224,20 +225,29 @@ Activation order reflects real operational value:
 
 ---
 
-## Current state (@ 2026-08-06)
+## Current state (@ AGENT-001B — 2026-08-06)
 
 | Phase | Status |
 |-------|--------|
 | Phase A | **Documentation complete — pending Owner approval** |
 | Phase B–F | **Not started** |
 
-| Agent status (register) | Count |
-|-------------------------|------:|
+| Implementation evidence (307 agents) | Count |
+|-------------------------------------|------:|
+| Verified complete | 0 |
+| Partial | 21 |
+| Provider-blocked | 3 |
+| Missing | 283 |
+
+| Activation lifecycle (307 agents) | Count |
+|-----------------------------------|------:|
 | Supervised | 1 (AURA-001) |
-| Implemented but inactive | 1 (MKT-005 Facebook) |
-| Build-ready | 2 |
-| Defined / Planned | remainder |
+| Shadow mode | 20 |
+| Planned | 3 |
+| Defined | 283 |
 | **Active** | **0** |
+
+**Note:** MKT-005 Facebook integration is staging-ready (J-6.7F14) but the agent remains **Defined** until activation gate. Do not conflate integration Connected with agent **Active**.
 
 ---
 

@@ -33,16 +33,18 @@ const DEPT_LABELS = {
 function renderTable(dept) {
   const rows = data.agents.filter((a) => a.dept === dept);
   const lines = [
-    '| Agent ID | Professional role | Implementation status | Code registry key | Evidence pointer |',
-    '|----------|-------------------|----------------------|-------------------|------------------|',
+    '| Agent ID | Professional role | Implementation evidence | Activation lifecycle | Code registry key | Evidence pointer |',
+    '|----------|-------------------|-------------------------|----------------------|-------------------|------------------|',
   ];
   for (const a of rows) {
     const key = a.registryKey ?? '—';
+    const impl = a.implementationStatus ?? a.status;
+    const life = a.activationLifecycleStatus ?? 'Defined';
     const evidence =
       a.registryKey != null
         ? `\`packages/shared/src/agents.ts\` → \`${a.registryKey}\``
         : 'No executable agent implementation';
-    lines.push(`| ${a.id} | ${a.name} | **${a.status}** | ${key} | ${evidence} |`);
+    lines.push(`| ${a.id} | ${a.name} | **${impl}** | **${life}** | ${key} | ${evidence} |`);
   }
   return lines.join('\n');
 }

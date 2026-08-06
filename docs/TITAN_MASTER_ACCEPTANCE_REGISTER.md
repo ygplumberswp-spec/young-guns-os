@@ -2,7 +2,7 @@
 
 **Audit type:** READ-ONLY requirement reconciliation  
 **Generated (UTC):** 2026-08-05  
-**Last updated (UTC):** 2026-08-06 — AGENT-001 formal master AI workforce standard  
+**Last updated (UTC):** 2026-08-06 — AGENT-001B restore approved 307-agent workforce scope  
 **Repository:** Titan-Aura-Consolidation (`ygplumberswp-spec/young-guns-os`)  
 **Worktree:** `/workspace/.worktrees/titan-recovery`  
 **Branch:** `cursor/titan-agent-register-001`  
@@ -13,28 +13,34 @@
 
 ---
 
-## Agent register programme (AGENT-001 — 2026-08-06)
+## Agent register programme (AGENT-001B — 2026-08-06)
 
 | Artifact | Document ID | Status |
 |----------|-------------|--------|
-| [TITAN_MASTER_AGENT_REGISTER.md](./TITAN_MASTER_AGENT_REGISTER.md) | **AGENT-001** | **COMPLETE_LOCAL_ONLY** — 191 minimum roles; extensible; no fixed cap |
-| [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) | **AGENT-002** | **COMPLETE_LOCAL_ONLY** |
+| [TITAN_MASTER_AGENT_REGISTER.md](./TITAN_MASTER_AGENT_REGISTER.md) | **AGENT-001** (restored) | **COMPLETE_LOCAL_ONLY** — **307 approved unique agents**; 18 departments; extensible; no arbitrary cap |
+| [TITAN_AGENT001_ROLE_RECONCILIATION.md](./TITAN_AGENT001_ROLE_RECONCILIATION.md) | **AGENT-001B** | **COMPLETE_LOCAL_ONLY** — 191 role families reconciled to 307 permanent IDs |
+| [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) | **AGENT-002** | **COMPLETE_LOCAL_ONLY** — dual status fields |
 | [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) | **AGENT-003** | **COMPLETE_LOCAL_ONLY** |
 | [TITAN_AGENT_ACTIVATION_ROADMAP.md](./TITAN_AGENT_ACTIVATION_ROADMAP.md) | **AGENT-004** | **COMPLETE_LOCAL_ONLY** — Phases A–F |
 | [TITAN_INTEGRATION_REGISTER.md](./TITAN_INTEGRATION_REGISTER.md) | **INT-UNIVERSAL-001** | **Updated** — universal integration wizard standard |
 | [TITAN_AUDIT_DEPARTMENT_AND_TOOLING_STANDARD.md](./TITAN_AUDIT_DEPARTMENT_AND_TOOLING_STANDARD.md) | Prior programme (AGT-005) | **Retained** — AUD department framework unchanged |
 
-**Agent status reconciliation (@ AGENT-001):** 0 Active · 1 Supervised (AURA-001) · 1 Implemented but inactive (MKT-005 Facebook) · 2 Build-ready · remainder Defined/Planned · **no false Active claims**.
+**AGENT-001B restoration:** Approved 307-agent register recovered from commit `363111f5df0f0ffa6e06e915320b4a88a0824aad`. **0 missing approved Agent IDs.** AGENT-001 governance improvements retained. Dual status model enforced (implementation evidence + activation lifecycle).
+
+**Agent status reconciliation (@ AGENT-001B):** Implementation — 0 Verified complete · 21 Partial · 3 Provider-blocked · 283 Missing. Activation — 0 Active · 1 Supervised (AURA-001) · 20 Shadow mode · 3 Planned · 283 Defined · **no false Active claims**.
+
+**191-role reconciliation:** 147 existing 307-agent matches · 44 aliases (excluded from agent count) · 0 valid new unique agents · 0 unsupported · 0 duplicates.
 
 **Facebook (Young Guns staging — J-6.7F14 deployed):** Young Guns Plumbing - Cape Town is **connected and verified** on staging. Content permissions granted for publishing, scheduling, reading comments, replying to comments, Page details and insights. Meta provider-confirmed webhook fields: **feed** and **mention**. Meta dashboard sample webhook delivery **succeeded**; no webhook error recorded. Polling fallback **active every 15 minutes**. A genuine live Young Guns Page event remains **pending** because the Meta app is **unpublished**. Messenger and Lead Ads remain **outside completed scope** (separate Meta approval). Facebook is **not production-complete**.
 
-**XERO-002:** **Parked** — unchanged; no Xero work started in AGENT-001.
+**XERO-002:** **Parked** — unchanged; no Xero work started.
 
-**New acceptance rows (AGENT-001 programme):**
+**New acceptance rows (AGENT-001B programme):**
 
 | Requirement ID | Requirement name | Current status | Blocker | Exact next action |
 |----------------|------------------|----------------|---------|-------------------|
-| AGENT-001 | Master Agent Register (extensible; no fixed agent cap) | **COMPLETE_LOCAL_ONLY** | — | Owner approval of register |
+| AGENT-001B | Restore approved 307-agent workforce scope | **COMPLETE_LOCAL_ONLY** | Owner approval | Owner approve restored register |
+| AGENT-001 | Master Agent Register (307 minimum; extensible) | **COMPLETE_LOCAL_ONLY** | — | Owner approval of register |
 | AGENT-002 | Agent Capability Matrix (Draft→Approve→Execute) | **COMPLETE_LOCAL_ONLY** | — | Populate per-agent at activation |
 | AGENT-003 | Learning and Governance Standard | **COMPLETE_LOCAL_ONLY** | — | Wire into agent runtime Phase A exit |
 | AGENT-004 | Activation Roadmap (Phases A–F) | **COMPLETE_LOCAL_ONLY** | — | Owner approve phase order |
@@ -44,16 +50,29 @@
 
 | Requirement ID | Requirement name | Superseded by | Notes |
 |----------------|------------------|---------------|-------|
-| AGT-001 | Permanent master agent register | AGENT-001 | Prior count 307; AGENT-001 uses 191 minimum extensible set |
+| AGT-001 | Permanent master agent register | AGENT-001 / AGENT-001B | **307 approved agents restored** — recovered from `363111f` |
 | AGT-002 | Agent capability matrix | AGENT-002 | — |
 | AGT-003 | Controlled self-learning governance | AGENT-003 | — |
 | AGT-004 | 15-phase activation roadmap | AGENT-004 | Replaced by Phases A–F |
-| AGT-005 | Permanent Audit Department framework | AGENT-001 § K | 14 AUD agents in register |
+| AGT-005 | Permanent Audit Department framework | AGENT-001 § AUD | 14 AUD agents in 307 register |
 | AGT-006 | Integration register | INT-UNIVERSAL-001 | — |
 | AGT-007 | Any agent marked Verified complete | AGENT-004 gates | Still 0 Active |
 | AGT-008 | Facebook advanced publishing/messaging | — | Messenger/Lead Ads outside J-6.7F14 scope |
 | AGT-009 | QS plan take-off → BOQ → quote chain | AGENT-004 Phase C+ | NOT_STARTED |
 | AGT-010 | Final Stage 2 business chain audit | — | NOT_STARTED |
+
+---
+
+## Agent register programme (AGENT-001 — superseded by AGENT-001B)
+
+<details>
+<summary>Prior AGENT-001 programme (2026-08-06) — superseded</summary>
+
+| Artifact | Document ID | Status |
+|----------|-------------|--------|
+| [TITAN_MASTER_AGENT_REGISTER.md](./TITAN_MASTER_AGENT_REGISTER.md) | **AGENT-001** | Superseded — incorrectly reduced to 191 roles |
+
+</details>
 
 ---
 

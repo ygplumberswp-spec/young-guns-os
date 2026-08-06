@@ -2,29 +2,32 @@
 
 **Audit type:** READ-ONLY planning artifact — no new features  
 **Generated (UTC):** 2026-08-05  
-**Last updated (UTC):** 2026-08-06 — AGENT-001 formal master AI workforce standard  
+**Last updated (UTC):** 2026-08-06 — AGENT-001B restore approved 307-agent workforce scope  
 **Base HEAD:** `23debd9cfa90a05ab31f051b76d3e7a86708b14f`  
 **Branch:** `cursor/titan-agent-register-001`  
 **Scope:** Unmet **accepted** requirements only — deferred items at end  
 
 ---
 
-## Agent workforce gaps (AGENT-001 — 2026-08-06)
+## Agent workforce gaps (AGENT-001B — 2026-08-06)
 
 | Gap | Count | Closure path |
 |-----|------:|--------------|
-| Agents Defined / Planned (no executable loop) | majority of 191 | [TITAN_AGENT_ACTIVATION_ROADMAP.md](./TITAN_AGENT_ACTIVATION_ROADMAP.md) Phases B–F |
+| Agents Missing (no meaningful implementation) | 283 of 307 | [TITAN_AGENT_ACTIVATION_ROADMAP.md](./TITAN_AGENT_ACTIVATION_ROADMAP.md) Phases B–F |
+| Agents Partial (registry/UI shell only) | 21 | Phase B–D tool wiring |
+| Provider-blocked | 3 | External provider gates |
 | Supervised (AURA only) | 1 | Phase B exit → expand read-only agents |
-| Implemented but inactive | 1 (Facebook) | Phase C–E; agent activation gate not yet passed |
-| Build-ready | 2 | Phase D prerequisites |
+| Shadow mode | 20 | Phase B–C |
 | **Active** | **0** | None — do not fake |
 | AUD department agents | 14 Defined | Phase A approved → Phase B shadow |
+
+**Register restoration:** Approved **307** unique agents across **18 departments** recovered from commit `363111f`. **0 missing approved Agent IDs.** AGENT-001 role families (191) reconciled as mappings/aliases — not replacements.
 
 **Facebook (J-6.7F14 deployed to staging):** Young Guns Plumbing - Cape Town connected and verified. Content permissions granted (publish, schedule, comments, reply, Page details, insights). Webhook fields **feed** + **mention** provider-confirmed; Meta dashboard sample delivery succeeded; no webhook error; polling fallback every 15 minutes. Genuine live Page event pending (Meta app unpublished). Messenger and Lead Ads outside scope. **Not production-complete.**
 
 **XERO-002:** **Parked** — no work started.
 
-**Owner approval gate:** Review [TITAN_MASTER_AGENT_REGISTER.md](./TITAN_MASTER_AGENT_REGISTER.md) (AGENT-001) before any agent activation work.
+**Owner approval gate:** Review [TITAN_MASTER_AGENT_REGISTER.md](./TITAN_MASTER_AGENT_REGISTER.md) (AGENT-001B restoration) before any agent activation work.
 
 **Universal integration gap:** Client-facing wizard must hide developer setup per [INT-UNIVERSAL-001](./TITAN_INTEGRATION_REGISTER.md).
 
@@ -122,7 +125,7 @@
 | 6.6 | Production deploy + migration | PRD-002 |
 | 6.7 | Pilot sign-off → commercial launch | PRD-003, FRZ-022 |
 | 6.8 | AURA Voice throughout TITAN | Future phases doc |
-| 6.10 | Master agent register (307 agents) activation | AGT-001–AGT-010 | [TITAN_AGENT_ACTIVATION_ROADMAP.md](./TITAN_AGENT_ACTIVATION_ROADMAP.md) |
+| 6.10 | Master agent register (AGENT-001B — 307 approved minimum; extensible) activation | AGENT-001–004, AGT-001–010 | [TITAN_AGENT_ACTIVATION_ROADMAP.md](./TITAN_AGENT_ACTIVATION_ROADMAP.md) |
 
 ---
 

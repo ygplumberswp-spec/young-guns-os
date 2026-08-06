@@ -3,7 +3,8 @@
 **Document ID:** AGENT-003  
 **Document type:** Permanent governance standard — documentation only  
 **Generated (UTC):** 2026-08-06  
-**Applies to:** All agents in [TITAN_MASTER_AGENT_REGISTER.md](./TITAN_MASTER_AGENT_REGISTER.md)  
+**Applies to:** All **307 approved** agents in [TITAN_MASTER_AGENT_REGISTER.md](./TITAN_MASTER_AGENT_REGISTER.md) (extensible; no arbitrary cap)  
+**Reconciliation:** [TITAN_AGENT001_ROLE_RECONCILIATION.md](./TITAN_AGENT001_ROLE_RECONCILIATION.md) (AGENT-001B)  
 **Capability matrix:** [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md)  
 **Activation:** [TITAN_AGENT_ACTIVATION_ROADMAP.md](./TITAN_AGENT_ACTIVATION_ROADMAP.md)  
 
@@ -14,6 +15,19 @@
 TITAN agents may improve over time only through **controlled self-learning**. Learning is never silent, never cross-tenant, and never bypasses Owner approval for material changes.
 
 AURA coordinates specialists but does not override governance rules defined here.
+
+---
+
+## Dual status model (both required)
+
+Every agent carries **two independent status fields**:
+
+| Dimension | Answers | Example values |
+|-----------|---------|----------------|
+| **Implementation evidence status** | What is technically built and verified? | Verified complete · Partial · Missing · Provider-blocked |
+| **Activation lifecycle status** | What operational gate applies? | Defined · Shadow mode · Supervised · Active · Paused |
+
+These dimensions must not replace one another. **Defined** or **Planned** must not conceal **Missing** implementation. Documentation alone does not justify **Active**.
 
 ---
 

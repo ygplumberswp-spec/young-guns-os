@@ -398,16 +398,34 @@ function defaultStatusFor(dept, name, id) {
   return 'Missing';
 }
 
+/** Maps implementation evidence status → activation lifecycle status. */
+function activationLifecycleFor(implStatus, id, name) {
+  if (id === 'AURA-001') return 'Supervised';
+  if (implStatus === 'Verified complete') return 'Active';
+  if (implStatus === 'Implemented but not live-verified') return 'Implemented but inactive';
+  if (implStatus === 'Partial') return 'Shadow mode';
+  if (implStatus === 'Provider-blocked') return 'Planned';
+  if (implStatus === 'Owner-action required') return 'Planned';
+  if (implStatus === 'Missing') return 'Defined';
+  if (implStatus === 'Deferred by Owner') return 'Paused';
+  if (implStatus === 'Not applicable') return 'Retired';
+  return 'Defined';
+}
+
 const agents = [];
 for (const [dept, names] of Object.entries(DEPARTMENTS)) {
   names.forEach((name, index) => {
     const id = `${dept}-${String(index + 1).padStart(3, '0')}`;
+    const implementationStatus = defaultStatusFor(dept, name, id);
     agents.push({
       id,
       dept,
       name,
       registryKey: REGISTRY_MAP[id] ?? null,
-      status: defaultStatusFor(dept, name, id),
+      implementationStatus,
+      activationLifecycleStatus: activationLifecycleFor(implementationStatus, id, name),
+      // Legacy field kept for scripts expecting .status
+      status: implementationStatus,
     });
   });
 }
@@ -417,17 +435,22 @@ for (const a of agents) {
   deptTotals[a.dept] = (deptTotals[a.dept] ?? 0) + 1;
 }
 
-const statusTotals = {};
+const implementationTotals = {};
+const activationTotals = {};
 for (const a of agents) {
-  statusTotals[a.status] = (statusTotals[a.status] ?? 0) + 1;
+  implementationTotals[a.implementationStatus] = (implementationTotals[a.implementationStatus] ?? 0) + 1;
+  activationTotals[a.activationLifecycleStatus] = (activationTotals[a.activationLifecycleStatus] ?? 0) + 1;
 }
 
 const summary = {
   totalUniqueAgents: agents.length,
+  recoveredFromCommit: '363111f5df0f0ffa6e06e915320b4a88a0824aad',
   departmentTotals: deptTotals,
-  statusTotals,
+  implementationTotals,
+  activationTotals,
+  statusTotals: implementationTotals,
   agents,
 };
 
 writeFileSync(join(ROOT, 'docs/.agent-register-data.json'), JSON.stringify(summary, null, 2));
-console.log(JSON.stringify({ total: agents.length, deptTotals, statusTotals }, null, 2));
+console.log(JSON.stringify({ total: agents.length, deptTotals, implementationTotals, activationTotals }, null, 2));

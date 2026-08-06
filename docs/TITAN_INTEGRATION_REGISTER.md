@@ -3,12 +3,12 @@
 **Document ID:** INT register (includes INT-UNIVERSAL-001)  
 **Document type:** Permanent provider and integration source of truth — documentation only  
 **Generated (UTC):** 2026-08-06  
-**Last updated (UTC):** 2026-08-06 — AGENT-001 universal integration standard  
+**Last updated (UTC):** 2026-08-06 — AGENT-001B restore approved 307-agent workforce scope  
 **No provider calls made during register maintenance**  
 
 **Related documents:**
 
-- [TITAN_MASTER_AGENT_REGISTER.md](./TITAN_MASTER_AGENT_REGISTER.md) (AGENT-001)
+- [TITAN_MASTER_AGENT_REGISTER.md](./TITAN_MASTER_AGENT_REGISTER.md) (AGENT-001 — 307 approved agents)
 - [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) (AGENT-003)
 - [TITAN_MASTER_ACCEPTANCE_REGISTER.md](./TITAN_MASTER_ACCEPTANCE_REGISTER.md)
 

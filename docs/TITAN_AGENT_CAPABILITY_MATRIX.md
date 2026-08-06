@@ -3,7 +3,8 @@
 **Document ID:** AGENT-002  
 **Document type:** Permanent capability schema — documentation only  
 **Generated (UTC):** 2026-08-06  
-**Parent register:** [TITAN_MASTER_AGENT_REGISTER.md](./TITAN_MASTER_AGENT_REGISTER.md) (191 minimum roles; extensible)  
+**Parent register:** [TITAN_MASTER_AGENT_REGISTER.md](./TITAN_MASTER_AGENT_REGISTER.md) (307 approved agents; extensible — no arbitrary cap)  
+**Reconciliation:** [TITAN_AGENT001_ROLE_RECONCILIATION.md](./TITAN_AGENT001_ROLE_RECONCILIATION.md) (AGENT-001B)  
 **Governance:** [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md)  
 **Activation:** [TITAN_AGENT_ACTIVATION_ROADMAP.md](./TITAN_AGENT_ACTIVATION_ROADMAP.md)  
 
@@ -181,8 +182,10 @@ Every agent profile in the master register must populate:
 19. Risk rating  
 20. Audit evidence required  
 21. Dependencies  
-22. Current implementation status  
-23. Activation phase  
+22. Implementation evidence status (technical truth)  
+23. Activation lifecycle status (operational gate)  
+
+Both status dimensions are required per agent. Do not use **Defined** or **Planned** to conceal **Missing** implementation. Do not mark **Active** because documentation exists alone.
 
 ---
 
@@ -192,4 +195,4 @@ Every agent profile in the master register must populate:
 - Cross-reference [TITAN_INTEGRATION_REGISTER.md](./TITAN_INTEGRATION_REGISTER.md) for provider truth states.
 - Do not mark **Execute** permitted without documented approval gate and audit evidence.
 
-**Document control:** AGENT-002 · Applies to extensible register — no fixed agent maximum.
+**Document control:** AGENT-002 · Applies to 307 approved minimum agents — extensible without deleting approved IDs.

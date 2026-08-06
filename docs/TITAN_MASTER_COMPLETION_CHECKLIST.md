@@ -33,17 +33,18 @@ Prior register estimate (**~27% verified live** on 116-row traceability) remains
 
 ---
 
-## AI workforce documentation (AGENT-001 — 2026-08-06)
+## AI workforce documentation (AGENT-001B — 2026-08-06)
 
 | Document | ID | Checklist status |
 |----------|-----|------------------|
-| [TITAN_MASTER_AGENT_REGISTER.md](./TITAN_MASTER_AGENT_REGISTER.md) | AGENT-001 | **DOCUMENTED** — 191 minimum roles; extensible; 0 Active |
-| [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) | AGENT-002 | **DOCUMENTED** |
+| [TITAN_MASTER_AGENT_REGISTER.md](./TITAN_MASTER_AGENT_REGISTER.md) | AGENT-001 (restored) | **DOCUMENTED** — **307 approved unique agents**; 18 departments; extensible; 0 Active |
+| [TITAN_AGENT001_ROLE_RECONCILIATION.md](./TITAN_AGENT001_ROLE_RECONCILIATION.md) | AGENT-001B | **DOCUMENTED** — 191 role families reconciled |
+| [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) | AGENT-002 | **DOCUMENTED** — dual status fields |
 | [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) | AGENT-003 | **DOCUMENTED** |
 | [TITAN_AGENT_ACTIVATION_ROADMAP.md](./TITAN_AGENT_ACTIVATION_ROADMAP.md) | AGENT-004 | **DOCUMENTED** — Phase A pending Owner approval |
 | Universal Integration Standard | INT-UNIVERSAL-001 | **DOCUMENTED** in integration register |
 
-**Note:** Documentation complete ≠ agent implementation complete. No agent marked **Active** without activation gate evidence.
+**Note:** Documentation complete ≠ agent implementation complete. No agent marked **Active** without activation gate evidence. Dual status model: implementation evidence (21 Partial · 3 Provider-blocked · 283 Missing) and activation lifecycle (0 Active).
 
 **Facebook (staging — J-6.7F14 deployed):** Connected and verified; content permissions granted; webhooks feed+mention provider-confirmed; Meta dashboard sample delivery succeeded; genuine live Page event pending (Meta app unpublished); not production-complete.
 
