@@ -2,6 +2,8 @@ import { Link } from 'wouter';
 import type { ExecutiveCompletedJob, ExecutiveSectionStatus } from '@titan/shared';
 import { Button, EmptyState, Panel } from '@titan/ui';
 import { StatusBadge } from '../../components/ux';
+import { DashboardDetailsDisclosure } from './DashboardDetailsDisclosure';
+import { DashboardFreshnessFooter } from './DashboardFreshnessFooter';
 import { DashboardSectionSkeleton } from './DashboardSectionSkeleton';
 import { DashboardSourceMeta } from './DashboardSourceMeta';
 import { resolveSectionHonesty } from './dashboard-honesty';
@@ -92,14 +94,20 @@ export function CompletedTodayPanel({
             ))}
           </ol>
         )}
-        <DashboardSourceMeta
-          source={section?.source ?? 'Jobs · Invoices · Job completion snapshots'}
+        <DashboardFreshnessFooter
           updatedAt={section?.updatedAt ?? generatedAt}
           state={honesty.state}
-          note={honesty.note ?? 'Completion times use the Cape Town business day.'}
-          href="/jobs?status=completed"
-          linkLabel="Open completed jobs"
         />
+        <DashboardDetailsDisclosure>
+          <DashboardSourceMeta
+            source={section?.source ?? 'Jobs · Invoices · Job completion snapshots'}
+            updatedAt={section?.updatedAt ?? generatedAt}
+            state={honesty.state}
+            note={honesty.note ?? 'Completion times use the Cape Town business day.'}
+            href="/jobs?status=completed"
+            linkLabel="Open completed jobs"
+          />
+        </DashboardDetailsDisclosure>
       </div>
     </Panel>
   );

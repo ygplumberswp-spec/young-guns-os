@@ -2,7 +2,9 @@ import { Link } from 'wouter';
 import type { AuraExecutiveSummary } from '@titan/shared';
 import { DASHBOARD_LIST_LIMITS } from '@titan/shared';
 import { Button, EmptyState, Panel } from '@titan/ui';
+import { DashboardDetailsDisclosure } from './DashboardDetailsDisclosure';
 import { DashboardSectionSkeleton } from './DashboardSectionSkeleton';
+import { DashboardSourceMeta } from './DashboardSourceMeta';
 
 type AuraExecutiveRecommendationsPanelProps = {
   data: AuraExecutiveSummary | null;
@@ -48,7 +50,6 @@ export function AuraExecutiveRecommendationsPanel({
                   <p className="exec-aura-recommendations__reason">{rec.reason}</p>
                   <p className="exec-aura-recommendations__impact">{rec.businessImpact}</p>
                   <p className="exec-aura-recommendations__meta">
-                    <span>{rec.source}</span>
                     <span>{CONFIDENCE_LABELS[rec.confidence]}</span>
                   </p>
                 </div>
@@ -69,6 +70,20 @@ export function AuraExecutiveRecommendationsPanel({
         {data?.freshness ? (
           <p className="exec-aura-recommendations__freshness">{data.freshness}</p>
         ) : null}
+        <DashboardDetailsDisclosure>
+          <DashboardSourceMeta
+            source="AURA · Jobs · CRM · Finance"
+            updatedAt={null}
+            state="live"
+            href="/aura/todays-plan"
+            linkLabel="Open AURA"
+            note={
+              recommendations.length > 0
+                ? recommendations.map((rec) => `${rec.title}: ${rec.source}`).join(' · ')
+                : null
+            }
+          />
+        </DashboardDetailsDisclosure>
       </div>
     </Panel>
   );

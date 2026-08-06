@@ -13,6 +13,7 @@ import {
   dashboardConnectionsFooterState,
 } from './dashboard-connection-overview';
 import { DashboardDetailsDisclosure } from './DashboardDetailsDisclosure';
+import { DashboardFreshnessFooter } from './DashboardFreshnessFooter';
 import { DashboardSectionSkeleton } from './DashboardSectionSkeleton';
 import { DashboardSourceMeta, useReceivedAt } from './DashboardSourceMeta';
 
@@ -121,6 +122,7 @@ export function ConnectionsPanel({ compact = false }: { compact?: boolean }) {
           ))}
         </ul>
       )}
+      <DashboardFreshnessFooter updatedAt={receivedAt} state={footerState} />
       <DashboardDetailsDisclosure label={compact ? 'Details' : 'View source'}>
         <DashboardSourceMeta
           source="Integration hub and social connection records"

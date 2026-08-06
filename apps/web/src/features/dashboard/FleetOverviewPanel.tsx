@@ -9,6 +9,8 @@ import {
 } from '@titan/shared';
 import { mapFleetConnectionDisplayToEnterpriseLabel } from '../integrations/enterprise-overview-status';
 import { Button, EmptyState, Panel } from '@titan/ui';
+import { DashboardDetailsDisclosure } from './DashboardDetailsDisclosure';
+import { DashboardFreshnessFooter } from './DashboardFreshnessFooter';
 import { DashboardSectionSkeleton } from './DashboardSectionSkeleton';
 import { DashboardSourceMeta } from './DashboardSourceMeta';
 import { resolveFleetCardHonesty } from './dashboard-honesty';
@@ -133,18 +135,21 @@ export function FleetOverviewPanel({
           })}
         </ul>
       )}
-      <DashboardSourceMeta
-        source={
-          tracking
-            ? `Cartrack · ${mapFleetConnectionDisplayToEnterpriseLabel(formatFleetConnectionDisplayLabel(tracking.connectionDisplayState))}`
-            : 'Cartrack'
-        }
-        updatedAt={lastFetchedAt}
-        state={honesty.state}
-        href="/fleet"
-        linkLabel="Open fleet"
-        note={honesty.note}
-      />
+      <DashboardFreshnessFooter updatedAt={lastFetchedAt} state={honesty.state} />
+      <DashboardDetailsDisclosure>
+        <DashboardSourceMeta
+          source={
+            tracking
+              ? `Cartrack · ${mapFleetConnectionDisplayToEnterpriseLabel(formatFleetConnectionDisplayLabel(tracking.connectionDisplayState))}`
+              : 'Cartrack'
+          }
+          updatedAt={lastFetchedAt}
+          state={honesty.state}
+          href="/fleet"
+          linkLabel="Open fleet"
+          note={honesty.note}
+        />
+      </DashboardDetailsDisclosure>
     </Panel>
   );
 }

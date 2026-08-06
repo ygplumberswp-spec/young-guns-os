@@ -2,6 +2,8 @@ import { Link } from 'wouter';
 import type { ExecutiveDashboardSummary, FleetTrackingContext } from '@titan/shared';
 import { Button, Panel } from '@titan/ui';
 import { useCompanyLocale } from '../../lib/company-locale-context';
+import { DashboardDetailsDisclosure } from './DashboardDetailsDisclosure';
+import { DashboardFreshnessFooter } from './DashboardFreshnessFooter';
 import { DashboardSectionSkeleton } from './DashboardSectionSkeleton';
 import { DashboardSourceMeta } from './DashboardSourceMeta';
 import { isSectionCountable } from './dashboard-honesty';
@@ -145,18 +147,24 @@ export function TodayAtAGlancePanel({
           ))}
         </ul>
       )}
-      <DashboardSourceMeta
-        source="Jobs · Finance · Team · Cartrack positions"
+      <DashboardFreshnessFooter
         updatedAt={summary?.generatedAt ?? null}
         state={!glance ? 'unavailable' : degraded > 0 ? 'partial' : 'live'}
-        href="/reports"
-        linkLabel="Open reports"
-        note={
-          degraded > 0
-            ? `${degraded} source(s) are not fully live — figures they feed show a dash rather than a zero.`
-            : null
-        }
       />
+      <DashboardDetailsDisclosure>
+        <DashboardSourceMeta
+          source="Jobs · Finance · Team · Cartrack positions"
+          updatedAt={summary?.generatedAt ?? null}
+          state={!glance ? 'unavailable' : degraded > 0 ? 'partial' : 'live'}
+          href="/reports"
+          linkLabel="Open reports"
+          note={
+            degraded > 0
+              ? `${degraded} source(s) are not fully live — figures they feed show a dash rather than a zero.`
+              : null
+          }
+        />
+      </DashboardDetailsDisclosure>
     </Panel>
   );
 }

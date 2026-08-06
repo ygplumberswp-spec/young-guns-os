@@ -8,11 +8,14 @@ import type {
 } from '@titan/shared';
 import { Button, EmptyState, Panel } from '@titan/ui';
 import { useCompanyLocale } from '../../lib/company-locale-context';
+import { DashboardDetailsDisclosure } from './DashboardDetailsDisclosure';
+import { DashboardFreshnessFooter } from './DashboardFreshnessFooter';
 import { DashboardSectionSkeleton } from './DashboardSectionSkeleton';
 import { DashboardSourceMeta } from './DashboardSourceMeta';
 import {
   buildOpenArEmptyDescription,
-  OPEN_AR_COVERAGE_CAPTIONS,
+  OPEN_AR_IMPORT_PENDING_NOTE,
+  openArOwnerCaption,
   resolveFinanceCardHonesty,
   resolveOpenArHistoryCoverage,
   resolveSectionHonesty,
@@ -66,6 +69,20 @@ function formatSyncLabel(iso: string | null): string {
   return days === 1 ? '1 day ago' : `${days} days ago`;
 }
 
+function buildXeroFinanceDisclosureMeta(xero: ExecutiveXeroFinance, formatMoney: (cents: number, currency?: string) => string): string {
+  if (!xero.connected) {
+    return 'Xero not connected — figures are TITAN finance records only';
+  }
+  const revenue = formatMoney(xero.revenueCents ?? 0, xero.currency);
+  return [
+    `Xero${xero.organisationName ? ` · ${xero.organisationName}` : ''}`,
+    `Last sync attempt ${formatSyncLabel(xero.lastSyncAt)}`,
+    `${xero.syncedInvoiceCount} invoices / ${xero.syncedPaymentCount} payments / ${xero.syncedQuoteCount} quotes synced`,
+    `Revenue ${revenue}`,
+    `Quote pipeline ${xero.quotePipelineCount}`,
+  ].join(' · ');
+}
+
 function InvoiceRow({
   invoice,
   currency,
@@ -80,7 +97,6 @@ function InvoiceRow({
   return (
     <tr className={`exec-outstanding__row is-${invoice.bucket}`}>
       <td data-label="Invoice" className="exec-outstanding__col--number">
-        {/* Short vertical accent carries the status colour; the row itself stays neutral. */}
         <span className={`exec-outstanding__accent is-${invoice.bucket}`} aria-hidden="true" />
         <Link href={`/finance/invoices/${invoice.id}`} className="finance-link">
           {invoice.invoiceNumber}
@@ -141,20 +157,30 @@ export function OutstandingInvoicesPanel({
   const hasOutstanding = Boolean(data && data.invoiceCount > 0 && data.outstandingCents > 0);
   const sectionHonesty = resolveSectionHonesty(section, error);
   const finance = resolveFinanceCardHonesty(xeroFinance, error);
-  // The invoice read itself must be sound before any Xero completeness caveat is meaningful.
   const sourceDown = sectionHonesty.state === 'unavailable';
   const state = sourceDown
     ? 'unavailable'
     : sectionHonesty.state === 'partial' && finance.state === 'live'
       ? 'partial'
       : finance.state;
-  const note = sourceDown
+  const disclosureNote = sourceDown
     ? sectionHonesty.note
-    : [sectionHonesty.state === 'partial' ? sectionHonesty.note : null, finance.note]
+    : [
+        sectionHonesty.state === 'partial' ? sectionHonesty.note : null,
+        finance.note,
+        sectionHonesty.state === 'partial' && data && data.excludedInvoiceCount > 0
+          ? `${data.excludedInvoiceCount} open invoice(s) are excluded from the total because their amounts are unusable.`
+          : null,
+      ]
         .filter(Boolean)
         .join(' · ') || null;
 
   const history = resolveOpenArHistoryCoverage(xeroFinance, sourceDown ? 'unavailable' : null);
+  const importPending =
+    history.coverage !== 'complete' ||
+    finance.state === 'partial' ||
+    sectionHonesty.state === 'partial';
+  const ownerCaption = openArOwnerCaption(history.coverage);
   const rowLimit = previewLimit ?? SCROLL_AFTER_ROWS;
   const rows = (data?.invoices ?? []).slice(0, rowLimit);
   const currency = data?.currency ?? 'ZAR';
@@ -177,7 +203,8 @@ export function OutstandingInvoicesPanel({
         <EmptyState
           title="Outstanding Invoices Unavailable"
           description={
-            note ?? 'Open balances could not be read. This is not the same as a zero balance.'
+            disclosureNote ??
+            'Open balances could not be read. This is not the same as a zero balance.'
           }
           action={
             onRetry ? (
@@ -207,7 +234,7 @@ export function OutstandingInvoicesPanel({
               <dd className="exec-outstanding__amount">
                 {formatMoney(data!.outstandingCents, currency)}
               </dd>
-              <span>{OPEN_AR_COVERAGE_CAPTIONS[history.coverage]}</span>
+              {ownerCaption ? <span>{ownerCaption}</span> : null}
             </div>
             <div className="exec-outstanding__tile is-overdue">
               <dt>Overdue</dt>
@@ -231,17 +258,8 @@ export function OutstandingInvoicesPanel({
             </div>
           </dl>
 
-          {sectionHonesty.state === 'partial' ? (
-            <p className="exec-outstanding__coverage is-warn">
-              Some outstanding invoices are shown. Financial sync is incomplete.
-              {data!.excludedInvoiceCount > 0
-                ? ` ${data!.excludedInvoiceCount} open invoice(s) are excluded from the total because their amounts are unusable.`
-                : ''}
-            </p>
-          ) : null}
-
-          {history.coverage !== 'complete' ? (
-            <p className="exec-outstanding__coverage">{history.note}</p>
+          {importPending ? (
+            <p className="exec-outstanding__coverage">{OPEN_AR_IMPORT_PENDING_NOTE}</p>
           ) : null}
 
           <div
@@ -310,22 +328,28 @@ export function OutstandingInvoicesPanel({
         </div>
       )}
 
-      {xeroFinance ? (
-        <p className="exec-outstanding__xero-meta" data-testid="xero-finance-meta">
-          {xeroFinance.connected
-            ? `Xero${xeroFinance.organisationName ? ` · ${xeroFinance.organisationName}` : ''} · Last sync attempt ${formatSyncLabel(xeroFinance.lastSyncAt)} · ${xeroFinance.syncedInvoiceCount} invoices / ${xeroFinance.syncedPaymentCount} payments / ${xeroFinance.syncedQuoteCount} quotes synced · Revenue ${((xeroFinance.revenueCents ?? 0) / 100).toLocaleString(undefined, { style: 'currency', currency: xeroFinance.currency })} · Quote pipeline ${xeroFinance.quotePipelineCount}`
-            : 'Xero not connected — figures are TITAN finance records only'}
-        </p>
-      ) : null}
-
-      <DashboardSourceMeta
-        source={section?.source ?? 'TITAN invoices (all open balances)'}
+      <DashboardFreshnessFooter
         updatedAt={section?.updatedAt ?? generatedAt}
-        state={state}
-        href="/finance/invoices"
-        linkLabel="Open finance"
-        note={note}
+        state={importPending ? 'live' : state}
+        financialImportPending={importPending}
       />
+      <DashboardDetailsDisclosure>
+        {xeroFinance ? (
+          <p className="exec-source-meta" data-testid="xero-finance-meta">
+            {buildXeroFinanceDisclosureMeta(xeroFinance, formatMoney)}
+          </p>
+        ) : null}
+        <DashboardSourceMeta
+          source={section?.source ?? 'TITAN invoices (all open balances)'}
+          updatedAt={section?.updatedAt ?? generatedAt}
+          state={state}
+          href="/finance/invoices"
+          linkLabel="Open finance"
+          note={[disclosureNote, history.coverage !== 'complete' ? history.note : null]
+            .filter(Boolean)
+            .join(' · ') || null}
+        />
+      </DashboardDetailsDisclosure>
     </Panel>
   );
 }

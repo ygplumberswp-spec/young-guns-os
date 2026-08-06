@@ -16,6 +16,10 @@ import {
 import { mapFleetConnectionDisplayToEnterpriseLabel } from '../integrations/enterprise-overview-status';
 import { Button, EmptyState, Panel } from '@titan/ui';
 import { GoogleMapView, type MapMarker } from '../maps/GoogleMapView';
+import { DashboardDetailsDisclosure } from './DashboardDetailsDisclosure';
+import { DashboardFreshnessFooter } from './DashboardFreshnessFooter';
+import { DashboardSourceMeta } from './DashboardSourceMeta';
+import { resolveFleetCardHonesty } from './dashboard-honesty';
 import {
   createLiveOpsExtensionContext,
   renderLiveOpsFutureSections,
@@ -42,9 +46,20 @@ type LiveOperationsPanelProps = {
 };
 
 /**
- * The map footer states the age of the newest stored position and where it came from.
- * A per-vehicle "LIVE" badge on every marker row said the same thing many times over and
- * implied a stream TITAN does not have; one honest line replaces it.
+ * Owner-visible map freshness — position age only, without provider diagnostics.
+ */
+function mapVisibleFreshnessLabel(tracking: FleetTrackingContext | null): string {
+  if (!tracking?.cartrackConnected) return 'Updated recently';
+  const newest = tracking.latestPositions.reduce<string | null>((latest, position) => {
+    if (!latest) return position.recordedAt;
+    return new Date(position.recordedAt) > new Date(latest) ? position.recordedAt : latest;
+  }, null);
+  if (!newest) return 'Updated recently';
+  return formatVehiclePositionFreshness(newest);
+}
+
+/**
+ * Full Cartrack provenance for the details disclosure — includes connection and sync context.
  */
 function mapFooterLabel(
   tracking: FleetTrackingContext | null,
@@ -152,6 +167,24 @@ export function LiveOperationsPanel({
 
   const hasStoredPositions = (tracking?.latestPositions.length ?? 0) > 0;
   const showMapSurface = hasStoredPositions || mapMarkers.length > 0;
+  const honesty = resolveFleetCardHonesty({
+    hasTracking: Boolean(tracking),
+    cartrackConnected: Boolean(tracking?.cartrackConnected),
+    connectionDisplayState: tracking?.connectionDisplayState ?? null,
+    hasStoredPositions,
+    error: fleetError ?? null,
+  });
+  const cachedSnapshotNote = tracking?.providerRefresh?.showingCachedSnapshot
+    ? [
+        CARTRACK_SLOW_SNAPSHOT_BANNER,
+        tracking.providerRefresh.failedEndpoint
+          ? `Failed endpoint: ${tracking.providerRefresh.failedEndpoint}.`
+          : null,
+        tracking.providerRefresh.timeoutMessage ?? null,
+      ]
+        .filter(Boolean)
+        .join(' ')
+    : null;
 
   return (
     <Panel
@@ -201,38 +234,44 @@ export function LiveOperationsPanel({
 
         {renderLiveOpsFutureSections(liveOpsExtensions)}
 
-        {tracking?.providerRefresh?.showingCachedSnapshot ? (
-          <p className="form-warning" role="status">
-            {CARTRACK_SLOW_SNAPSHOT_BANNER}
-            {tracking.providerRefresh.failedEndpoint
-              ? ` Failed endpoint: ${tracking.providerRefresh.failedEndpoint}.`
-              : ''}
-            {tracking.providerRefresh.timeoutMessage
-              ? ` ${tracking.providerRefresh.timeoutMessage}`
-              : ''}
-          </p>
-        ) : null}
-        {fleetError ? <p className="form-error">{fleetError}</p> : null}
-        {tracking?.lastError && !tracking.providerRefresh?.showingCachedSnapshot ? (
-          <p className="form-error">{tracking.lastError}</p>
-        ) : null}
-
-        <p className="exec-live-ops-map__footer">
-          <span>{mapFooterLabel(tracking, isPolling)}</span>
+        <DashboardFreshnessFooter
+          updatedAt={lastFetchedAt}
+          state={honesty.state}
+          label={mapVisibleFreshnessLabel(tracking)}
+        />
+        <DashboardDetailsDisclosure>
+          {cachedSnapshotNote ? <p className="exec-source-meta">{cachedSnapshotNote}</p> : null}
+          {fleetError ? <p className="exec-source-meta">{fleetError}</p> : null}
+          {tracking?.lastError && !tracking.providerRefresh?.showingCachedSnapshot ? (
+            <p className="exec-source-meta">{tracking.lastError}</p>
+          ) : null}
+          <p className="exec-source-meta">{mapFooterLabel(tracking, isPolling)}</p>
           {tracking && !tracking.livePollingAllowed ? (
-            <span className="exec-live-ops-map__footer-note">
+            <p className="exec-source-meta">
               Live polling disabled — showing the last stored positions
-            </span>
+            </p>
           ) : null}
           {tracking ? (
-            <span className="exec-live-ops-map__footer-note">
+            <p className="exec-source-meta">
               {mapFleetConnectionDisplayToEnterpriseLabel(
                 formatFleetConnectionDisplayLabel(tracking.connectionDisplayState),
               )}
               {lastFetchedAt ? ' · TITAN refreshed just now' : ''}
-            </span>
+            </p>
           ) : null}
-        </p>
+          <DashboardSourceMeta
+            source={
+              tracking
+                ? `Cartrack · ${mapFleetConnectionDisplayToEnterpriseLabel(formatFleetConnectionDisplayLabel(tracking.connectionDisplayState))}`
+                : 'Cartrack'
+            }
+            updatedAt={lastFetchedAt}
+            state={honesty.state}
+            href="/fleet"
+            linkLabel="Open fleet"
+            note={honesty.note}
+          />
+        </DashboardDetailsDisclosure>
       </div>
     </Panel>
   );

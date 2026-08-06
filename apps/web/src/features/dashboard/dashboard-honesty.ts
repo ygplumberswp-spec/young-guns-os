@@ -161,6 +161,16 @@ export const OPEN_AR_COVERAGE_CAPTIONS: Record<OpenArHistoryCoverage, string> = 
   unavailable: 'Financial history unavailable',
 };
 
+/** Calm Owner-facing note when Xero history is still arriving — never "Partial" or import counts. */
+export const OPEN_AR_IMPORT_PENDING_NOTE =
+  'Some earlier financial records are still being imported.';
+
+/** Short caption under the open-AR headline — null when no caveat is needed on the default surface. */
+export function openArOwnerCaption(coverage: OpenArHistoryCoverage): string | null {
+  if (coverage === 'complete' || coverage === 'unavailable') return null;
+  return OPEN_AR_IMPORT_PENDING_NOTE;
+}
+
 export function resolveOpenArHistoryCoverage(
   xero: ExecutiveXeroFinance | null | undefined,
   error: string | null = null,

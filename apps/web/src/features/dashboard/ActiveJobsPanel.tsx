@@ -2,6 +2,8 @@ import { Link } from 'wouter';
 import type { ExecutiveLiveJob, ExecutiveSectionStatus } from '@titan/shared';
 import { Button, EmptyState, Panel } from '@titan/ui';
 import { StatusBadge } from '../../components/ux';
+import { DashboardDetailsDisclosure } from './DashboardDetailsDisclosure';
+import { DashboardFreshnessFooter } from './DashboardFreshnessFooter';
 import { DashboardSectionSkeleton } from './DashboardSectionSkeleton';
 import { DashboardSourceMeta } from './DashboardSourceMeta';
 import { resolveSectionHonesty } from './dashboard-honesty';
@@ -112,14 +114,20 @@ export function ActiveJobsPanel({
             ))}
           </ul>
         )}
-        <DashboardSourceMeta
-          source={section?.source ?? 'Jobs (executive summary)'}
+        <DashboardFreshnessFooter
           updatedAt={section?.updatedAt ?? generatedAt}
           state={honesty.state}
-          note={honesty.note}
-          href="/jobs?status=in_progress"
-          linkLabel="Open jobs"
         />
+        <DashboardDetailsDisclosure>
+          <DashboardSourceMeta
+            source={section?.source ?? 'Jobs (executive summary)'}
+            updatedAt={section?.updatedAt ?? generatedAt}
+            state={honesty.state}
+            note={honesty.note}
+            href="/jobs?status=in_progress"
+            linkLabel="Open jobs"
+          />
+        </DashboardDetailsDisclosure>
       </div>
     </Panel>
   );

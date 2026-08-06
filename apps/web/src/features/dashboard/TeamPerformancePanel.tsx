@@ -1,6 +1,8 @@
 import { Link } from 'wouter';
 import type { ExecutiveSectionStatus, TeamPerformanceSummary } from '@titan/shared';
 import { EmptyState, Panel } from '@titan/ui';
+import { DashboardDetailsDisclosure } from './DashboardDetailsDisclosure';
+import { DashboardFreshnessFooter } from './DashboardFreshnessFooter';
 import { DashboardSectionSkeleton } from './DashboardSectionSkeleton';
 import { DashboardSourceMeta } from './DashboardSourceMeta';
 import { resolveSectionHonesty } from './dashboard-honesty';
@@ -86,14 +88,21 @@ export function TeamPerformancePanel({
             )}
           </>
         )}
-        <DashboardSourceMeta
-          source={section?.source ?? 'Team · Jobs'}
+        <DashboardFreshnessFooter
           updatedAt={section?.updatedAt ?? generatedAt}
           state={honesty.state}
-          note={data?.freshness ?? honesty.note}
-          href="/team"
-          linkLabel="Open team"
+          label={data?.freshness ?? undefined}
         />
+        <DashboardDetailsDisclosure>
+          <DashboardSourceMeta
+            source={section?.source ?? 'Team · Jobs'}
+            updatedAt={section?.updatedAt ?? generatedAt}
+            state={honesty.state}
+            note={data?.freshness ?? honesty.note}
+            href="/team"
+            linkLabel="Open team"
+          />
+        </DashboardDetailsDisclosure>
       </div>
     </Panel>
   );

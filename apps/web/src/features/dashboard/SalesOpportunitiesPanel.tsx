@@ -3,6 +3,8 @@ import type { ExecutiveSectionStatus, SalesOpportunitiesSummary } from '@titan/s
 import { DASHBOARD_LIST_LIMITS } from '@titan/shared';
 import { EmptyState, Panel } from '@titan/ui';
 import { useCompanyLocale } from '../../lib/company-locale-context';
+import { DashboardDetailsDisclosure } from './DashboardDetailsDisclosure';
+import { DashboardFreshnessFooter } from './DashboardFreshnessFooter';
 import { DashboardSectionSkeleton } from './DashboardSectionSkeleton';
 import { DashboardSourceMeta } from './DashboardSourceMeta';
 import { resolveSectionHonesty } from './dashboard-honesty';
@@ -76,14 +78,20 @@ export function SalesOpportunitiesPanel({
             )}
           </>
         )}
-        <DashboardSourceMeta
-          source={section?.source ?? 'CRM · Quotes'}
+        <DashboardFreshnessFooter
           updatedAt={section?.updatedAt ?? generatedAt}
           state={honesty.state}
-          note={honesty.note}
-          href="/crm/leads"
-          linkLabel="Open CRM"
         />
+        <DashboardDetailsDisclosure>
+          <DashboardSourceMeta
+            source={section?.source ?? 'CRM · Quotes'}
+            updatedAt={section?.updatedAt ?? generatedAt}
+            state={honesty.state}
+            note={honesty.note}
+            href="/crm/leads"
+            linkLabel="Open CRM"
+          />
+        </DashboardDetailsDisclosure>
       </div>
     </Panel>
   );
