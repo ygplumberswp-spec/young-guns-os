@@ -29,6 +29,7 @@ import type { ConnectorEngineService } from './connector-engine.service.js';
 import type { IntegrationsService } from './integrations.service.js';
 import type { XeroOAuthService } from './xero-oauth.service.js';
 import type { XeroSyncService } from './xero-sync.service.js';
+import type { XeroRateBudgetService } from './xero-rate-budget.service.js';
 import { invalidateIntegrationReadCaches } from './api-read-cache.js';
 
 const MAX_BACKOFF_MINUTES = 240;
@@ -66,6 +67,7 @@ type IntegrationSyncOrchestratorDeps = {
   connectorEngine: ConnectorEngineService;
   xeroSyncService: XeroSyncService;
   xeroOAuthService: XeroOAuthService;
+  xeroRateBudgetService?: XeroRateBudgetService;
   integrationsService: IntegrationsService;
   businessIntegrationsService: BusinessIntegrationsService;
 };
@@ -586,6 +588,27 @@ export class IntegrationSyncOrchestratorService {
     await this.updateConnectorAttemptMeta(input.companyId, input.provider, {
       lastAttemptAt: new Date().toISOString(),
     });
+
+    if (input.provider === 'xero' && this.deps.xeroRateBudgetService) {
+      const priority =
+        input.trigger === 'initial'
+          ? 'historical_import'
+          : input.trigger === 'manual'
+            ? 'incremental_refresh'
+            : 'background_sync';
+      if (!(await this.deps.xeroRateBudgetService.canStartWork(input.companyId, priority))) {
+        return {
+          provider: 'xero',
+          trigger: input.trigger,
+          success: false,
+          syncJobId: null,
+          recordsProcessed: 0,
+          message: 'Xero sync deferred — tenant rate budget or proof pause active.',
+          errorCode: 'RATE_BUDGET_DEFERRED',
+          queued: false,
+        };
+      }
+    }
 
     try {
       const result = await this.dispatchProviderSync(input, idempotencyKey);

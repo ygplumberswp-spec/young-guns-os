@@ -29,6 +29,7 @@ import type { XeroGate2ReadonlyProofService } from '../services/xero-gate2-reado
 import { XeroGate2ReadonlyProofError } from '../services/xero-gate2-readonly-proof.service.js';
 import type { XeroGate5bPaymentObservationService } from '../services/xero-gate5b-payment-observation.service.js';
 import { XeroGate5bPaymentObservationError } from '../services/xero-gate5b-payment-observation.service.js';
+import type { XeroRateBudgetService } from '../services/xero-rate-budget.service.js';
 import { XeroError } from '../lib/xero.client.js';
 import type { XeroGate3ControlledQuoteService } from '../services/xero-gate3-controlled-quote.service.js';
 import { XeroGate3ControlledQuoteError } from '../services/xero-gate3-controlled-quote.service.js';
@@ -231,6 +232,7 @@ type IntegrationsRouterDeps = {
   xeroGate3ControlledQuoteService?: XeroGate3ControlledQuoteService;
   xeroGate4ControlledInvoiceService?: XeroGate4ControlledInvoiceService;
   xeroGate5bPaymentObservationService?: XeroGate5bPaymentObservationService;
+  xeroRateBudgetService?: XeroRateBudgetService;
   teamService: TeamService;
   appUrl: string;
   jwtSecret: string;
@@ -275,6 +277,7 @@ export function createIntegrationsRouter({
   xeroGate3ControlledQuoteService,
   xeroGate4ControlledInvoiceService,
   xeroGate5bPaymentObservationService,
+  xeroRateBudgetService,
   teamService,
   appUrl,
   jwtSecret,
@@ -701,6 +704,48 @@ export function createIntegrationsRouter({
     },
   );
 
+  router.get('/xero/rate-budget/state', requireAnyPermission('integrations:manage'), async (req, res) => {
+    const { companyId } = getAuth(req);
+    if (!xeroRateBudgetService) {
+      res.status(503).json({ error: { code: 'NOT_CONFIGURED', message: 'Xero rate budget is not configured.' } });
+      return;
+    }
+    const state = await xeroRateBudgetService.getState(companyId);
+    res.json({ data: { state } });
+  });
+
+  router.post('/xero/rate-budget/pause-sync', requireAnyPermission('integrations:manage'), async (req, res) => {
+    const { companyId, userId } = getAuth(req);
+    if (!xeroRateBudgetService) {
+      res.status(503).json({ error: { code: 'NOT_CONFIGURED', message: 'Xero rate budget is not configured.' } });
+      return;
+    }
+    const reason =
+      typeof req.body?.reason === 'string' && req.body.reason.trim()
+        ? req.body.reason.trim()
+        : 'owner_controlled_proof';
+    await xeroRateBudgetService.pauseTenantSync(companyId, reason, {
+      userId,
+      auditLabel: 'xero_sync_paused_for_proof',
+    });
+    const state = await xeroRateBudgetService.getState(companyId);
+    res.json({ data: { paused: true, state } });
+  });
+
+  router.post('/xero/rate-budget/resume-sync', requireAnyPermission('integrations:manage'), async (req, res) => {
+    const { companyId, userId } = getAuth(req);
+    if (!xeroRateBudgetService) {
+      res.status(503).json({ error: { code: 'NOT_CONFIGURED', message: 'Xero rate budget is not configured.' } });
+      return;
+    }
+    await xeroRateBudgetService.resumeTenantSync(companyId, {
+      userId,
+      auditLabel: 'xero_sync_resumed_after_proof',
+    });
+    const state = await xeroRateBudgetService.getState(companyId);
+    res.json({ data: { paused: false, state } });
+  });
+
   router.post(
     '/xero/gate4-controlled-invoice',
     requireAnyPermission('integrations:manage'),
@@ -801,6 +846,48 @@ export function createIntegrationsRouter({
       }
     },
   );
+
+  router.get('/xero/rate-budget/state', requireAnyPermission('integrations:manage'), async (req, res) => {
+    const { companyId } = getAuth(req);
+    if (!xeroRateBudgetService) {
+      res.status(503).json({ error: { code: 'NOT_CONFIGURED', message: 'Xero rate budget is not configured.' } });
+      return;
+    }
+    const state = await xeroRateBudgetService.getState(companyId);
+    res.json({ data: { state } });
+  });
+
+  router.post('/xero/rate-budget/pause-sync', requireAnyPermission('integrations:manage'), async (req, res) => {
+    const { companyId, userId } = getAuth(req);
+    if (!xeroRateBudgetService) {
+      res.status(503).json({ error: { code: 'NOT_CONFIGURED', message: 'Xero rate budget is not configured.' } });
+      return;
+    }
+    const reason =
+      typeof req.body?.reason === 'string' && req.body.reason.trim()
+        ? req.body.reason.trim()
+        : 'owner_controlled_proof';
+    await xeroRateBudgetService.pauseTenantSync(companyId, reason, {
+      userId,
+      auditLabel: 'xero_sync_paused_for_proof',
+    });
+    const state = await xeroRateBudgetService.getState(companyId);
+    res.json({ data: { paused: true, state } });
+  });
+
+  router.post('/xero/rate-budget/resume-sync', requireAnyPermission('integrations:manage'), async (req, res) => {
+    const { companyId, userId } = getAuth(req);
+    if (!xeroRateBudgetService) {
+      res.status(503).json({ error: { code: 'NOT_CONFIGURED', message: 'Xero rate budget is not configured.' } });
+      return;
+    }
+    await xeroRateBudgetService.resumeTenantSync(companyId, {
+      userId,
+      auditLabel: 'xero_sync_resumed_after_proof',
+    });
+    const state = await xeroRateBudgetService.getState(companyId);
+    res.json({ data: { paused: false, state } });
+  });
 
   router.put('/xero', requireAnyPermission('integrations:manage'), async (_req, res) => {
     res.status(410).json({

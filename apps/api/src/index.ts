@@ -573,6 +573,8 @@ const xeroOAuthService = XeroOAuthService.create({
   appUrl: env.APP_URL,
   oauthConfig: xeroOAuthConfig,
 });
+const xeroRateBudgetService = XeroRateBudgetService.create(db);
+xeroOAuthService.setRateBudget(xeroRateBudgetService);
 const xeroGate2ReadonlyProofService = new XeroGate2ReadonlyProofService(db, xeroOAuthService);
 const gmailOAuthConfig = resolveGmailOAuthConfig(env, apiPublicUrl);
 bootLog('gmail oauth resolved', {
@@ -631,10 +633,12 @@ const xeroSyncService = XeroSyncService.create({
   writeApprovalGate: xeroWriteApprovalGate,
   mappingConflictService: xeroMappingConflictService,
 });
+xeroSyncService.setRateBudget(xeroRateBudgetService);
 const xeroGate5bPaymentObservationService = new XeroGate5bPaymentObservationService(
   db,
   xeroOAuthService,
   xeroSyncService,
+  xeroRateBudgetService,
 );
 const xeroGate3ControlledQuoteService = new XeroGate3ControlledQuoteService(
   db,
@@ -651,7 +655,6 @@ const xeroGate4ControlledInvoiceService = new XeroGate4ControlledInvoiceService(
 const xeroFinancialMemoryService = new XeroFinancialMemoryService(db, xeroSyncService);
 const xeroCustomerMappingService = XeroCustomerMappingService.create(db);
 const xeroReconciliationService = XeroReconciliationService.create(db);
-const xeroRateBudgetService = XeroRateBudgetService.create(db);
 const xeroRealtimeIntersyncService = XeroRealtimeIntersyncService.create({
   db,
   xeroSyncService,
@@ -705,6 +708,7 @@ const integrationSyncOrchestratorService = new IntegrationSyncOrchestratorServic
   connectorEngine: connectorEngineService,
   xeroSyncService,
   xeroOAuthService,
+  xeroRateBudgetService,
   integrationsService,
   businessIntegrationsService,
 });
@@ -1983,6 +1987,7 @@ app.use(
     xeroGate3ControlledQuoteService,
     xeroGate4ControlledInvoiceService,
     xeroGate5bPaymentObservationService,
+    xeroRateBudgetService,
     teamService,
     appUrl: env.APP_URL,
     jwtSecret: env.JWT_SECRET,

@@ -197,7 +197,7 @@ export class XeroRealtimeIntersyncService {
 
     let processed = 0;
     for (const job of jobs) {
-      if (await this.rateBudget.isPaused(job.companyId)) {
+      if (!(await this.rateBudget.canStartWork(job.companyId, 'webhook_targeted_refresh'))) {
         continue;
       }
       if (!this.rateBudget.acquireConcurrentSlot(job.companyId)) {
@@ -251,7 +251,7 @@ export class XeroRealtimeIntersyncService {
   }
 
   async refreshQuotesForCompany(companyId: string): Promise<XeroIncrementalQuoteRefreshResult> {
-    if (await this.rateBudget.isPaused(companyId)) {
+    if (!(await this.rateBudget.canStartWork(companyId, 'incremental_refresh'))) {
       return {
         refreshedAt: new Date().toISOString(),
         createdCount: 0,

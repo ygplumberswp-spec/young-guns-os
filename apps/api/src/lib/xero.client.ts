@@ -146,6 +146,8 @@ type XeroClientOptions = {
   getAccessToken: () => Promise<string>;
   /** Called once before an auth retry — should force-refresh OAuth tokens when Xero returns 401. */
   onAuthRetry?: () => Promise<void>;
+  /** Invoked for every Xero HTTP response so tenant rate-budget headers can be persisted. */
+  onResponse?: (response: Response) => void | Promise<void>;
   /** Per-request timeout for Xero HTTP calls. Default 20s. */
   requestTimeoutMs?: number;
 };
@@ -233,15 +235,17 @@ export class XeroClient {
   private readonly tenantId: string;
   private readonly getAccessToken: () => Promise<string>;
   private readonly onAuthRetry?: () => Promise<void>;
+  private readonly onResponse?: (response: Response) => void | Promise<void>;
   private readonly requestTimeoutMs: number;
   private cachedAccessToken: string | null = null;
   private cachedSalesAccountCode: string | null = null;
   private cachedBankAccountCode: string | null = null;
 
-  constructor({ tenantId, getAccessToken, onAuthRetry, requestTimeoutMs }: XeroClientOptions) {
+  constructor({ tenantId, getAccessToken, onAuthRetry, onResponse, requestTimeoutMs }: XeroClientOptions) {
     this.tenantId = tenantId.trim();
     this.getAccessToken = getAccessToken;
     this.onAuthRetry = onAuthRetry;
+    this.onResponse = onResponse;
     this.requestTimeoutMs = requestTimeoutMs ?? XERO_REQUEST_TIMEOUT_MS;
   }
 
@@ -776,6 +780,10 @@ export class XeroClient {
         'NETWORK_ERROR',
         error instanceof Error ? error.message : 'Unable to reach Xero API',
       );
+    }
+
+    if (this.onResponse) {
+      await this.onResponse(response);
     }
 
     if (response.status === 401) {

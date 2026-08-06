@@ -50,6 +50,10 @@ export const xeroRateBudgetState = pgTable('xero_rate_budget_state', {
   rateLimitProblem: text('rate_limit_problem'),
   retryAfterUntil: timestamp('retry_after_until', { withTimezone: true }),
   lastCorrelationId: text('last_correlation_id'),
+  syncPausedUntil: timestamp('sync_paused_until', { withTimezone: true }),
+  syncPauseReason: text('sync_pause_reason'),
+  lastRequestAt: timestamp('last_request_at', { withTimezone: true }),
+  lastResponseDate: text('last_response_date'),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
 

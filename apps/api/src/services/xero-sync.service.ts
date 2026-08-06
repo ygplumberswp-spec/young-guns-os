@@ -62,6 +62,10 @@ import { decryptXeroCredentials, isXeroOAuthCredentials } from '../lib/crypto.js
 import { amountToCents, mapXeroInvoiceStatus, XeroClient, XeroError, XERO_PAGE_SIZE, XERO_RATE_LIMIT_BASE_DELAY_MS } from '../lib/xero.client.js';
 import type { IntegrationHubService } from './integration-hub.service.js';
 import type { XeroOAuthService } from './xero-oauth.service.js';
+import type {
+  XeroRateBudgetService,
+  XeroRequestPriority,
+} from './xero-rate-budget.service.js';
 import {
   invalidateDashboardFinanceCaches,
   invalidateIntegrationReadCaches,
@@ -253,6 +257,7 @@ export class XeroSyncService {
   private importJobSettledHandler?: XeroImportJobSettledHandler;
   private readonly writeApprovalGate?: import('./xero-write-approval-gate.service.js').XeroWriteApprovalGate;
   private readonly mappingConflictService?: import('./xero-mapping-conflict.service.js').XeroMappingConflictService;
+  private rateBudget: XeroRateBudgetService | null = null;
 
   constructor(
     private readonly db: DatabaseClient,
@@ -277,6 +282,10 @@ export class XeroSyncService {
 
   setImportJobSettledHandler(handler: XeroImportJobSettledHandler): void {
     this.importJobSettledHandler = handler;
+  }
+
+  setRateBudget(rateBudget: XeroRateBudgetService | null): void {
+    this.rateBudget = rateBudget;
   }
 
   async getSyncStatus(companyId: string): Promise<XeroSyncStatusResponse> {
@@ -509,6 +518,15 @@ export class XeroSyncService {
       const state = parseImportJobState(job.resultSummary as Record<string, unknown> | null);
       if (state.nextRetryAt && new Date(state.nextRetryAt) > new Date()) {
         continue;
+      }
+
+      if (this.rateBudget) {
+        if (await this.rateBudget.isSyncPaused(job.companyId)) {
+          continue;
+        }
+        if (!(await this.rateBudget.canStartWork(job.companyId, 'historical_import'))) {
+          continue;
+        }
       }
 
       await this.processImportJobBatch(job.id);
@@ -4573,6 +4591,19 @@ export class XeroSyncService {
    * Does not start a full import job; fetches only the affected invoice.
    */
   async refreshTargetedInvoiceFromXero(
+    companyId: string,
+    xeroInvoiceId: string,
+    options?: { priority?: XeroRequestPriority },
+  ): Promise<{ invoiceId: string | null; updated: boolean; failed: boolean }> {
+    const priority = options?.priority ?? 'webhook_targeted_refresh';
+    const execute = () => this.refreshTargetedInvoiceFromXeroOnce(companyId, xeroInvoiceId);
+    if (this.rateBudget) {
+      return this.rateBudget.executeWithBudget(companyId, priority, execute);
+    }
+    return execute();
+  }
+
+  private async refreshTargetedInvoiceFromXeroOnce(
     companyId: string,
     xeroInvoiceId: string,
   ): Promise<{ invoiceId: string | null; updated: boolean; failed: boolean }> {

@@ -18,6 +18,7 @@ import {
   type XeroOAuthStoredCredentials,
 } from '../lib/crypto.js';
 import { XeroClient, XeroError } from '../lib/xero.client.js';
+import type { XeroRateBudgetService } from './xero-rate-budget.service.js';
 import { invalidateIntegrationReadCaches } from './api-read-cache.js';
 
 const AUTHORIZE_URL = 'https://login.xero.com/identity/connect/authorize';
@@ -75,6 +76,7 @@ type XeroConnectionInfo = {
 
 export class XeroOAuthService {
   private readonly refreshInflight = new Map<string, Promise<string>>();
+  private rateBudget: XeroRateBudgetService | null = null;
   private onConnectedHook:
     | ((input: { companyId: string; userId: string }) => void | Promise<void>)
     | null = null;
@@ -98,6 +100,10 @@ export class XeroOAuthService {
     hook: ((input: { companyId: string; userId: string }) => void | Promise<void>) | null,
   ): void {
     this.onConnectedHook = hook;
+  }
+
+  setRateBudget(rateBudget: XeroRateBudgetService | null): void {
+    this.rateBudget = rateBudget;
   }
 
   getRedirectUri(): string | null {
@@ -470,6 +476,9 @@ export class XeroOAuthService {
       tenantId,
       getAccessToken: () => this.getValidAccessToken(companyId),
       onAuthRetry: () => this.forceRefreshAccessToken(companyId).then(() => undefined),
+      onResponse: this.rateBudget
+        ? (response) => this.rateBudget!.recordResponse(companyId, response)
+        : undefined,
     });
   }
 

@@ -15,6 +15,10 @@ import {
 import type { XeroOAuthService } from './xero-oauth.service.js';
 import type { XeroSyncService } from './xero-sync.service.js';
 import { XeroError } from '../lib/xero.client.js';
+import {
+  XeroRateBudgetError,
+  type XeroRateBudgetService,
+} from './xero-rate-budget.service.js';
 
 export class XeroGate5bPaymentObservationError extends Error {
   constructor(
@@ -32,6 +36,13 @@ function maskId(value: string | null | undefined): string | null {
 }
 
 function rethrowProviderReadError(scope: 'invoice' | 'payment', error: unknown): never {
+  if (error instanceof XeroRateBudgetError) {
+    throw new XeroGate5bPaymentObservationError(
+      'PROVIDER_UNAVAILABLE',
+      `Xero ${scope} read unavailable: ${error.message}`,
+    );
+  }
+
   if (error instanceof XeroError) {
     if (error.code === 'TIMEOUT' || error.code === 'RATE_LIMIT') {
       throw new XeroGate5bPaymentObservationError(
@@ -114,6 +125,8 @@ export type XeroGate5bPaymentObservationResult = {
   rateLimit: {
     healthy: boolean;
     note: string;
+    retryAfterUntil?: string | null;
+    minLimitRemaining?: number | null;
   };
 };
 
@@ -127,9 +140,22 @@ export class XeroGate5bPaymentObservationService {
     private readonly db: DatabaseClient,
     private readonly xeroOAuthService: XeroOAuthService,
     private readonly xeroSyncService: XeroSyncService,
+    private readonly rateBudget?: XeroRateBudgetService,
   ) {}
 
   async observePaymentState(input: {
+    companyId: string;
+    invoiceId: string;
+    runTargetedRefresh?: boolean;
+  }): Promise<XeroGate5bPaymentObservationResult> {
+    const run = () => this.observePaymentStateInner(input);
+    if (this.rateBudget) {
+      return this.rateBudget.executeWithBudget(input.companyId, 'owner_proof_read', run);
+    }
+    return run();
+  }
+
+  private async observePaymentStateInner(input: {
     companyId: string;
     invoiceId: string;
     runTargetedRefresh?: boolean;
@@ -306,10 +332,15 @@ export class XeroGate5bPaymentObservationService {
       const refresh = await this.xeroSyncService.refreshTargetedInvoiceFromXero(
         input.companyId,
         invoiceMapping.xeroInvoiceId,
+        { priority: 'owner_proof_read' },
       );
       targetedRefresh.updated = refresh.updated;
       targetedRefresh.failed = refresh.failed;
     }
+
+    const budgetState = this.rateBudget ? await this.rateBudget.getState(input.companyId) : null;
+    const rateLimitHealthy =
+      !budgetState?.retryAfterUntil || Date.parse(budgetState.retryAfterUntil) <= Date.now();
 
     const invoicePaidInXero =
       remoteStatus === 'PAID' || (xeroAmountDueCents === 0 && xeroAmountPaidCents > 0);
@@ -371,8 +402,12 @@ export class XeroGate5bPaymentObservationService {
       },
       targetedRefresh,
       rateLimit: {
-        healthy: true,
-        note: 'No rate-limit responses during Gate 5B read sequence',
+        healthy: rateLimitHealthy,
+        note: rateLimitHealthy
+          ? 'Tenant rate budget within limits during Gate 5B read sequence'
+          : 'Tenant rate budget cooldown active — provider headers persisted',
+        retryAfterUntil: budgetState?.retryAfterUntil ?? null,
+        minLimitRemaining: budgetState?.minLimitRemaining ?? null,
       },
     };
   }
