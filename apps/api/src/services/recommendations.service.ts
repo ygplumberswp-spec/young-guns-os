@@ -1,4 +1,5 @@
 import type { Recommendation, RecommendationsResponse } from '@titan/shared';
+import { dedupeFollowUpRecommendations } from '@titan/shared';
 import type { IntelligenceService } from './intelligence.service.js';
 
 export class RecommendationsService {
@@ -8,11 +9,12 @@ export class RecommendationsService {
     const dashboard = await this.intelligenceService.getDashboard(companyId);
     const recommendations: Recommendation[] = [];
 
-    for (const customer of dashboard.customerFollowUps.items) {
-      recommendations.push({
+    const followUpByCustomer = dedupeFollowUpRecommendations(
+      dashboard.customerFollowUps.items.map((customer) => ({
         id: `follow-up-${customer.id}`,
-        category: 'customer_follow_up',
-        priority: customer.daysSinceContact && customer.daysSinceContact > 30 ? 'high' : 'medium',
+        category: 'customer_follow_up' as const,
+        priority:
+          customer.daysSinceContact && customer.daysSinceContact > 30 ? ('high' as const) : ('medium' as const),
         title: `Follow up with ${customer.name}`,
         description: customer.lastActivityAt
           ? `No recent activity recorded. Last contact was ${customer.daysSinceContact ?? 'unknown'} days ago.`
@@ -20,7 +22,11 @@ export class RecommendationsService {
         actionHint: 'Log a CRM activity or draft a WhatsApp message',
         entityType: 'customer',
         entityId: customer.id,
-      });
+      })),
+    );
+
+    for (const recommendation of followUpByCustomer.values()) {
+      recommendations.push(recommendation);
     }
 
     for (const invoice of dashboard.outstandingInvoices.items) {

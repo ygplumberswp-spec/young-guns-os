@@ -1,0 +1,74 @@
+{
+  "schemaVersion": "frz015-staging-verify-v2",
+  "startedAt": "2026-08-01T09:45:47.957Z",
+  "apiOrigin": "https://young-guns-os-staging.up.railway.app",
+  "productionRefTouched": false,
+  "syntheticOnly": true,
+  "results": [
+    {
+      "name": "staging_api_ready",
+      "status": "PASS",
+      "detail": "providersEnabled=true"
+    },
+    {
+      "name": "providers_gate_enabled",
+      "status": "PASS",
+      "detail": "true"
+    },
+    {
+      "name": "owner_signup",
+      "status": "PASS",
+      "detail": "094b8215-c5b8-42a7-975c-d31cf50266d0"
+    },
+    {
+      "name": "provider_status_endpoint",
+      "status": "PASS",
+      "detail": "count=9"
+    },
+    {
+      "name": "provider_credentials_truthful",
+      "status": "PASS",
+      "detail": "health=healthy"
+    },
+    {
+      "name": "conversation_create",
+      "status": "PASS",
+      "detail": "7d197ce6-deda-4e41-9364-25cb0e831c45"
+    },
+    {
+      "name": "synthetic_message_send",
+      "status": "PASS",
+      "detail": "latencyMs=8435"
+    },
+    {
+      "name": "provider_response_received",
+      "status": "PASS",
+      "detail": "OK"
+    },
+    {
+      "name": "provider_trace_metadata",
+      "status": "PASS",
+      "detail": "response carried assistant message"
+    },
+    {
+      "name": "no_customer_pii_in_request",
+      "status": "PASS",
+      "detail": "synthetic prompt only"
+    },
+    {
+      "name": "tenant_isolation",
+      "status": "PASS",
+      "detail": "404"
+    },
+    {
+      "name": "permissions_unauthenticated_denied",
+      "status": "PASS",
+      "detail": "401"
+    }
+  ],
+  "totals": {
+    "passed": 12,
+    "failed": 0
+  },
+  "verdict": "GO"
+}

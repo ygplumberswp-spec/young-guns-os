@@ -20,8 +20,10 @@ import type {
 } from '@titan/shared';
 import {
   classifyBuyerFromEvidence,
+  classifyCustomerValueFromEvidence,
   HUMAN_QUALITY_CONTENT_STANDARD,
   isMarketingConsentGranted,
+  isMarketingEligibleCustomerValue,
   isPlaceholderEmail,
   isValidEmailAddress,
   normalizeSaPhone,
@@ -575,6 +577,18 @@ export class MarketingEligibilityService {
       consentsByCustomer.set(row.customerId, list);
     }
 
+    const invoiceRows = await this.db
+      .select()
+      .from(invoices)
+      .where(and(eq(invoices.companyId, companyId), inArray(invoices.customerId, customerIds)));
+
+    const invoicesByCustomer = new Map<string, typeof invoiceRows>();
+    for (const invoice of invoiceRows) {
+      const list = invoicesByCustomer.get(invoice.customerId) ?? [];
+      list.push(invoice);
+      invoicesByCustomer.set(invoice.customerId, list);
+    }
+
     let sensitiveCustomerIds = new Set<string>();
     try {
       const sensitiveRows = await this.db
@@ -603,9 +617,30 @@ export class MarketingEligibilityService {
       const phoneField = phoneFieldByCustomer.get(customer.id) ?? null;
       const consents = consentsByCustomer.get(customer.id) ?? [];
 
+      const customerInvoices = invoicesByCustomer.get(customer.id) ?? [];
+      const valueClassification = classifyCustomerValueFromEvidence({
+        customerId: customer.id,
+        customerName: customer.name,
+        customerStatus: customer.status,
+        isSupplierOnly: customer.isSupplierOnly,
+        xeroContactId: null,
+        invoices: customerInvoices.map((invoice) => ({
+          id: invoice.id,
+          invoiceNumber: invoice.invoiceNumber,
+          status: invoice.status,
+          amountCents: invoice.amountCents,
+          amountPaidCents: invoice.amountPaidCents,
+          totalCents: invoice.totalCents,
+          issuedAt: invoice.issuedAt ? invoice.issuedAt.toISOString() : null,
+          dueDate: invoice.dueDate ? invoice.dueDate.toISOString() : null,
+          updatedAt: invoice.updatedAt.toISOString(),
+        })),
+      });
+
       const { status, reasons, preferredChannel } = computeEligibilityDecision({
         customer,
         classification,
+        valuePaymentEligible: isMarketingEligibleCustomerValue(valueClassification),
         emailField,
         phoneField,
         consents,
@@ -1011,6 +1046,7 @@ function canApproveAudience(scope: MarketingEligibilityScope): boolean {
 function computeEligibilityDecision(input: {
   customer: typeof customers.$inferSelect;
   classification: typeof customerBuyerClassifications.$inferSelect | null;
+  valuePaymentEligible?: boolean;
   emailField: typeof customerContactFields.$inferSelect | null;
   phoneField: typeof customerContactFields.$inferSelect | null;
   consents: Array<typeof customerMarketingConsents.$inferSelect>;
@@ -1020,12 +1056,14 @@ function computeEligibilityDecision(input: {
   reasons: ReactivationEligibilityReason[];
   preferredChannel: typeof customerMarketingConsents.$inferSelect.channel | null;
 } {
-  const { customer, classification, emailField, phoneField, consents, isSensitive } = input;
+  const { customer, classification, valuePaymentEligible, emailField, phoneField, consents, isSensitive } =
+    input;
   const reasons: ReactivationEligibilityReason[] = [];
 
   const isPaidBuyerClassification = Boolean(
     classification && PAID_BUYER_PRIMARY_CLASSIFICATIONS.has(classification.primaryClassification),
   );
+  const isPaymentEligible = valuePaymentEligible ?? isPaidBuyerClassification;
 
   if (!classification) {
     reasons.push({
@@ -1043,10 +1081,10 @@ function computeEligibilityDecision(input: {
     return { status: 'excluded', reasons, preferredChannel: null };
   }
 
-  if (!isPaidBuyerClassification) {
+  if (!isPaymentEligible) {
     reasons.push({
       code: `not_paid_buyer_${classification.primaryClassification}`,
-      detail: `Classified as ${classification.primaryClassification} — paid ACCREC invoice evidence is required for marketing eligibility.`,
+      detail: `Classified as ${classification.primaryClassification} — paying/fully paid ACCREC evidence is required for marketing eligibility.`,
     });
     return { status: 'excluded', reasons, preferredChannel: null };
   }

@@ -1,0 +1,26 @@
+{
+  "generatedAt": "2026-08-01T11:38:27.545Z",
+  "disposableDb": "titan_wa_enrich_mig_msaasiel",
+  "migration": "0107_whatsapp_contact_enrichment.sql",
+  "results": [
+    {
+      "check": "tables_present",
+      "pass": true,
+      "tables": [
+        "customer_contact_sources",
+        "whatsapp_match_reviews"
+      ]
+    },
+    {
+      "check": "insert_contact_source",
+      "pass": true,
+      "count": 1
+    },
+    {
+      "check": "reapply_idempotent",
+      "pass": true,
+      "count": 1
+    }
+  ],
+  "pass": true
+}

@@ -14,6 +14,30 @@ export const DashboardPage = lazyNamed(
   'DashboardPage',
 );
 export const AuraPage = lazyNamed(() => import('../pages/aura/AuraPage'), 'AuraPage');
+export const AuraCommandCentrePage = lazyNamed(
+  () => import('../pages/aura/AuraCommandCentrePage'),
+  'AuraCommandCentrePage',
+);
+export const AuraAgentNetworkPage = lazyNamed(
+  () => import('../pages/aura-agent-network/AuraAgentNetworkPage'),
+  'AuraAgentNetworkPage',
+);
+export const AuraEvolutionPage = lazyNamed(
+  () => import('../pages/aura/AuraEvolutionPage'),
+  'AuraEvolutionPage',
+);
+export const TodaysPlanPage = lazyNamed(
+  () => import('../pages/aura/TodaysPlanPage'),
+  'TodaysPlanPage',
+);
+export const BusinessRulesPage = lazyNamed(
+  () => import('../pages/aura/BusinessRulesPage'),
+  'BusinessRulesPage',
+);
+export const SettingsIndexPage = lazyNamed(
+  () => import('../pages/settings/SettingsIndexPage'),
+  'SettingsIndexPage',
+);
 export const CompanySettingsPage = lazyNamed(
   () => import('../pages/settings/CompanySettingsPage'),
   'CompanySettingsPage',
@@ -26,6 +50,10 @@ export const TeamSettingsPage = lazyNamed(
   () => import('../pages/settings/TeamSettingsPage'),
   'TeamSettingsPage',
 );
+export const DashboardSettingsPage = lazyNamed(
+  () => import('../pages/settings/DashboardSettingsPage'),
+  'DashboardSettingsPage',
+);
 export const CustomerListPage = lazyNamed(
   () => import('../pages/crm/CustomerListPage'),
   'CustomerListPage',
@@ -37,6 +65,14 @@ export const CustomerCreatePage = lazyNamed(
 export const CustomerDetailPage = lazyNamed(
   () => import('../pages/crm/CustomerDetailPage'),
   'CustomerDetailPage',
+);
+export const CustomerDuplicateMergePage = lazyNamed(
+  () => import('../pages/crm/CustomerDuplicateMergePage'),
+  'CustomerDuplicateMergePage',
+);
+export const DraftsPage = lazyNamed(
+  () => import('../pages/drafts/DraftsPage'),
+  'DraftsPage',
 );
 export const JobListPage = lazyNamed(() => import('../pages/jobs/JobListPage'), 'JobListPage');
 export const JobCreatePage = lazyNamed(
@@ -51,6 +87,10 @@ export const SchedulingPage = lazyNamed(
   () => import('../pages/scheduling/SchedulingPage'),
   'SchedulingPage',
 );
+export const BusinessDayTimelinePage = lazyNamed(
+  () => import('../pages/workforce/BusinessDayTimelinePage'),
+  'BusinessDayTimelinePage',
+);
 export const QuoteListPage = lazyNamed(
   () => import('../pages/finance/QuoteListPage'),
   'QuoteListPage',
@@ -63,6 +103,19 @@ export const QuoteDetailPage = lazyNamed(
   () => import('../pages/finance/QuoteDetailPage'),
   'QuoteDetailPage',
 );
+export const QuoteEditPage = lazyNamed(
+  () => import('../pages/finance/QuoteEditPage'),
+  'QuoteEditPage',
+);
+export const BoqListPage = lazyNamed(() => import('../pages/finance/BoqListPage'), 'BoqListPage');
+export const BoqCreatePage = lazyNamed(
+  () => import('../pages/finance/BoqCreatePage'),
+  'BoqCreatePage',
+);
+export const BoqDetailPage = lazyNamed(
+  () => import('../pages/finance/BoqDetailPage'),
+  'BoqDetailPage',
+);
 export const InvoiceListPage = lazyNamed(
   () => import('../pages/finance/InvoiceListPage'),
   'InvoiceListPage',
@@ -71,13 +124,25 @@ export const InvoiceCreatePage = lazyNamed(
   () => import('../pages/finance/InvoiceCreatePage'),
   'InvoiceCreatePage',
 );
+export const InvoiceEditPage = lazyNamed(
+  () => import('../pages/finance/InvoiceEditPage'),
+  'InvoiceEditPage',
+);
 export const InvoiceDetailPage = lazyNamed(
   () => import('../pages/finance/InvoiceDetailPage'),
   'InvoiceDetailPage',
 );
+export const TitanDocumentPage = lazyNamed(
+  () => import('../pages/documents/TitanDocumentPage'),
+  'TitanDocumentPage',
+);
 export const PaymentListPage = lazyNamed(
   () => import('../pages/finance/PaymentListPage'),
   'PaymentListPage',
+);
+export const BankStatementImportPage = lazyNamed(
+  () => import('../pages/finance/BankStatementImportPage'),
+  'BankStatementImportPage',
 );
 export const PaymentCreatePage = lazyNamed(
   () => import('../pages/finance/PaymentCreatePage'),
@@ -98,6 +163,10 @@ export const ProductCreatePage = lazyNamed(
 export const StockOverviewPage = lazyNamed(
   () => import('../pages/inventory/StockOverviewPage'),
   'StockOverviewPage',
+);
+export const StockMovementsPage = lazyNamed(
+  () => import('../pages/inventory/StockMovementsPage'),
+  'StockMovementsPage',
 );
 export const SupplierListPage = lazyNamed(
   () => import('../pages/procurement/SupplierListPage'),
@@ -162,6 +231,22 @@ export const DocumentCreatePage = lazyNamed(
 export const DocumentDetailPage = lazyNamed(
   () => import('../pages/documents/DocumentDetailPage'),
   'DocumentDetailPage',
+);
+export const JobPackListPage = lazyNamed(
+  () => import('../pages/documents/JobPackListPage'),
+  'JobPackListPage',
+);
+export const JobPackDetailPage = lazyNamed(
+  () => import('../pages/documents/JobPackDetailPage'),
+  'JobPackDetailPage',
+);
+export const CompletionReportListPage = lazyNamed(
+  () => import('../pages/documents/CompletionReportListPage'),
+  'CompletionReportListPage',
+);
+export const CompletionReportDetailPage = lazyNamed(
+  () => import('../pages/documents/CompletionReportDetailPage'),
+  'CompletionReportDetailPage',
 );
 export const CategoryListPage = lazyNamed(
   () => import('../pages/documents/CategoryListPage'),
@@ -231,6 +316,62 @@ export const VoiceReceptionPage = lazyNamed(
   () => import('../pages/voice-reception/VoiceReceptionPage'),
   'VoiceReceptionPage',
 );
+export const VoiceAiReceptionistPage = lazyNamed(
+  () => import('../pages/voice-ai-receptionist/VoiceAiReceptionistPage'),
+  'VoiceAiReceptionistPage',
+);
+export const CallIntelligencePage = lazyNamed(
+  () => import('../pages/call-intelligence/CallIntelligencePage'),
+  'CallIntelligencePage',
+);
+export const SalesIntelligenceAgentPage = lazyNamed(
+  () => import('../pages/sales-intelligence-agent/SalesIntelligenceAgentPage'),
+  'SalesIntelligenceAgentPage',
+);
+export const SalesFollowupIntelligencePage = lazyNamed(
+  () => import('../pages/sales-followup-intelligence/SalesFollowupIntelligencePage'),
+  'SalesFollowupIntelligencePage',
+);
+export const SalesAnalyticsIntelligencePage = lazyNamed(
+  () => import('../pages/sales-analytics-intelligence/SalesAnalyticsIntelligencePage'),
+  'SalesAnalyticsIntelligencePage',
+);
+export const Customer360IntelligencePage = lazyNamed(
+  () => import('../pages/customer-360-intelligence/Customer360IntelligencePage'),
+  'Customer360IntelligencePage',
+);
+export const PropertyIntelligencePage = lazyNamed(
+  () => import('../pages/property-intelligence/PropertyIntelligencePage'),
+  'PropertyIntelligencePage',
+);
+export const DocumentIntelligencePage = lazyNamed(
+  () => import('../pages/document-intelligence/DocumentIntelligencePage'),
+  'DocumentIntelligencePage',
+);
+export const ComplianceIntelligencePage = lazyNamed(
+  () => import('../pages/compliance-intelligence/ComplianceIntelligencePage'),
+  'ComplianceIntelligencePage',
+);
+export const SmartNotificationsPage = lazyNamed(
+  () => import('../pages/smart-notifications/SmartNotificationsPage'),
+  'SmartNotificationsPage',
+);
+export const MarketIntelligencePage = lazyNamed(
+  () => import('../pages/market-intelligence/MarketIntelligencePage'),
+  'MarketIntelligencePage',
+);
+export const SecurityMonitoringPage = lazyNamed(
+  () => import('../pages/security-monitoring/SecurityMonitoringPage'),
+  'SecurityMonitoringPage',
+);
+export const IndustryTemplatesPage = lazyNamed(
+  () => import('../pages/industry-templates/IndustryTemplatesPage'),
+  'IndustryTemplatesPage',
+);
+export const ExecutiveCommandCentrePage = lazyNamed(
+  () => import('../pages/executive-command-centre/ExecutiveCommandCentrePage'),
+  'ExecutiveCommandCentrePage',
+);
 export const DocumentAiPage = lazyNamed(
   () => import('../pages/document-ai/DocumentAiPage'),
   'DocumentAiPage',
@@ -288,6 +429,14 @@ export const MobileDispatcherPage = lazyNamed(
 export const CommunicationsHubPage = lazyNamed(
   () => import('../pages/communications-hub/CommunicationsHubPage'),
   'CommunicationsHubPage',
+);
+export const EmailCentrePage = lazyNamed(
+  () => import('../pages/email-centre/EmailCentrePage'),
+  'EmailCentrePage',
+);
+export const CommunicationTimelinePage = lazyNamed(
+  () => import('../pages/communication-timeline/CommunicationTimelinePage'),
+  'CommunicationTimelinePage',
 );
 export const CustomerExperiencePage = lazyNamed(
   () => import('../pages/customer-experience/CustomerExperiencePage'),
@@ -393,9 +542,17 @@ export const XeroSettingsPage = lazyNamed(
   () => import('../pages/integrations/XeroSettingsPage'),
   'XeroSettingsPage',
 );
+export const XeroWriteApprovalsPage = lazyNamed(
+  () => import('../pages/integrations/XeroWriteApprovalsPage'),
+  'XeroWriteApprovalsPage',
+);
 export const EmailSettingsPage = lazyNamed(
   () => import('../pages/integrations/EmailSettingsPage'),
   'EmailSettingsPage',
+);
+export const ResendSettingsPage = lazyNamed(
+  () => import('../pages/integrations/ResendSettingsPage'),
+  'ResendSettingsPage',
 );
 export const YocoSettingsPage = lazyNamed(
   () => import('../pages/integrations/YocoSettingsPage'),
@@ -430,9 +587,46 @@ export const DispatchIntelligencePage = lazyNamed(
   () => import('../pages/dispatch-intelligence/DispatchIntelligencePage'),
   'DispatchIntelligencePage',
 );
+export const TechnicianIntelligencePage = lazyNamed(
+  () => import('../pages/technician-intelligence/TechnicianIntelligencePage'),
+  'TechnicianIntelligencePage',
+);
+export const PayrollTimesheetIntelligencePage = lazyNamed(
+  () =>
+    import('../pages/payroll-timesheet-intelligence/PayrollTimesheetIntelligencePage'),
+  'PayrollTimesheetIntelligencePage',
+);
+export const WorkflowAutomationPage = lazyNamed(
+  () => import('../pages/workflow-automation/WorkflowAutomationPage'),
+  'WorkflowAutomationPage',
+);
+export const RecurringMaintenancePage = lazyNamed(
+  () => import('../pages/recurring-maintenance/RecurringMaintenancePage'),
+  'RecurringMaintenancePage',
+);
+export const HomeshieldExperiencePage = lazyNamed(
+  () => import('../pages/homeshield-experience/HomeshieldExperiencePage'),
+  'HomeshieldExperiencePage',
+);
+export const CustomerEngagementIntelligencePage = lazyNamed(
+  () => import('../pages/customer-engagement-intelligence/CustomerEngagementIntelligencePage'),
+  'CustomerEngagementIntelligencePage',
+);
 export const FleetIntelligencePage = lazyNamed(
   () => import('../pages/fleet-intelligence/FleetIntelligencePage'),
   'FleetIntelligencePage',
+);
+export const VehicleIntelligencePage = lazyNamed(
+  () => import('../pages/vehicle-intelligence/VehicleIntelligencePage'),
+  'VehicleIntelligencePage',
+);
+export const FleetAiRecommendationsPage = lazyNamed(
+  () => import('../pages/fleet-ai-recommendations/FleetAiRecommendationsPage'),
+  'FleetAiRecommendationsPage',
+);
+export const DriverIntelligencePage = lazyNamed(
+  () => import('../pages/driver-intelligence/DriverIntelligencePage'),
+  'DriverIntelligencePage',
 );
 export const EnterpriseSecurityPage = lazyNamed(
   () => import('../pages/enterprise-security/EnterpriseSecurityPage'),
@@ -443,12 +637,102 @@ export const PersonalCommunicationsIntelligencePage = lazyNamed(
     import('../pages/personal-communications-intelligence/PersonalCommunicationsIntelligencePage'),
   'PersonalCommunicationsIntelligencePage',
 );
+export const PersonalWhatsappIntelligencePage = lazyNamed(
+  () =>
+    import('../pages/personal-whatsapp-intelligence/PersonalWhatsappIntelligencePage'),
+  'PersonalWhatsappIntelligencePage',
+);
+export const PersonalWhatsappConnectionPage = lazyNamed(
+  () =>
+    import('../pages/personal-whatsapp-connection/PersonalWhatsappConnectionPage'),
+  'PersonalWhatsappConnectionPage',
+);
+export const CommunicationAuraIntelligencePage = lazyNamed(
+  () =>
+    import('../pages/communication-aura-intelligence/CommunicationAuraIntelligencePage'),
+  'CommunicationAuraIntelligencePage',
+);
+export const MarketingAgentPage = lazyNamed(
+  () => import('../pages/marketing-agent/MarketingAgentPage'),
+  'MarketingAgentPage',
+);
+export const FinanceAuraAgentPage = lazyNamed(
+  () => import('../pages/finance-aura-agent/FinanceAuraAgentPage'),
+  'FinanceAuraAgentPage',
+);
+export const FinanceCashflowProfitPage = lazyNamed(
+  () => import('../pages/finance-cashflow-profit/FinanceCashflowProfitPage'),
+  'FinanceCashflowProfitPage',
+);
+export const FinanceReportingForecastPage = lazyNamed(
+  () => import('../pages/finance-reporting-forecast/FinanceReportingForecastPage'),
+  'FinanceReportingForecastPage',
+);
+export const InventoryIntelligencePage = lazyNamed(
+  () => import('../pages/inventory-intelligence/InventoryIntelligencePage'),
+  'InventoryIntelligencePage',
+);
+export const HrEmployeeIntelligencePage = lazyNamed(
+  () => import('../pages/hr-employee-intelligence/HrEmployeeIntelligencePage'),
+  'HrEmployeeIntelligencePage',
+);
+export const RecruitmentPerformanceIntelligencePage = lazyNamed(
+  () => import('../pages/recruitment-performance-intelligence/RecruitmentPerformanceIntelligencePage'),
+  'RecruitmentPerformanceIntelligencePage',
+);
+export const ProcurementIntelligencePage = lazyNamed(
+  () => import('../pages/procurement-intelligence/ProcurementIntelligencePage'),
+  'ProcurementIntelligencePage',
+);
+export const SocialMediaIntegrationsPage = lazyNamed(
+  () =>
+    import('../pages/social-media-integrations/SocialMediaIntegrationsPage'),
+  'SocialMediaIntegrationsPage',
+);
+export const FacebookBusinessPage = lazyNamed(
+  () => import('../pages/facebook-business/FacebookBusinessPage'),
+  'FacebookBusinessPage',
+);
+export const ContentReputationIntelligencePage = lazyNamed(
+  () =>
+    import('../pages/content-reputation-intelligence/ContentReputationIntelligencePage'),
+  'ContentReputationIntelligencePage',
+);
 export const NotFoundPage = lazyNamed(() => import('../pages/NotFoundPage'), 'NotFoundPage');
 export const CartrackSettingsPage = lazyNamed(
   () => import('../pages/settings/CartrackSettingsPage'),
   'CartrackSettingsPage',
 );
+export const GoogleMapsSettingsPage = lazyNamed(
+  () => import('../pages/integrations/GoogleMapsSettingsPage'),
+  'GoogleMapsSettingsPage',
+);
+export const GoogleCalendarSettingsPage = lazyNamed(
+  () => import('../pages/integrations/GoogleCalendarSettingsPage'),
+  'GoogleCalendarSettingsPage',
+);
 export const PortalSettingsPage = lazyNamed(
   () => import('../pages/settings/PortalSettingsPage'),
   'PortalSettingsPage',
+);
+export const SecuritySettingsPage = lazyNamed(
+  () => import('../pages/settings/SecuritySettingsPage'),
+  'SecuritySettingsPage',
+);
+export const DocumentsRecordsSettingsPage = lazyNamed(
+  () => import('../pages/settings/DocumentsRecordsSettingsPage'),
+  'DocumentsRecordsSettingsPage',
+);
+export const NotificationsSettingsPage = lazyNamed(
+  () => import('../pages/settings/NotificationsSettingsPage'),
+  'NotificationsSettingsPage',
+);
+export const DataProtectionSettingsPage = lazyNamed(
+  () => import('../pages/settings/DataProtectionSettingsPage'),
+  'DataProtectionSettingsPage',
+);
+
+export const StockForecastingPage = lazyNamed(
+  () => import('../pages/stock-forecasting/StockForecastingPage'),
+  'StockForecastingPage',
 );

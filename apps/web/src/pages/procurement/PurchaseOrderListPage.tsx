@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { useMemo } from 'react';
 import { Link } from 'wouter';
-import { Button, PageHeader, PageLoadState, Panel } from '@titan/ui';
+import { Button, PageLoadState, Panel } from '@titan/ui';
 import { formatMoney } from '@titan/shared';
 import { fetchPurchaseOrders } from '../../lib/procurement-api';
 import { useAuth } from '../../lib/auth-context';
@@ -35,7 +36,7 @@ export function PurchaseOrderListPage() {
     return (
       <div className="inventory-page">
         <PageHeader
-          title="Purchase orders"
+          title="Purchase Orders"
           description="You do not have permission to view purchase orders."
         />
       </div>
@@ -50,7 +51,7 @@ export function PurchaseOrderListPage() {
         actions={
           canWrite ? (
             <Link href="/procurement/purchase-orders/new">
-              <Button>New purchase order</Button>
+              <Button>New Purchase Order</Button>
             </Link>
           ) : undefined
         }
@@ -61,11 +62,11 @@ export function PurchaseOrderListPage() {
         isLoading={isLoading}
         error={error}
         isEmpty={(purchaseOrders?.length ?? 0) === 0}
-        emptyTitle="No purchase orders yet"
+        emptyTitle="No Purchase Orders Yet"
         emptyDescription="Create a purchase order to start tracking supplier deliveries."
         loadingLabel="Loading purchase orders…"
       >
-        <Panel title="Purchase orders">
+        <Panel title="Purchase Orders">
           <div className="inventory-table-wrap">
             <table className="inventory-table">
               <thead>

@@ -1,0 +1,198 @@
+{
+  "schemaVersion": "cursor-resume-reconciliation-v1",
+  "generatedAt": "2026-08-01T12:26:00.000Z",
+  "repository": "/Users/keanuventer/Downloads/Titan Aura V1",
+  "branch": "cursor/titan-frozen-scope-completion",
+  "headCommit": "1ebd09f",
+  "productionTouched": false,
+  "stagingRef": "cpkuwtaipjxeipvbssvn",
+  "forbiddenProductionRef": "rshuiaghmtrvvilhqpwm",
+  "cursorClosedContext": {
+    "knownPreservedWork": [
+      "Xero recovery 9bec8c3",
+      "SPI 0b6b911",
+      "YGP queued",
+      "CV-001",
+      "WhatsApp 4f665d1",
+      "sessions 4410a02",
+      "two-way 0dd0643",
+      "pipeline 1ebd09f",
+      "JOB-DEL in progress (audit only)"
+    ],
+    "subagentsReferenced": {
+      "JOB-DEL-001": "7443e5b5",
+      "PRN-001": "1ebd09f"
+    }
+  },
+  "git": {
+    "branch": "cursor/titan-frozen-scope-completion",
+    "tracking": "origin/cursor/titan-frozen-scope-completion",
+    "syncWithRemote": "up to date",
+    "worktrees": [
+      {
+        "path": "/Users/keanuventer/Downloads/Titan Aura V1",
+        "commit": "1ebd09f",
+        "branch": "cursor/titan-frozen-scope-completion"
+      }
+    ],
+    "commitsToday2026-08-01": [
+      { "hash": "1ebd09f", "summary": "Add PRN-001 complete-app printing to auto work pipeline." },
+      { "hash": "21b8705", "summary": "Queue PRINT-001 printing and document output in auto pipeline." },
+      { "hash": "c7cea86", "summary": "Add JOB-DEL-001 to auto work pipeline after pricing phases." },
+      { "hash": "00fbd31", "summary": "Update auto work pipeline status with phase commit hashes." },
+      { "hash": "0b6b911", "summary": "Add SPI-001 supplier price intelligence scaffold." },
+      { "hash": "1e87410", "summary": "Fix staging session verify script API health paths." },
+      { "hash": "4410a02", "summary": "Implement secure persistent session across staff auth surfaces." },
+      { "hash": "71f27fe", "summary": "Document FRZ-018h Xero import recovery and refresh staging evidence." },
+      { "hash": "9bec8c3", "summary": "Fix Xero import heartbeat recovery and checkpoint auto-resume." },
+      { "hash": "0dd0643", "summary": "Add Xero two-way sync binding scaffold (Sprint 186)." },
+      { "hash": "0e86821", "summary": "Add CV-001b post-Xero-import customer value recalculation automation." },
+      { "hash": "4f665d1", "summary": "Add WhatsApp customer contact enrichment scaffold (COM-013)." }
+    ]
+  },
+  "workSafelyCommitted": {
+    "summary": "20+ commits on 2026-08-01 on cursor/titan-frozen-scope-completion; HEAD 1ebd09f. All preserved work from prior session is committed including Xero recovery (9bec8c3), SPI scaffold (0b6b911), sessions (4410a02), pipeline phases JOB-DEL/PRN-001 queue docs (c7cea86, 1ebd09f). No JOB-DEL lifecycle implementation code exists in tree.",
+    "keyHashes": {
+      "xeroRecovery": "9bec8c3",
+      "spi001": "0b6b911",
+      "secureSessions": "4410a02",
+      "xeroTwoWay": "0dd0643",
+      "whatsappEnrichment": "4f665d1",
+      "cv001": "eb60e06",
+      "jobDelPipeline": "c7cea86",
+      "prn001Pipeline": "1ebd09f",
+      "pipelineStatus": "00fbd31"
+    }
+  },
+  "workPresentUncommitted": {
+    "trackedModified": [
+      {
+        "path": "diagnostic-output/182-customer-value-classification-staging-probe.json",
+        "note": "Re-probe timestamp and bucket counts; not lifecycle code"
+      },
+      {
+        "path": "diagnostic-output/187-xero-import-recovery-verify.json",
+        "note": "Fresh resume probe — active job 81c5b8d8 running with heartbeat"
+      },
+      {
+        "path": "storage/company-media/.gitkeep",
+        "note": "Trivial whitespace"
+      }
+    ],
+    "untrackedNotFromInterruptedWorkers": [
+      "Large diagnostic-output/ artifact tree from prior sprints",
+      "TITAN_* report markdown copies (untracked duplicates)",
+      ".pnpm-store/, .pnpm-clean-store/, test-results/",
+      "apps/api/src/services/customer-value-classification.service.ts.bak",
+      "apps/api/src/services/.parallel-customer-value-classification.test.ts"
+    ],
+    "jobDel001Artifacts": {
+      "job-lifecycle.service.ts": false,
+      "0111_job_lifecycle migration": false,
+      "routesOrUI": false,
+      "note": "Subagent 7443e5b5 left audit only (190-job-delete-blocker-audit.json committed); no implementation files to merge or commit"
+    },
+    "prn001Artifacts": {
+      "implementationFiles": false,
+      "note": "Pipeline doc commits only (1ebd09f); TITAN_PRINTING_AND_DOCUMENT_OUTPUT.md binding stub on branch"
+    }
+  },
+  "workersInterrupted": [
+    {
+      "id": "JOB-DEL-001",
+      "subagent": "7443e5b5",
+      "state": "QUEUED — pre-implementation audit complete",
+      "evidence": "diagnostic-output/190-job-delete-blocker-audit.json",
+      "blockedBy": "Active Xero import + missing lifecycle schema on staging"
+    },
+    {
+      "id": "PRN-001",
+      "subagent": "1ebd09f",
+      "state": "QUEUED — pipeline entry committed, no code started",
+      "evidence": "TITAN_AUTO_WORK_PIPELINE.md Phase 7",
+      "blockedBy": "Sequenced after JOB-DEL-001"
+    },
+    {
+      "id": "SPI-001 staging migration",
+      "state": "FAIL on staging — migration 0110 not applied",
+      "evidence": "diagnostic-output/189-spi001-staging-verify.json",
+      "blockedBy": "Active Xero import — do not apply 0110 during batches"
+    }
+  ],
+  "stagingProcesses": {
+    "apiHealth": {
+      "url": "https://young-guns-os-staging.up.railway.app/api/v1/health/ready",
+      "status": "ready",
+      "database": "connected",
+      "providersEnabled": true,
+      "workersEnabled": false,
+      "webhooksEnabled": false,
+      "probedAt": "2026-08-01T12:24:46.777Z"
+    },
+    "xeroImport": {
+      "priorFailedJob": {
+        "id": "8e6aec9b-2d99-493c-85b8-75f61d7f414b",
+        "status": "failed",
+        "failedStage": "payments",
+        "reason": "Invoice mapping lateral join query error during payments stage",
+        "mappingsPreserved": true
+      },
+      "activeJob": {
+        "id": "81c5b8d8-839b-4875-b106-2ecece11a966",
+        "status": "running",
+        "checkpoint": {
+          "stage": "contacts",
+          "contactsPage": 3
+        },
+        "heartbeatAt": "2026-08-01T12:24:39.476Z",
+        "activity": "waiting_next_batch",
+        "autoResumeConfirmed": true
+      },
+      "mappingCounts": {
+        "customers": 673,
+        "invoices": 5,
+        "payments": 0
+      },
+      "lastSyncAt": null,
+      "cvMetricsRefreshJobId": null,
+      "verdict": "IN_PROGRESS — recovery fix deployed; scheduler resumed new job; do NOT manual Sync or restart from zero"
+    },
+    "migrationJournal": {
+      "localRepoJournalLatest": "0109_xero_two_way_sync_scaffolding",
+      "localSqlNotInJournal": ["0107_whatsapp_contact_enrichment", "0110_supplier_price_intelligence"],
+      "stagingAppliedCount": 106,
+      "spi0110Applied": false,
+      "note": "Do not apply 0110 or 0111 while Xero import active"
+    }
+  },
+  "currentPipelinePhase": {
+    "document": "TITAN_AUTO_WORK_PIPELINE.md",
+    "phase1XeroRecovery": "PASS code / staging deploy confirmed",
+    "phase2XeroGO": "IN_PROGRESS — poll read-only until completed + last_sync_at populated",
+    "phase3SPI001": "PASS code / FAIL staging migration (0110 deferred)",
+    "phase4YGP001": "QUEUED",
+    "phase5E2EMargin": "QUEUED",
+    "phase6JobDel001": "QUEUED — audit only",
+    "phase7Prn001": "QUEUED — pipeline docs only"
+  },
+  "exactNextSafeAction": {
+    "priority": 2,
+    "action": "Poll staging read-only for Xero GO gate (job 81c5b8d8 → completed, last_sync_at populated, cvMetricsRefreshJobId set). Do NOT apply migrations 0107/0110/0111. Do NOT start JOB-DEL-001 or PRN-001 implementation until import quiescent. Flag payments-stage SQL error from prior job 8e6aec9b for fix only if/when active job reaches payments and fails again.",
+    "evidenceScript": "diagnostic-output/187-xero-import-recovery-verify.mjs",
+    "ownerActionRequired": false
+  },
+  "resumedByThisSession": {
+    "actionsTaken": [
+      "Read-only git/worktree/pipeline reconciliation",
+      "Staging health curl",
+      "Fresh 187 Xero recovery probe (job running + heartbeat)",
+      "Wrote this reconciliation artifact"
+    ],
+    "actionsNotTaken": [
+      "No migration apply",
+      "No manual Xero Sync",
+      "No JOB-DEL/PRN implementation (no conflicting worker)",
+      "No production access"
+    ]
+  }
+}

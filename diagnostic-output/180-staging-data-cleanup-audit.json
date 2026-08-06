@@ -1,0 +1,1209 @@
+{
+  "schemaVersion": "staging-data-cleanup-audit-v1",
+  "auditedAt": "2026-08-01T11:23:45.172Z",
+  "stagingRef": "cpkuwtaipjxeipvbssvn",
+  "productionTouched": false,
+  "destructiveActionsTaken": false,
+  "activeXeroImport": {
+    "id": "8e6aec9b-2d99-493c-85b8-75f61d7f414b",
+    "status": "running"
+  },
+  "preserveCompanyIds": [
+    "095aef76-fef5-4139-af37-a42f2d7e2faf"
+  ],
+  "cleanupCandidates": [
+    {
+      "id": "f01fa030-56c6-4eb5-9857-6f99c14be961",
+      "name": "FRZ018f Co 978dbfbb",
+      "created_at": "2026-08-01T10:58:37.866Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_frz",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "05369a63-00ab-4bef-8d97-03822b81b1ca",
+      "name": "FRZ018e Co 13e46efe-b",
+      "created_at": "2026-08-01T10:48:18.811Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_frz",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "9dbb8a7b-1346-4a04-9451-be2b05c343e5",
+      "name": "FRZ018e Co 13e46efe",
+      "created_at": "2026-08-01T10:48:15.979Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_frz",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "8b77c238-1445-4e60-89a1-4b2b74388c49",
+      "name": "FRZ018d Co 2211a340-b",
+      "created_at": "2026-08-01T10:31:29.555Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_frz",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "516ee3d1-a376-4efd-824f-037e0127560a",
+      "name": "FRZ018d Co 2211a340",
+      "created_at": "2026-08-01T10:31:26.622Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_frz",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "6f56e3fe-9d9a-4afc-a00d-544a2ed85406",
+      "name": "FRZ018c Co 6766da4f-b",
+      "created_at": "2026-08-01T10:29:58.408Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_frz",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "26c082a5-a83e-4346-9736-190b85abf1f9",
+      "name": "FRZ018c Co 6766da4f",
+      "created_at": "2026-08-01T10:29:51.841Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_frz",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "a77dc7a8-0a52-4c3d-ba1e-f2733b3f47d6",
+      "name": "FRZ018c Co 45691f58-b",
+      "created_at": "2026-08-01T10:28:37.624Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_frz",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "1006a5d7-5a0c-4acb-8f2d-db79279bb3d2",
+      "name": "FRZ018c Co 45691f58",
+      "created_at": "2026-08-01T10:28:31.189Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_frz",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "d23e5c76-f26a-4de7-87dd-02f080654943",
+      "name": "FRZ018c Co 16bbbe53-b",
+      "created_at": "2026-08-01T10:27:21.215Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_frz",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "92eef2db-ec5f-4d0d-8adb-cf353fc11882",
+      "name": "FRZ018c Co 16bbbe53",
+      "created_at": "2026-08-01T10:27:14.251Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_frz",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "e776846c-7e98-4ea0-b425-0d6a2cfd5bed",
+      "name": "FRZ018 Co c51a5c79-b",
+      "created_at": "2026-08-01T10:23:21.583Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_frz",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "34b6ec66-46de-4b4f-b3d6-79d87278e2fb",
+      "name": "FRZ018 Co c51a5c79",
+      "created_at": "2026-08-01T10:23:12.576Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_frz",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "cb91697e-5bb6-42e1-a224-4103136375c7",
+      "name": "FRZ018 Co msa82vze",
+      "created_at": "2026-08-01T10:22:30.046Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_frz",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "7cfbefa5-0d13-4bcf-839a-65f8e64c5bdd",
+      "name": "FRZ018 Probe 1785577738996",
+      "created_at": "2026-08-01T09:49:00.266Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_frz",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "ac532706-1250-4b71-a9cc-4b48a67698d0",
+      "name": "FRZ018 Probe 1785577732693",
+      "created_at": "2026-08-01T09:48:53.957Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_frz",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "bb9f6bc6-dd89-458a-8c96-d8623c5c3d55",
+      "name": "FRZ018 Probe 1785577725448",
+      "created_at": "2026-08-01T09:48:47.264Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_frz",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "fa143c38-2bd7-4883-8cd9-d3d9fc698048",
+      "name": "FRZ015 Foreign 3a4773f0",
+      "created_at": "2026-08-01T09:45:52.645Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_frz",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "094b8215-c5b8-42a7-975c-d31cf50266d0",
+      "name": "FRZ015 Co 3a4773f0",
+      "created_at": "2026-08-01T09:45:49.795Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_frz",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "1b6dd33e-1d43-4b87-b036-197d8678ba92",
+      "name": "STAGING-P8-12 Co 3963749e-foreign",
+      "created_at": "2026-08-01T09:09:15.728Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "d83d2d38-92b2-4e65-8b9c-3f3e4836ee5a",
+      "name": "STAGING-P8-12 Co 3963749e",
+      "created_at": "2026-08-01T09:09:09.572Z",
+      "users": 1,
+      "customers": 1,
+      "jobs": 1,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "17f3af1d-b464-4b6a-8b8e-69ab4ced0109",
+      "name": "STAGING-P8-12 Co dbedca1c-foreign",
+      "created_at": "2026-08-01T09:08:05.232Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "8f237441-5f61-4275-b2f3-d977909e379e",
+      "name": "STAGING-P8-12 Co dbedca1c",
+      "created_at": "2026-08-01T09:07:58.973Z",
+      "users": 1,
+      "customers": 1,
+      "jobs": 1,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "ac1c6b12-d66e-4c0a-92f4-06d660a3e132",
+      "name": "STAGING-P6 Foreign d3d2fdb8",
+      "created_at": "2026-08-01T09:07:14.759Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "f2c18084-2da6-4895-9b75-93e053c84da5",
+      "name": "STAGING-P5 Foreign a1314b6c",
+      "created_at": "2026-08-01T09:07:01.961Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "0b20aa24-8c31-441f-a153-1464b364e35a",
+      "name": "STAGING-P8-12 Co 3e2415a2-foreign",
+      "created_at": "2026-08-01T09:06:43.731Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "d0f5053c-0434-4216-9262-cdc4dd80c48f",
+      "name": "STAGING-P8-12 Co 3e2415a2",
+      "created_at": "2026-08-01T09:06:38.962Z",
+      "users": 1,
+      "customers": 1,
+      "jobs": 0,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "7d5f91c5-ccbc-43e3-9b40-bf5a658a6484",
+      "name": "STAGING-P6 Crew Co d3d2fdb8",
+      "created_at": "2026-08-01T09:06:38.954Z",
+      "users": 3,
+      "customers": 1,
+      "jobs": 1,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "e40f11da-53f5-49ff-82a1-9be56ad0751c",
+      "name": "STAGING-P5 Young Guns a1314b6c",
+      "created_at": "2026-08-01T09:06:37.154Z",
+      "users": 1,
+      "customers": 1,
+      "jobs": 1,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "7ba0f08f-93f4-488b-a99d-355387120254",
+      "name": "STAGING-P6 Foreign 5d764620",
+      "created_at": "2026-08-01T07:53:26.116Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "f664c1d6-fe03-4eaf-b6f1-c0afcb07c080",
+      "name": "STAGING-P5 Foreign 42198a0b",
+      "created_at": "2026-08-01T07:53:14.900Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "63a1a4d2-24a8-46f7-a98f-e18dc931e51f",
+      "name": "STAGING-P8-12 Co be98994d-foreign",
+      "created_at": "2026-08-01T07:52:55.000Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "52d09ccb-65e2-457d-a1f8-5107c456df93",
+      "name": "STAGING-P5 Young Guns 42198a0b",
+      "created_at": "2026-08-01T07:52:50.590Z",
+      "users": 1,
+      "customers": 1,
+      "jobs": 1,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "979aa62c-372e-412a-a5ad-2914794debc7",
+      "name": "STAGING-P6 Crew Co 5d764620",
+      "created_at": "2026-08-01T07:52:50.589Z",
+      "users": 3,
+      "customers": 1,
+      "jobs": 1,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "889e800e-792d-47dd-b4c9-8235f5ba7885",
+      "name": "STAGING-P8-12 Co be98994d",
+      "created_at": "2026-08-01T07:52:50.589Z",
+      "users": 1,
+      "customers": 1,
+      "jobs": 0,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "27e3f883-3572-4df6-b296-a12a87349398",
+      "name": "STAGING-P8-12 Co 818faa8e-foreign",
+      "created_at": "2026-08-01T07:48:26.578Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "6aaea890-5dfc-4943-868d-16677a479ffd",
+      "name": "STAGING-P8-12 Co 818faa8e",
+      "created_at": "2026-08-01T07:48:22.223Z",
+      "users": 1,
+      "customers": 1,
+      "jobs": 0,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "d7132a3c-26ac-4986-9ff4-4daacba694d9",
+      "name": "STAGING-P6 Foreign 3f289ee1",
+      "created_at": "2026-08-01T07:48:13.469Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "c9b905d6-7188-403d-ab6b-c21343b53024",
+      "name": "STAGING-P5 Foreign 4935b54c",
+      "created_at": "2026-08-01T07:48:03.051Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "31c64b3a-0fca-4226-807c-39048d75ee0e",
+      "name": "STAGING-P5 Young Guns 4935b54c",
+      "created_at": "2026-08-01T07:47:38.127Z",
+      "users": 1,
+      "customers": 1,
+      "jobs": 1,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "050d5217-e36c-4b65-93b5-32eab24c862a",
+      "name": "STAGING-P6 Crew Co 3f289ee1",
+      "created_at": "2026-08-01T07:47:38.126Z",
+      "users": 3,
+      "customers": 1,
+      "jobs": 1,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "4357d393-3d19-4a79-928d-c49224dc20e8",
+      "name": "STAGING-P6 Foreign a9537f3a",
+      "created_at": "2026-08-01T07:22:11.357Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "09d6951b-9d19-4553-8226-4d35f87cd74e",
+      "name": "STAGING-P6 Crew Co a9537f3a",
+      "created_at": "2026-08-01T07:21:37.712Z",
+      "users": 3,
+      "customers": 1,
+      "jobs": 1,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "fad5599b-1fac-4130-b20b-81b54a71e9c4",
+      "name": "STAGING-P6 Foreign e6ec3b05",
+      "created_at": "2026-08-01T07:21:17.844Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "8afc08d8-d0b6-4705-b938-85b7a770a161",
+      "name": "STAGING-P6 Foreign c90621a5",
+      "created_at": "2026-08-01T07:20:58.837Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "4fdc7691-7e20-4fa8-891b-352496fc8ce7",
+      "name": "STAGING-P6 Crew Co e6ec3b05",
+      "created_at": "2026-08-01T07:20:44.171Z",
+      "users": 3,
+      "customers": 1,
+      "jobs": 1,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "1f6704d2-de07-42ce-82b4-762b82887cc0",
+      "name": "STAGING-P6 Foreign 65543a50",
+      "created_at": "2026-08-01T07:20:29.679Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "3d1c44da-342c-45bf-9db5-90f2e7494e17",
+      "name": "STAGING-P6 Crew Co c90621a5",
+      "created_at": "2026-08-01T07:20:23.151Z",
+      "users": 3,
+      "customers": 1,
+      "jobs": 1,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "89ec6791-0104-4910-b4d8-a35c0c7deef0",
+      "name": "STAGING-P6 Crew Co 65543a50",
+      "created_at": "2026-08-01T07:19:53.979Z",
+      "users": 3,
+      "customers": 1,
+      "jobs": 1,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "506b8881-4d26-414f-a30f-680226481026",
+      "name": "STAGING-P6 Crew Co c08d8b36",
+      "created_at": "2026-08-01T07:19:28.064Z",
+      "users": 3,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "ece4b766-44bb-4a1e-9ecc-0b7c4c455238",
+      "name": "STAGING-P6 Crew Co c4ac1bf6",
+      "created_at": "2026-08-01T07:18:38.198Z",
+      "users": 3,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "2525824e-bee7-4242-ab6a-21e5d3582c8e",
+      "name": "STAGING-P5 Foreign 00caaefc",
+      "created_at": "2026-08-01T07:18:29.499Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "3369b37b-93fd-49f4-8999-51f281014dbe",
+      "name": "STAGING-P5 Young Guns 00caaefc",
+      "created_at": "2026-08-01T07:17:59.232Z",
+      "users": 1,
+      "customers": 1,
+      "jobs": 1,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "306a3979-fb98-4fa9-a49d-046008832cfa",
+      "name": "STAGING-P5 Foreign dc2d65ca",
+      "created_at": "2026-08-01T07:11:50.395Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "a9437e19-3d45-41a0-ab1e-8525d1b78c45",
+      "name": "STAGING-P5 Young Guns dc2d65ca",
+      "created_at": "2026-08-01T07:11:26.279Z",
+      "users": 1,
+      "customers": 1,
+      "jobs": 1,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "6c51eac8-432a-437b-ae06-29198ba37c9f",
+      "name": "STAGING-P5 Foreign b0c31ff6",
+      "created_at": "2026-08-01T07:09:34.664Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "c4063072-7444-4afb-9668-b6ecbb23be2c",
+      "name": "STAGING-P5 Young Guns b0c31ff6",
+      "created_at": "2026-08-01T07:09:13.797Z",
+      "users": 1,
+      "customers": 1,
+      "jobs": 1,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "4463b456-5400-4534-8b9e-81f03880df76",
+      "name": "STAGING-P5 Foreign 51144398",
+      "created_at": "2026-08-01T07:08:59.172Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "e5fc40b3-50e0-49cd-932e-ee8d2c1f7f04",
+      "name": "STAGING-P5 Young Guns 51144398",
+      "created_at": "2026-08-01T07:08:35.865Z",
+      "users": 1,
+      "customers": 1,
+      "jobs": 1,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    }
+  ],
+  "uncertain": [],
+  "companies": [
+    {
+      "id": "f01fa030-56c6-4eb5-9857-6f99c14be961",
+      "name": "FRZ018f Co 978dbfbb",
+      "created_at": "2026-08-01T10:58:37.866Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_frz",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "05369a63-00ab-4bef-8d97-03822b81b1ca",
+      "name": "FRZ018e Co 13e46efe-b",
+      "created_at": "2026-08-01T10:48:18.811Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_frz",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "9dbb8a7b-1346-4a04-9451-be2b05c343e5",
+      "name": "FRZ018e Co 13e46efe",
+      "created_at": "2026-08-01T10:48:15.979Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_frz",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "8b77c238-1445-4e60-89a1-4b2b74388c49",
+      "name": "FRZ018d Co 2211a340-b",
+      "created_at": "2026-08-01T10:31:29.555Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_frz",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "516ee3d1-a376-4efd-824f-037e0127560a",
+      "name": "FRZ018d Co 2211a340",
+      "created_at": "2026-08-01T10:31:26.622Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_frz",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "6f56e3fe-9d9a-4afc-a00d-544a2ed85406",
+      "name": "FRZ018c Co 6766da4f-b",
+      "created_at": "2026-08-01T10:29:58.408Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_frz",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "26c082a5-a83e-4346-9736-190b85abf1f9",
+      "name": "FRZ018c Co 6766da4f",
+      "created_at": "2026-08-01T10:29:51.841Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_frz",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "a77dc7a8-0a52-4c3d-ba1e-f2733b3f47d6",
+      "name": "FRZ018c Co 45691f58-b",
+      "created_at": "2026-08-01T10:28:37.624Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_frz",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "1006a5d7-5a0c-4acb-8f2d-db79279bb3d2",
+      "name": "FRZ018c Co 45691f58",
+      "created_at": "2026-08-01T10:28:31.189Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_frz",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "d23e5c76-f26a-4de7-87dd-02f080654943",
+      "name": "FRZ018c Co 16bbbe53-b",
+      "created_at": "2026-08-01T10:27:21.215Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_frz",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "92eef2db-ec5f-4d0d-8adb-cf353fc11882",
+      "name": "FRZ018c Co 16bbbe53",
+      "created_at": "2026-08-01T10:27:14.251Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_frz",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "e776846c-7e98-4ea0-b425-0d6a2cfd5bed",
+      "name": "FRZ018 Co c51a5c79-b",
+      "created_at": "2026-08-01T10:23:21.583Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_frz",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "34b6ec66-46de-4b4f-b3d6-79d87278e2fb",
+      "name": "FRZ018 Co c51a5c79",
+      "created_at": "2026-08-01T10:23:12.576Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_frz",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "cb91697e-5bb6-42e1-a224-4103136375c7",
+      "name": "FRZ018 Co msa82vze",
+      "created_at": "2026-08-01T10:22:30.046Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_frz",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "7cfbefa5-0d13-4bcf-839a-65f8e64c5bdd",
+      "name": "FRZ018 Probe 1785577738996",
+      "created_at": "2026-08-01T09:49:00.266Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_frz",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "ac532706-1250-4b71-a9cc-4b48a67698d0",
+      "name": "FRZ018 Probe 1785577732693",
+      "created_at": "2026-08-01T09:48:53.957Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_frz",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "bb9f6bc6-dd89-458a-8c96-d8623c5c3d55",
+      "name": "FRZ018 Probe 1785577725448",
+      "created_at": "2026-08-01T09:48:47.264Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_frz",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "fa143c38-2bd7-4883-8cd9-d3d9fc698048",
+      "name": "FRZ015 Foreign 3a4773f0",
+      "created_at": "2026-08-01T09:45:52.645Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_frz",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "094b8215-c5b8-42a7-975c-d31cf50266d0",
+      "name": "FRZ015 Co 3a4773f0",
+      "created_at": "2026-08-01T09:45:49.795Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_frz",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "1b6dd33e-1d43-4b87-b036-197d8678ba92",
+      "name": "STAGING-P8-12 Co 3963749e-foreign",
+      "created_at": "2026-08-01T09:09:15.728Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "d83d2d38-92b2-4e65-8b9c-3f3e4836ee5a",
+      "name": "STAGING-P8-12 Co 3963749e",
+      "created_at": "2026-08-01T09:09:09.572Z",
+      "users": 1,
+      "customers": 1,
+      "jobs": 1,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "17f3af1d-b464-4b6a-8b8e-69ab4ced0109",
+      "name": "STAGING-P8-12 Co dbedca1c-foreign",
+      "created_at": "2026-08-01T09:08:05.232Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "8f237441-5f61-4275-b2f3-d977909e379e",
+      "name": "STAGING-P8-12 Co dbedca1c",
+      "created_at": "2026-08-01T09:07:58.973Z",
+      "users": 1,
+      "customers": 1,
+      "jobs": 1,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "ac1c6b12-d66e-4c0a-92f4-06d660a3e132",
+      "name": "STAGING-P6 Foreign d3d2fdb8",
+      "created_at": "2026-08-01T09:07:14.759Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "f2c18084-2da6-4895-9b75-93e053c84da5",
+      "name": "STAGING-P5 Foreign a1314b6c",
+      "created_at": "2026-08-01T09:07:01.961Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "0b20aa24-8c31-441f-a153-1464b364e35a",
+      "name": "STAGING-P8-12 Co 3e2415a2-foreign",
+      "created_at": "2026-08-01T09:06:43.731Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "d0f5053c-0434-4216-9262-cdc4dd80c48f",
+      "name": "STAGING-P8-12 Co 3e2415a2",
+      "created_at": "2026-08-01T09:06:38.962Z",
+      "users": 1,
+      "customers": 1,
+      "jobs": 0,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "7d5f91c5-ccbc-43e3-9b40-bf5a658a6484",
+      "name": "STAGING-P6 Crew Co d3d2fdb8",
+      "created_at": "2026-08-01T09:06:38.954Z",
+      "users": 3,
+      "customers": 1,
+      "jobs": 1,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "e40f11da-53f5-49ff-82a1-9be56ad0751c",
+      "name": "STAGING-P5 Young Guns a1314b6c",
+      "created_at": "2026-08-01T09:06:37.154Z",
+      "users": 1,
+      "customers": 1,
+      "jobs": 1,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "7ba0f08f-93f4-488b-a99d-355387120254",
+      "name": "STAGING-P6 Foreign 5d764620",
+      "created_at": "2026-08-01T07:53:26.116Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "f664c1d6-fe03-4eaf-b6f1-c0afcb07c080",
+      "name": "STAGING-P5 Foreign 42198a0b",
+      "created_at": "2026-08-01T07:53:14.900Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "63a1a4d2-24a8-46f7-a98f-e18dc931e51f",
+      "name": "STAGING-P8-12 Co be98994d-foreign",
+      "created_at": "2026-08-01T07:52:55.000Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "52d09ccb-65e2-457d-a1f8-5107c456df93",
+      "name": "STAGING-P5 Young Guns 42198a0b",
+      "created_at": "2026-08-01T07:52:50.590Z",
+      "users": 1,
+      "customers": 1,
+      "jobs": 1,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "979aa62c-372e-412a-a5ad-2914794debc7",
+      "name": "STAGING-P6 Crew Co 5d764620",
+      "created_at": "2026-08-01T07:52:50.589Z",
+      "users": 3,
+      "customers": 1,
+      "jobs": 1,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "889e800e-792d-47dd-b4c9-8235f5ba7885",
+      "name": "STAGING-P8-12 Co be98994d",
+      "created_at": "2026-08-01T07:52:50.589Z",
+      "users": 1,
+      "customers": 1,
+      "jobs": 0,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "27e3f883-3572-4df6-b296-a12a87349398",
+      "name": "STAGING-P8-12 Co 818faa8e-foreign",
+      "created_at": "2026-08-01T07:48:26.578Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "6aaea890-5dfc-4943-868d-16677a479ffd",
+      "name": "STAGING-P8-12 Co 818faa8e",
+      "created_at": "2026-08-01T07:48:22.223Z",
+      "users": 1,
+      "customers": 1,
+      "jobs": 0,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "d7132a3c-26ac-4986-9ff4-4daacba694d9",
+      "name": "STAGING-P6 Foreign 3f289ee1",
+      "created_at": "2026-08-01T07:48:13.469Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "c9b905d6-7188-403d-ab6b-c21343b53024",
+      "name": "STAGING-P5 Foreign 4935b54c",
+      "created_at": "2026-08-01T07:48:03.051Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "31c64b3a-0fca-4226-807c-39048d75ee0e",
+      "name": "STAGING-P5 Young Guns 4935b54c",
+      "created_at": "2026-08-01T07:47:38.127Z",
+      "users": 1,
+      "customers": 1,
+      "jobs": 1,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "050d5217-e36c-4b65-93b5-32eab24c862a",
+      "name": "STAGING-P6 Crew Co 3f289ee1",
+      "created_at": "2026-08-01T07:47:38.126Z",
+      "users": 3,
+      "customers": 1,
+      "jobs": 1,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "4357d393-3d19-4a79-928d-c49224dc20e8",
+      "name": "STAGING-P6 Foreign a9537f3a",
+      "created_at": "2026-08-01T07:22:11.357Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "09d6951b-9d19-4553-8226-4d35f87cd74e",
+      "name": "STAGING-P6 Crew Co a9537f3a",
+      "created_at": "2026-08-01T07:21:37.712Z",
+      "users": 3,
+      "customers": 1,
+      "jobs": 1,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "fad5599b-1fac-4130-b20b-81b54a71e9c4",
+      "name": "STAGING-P6 Foreign e6ec3b05",
+      "created_at": "2026-08-01T07:21:17.844Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "8afc08d8-d0b6-4705-b938-85b7a770a161",
+      "name": "STAGING-P6 Foreign c90621a5",
+      "created_at": "2026-08-01T07:20:58.837Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "4fdc7691-7e20-4fa8-891b-352496fc8ce7",
+      "name": "STAGING-P6 Crew Co e6ec3b05",
+      "created_at": "2026-08-01T07:20:44.171Z",
+      "users": 3,
+      "customers": 1,
+      "jobs": 1,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "1f6704d2-de07-42ce-82b4-762b82887cc0",
+      "name": "STAGING-P6 Foreign 65543a50",
+      "created_at": "2026-08-01T07:20:29.679Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "3d1c44da-342c-45bf-9db5-90f2e7494e17",
+      "name": "STAGING-P6 Crew Co c90621a5",
+      "created_at": "2026-08-01T07:20:23.151Z",
+      "users": 3,
+      "customers": 1,
+      "jobs": 1,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "89ec6791-0104-4910-b4d8-a35c0c7deef0",
+      "name": "STAGING-P6 Crew Co 65543a50",
+      "created_at": "2026-08-01T07:19:53.979Z",
+      "users": 3,
+      "customers": 1,
+      "jobs": 1,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "506b8881-4d26-414f-a30f-680226481026",
+      "name": "STAGING-P6 Crew Co c08d8b36",
+      "created_at": "2026-08-01T07:19:28.064Z",
+      "users": 3,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "ece4b766-44bb-4a1e-9ecc-0b7c4c455238",
+      "name": "STAGING-P6 Crew Co c4ac1bf6",
+      "created_at": "2026-08-01T07:18:38.198Z",
+      "users": 3,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "2525824e-bee7-4242-ab6a-21e5d3582c8e",
+      "name": "STAGING-P5 Foreign 00caaefc",
+      "created_at": "2026-08-01T07:18:29.499Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "3369b37b-93fd-49f4-8999-51f281014dbe",
+      "name": "STAGING-P5 Young Guns 00caaefc",
+      "created_at": "2026-08-01T07:17:59.232Z",
+      "users": 1,
+      "customers": 1,
+      "jobs": 1,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "306a3979-fb98-4fa9-a49d-046008832cfa",
+      "name": "STAGING-P5 Foreign dc2d65ca",
+      "created_at": "2026-08-01T07:11:50.395Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "a9437e19-3d45-41a0-ab1e-8525d1b78c45",
+      "name": "STAGING-P5 Young Guns dc2d65ca",
+      "created_at": "2026-08-01T07:11:26.279Z",
+      "users": 1,
+      "customers": 1,
+      "jobs": 1,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "6c51eac8-432a-437b-ae06-29198ba37c9f",
+      "name": "STAGING-P5 Foreign b0c31ff6",
+      "created_at": "2026-08-01T07:09:34.664Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "c4063072-7444-4afb-9668-b6ecbb23be2c",
+      "name": "STAGING-P5 Young Guns b0c31ff6",
+      "created_at": "2026-08-01T07:09:13.797Z",
+      "users": 1,
+      "customers": 1,
+      "jobs": 1,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "4463b456-5400-4534-8b9e-81f03880df76",
+      "name": "STAGING-P5 Foreign 51144398",
+      "created_at": "2026-08-01T07:08:59.172Z",
+      "users": 1,
+      "customers": 0,
+      "jobs": 0,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "e5fc40b3-50e0-49cd-932e-ee8d2c1f7f04",
+      "name": "STAGING-P5 Young Guns 51144398",
+      "created_at": "2026-08-01T07:08:35.865Z",
+      "users": 1,
+      "customers": 1,
+      "jobs": 1,
+      "classification": "confirmed_e2e_phase",
+      "recommended_action": "cleanup_candidate_after_approval"
+    },
+    {
+      "id": "095aef76-fef5-4139-af37-a42f2d7e2faf",
+      "name": "Young Guns Plumbing",
+      "created_at": "2026-07-31T23:48:30.728Z",
+      "users": 1,
+      "customers": 286,
+      "jobs": 1,
+      "classification": "verified_live_owner",
+      "recommended_action": "preserve"
+    }
+  ]
+}
