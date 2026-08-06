@@ -2,8 +2,9 @@
 /**
  * XERO-002 Gate 5B-S — coordinated rate-budget proof with pause/cooldown/resume.
  */
-import { execSync } from 'node:child_process';
+import fs from 'node:fs';
 import path from 'node:path';
+import { execSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
@@ -155,18 +156,19 @@ async function main() {
 
     const cooldownStarted = Date.now();
     let readyForProof = false;
-    while (Date.now() - cooldownStarted < 180_000) {
+    while (Date.now() - cooldownStarted < 300_000) {
       const [state] = await sql`
         SELECT retry_after_until, last_request_at, sync_pause_reason
         FROM xero_rate_budget_state WHERE company_id = ${YGP}::uuid`;
       const retryClear =
         !state?.retry_after_until || new Date(state.retry_after_until).getTime() <= Date.now();
-      const quietMs = state?.last_request_at
-        ? Date.now() - new Date(state.last_request_at).getTime()
-        : 130_000;
+      const lastReqMs = state?.last_request_at
+        ? new Date(state.last_request_at).getTime()
+        : 0;
+      const quietMs = lastReqMs ? Date.now() - lastReqMs : 0;
       const noNewTraffic =
-        !state?.last_request_at ||
         !baselineRequestAt ||
+        !state?.last_request_at ||
         new Date(state.last_request_at).getTime() === new Date(baselineRequestAt).getTime();
 
       if (retryClear && quietMs >= 120_000 && noNewTraffic && state?.sync_pause_reason) {
@@ -181,6 +183,15 @@ async function main() {
       waitedMs: Date.now() - cooldownStarted,
       baselineRequestAt,
     };
+
+    if (!readyForProof) {
+      report.verdict = 'FAIL';
+      report.blocker = 'Clean cooldown not achieved before proof window';
+      fs.writeFileSync(OUT, JSON.stringify(report, null, 2));
+      console.log(JSON.stringify(report, null, 2));
+      await api('/api/v1/integrations/xero/rate-budget/resume-sync', { method: 'POST', token });
+      process.exit(1);
+    }
 
     const selection = JSON.parse(
       fs.readFileSync(path.join(repoRoot, 'diagnostic-output/xero-002-gate2-selection.json'), 'utf8'),
