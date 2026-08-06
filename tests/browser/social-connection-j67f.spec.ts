@@ -183,7 +183,7 @@ test.describe('Social connection foundation (J-6.7F)', () => {
       'utf8',
     );
     expect(sharedSource).toMatch(/61564442420962/);
-    expect(serviceSource).toMatch(/assertClientPageIdMatchesBusinessDiscovery/);
+    expect(serviceSource).toMatch(/assertClientPageIdInMetaDiscovery/);
     expect(serviceSource).toMatch(/resolvePendingPageCandidateForCompany/);
     expect(serviceSource).toMatch(/startBusinessPortfolioOAuth/);
     expect(serviceSource).toMatch(/startPageReadOAuth/);
