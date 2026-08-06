@@ -191,13 +191,17 @@ export async function completeMobileJobGated(
   accessToken: string,
   jobId: string,
   body: Omit<SubmitGatedJobCompletionRequest, 'clientActionId'>,
+  options?: { clientActionId?: string },
 ) {
   const data = await request<{ job: JobDetail; snapshotId: string }>(
     `/mobile/technician/jobs/${jobId}/complete-gated`,
     {
       accessToken,
       method: 'POST',
-      body: { ...body, clientActionId: newClientActionId('complete') },
+      body: {
+        ...body,
+        clientActionId: options?.clientActionId ?? newClientActionId('complete'),
+      },
     },
   );
   return data;

@@ -74,12 +74,18 @@ type N8nStatusProvider = {
 
 export class IntegrationHubService {
   private n8nStatusProvider: N8nStatusProvider | null = null;
+  private gmailOAuthConfigured: (() => boolean) | null = null;
 
   constructor(private readonly db: DatabaseClient) {}
 
   /** UX-J — bind Automation-owned n8n status without duplicating connector storage. */
   setN8nStatusProvider(provider: N8nStatusProvider | null) {
     this.n8nStatusProvider = provider;
+  }
+
+  /** Bind Google OAuth app configuration so Gmail never fakes Connected when secrets are missing. */
+  setGmailOAuthConfiguredProvider(provider: (() => boolean) | null) {
+    this.gmailOAuthConfigured = provider;
   }
 
   async getDashboard(
@@ -217,37 +223,65 @@ export class IntegrationHubService {
       connections.map((connection) => [connection.provider, connection]),
     );
 
+    const gmailAppConfigured = this.gmailOAuthConfigured?.() ?? true;
+
     const registryStatuses: IntegrationProviderStatus[] = INTEGRATION_PROVIDER_REGISTRY.map(
       (entry) => {
         const isWhatsapp = entry.provider === 'whatsapp';
+        const isGmail = entry.provider === 'gmail';
         const connection = isWhatsapp ? undefined : connectionByProvider.get(entry.provider);
 
-        const connectionStatus = isWhatsapp
+        let connectionStatus = isWhatsapp
           ? (whatsappConnection?.status ?? 'disconnected')
           : (connection?.status ?? 'disconnected');
-        const isConfigured = isWhatsapp
+        // Gmail tokens live on Communications Platform — hub row is status-only.
+        // Treat Connected only when status is connected; disconnected rows are not "configured".
+        let isConfigured = isWhatsapp
           ? Boolean(whatsappConnection?.credentialsEncrypted)
-          : Boolean(connection);
+          : isGmail
+            ? connection?.status === 'connected'
+            : Boolean(connection);
         const lastError = isWhatsapp
           ? (whatsappConnection?.lastError ?? null)
           : (connection?.lastError ?? null);
 
+        if (isGmail && !gmailAppConfigured) {
+          connectionStatus = 'disconnected';
+          isConfigured = false;
+        }
+
         const backendImplemented = entry.availability === 'available';
-        const capabilityState = deriveIntegrationCapabilityState({
-          availability: entry.availability,
-          connectionStatus,
-          isConfigured,
-          backendImplemented,
-          lastError,
-        });
+        // Distinguish platform OAuth app (GOOGLE_*) from tenant Gmail connection.
+        // App ready + tenant not connected → disconnected (Connect available), not not_configured.
+        const capabilityState =
+          isGmail && !gmailAppConfigured
+            ? 'not_configured'
+            : isGmail &&
+                gmailAppConfigured &&
+                !isConfigured &&
+                (connectionStatus === 'disconnected' || connectionStatus === 'pending')
+              ? connectionStatus === 'pending'
+                ? 'configured_unverified'
+                : 'disconnected'
+              : deriveIntegrationCapabilityState({
+                  availability: entry.availability,
+                  connectionStatus,
+                  isConfigured,
+                  backendImplemented,
+                  lastError,
+                });
         const capabilityLabel = formatCapabilityStateLabel(capabilityState);
         const canConnect =
           capabilityState !== 'not_implemented' &&
           entry.availability === 'available' &&
-          Boolean(entry.settingsPath);
+          Boolean(entry.settingsPath) &&
+          !(isGmail && !gmailAppConfigured);
         const canSend =
           capabilityState === 'connected_usable' &&
-          (entry.provider === 'whatsapp' || entry.provider === 'email');
+          (entry.provider === 'whatsapp' ||
+            entry.provider === 'email' ||
+            entry.provider === 'gmail' ||
+            entry.provider === 'resend');
 
         return {
           ...entry,
@@ -255,7 +289,10 @@ export class IntegrationHubService {
           connectionStatus,
           isConfigured,
           lastSyncAt: isWhatsapp ? null : (connection?.lastSyncAt?.toISOString() ?? null),
-          lastError,
+          lastError:
+            isGmail && !gmailAppConfigured
+              ? 'Not configured — set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET on the API.'
+              : lastError,
           connectedAt: isWhatsapp
             ? (whatsappConnection?.connectedAt?.toISOString() ?? null)
             : (connection?.connectedAt?.toISOString() ?? null),
@@ -268,16 +305,16 @@ export class IntegrationHubService {
     );
 
     const honestyStatuses: IntegrationProviderStatus[] = HONESTY_ONLY_PROVIDERS.map((honesty) => ({
-      provider: honesty.id,
+      provider: honesty.id as IntegrationProviderStatus['provider'],
       name: honesty.name,
       description: honesty.description,
       category: honesty.category,
-      availability: 'planned',
+      availability: 'planned' as const,
       settingsPath: honesty.deepLinkPath,
       supportsSync: false,
       supportsWebhooks: false,
       connectionId: null,
-      connectionStatus: 'disconnected',
+      connectionStatus: 'disconnected' as const,
       isConfigured: false,
       lastSyncAt: null,
       lastError: null,
@@ -384,6 +421,35 @@ export class IntegrationHubService {
         syncScope: input.syncScope ?? null,
         status: 'running',
         startedAt: new Date(),
+      })
+      .returning({ id: integrationSyncJobs.id });
+
+    if (!created) {
+      throw new IntegrationHubError('CREATE_FAILED', 'Unable to create sync job');
+    }
+
+    return created.id;
+  }
+
+  async enqueueSyncJob(input: {
+    companyId: string;
+    provider: IntegrationProvider;
+    integrationConnectionId?: string | null;
+    jobType?: 'manual' | 'scheduled';
+    syncScope?: string | null;
+    resultSummary?: Record<string, unknown> | null;
+  }): Promise<string> {
+    const [created] = await this.db
+      .insert(integrationSyncJobs)
+      .values({
+        companyId: input.companyId,
+        provider: input.provider,
+        integrationConnectionId: input.integrationConnectionId ?? null,
+        jobType: input.jobType ?? 'manual',
+        syncScope: input.syncScope ?? null,
+        status: 'pending',
+        startedAt: new Date(),
+        resultSummary: input.resultSummary ?? null,
       })
       .returning({ id: integrationSyncJobs.id });
 

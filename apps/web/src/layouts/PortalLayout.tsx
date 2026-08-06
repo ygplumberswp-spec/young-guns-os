@@ -1,7 +1,7 @@
 import { type ReactNode, useMemo } from 'react';
 import { Link, useLocation } from 'wouter';
 import { Button } from '@titan/ui';
-import { AI_NAME } from '@titan/shared';
+import { AI_NAME, AUDIT_SANDBOX_COMPANY_NAME } from '@titan/shared';
 import { usePortalAuth } from '../lib/portal-auth-context';
 import { filterPortalNav } from '../lib/role-experience';
 import { portalHrefMatchesLocation, toPortalNestedHref } from '../lib/portal-routing';
@@ -37,8 +37,10 @@ export function PortalLayout({ children }: PortalLayoutProps) {
           <span className="brand-sub">
             Powered by <span className="brand-sub__accent">{AI_NAME}</span>
           </span>
-          <span className="brand-credit">Built by Young Guns Plumbing</span>
-          {user ? <span className="portal-brand-sub">{user.companyName}</span> : null}
+          <span className="brand-credit">
+            <span className="brand-credit__by">Built by</span>{' '}
+            <span className="brand-credit__org">Young Guns Plumbing</span>
+          </span>
         </div>
         <div className="portal-header__user">
           {user ? (
@@ -47,15 +49,21 @@ export function PortalLayout({ children }: PortalLayoutProps) {
                 <span className="portal-header__name">
                   {user.firstName} {user.lastName}
                 </span>
-                <span className="portal-header__company">{user.customerName}</span>
+                <span className="portal-header__company">{user.companyName}</span>
+                <span className="portal-header__role">{user.customerName}</span>
               </div>
               <Button variant="ghost" size="sm" onClick={() => void logout()}>
-                Sign out
+                Sign Out
               </Button>
             </>
           ) : null}
         </div>
       </header>
+      {user?.companyName === AUDIT_SANDBOX_COMPANY_NAME ? (
+        <div className="audit-sandbox-banner" role="status" aria-live="polite">
+          STAGING AUDIT SANDBOX — NO REAL BUSINESS DATA
+        </div>
+      ) : null}
       <div className="portal-body">
         <nav className="portal-nav">
           {navItems.map((item) => (

@@ -85,6 +85,8 @@ export type SecuritySessionSummary = {
   userAgent: string | null;
   createdAt: string;
   expiresAt: string;
+  lastActivityAt: string | null;
+  isTrustedDevice: boolean;
   isCurrent: boolean;
 };
 

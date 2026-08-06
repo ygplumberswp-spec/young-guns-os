@@ -1,16 +1,32 @@
-import { and, asc, eq, gte, isNotNull, lt, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, inArray, isNotNull, isNull, lt, sql } from 'drizzle-orm';
 import type {
   JobAssignee,
   ScheduleJobRequest,
   ScheduledJobEvent,
+  SchedulingCalendarFilters,
   SchedulingCalendarResponse,
   SchedulingStats,
   UpdateScheduleRequest,
 } from '@titan/shared';
-import { buildJobAddressDisplay } from '@titan/shared';
+import { buildJobAddressDisplay, mapCalendarJobDisplayStatus } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
-import { jobs, users } from '@titan/db';
+import {
+  jobs,
+  jobCrewMembers,
+  jobVehicleAssignments,
+  schedulingOverrideAudits,
+  users,
+  vehicles,
+} from '@titan/db';
+import { emitBusinessEvent } from '../lib/automation-events.js';
+import { resolveCalendarViewScope, type SchedulingAuthContext } from './scheduling-access.js';
 import { JobsError } from './jobs.service.js';
+import { upsertPrimaryCrewMember } from './job-execution.service.js';
+import {
+  formatSchedulingCrewLabel,
+  formatSchedulingVehicleLabel,
+} from './scheduling-execution-labels.js';
+import { SchedulingConflictService } from './scheduling-conflict.service.js';
 
 export class SchedulingError extends Error {
   constructor(
@@ -33,7 +49,14 @@ export type AuraSchedulingContext = {
 };
 
 export class SchedulingService {
-  constructor(private readonly db: DatabaseClient) {}
+  private readonly conflictService: SchedulingConflictService;
+
+  constructor(
+    private readonly db: DatabaseClient,
+    googleMapsService?: import('./google-maps.service.js').GoogleMapsService,
+  ) {
+    this.conflictService = new SchedulingConflictService(db, googleMapsService);
+  }
 
   async listAssignees(companyId: string): Promise<JobAssignee[]> {
     const members = await this.db.query.users.findMany({
@@ -62,10 +85,23 @@ export class SchedulingService {
     };
   }
 
-  async getCalendar(companyId: string, from: Date, to: Date): Promise<SchedulingCalendarResponse> {
+  async getCalendar(
+    companyId: string,
+    from: Date,
+    to: Date,
+    identity: SchedulingAuthContext = {
+      userId: '',
+      roleName: 'Company Owner',
+      permissions: ['*'],
+    },
+    filters: SchedulingCalendarFilters = {},
+  ): Promise<SchedulingCalendarResponse> {
     if (from >= to) {
       throw new SchedulingError('VALIDATION_ERROR', 'Calendar range end must be after start');
     }
+
+    const viewScope = resolveCalendarViewScope(identity);
+    const settings = await this.conflictService.buildSettingsSummary(companyId);
 
     const rows = await this.db.query.jobs.findMany({
       where: and(
@@ -73,6 +109,13 @@ export class SchedulingService {
         isNotNull(jobs.scheduledAt),
         gte(jobs.scheduledAt, from),
         lt(jobs.scheduledAt, to),
+        viewScope === 'own' ? eq(jobs.assignedUserId, identity.userId) : undefined,
+        filters.technicianId ? eq(jobs.assignedUserId, filters.technicianId) : undefined,
+        filters.status ? eq(jobs.status, filters.status as typeof jobs.$inferSelect.status) : undefined,
+        filters.priority
+          ? eq(jobs.priority, filters.priority as typeof jobs.$inferSelect.priority)
+          : undefined,
+        filters.suburb ? eq(jobs.snapshotSuburb, filters.suburb) : undefined,
       ),
       with: {
         customer: true,
@@ -81,13 +124,19 @@ export class SchedulingService {
       orderBy: [asc(jobs.scheduledAt)],
     });
 
-    const events = rows.map(toScheduledJobEvent);
+    const executionLabels = await this.loadExecutionLabels(
+      companyId,
+      rows.map((row) => row.id),
+    );
+    const events = rows.map((row) => toScheduledJobEvent(row, executionLabels.get(row.id)));
 
     return {
       from: from.toISOString(),
       to: to.toISOString(),
       scheduledCount: events.length,
+      viewScope,
       events,
+      settings,
     };
   }
 
@@ -95,6 +144,7 @@ export class SchedulingService {
     companyId: string,
     jobId: string,
     input: ScheduleJobRequest,
+    identity: SchedulingAuthContext,
   ): Promise<ScheduledJobEvent> {
     const job = await this.db.query.jobs.findFirst({
       where: and(eq(jobs.id, jobId), eq(jobs.companyId, companyId)),
@@ -113,6 +163,14 @@ export class SchedulingService {
       await this.ensureAssigneeBelongsToCompany(companyId, input.assignedUserId);
     }
 
+    await this.assertScheduleAllowed(companyId, identity, jobId, {
+      scheduledAt,
+      scheduledEndAt,
+      assignedUserId: input.assignedUserId ?? null,
+      overrideReason: input.overrideReason ?? null,
+      acknowledgeConflicts: input.acknowledgeConflicts ?? false,
+    });
+
     const [updated] = await this.db
       .update(jobs)
       .set({
@@ -129,13 +187,95 @@ export class SchedulingService {
       throw new SchedulingError('SCHEDULE_FAILED', 'Unable to schedule job');
     }
 
+    if (input.assignedUserId) {
+      await upsertPrimaryCrewMember(this.db, {
+        companyId,
+        jobId,
+        userId: input.assignedUserId,
+        assignedByUserId: identity.userId,
+      });
+    }
+
     return (await this.getScheduledJobEvent(companyId, jobId))!;
+  }
+
+  private async loadExecutionLabels(
+    companyId: string,
+    jobIds: string[],
+  ): Promise<Map<string, { crewLabel: string | null; vehicleLabel: string | null }>> {
+    const labels = new Map<string, { crewLabel: string | null; vehicleLabel: string | null }>();
+    if (jobIds.length === 0) {
+      return labels;
+    }
+
+    for (const jobId of jobIds) {
+      labels.set(jobId, { crewLabel: null, vehicleLabel: null });
+    }
+
+    const crewRows = await this.db
+      .select({
+        jobId: jobCrewMembers.jobId,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        isPrimary: jobCrewMembers.isPrimary,
+      })
+      .from(jobCrewMembers)
+      .innerJoin(users, eq(jobCrewMembers.userId, users.id))
+      .where(
+        and(
+          eq(jobCrewMembers.companyId, companyId),
+          inArray(jobCrewMembers.jobId, jobIds),
+          isNull(jobCrewMembers.unassignedAt),
+        ),
+      )
+      .orderBy(desc(jobCrewMembers.isPrimary), asc(jobCrewMembers.assignedAt));
+
+    const crewNamesByJob = new Map<string, string[]>();
+    for (const row of crewRows) {
+      const names = crewNamesByJob.get(row.jobId) ?? [];
+      names.push(`${row.firstName} ${row.lastName}`.trim());
+      crewNamesByJob.set(row.jobId, names);
+    }
+
+    for (const [jobId, names] of crewNamesByJob) {
+      const current = labels.get(jobId) ?? { crewLabel: null, vehicleLabel: null };
+      current.crewLabel = formatSchedulingCrewLabel(names);
+      labels.set(jobId, current);
+    }
+
+    const vehicleRows = await this.db
+      .select({
+        jobId: jobVehicleAssignments.jobId,
+        name: vehicles.name,
+        licensePlate: vehicles.licensePlate,
+      })
+      .from(jobVehicleAssignments)
+      .innerJoin(vehicles, eq(jobVehicleAssignments.vehicleId, vehicles.id))
+      .where(
+        and(
+          eq(jobVehicleAssignments.companyId, companyId),
+          inArray(jobVehicleAssignments.jobId, jobIds),
+          isNull(jobVehicleAssignments.unassignedAt),
+        ),
+      )
+      .orderBy(asc(jobVehicleAssignments.assignedAt));
+
+    for (const row of vehicleRows) {
+      const current = labels.get(row.jobId) ?? { crewLabel: null, vehicleLabel: null };
+      if (!current.vehicleLabel) {
+        current.vehicleLabel = formatSchedulingVehicleLabel(row.name, row.licensePlate);
+        labels.set(row.jobId, current);
+      }
+    }
+
+    return labels;
   }
 
   async updateSchedule(
     companyId: string,
     jobId: string,
     input: UpdateScheduleRequest,
+    identity: SchedulingAuthContext,
   ): Promise<ScheduledJobEvent | null> {
     const job = await this.db.query.jobs.findFirst({
       where: and(eq(jobs.id, jobId), eq(jobs.companyId, companyId)),
@@ -182,17 +322,27 @@ export class SchedulingService {
 
     validateScheduleRange(scheduledAt, scheduledEndAt);
 
+    const nextAssignee =
+      input.assignedUserId === undefined ? job.assignedUserId : (input.assignedUserId ?? null);
+
     if (input.assignedUserId) {
       await this.ensureAssigneeBelongsToCompany(companyId, input.assignedUserId);
     }
+
+    await this.assertScheduleAllowed(companyId, identity, jobId, {
+      scheduledAt,
+      scheduledEndAt,
+      assignedUserId: nextAssignee,
+      overrideReason: input.overrideReason ?? null,
+      acknowledgeConflicts: input.acknowledgeConflicts ?? false,
+    });
 
     const [updated] = await this.db
       .update(jobs)
       .set({
         scheduledAt,
         scheduledEndAt,
-        assignedUserId:
-          input.assignedUserId === undefined ? job.assignedUserId : (input.assignedUserId ?? null),
+        assignedUserId: nextAssignee,
         status: job.status === 'new' ? 'scheduled' : job.status,
         updatedAt: new Date(),
       })
@@ -203,7 +353,108 @@ export class SchedulingService {
       throw new SchedulingError('SCHEDULE_FAILED', 'Unable to update schedule');
     }
 
+    if (nextAssignee) {
+      await upsertPrimaryCrewMember(this.db, {
+        companyId,
+        jobId,
+        userId: nextAssignee,
+        assignedByUserId: identity.userId,
+      });
+    }
+
+    const schedulePayload = {
+      job: {
+        id: jobId,
+        status: updated.status,
+        customerId: updated.customerId,
+        scheduledAt: updated.scheduledAt?.toISOString() ?? null,
+        assignedUserId: updated.assignedUserId,
+      },
+      customerId: updated.customerId,
+    };
+
+    emitBusinessEvent({
+      companyId,
+      eventType: 'job.scheduled',
+      entityType: 'job',
+      entityId: jobId,
+      payload: schedulePayload,
+    });
+    emitBusinessEvent({
+      companyId,
+      eventType: 'job.booked',
+      entityType: 'job',
+      entityId: jobId,
+      payload: schedulePayload,
+    });
+
+    if (nextAssignee && nextAssignee !== job.assignedUserId) {
+      emitBusinessEvent({
+        companyId,
+        eventType: 'job.assigned',
+        entityType: 'job',
+        entityId: jobId,
+        payload: {
+          ...schedulePayload,
+          assignedUserId: nextAssignee,
+          previousAssignedUserId: job.assignedUserId,
+        },
+      });
+    }
+
     return (await this.getScheduledJobEvent(companyId, jobId))!;
+  }
+
+  getConflictService(): SchedulingConflictService {
+    return this.conflictService;
+  }
+
+  private async assertScheduleAllowed(
+    companyId: string,
+    identity: SchedulingAuthContext,
+    jobId: string,
+    input: {
+      scheduledAt: Date;
+      scheduledEndAt: Date | null;
+      assignedUserId: string | null;
+      overrideReason: string | null;
+      acknowledgeConflicts: boolean;
+    },
+  ): Promise<void> {
+    const check = await this.conflictService.checkConflicts(companyId, identity, {
+      jobId,
+      scheduledAt: input.scheduledAt.toISOString(),
+      scheduledEndAt: input.scheduledEndAt?.toISOString() ?? null,
+      assignedUserId: input.assignedUserId,
+    });
+
+    if (!check.hasConflicts) return;
+
+    const blocking = check.conflicts.filter((c) => c.severity === 'block');
+    if (blocking.length === 0) return;
+
+    if (input.acknowledgeConflicts && check.canOverride) {
+      if (!input.overrideReason?.trim()) {
+        throw new SchedulingError(
+          'OVERRIDE_REASON_REQUIRED',
+          'Owner/Admin override requires a reason',
+        );
+      }
+
+      await this.db.insert(schedulingOverrideAudits).values({
+        companyId,
+        jobId,
+        userId: identity.userId,
+        reason: input.overrideReason.trim(),
+        conflictSummary: { conflicts: check.conflicts },
+      });
+      return;
+    }
+
+    throw new SchedulingError(
+      'SCHEDULING_CONFLICT',
+      blocking.map((c) => c.message).join(' '),
+    );
   }
 
   async buildAuraContext(companyId: string): Promise<AuraSchedulingContext> {
@@ -266,7 +517,8 @@ export class SchedulingService {
       return null;
     }
 
-    return toScheduledJobEvent(job);
+    const executionLabels = await this.loadExecutionLabels(companyId, [jobId]);
+    return toScheduledJobEvent(job, executionLabels.get(jobId));
   }
 
   private async ensureAssigneeBelongsToCompany(companyId: string, userId: string): Promise<void> {
@@ -285,7 +537,10 @@ type JobWithRelations = typeof jobs.$inferSelect & {
   assignedUser: { firstName: string; lastName: string } | null;
 };
 
-function toScheduledJobEvent(job: JobWithRelations): ScheduledJobEvent {
+function toScheduledJobEvent(
+  job: JobWithRelations,
+  executionLabels?: { crewLabel: string | null; vehicleLabel: string | null } | null,
+): ScheduledJobEvent {
   if (!job.scheduledAt) {
     throw new JobsError('VALIDATION_ERROR', 'Job is not scheduled');
   }
@@ -300,11 +555,27 @@ function toScheduledJobEvent(job: JobWithRelations): ScheduledJobEvent {
       unit: job.snapshotUnit,
     }) ?? null;
 
+  const assignedUserName = job.assignedUser
+    ? `${job.assignedUser.firstName} ${job.assignedUser.lastName}`
+    : null;
+
+  const scheduledAtIso = job.scheduledAt.toISOString();
+  const scheduledEndAtIso = job.scheduledEndAt ? job.scheduledEndAt.toISOString() : null;
+  const displayStatus = mapCalendarJobDisplayStatus({
+    status: job.status,
+    assignedUserId: job.assignedUserId,
+    executionPhase: job.executionPhase,
+    scheduledAt: scheduledAtIso,
+    scheduledEndAt: scheduledEndAtIso,
+  });
+
   return {
     id: job.id,
     jobNumber: job.jobNumber ?? null,
     title: job.title,
     status: job.status,
+    displayStatus,
+    executionPhase: job.executionPhase,
     priority: job.priority ?? 'normal',
     jobType: job.jobType ?? null,
     customerId: job.customerId,
@@ -315,16 +586,13 @@ function toScheduledJobEvent(job: JobWithRelations): ScheduledJobEvent {
     siteContactMobile: job.snapshotSiteContactMobile ?? null,
     accessWarning: Boolean(job.accessInstructions?.trim()),
     accessInstructions: job.accessInstructions ?? null,
-    scheduledAt: job.scheduledAt.toISOString(),
-    scheduledEndAt: job.scheduledEndAt ? job.scheduledEndAt.toISOString() : null,
+    scheduledAt: scheduledAtIso,
+    scheduledEndAt: scheduledEndAtIso,
+    expectedFinishAt: scheduledEndAtIso,
     assignedUserId: job.assignedUserId,
-    assignedUserName: job.assignedUser
-      ? `${job.assignedUser.firstName} ${job.assignedUser.lastName}`
-      : null,
-    vehicleLabel: null,
-    crewLabel: job.assignedUser
-      ? `${job.assignedUser.firstName} ${job.assignedUser.lastName}`.trim()
-      : null,
+    assignedUserName,
+    vehicleLabel: executionLabels?.vehicleLabel ?? null,
+    crewLabel: executionLabels?.crewLabel ?? assignedUserName,
   };
 }
 

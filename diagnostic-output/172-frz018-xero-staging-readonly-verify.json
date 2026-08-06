@@ -1,0 +1,155 @@
+{
+  "schemaVersion": "frz018-staging-readonly-verify-v1",
+  "startedAt": "2026-08-01T10:23:08.463Z",
+  "branch": "cursor/titan-frozen-scope-completion",
+  "priorCheckpoint": "4d46656",
+  "apiOrigin": "https://young-guns-os-staging.up.railway.app",
+  "webOrigin": "https://comfortable-determination-staging.up.railway.app",
+  "stagingSupabaseRef": "cpkuwtaipjxeipvbssvn",
+  "productionRefTouched": false,
+  "liveFinancialWrites": false,
+  "oauthPerformed": false,
+  "readOnlyIntent": true,
+  "callbackUrlForXeroApp": "https://young-guns-os-staging.up.railway.app/api/v1/integrations/xero/oauth/callback",
+  "oauthStartPath": "https://comfortable-determination-staging.up.railway.app/integrations/xero",
+  "results": [
+    {
+      "name": "staging_api_ready",
+      "status": "PASS",
+      "detail": "providersEnabled=true, database=connected"
+    },
+    {
+      "name": "unauthenticated_xero_denied",
+      "status": "PASS",
+      "detail": "401"
+    },
+    {
+      "name": "oauth_callback_public_redirect",
+      "status": "PASS",
+      "detail": "302 honest error redirect"
+    },
+    {
+      "name": "owner_signup_session",
+      "status": "PASS",
+      "detail": "34b6ec66-46de-4b4f-b3d6-79d87278e2fb"
+    },
+    {
+      "name": "credential_gate_oauthConfigured",
+      "status": "PASS",
+      "detail": "true"
+    },
+    {
+      "name": "truthful_disconnected_state",
+      "status": "PASS",
+      "detail": "status=disconnected, hasCredentials=false"
+    },
+    {
+      "name": "oauth_start_returns_authorize_url",
+      "status": "PASS",
+      "detail": "Xero authorize URL issued (client_id redacted from evidence)"
+    },
+    {
+      "name": "hub_provider_truthful_status",
+      "status": "PASS",
+      "detail": "connectionStatus=pending, capabilityState=configured_unverified"
+    },
+    {
+      "name": "tenant_isolation_disconnected_independent",
+      "status": "PASS",
+      "detail": "foreign tenant has own disconnected state"
+    },
+    {
+      "name": "tenant_isolation_sync_status_empty",
+      "status": "PASS",
+      "detail": "foreign sync status not connected"
+    },
+    {
+      "name": "tenant_isolation_sync_logs",
+      "status": "PASS",
+      "detail": "no shared log ids between tenants"
+    },
+    {
+      "name": "checklist_connected_organisation",
+      "status": "PAUSE",
+      "detail": "Owner browser OAuth required — no connected tenant on probe account"
+    },
+    {
+      "name": "checklist_contacts_import",
+      "status": "PAUSE",
+      "detail": "deferred until OAuth connected"
+    },
+    {
+      "name": "checklist_invoices_import",
+      "status": "PAUSE",
+      "detail": "deferred until OAuth connected"
+    },
+    {
+      "name": "checklist_payments_import",
+      "status": "PAUSE",
+      "detail": "deferred until OAuth connected"
+    },
+    {
+      "name": "checklist_bank_transactions_import",
+      "status": "PAUSE",
+      "detail": "deferred until OAuth connected"
+    },
+    {
+      "name": "checklist_lastSyncAt",
+      "status": "PAUSE",
+      "detail": "deferred until OAuth connected"
+    },
+    {
+      "name": "checklist_duplicate_protection",
+      "status": "PAUSE",
+      "detail": "deferred until OAuth connected"
+    },
+    {
+      "name": "checklist_audit_sync_logs",
+      "status": "PAUSE",
+      "detail": "deferred until OAuth connected"
+    },
+    {
+      "name": "sync_blocked_when_disconnected",
+      "status": "PASS",
+      "detail": "NOT_CONNECTED"
+    },
+    {
+      "name": "token_refresh_code_coverage",
+      "status": "PASS",
+      "detail": "getValidAccessToken 60s buffer + inflight dedupe; unit tests in xero-oauth.test.ts + xero-import-sync.test.ts"
+    },
+    {
+      "name": "secret_leak_scan",
+      "status": "PASS",
+      "detail": "no token patterns in evidence"
+    }
+  ],
+  "checklist": {
+    "connectedOrganisation": "PAUSE",
+    "contactsImport": "PAUSE",
+    "invoicesImport": "PAUSE",
+    "paymentsImport": "PAUSE",
+    "bankTransactionsImport": "PAUSE",
+    "lastSyncAt": "PAUSE",
+    "tokenRefresh": "PASS-CODE",
+    "tenantIsolation": "PASS",
+    "duplicateProtection": "PAUSE",
+    "auditEvidence": "PAUSE",
+    "truthfulProviderStatus": "PASS"
+  },
+  "connectedForImport": false,
+  "verdict": "PAUSE-OAUTH",
+  "ownerOAuthUrl": "https://comfortable-determination-staging.up.railway.app/integrations/xero",
+  "ownerAction": {
+    "step": 1,
+    "action": "Owner opens https://comfortable-determination-staging.up.railway.app/integrations/xero → Sign in with Xero (browser OAuth). Callback: https://young-guns-os-staging.up.railway.app/api/v1/integrations/xero/oauth/callback",
+    "note": "Credential gate passed (oauthConfigured=true). Agent cannot perform browser OAuth."
+  },
+  "totals": {
+    "passed": 14,
+    "failed": 0,
+    "paused": 8,
+    "skipped": 0
+  },
+  "completedAt": "2026-08-01T10:23:29.519Z"
+}

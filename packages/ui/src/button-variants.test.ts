@@ -18,6 +18,7 @@ test('styles define semantic tokens and button variants', () => {
   assert.match(tokens, /--titan-bg:/);
   assert.match(tokens, /--titan-accent:/);
   assert.match(tokens, /--titan-focus:/);
+  assert.match(tokens, /--yg-map-marker-fill:/);
   assert.match(tokens, /prefers-reduced-motion/);
 
   const styles = readFileSync(join(__dirname, 'styles.css'), 'utf8');
@@ -25,4 +26,6 @@ test('styles define semantic tokens and button variants', () => {
     assert.match(styles, new RegExp(`\\.titan-btn--${variant}`));
   }
   assert.match(styles, /--titan-focus-ring/);
+  assert.match(styles, /background:\s*var\(--yg-blue-primary\)/);
+  assert.doesNotMatch(styles, /#164e63/i);
 });

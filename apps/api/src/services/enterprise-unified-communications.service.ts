@@ -18,6 +18,7 @@ import type {
 import { UC_PROVIDER_CHANNELS } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
 import {
+  commPlatformAccounts,
   customers,
   ucAnalyticsSnapshots,
   ucAuditLogs,
@@ -29,6 +30,7 @@ import {
 } from '@titan/db';
 import type { CommunicationsIntelligenceService } from './communications-intelligence.service.js';
 import type { EnterpriseSaasPlatformService } from './enterprise-saas-platform.service.js';
+import type { GmailOAuthService } from './gmail-oauth.service.js';
 import type { IntegrationHubService } from './integration-hub.service.js';
 import type { IntegrationsService } from './integrations.service.js';
 import type { VoiceService } from './voice.service.js';
@@ -54,7 +56,12 @@ type UnifiedCommsDeps = {
   whatsappService: WhatsappService;
   integrationsService: IntegrationsService;
   integrationHubService: IntegrationHubService;
+  /** Optional — when present, Business Gmail is registered as a real UC adapter. */
+  gmailOAuthService?: GmailOAuthService;
 };
+
+const GMAIL_UC_PROVIDER_KEY = 'gmail';
+const GMAIL_UC_ADAPTER_NAME = 'Business Gmail';
 
 export class EnterpriseUnifiedCommunicationsService {
   constructor(private readonly deps: UnifiedCommsDeps) {}
@@ -62,6 +69,7 @@ export class EnterpriseUnifiedCommunicationsService {
   async getDashboard(companyId: string): Promise<EnterpriseUnifiedCommunicationsDashboard> {
     const isPlatformOwner =
       await this.deps.enterpriseSaasPlatformService.isPlatformOwnerTenant(companyId);
+    await this.ensureRegisteredChannelAdapters(companyId);
     const [
       platformConfig,
       providerAdapters,
@@ -148,10 +156,13 @@ export class EnterpriseUnifiedCommunicationsService {
 
     const created: UcTimelineEntrySummary[] = [];
     for (const entry of commTimeline) {
+      const sourceModule = entry.entityType ?? entry.channel;
+      const sourceEntityId = entry.entityId ?? entry.id;
       const existing = await this.deps.db.query.ucTimelineIndex.findFirst({
         where: and(
           eq(ucTimelineIndex.companyId, companyId),
-          eq(ucTimelineIndex.sourceEntityId, entry.id),
+          eq(ucTimelineIndex.sourceModule, sourceModule),
+          eq(ucTimelineIndex.sourceEntityId, sourceEntityId),
         ),
       });
       if (existing) {
@@ -167,12 +178,13 @@ export class EnterpriseUnifiedCommunicationsService {
         .values({
           companyId,
           customerId: entry.customerId,
+          jobId: (entry.metadata?.jobId as string | undefined) ?? null,
           entryType,
           channel: mapCommIntelChannel(entry.channel),
           title: entry.title,
           summary: entry.preview,
-          sourceModule: entry.entityType ?? entry.channel,
-          sourceEntityId: entry.entityId ?? entry.id,
+          sourceModule,
+          sourceEntityId,
           occurredAt: new Date(entry.occurredAt),
           metadata: entry.metadata ?? {},
         })
@@ -228,10 +240,25 @@ export class EnterpriseUnifiedCommunicationsService {
         message = 'WhatsApp connection verified via existing integration.';
       }
     } else if (adapter.channel === 'email') {
-      const connected = await this.isEmailConnected(scope.companyId);
-      if (connected) {
-        status = 'passed';
-        message = 'Email integration verified via existing SMTP configuration.';
+      if (adapter.providerKey === GMAIL_UC_PROVIDER_KEY) {
+        const gmail = await this.getBusinessGmailAdapterState(scope.companyId);
+        if (gmail.connected) {
+          status = 'passed';
+          message = `Business Gmail OAuth verified${gmail.emailAddress ? ` (${gmail.emailAddress})` : ''}.`;
+        } else if (!gmail.oauthConfigured) {
+          status = 'failed';
+          message =
+            'Business Gmail is not configured — set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET on the API.';
+        } else {
+          status = 'failed';
+          message = 'Business Gmail OAuth is available but not connected. Use Connect Gmail in Channel Settings.';
+        }
+      } else {
+        const connected = await this.isEmailConnected(scope.companyId);
+        if (connected) {
+          status = 'passed';
+          message = 'Email integration verified via existing SMTP configuration.';
+        }
       }
     } else if (adapter.endpointUrl) {
       status = 'pending';
@@ -458,6 +485,98 @@ export class EnterpriseUnifiedCommunicationsService {
     return rows.map((row) => this.toAdapterSummary(row));
   }
 
+  /**
+   * Register real Communications Platform channel adapters (Gmail) so the hub
+   * Providers tab never shows a false empty registry when OAuth wiring exists.
+   * Status is honest — never claims Connected without a live OAuth connection.
+   */
+  private async ensureRegisteredChannelAdapters(companyId: string): Promise<void> {
+    const gmail = await this.getBusinessGmailAdapterState(companyId);
+    const existing = await this.deps.db.query.ucProviderAdapters.findFirst({
+      where: and(
+        eq(ucProviderAdapters.companyId, companyId),
+        eq(ucProviderAdapters.channel, 'email'),
+        eq(ucProviderAdapters.providerKey, GMAIL_UC_PROVIDER_KEY),
+      ),
+    });
+
+    const status: UcProviderAdapterSummary['status'] = gmail.connected ? 'active' : 'inactive';
+    const lastTestMessage = gmail.connected
+      ? `Connected via Google OAuth${gmail.emailAddress ? ` (${gmail.emailAddress})` : ''}.`
+      : !gmail.oauthConfigured
+        ? 'Not configured — set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET on the API.'
+        : 'Google OAuth is configured. Platform Owner can Connect Gmail in Channel Settings.';
+    const lastTestStatus = gmail.connected
+      ? 'passed'
+      : !gmail.oauthConfigured
+        ? 'not_configured'
+        : 'not_connected';
+    const config = {
+      source: 'communications_platform',
+      oauthConfigured: gmail.oauthConfigured,
+      emailAddress: gmail.emailAddress,
+      connectPath: '/communications-hub',
+    };
+
+    if (existing) {
+      await this.deps.db
+        .update(ucProviderAdapters)
+        .set({
+          name: GMAIL_UC_ADAPTER_NAME,
+          status,
+          isPrimary: true,
+          lastTestStatus,
+          lastTestMessage,
+          lastTestAt: gmail.connected ? (existing.lastTestAt ?? new Date()) : existing.lastTestAt,
+          config: { ...(existing.config ?? {}), ...config },
+          updatedAt: new Date(),
+        })
+        .where(eq(ucProviderAdapters.id, existing.id));
+      return;
+    }
+
+    await this.deps.db.insert(ucProviderAdapters).values({
+      companyId,
+      channel: 'email',
+      providerKey: GMAIL_UC_PROVIDER_KEY,
+      name: GMAIL_UC_ADAPTER_NAME,
+      status,
+      isPrimary: true,
+      lastTestStatus,
+      lastTestMessage,
+      config,
+    });
+  }
+
+  private async getBusinessGmailAdapterState(companyId: string): Promise<{
+    oauthConfigured: boolean;
+    connected: boolean;
+    emailAddress: string | null;
+  }> {
+    const oauthConfigured = this.deps.gmailOAuthService?.isAppConfigured() ?? false;
+    const [account] = await this.deps.db
+      .select()
+      .from(commPlatformAccounts)
+      .where(
+        and(
+          eq(commPlatformAccounts.companyId, companyId),
+          eq(commPlatformAccounts.accountKind, 'business_gmail'),
+        ),
+      )
+      .limit(1);
+
+    const connected =
+      oauthConfigured &&
+      account?.status === 'connected' &&
+      Boolean(account.credentialsEncrypted);
+
+    return {
+      oauthConfigured,
+      connected,
+      emailAddress: account?.externalAddress ?? null,
+    };
+  }
+
   private async listOutboundCampaigns(companyId: string): Promise<UcOutboundCampaignSummary[]> {
     const rows = await this.deps.db.query.ucOutboundCallCampaigns.findMany({
       where: eq(ucOutboundCallCampaigns.companyId, companyId),
@@ -558,9 +677,14 @@ export class EnterpriseUnifiedCommunicationsService {
   }
 
   private async isEmailConnected(companyId: string): Promise<boolean> {
+    const gmail = await this.getBusinessGmailAdapterState(companyId);
+    if (gmail.connected) return true;
     const providers = await this.deps.integrationHubService.listProviderStatuses(companyId);
     const email = providers.find((p) => p.provider === 'email');
-    return email?.connectionStatus === 'connected';
+    const gmailHub = providers.find((p) => p.provider === 'gmail');
+    return (
+      email?.connectionStatus === 'connected' || gmailHub?.connectionStatus === 'connected'
+    );
   }
 
   private toPlatformConfigSummary(
@@ -578,6 +702,11 @@ export class EnterpriseUnifiedCommunicationsService {
   }
 
   private toAdapterSummary(row: typeof ucProviderAdapters.$inferSelect): UcProviderAdapterSummary {
+    const config = (row.config ?? {}) as {
+      oauthConfigured?: boolean;
+      emailAddress?: string | null;
+      connectPath?: string | null;
+    };
     return {
       id: row.id,
       channel: row.channel,
@@ -589,6 +718,9 @@ export class EnterpriseUnifiedCommunicationsService {
       lastTestAt: row.lastTestAt?.toISOString() ?? null,
       lastTestStatus: row.lastTestStatus,
       lastTestMessage: row.lastTestMessage,
+      oauthConfigured: config.oauthConfigured,
+      emailAddress: config.emailAddress ?? null,
+      connectPath: config.connectPath ?? null,
     };
   }
 
@@ -596,6 +728,7 @@ export class EnterpriseUnifiedCommunicationsService {
     return {
       id: row.id,
       customerId: row.customerId,
+      jobId: row.jobId ?? null,
       entryType: row.entryType,
       channel: row.channel,
       title: row.title,

@@ -1,0 +1,6 @@
+{
+  "verdict": "NO-GO",
+  "passed": 3,
+  "failed": 5,
+  "blocked": 6
+}

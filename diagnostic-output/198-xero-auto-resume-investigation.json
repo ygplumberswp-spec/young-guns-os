@@ -1,0 +1,78 @@
+{
+  "label": "198-xero-auto-resume-investigation",
+  "generatedAt": "2026-08-01T13:10:00.000Z",
+  "stagingUrl": "https://young-guns-os-staging.up.railway.app",
+  "deploySha": "00e784d",
+  "paymentsFixCommit": "162cbf4",
+  "xeroJobId": "81c5b8d8-839b-4875-b106-2ecece11a966",
+  "verdict": "ROOT_CAUSE_IDENTIFIED",
+  "currentXeroState": {
+    "jobStatus": "failed",
+    "failedStage": "payments",
+    "checkpoint": {
+      "stage": "payments",
+      "contactsPage": 8,
+      "invoicesPage": 7,
+      "paymentsPage": 1,
+      "bankTransactionsPage": 1
+    },
+    "completedStages": ["contacts", "invoices"],
+    "heartbeatAt": "2026-08-01T12:48:40.984Z",
+    "resumedFromAbandoned": false,
+    "lastSyncAt": null,
+    "mappingCounts": {
+      "customer_mappings": 673,
+      "invoice_mappings": 5,
+      "payment_mappings": 0,
+      "bank_tx_logs": 0
+    },
+    "duplicateCustomerContactIds": 0
+  },
+  "rootCause": {
+    "primary": {
+      "type": "code",
+      "detail": "resumeAbandonedImportJobs skipped jobs with failedStage set (line 887 guard). Job 81c5b8d8 failed at payments with failedStage=p payments and preserved checkpoint — scheduler tick calls resumeAbandonedImportJobs but job was never re-queued."
+    },
+    "secondary": {
+      "type": "env",
+      "detail": "integration_sync_schedules.last_run_at stuck at 2026-08-01T12:42:44Z after deploy (~13:01). No scheduler tick since deploy — SCHEDULERS_ENABLED likely false or not effective on current Railway service. Health/ready exposed workersEnabled=false; schedulersEnabled was not exposed until this fix."
+    }
+  },
+  "whyNoAutoRetryAfterDeploy": [
+    "API restart does NOT directly resume failed import jobs — only integration-sync.scheduler 60s tick → runScheduledSyncs → resumeAbandonedImportJobs",
+    "failedStage guard prevented resume even when checkpoint preserved (contradicts TITAN_FRZ018 doc and retryImportSyncJob manual path)",
+    "Scheduler appears inactive post-deploy (schedule last_run_at unchanged for 20+ min)",
+    "Connector autoSync.nextRetryAt backoff (13:08:42) blocks new incremental enqueue but does not affect resume of existing failed job"
+  ],
+  "stagingHealth": {
+    "ready": {
+      "httpStatus": 200,
+      "providersEnabled": true,
+      "workersEnabled": false,
+      "webhooksEnabled": false,
+      "schedulersEnabled": "not_exposed_pre_fix"
+    }
+  },
+  "requiredRailwayVariables": {
+    "service": "young-guns-os (titan-staging-api)",
+    "setInOwnerDashboard": true,
+    "variables": [
+      { "name": "SCHEDULERS_ENABLED", "value": "true", "reason": "Starts in-process 60s integration-sync scheduler (resumeAbandonedImportJobs + processPendingImportJobs)" },
+      { "name": "PROVIDERS_ENABLED", "value": "true", "reason": "Already true per health/ready — required gate for auto-sync" },
+      { "name": "XERO_SYNC_ENABLED", "value": "true", "reason": "Required with PROVIDERS_ENABLED for Xero import dispatch" }
+    ],
+    "note": "WORKERS_ENABLED=false is OK — scheduler runs in API process when SCHEDULERS_ENABLED=true"
+  },
+  "codeFix": {
+    "file": "apps/api/src/services/xero-sync.service.ts",
+    "change": "Remove failedStage skip in resumeAbandonedImportJobs — stage failures with checkpoint now auto-resume (clears failedStage like retryImportSyncJob)",
+    "healthObservability": "apps/api/src/routes/health.ts — expose schedulersEnabled on /health/ready"
+  },
+  "monitor31c201c7": {
+    "file": "diagnostic-output/197-xero-go-recovery-monitor.json",
+    "generatedAt": "2026-08-01T13:04:29.642Z",
+    "newerThan187": false,
+    "note": "197 captured 2 polls post-deploy (8c3e7b7); 187 re-run at 13:06 confirms same failed state. No 198 verdict yet from monitor session."
+  },
+  "nextAutomaticAction": "Owner: set SCHEDULERS_ENABLED=true on Railway + redeploy with code fix commit. On next scheduler tick (immediate on boot + 60s): resumeAbandonedImportJobs re-queues job 81c5b8d8 from payments p1 with 162cbf4 SQL fix live. Read-only poll via 187-xero-import-recovery-verify.mjs."
+}

@@ -391,6 +391,26 @@ export function createLeadsRouter({
     }
   });
 
+  router.delete('/:id', requireWrite, async (req, res) => {
+    try {
+      const auth = getAuth(req);
+      await leadsService.deleteLead(auth, getRouteParam(req.params.id));
+      res.json({ data: { deleted: true } });
+    } catch (error) {
+      handleLeadsError(res, error);
+    }
+  });
+
+  router.delete('/:id', requireWrite, async (req, res) => {
+    try {
+      const auth = getAuth(req);
+      await leadsService.deleteLead(auth, getRouteParam(req.params.id));
+      res.json({ data: { deleted: true } });
+    } catch (error) {
+      handleLeadsError(res, error);
+    }
+  });
+
   router.post('/:id/convert', requireWrite, async (req, res) => {
     const auth = getAuth(req);
     if (!hasAnyPermission(auth.permissions, ['customers:write', '*'])) {
