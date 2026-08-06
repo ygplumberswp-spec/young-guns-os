@@ -2,7 +2,7 @@ import { PageHeader } from '../../components/ux';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import { Button, EmptyState, LoadingState, Panel, StatCard } from '@titan/ui';
-import type { IntegrationProviderAutoSyncStatus, IntegrationProviderStatus } from '@titan/shared';
+import type { IntegrationProviderAutoSyncStatus } from '@titan/shared';
 import { FACEBOOK_PAGE_SELECTION_WORKSPACE_PATH } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import { invalidateStaffQueryPrefixes } from '../../lib/cache-invalidation';
@@ -20,14 +20,8 @@ import { useCachedQuery } from '../../lib/use-cached-query';
 import { SimpleAdvancedToggle } from '../../components/SimpleAdvancedToggle';
 import { SocialConnectionsSection } from '../../features/integrations/SocialConnectionsSection';
 import { canAccessIntegrations, canManageIntegrations } from '../../features/integrations/utils';
-import {
-  EnterpriseConnectionStatusLine,
-  enterpriseConnectionActionLabel,
-} from '../../features/integrations/EnterpriseConnectionStatusLine';
-import {
-  deriveHubEnterpriseConnectionStatus,
-  resolveHubEnterpriseActionHref,
-} from '../../features/integrations/enterprise-connection-status';
+import { HubProviderOverviewCard } from '../../features/integrations/HubProviderOverviewCard';
+import { IntegrationOverviewSection } from '../../features/integrations/IntegrationOverviewSection';
 import {
   formatProviderCategory,
   formatSyncJobStatus,
@@ -43,6 +37,15 @@ const PROVIDER_GROUPS: Array<{ id: string; label: string; providers: string[] }>
 ];
 
 /** Social publishing providers (Facebook, Instagram, TikTok) render in SocialConnectionsSection only. */
+
+const HUB_LOADING_SKELETON_COUNTS: Record<string, number> = {
+  accounting: 1,
+  communications: 3,
+  fleet: 1,
+  payments: 1,
+  automation: 1,
+  other: 1,
+};
 
 function IntegrationCategoryLinks() {
   return (
@@ -80,58 +83,6 @@ function IntegrationCategoryLinks() {
         </div>
       </Panel>
     </>
-  );
-}
-
-function resolveHubOverviewActionLabel(
-  status: ReturnType<typeof deriveHubEnterpriseConnectionStatus>,
-  provider: IntegrationProviderStatus,
-): string {
-  if (
-    (status === 'not_connected' && !provider.canConnect && provider.settingsPath) ||
-    provider.capabilityState === 'not_implemented'
-  ) {
-    return 'View status';
-  }
-  return enterpriseConnectionActionLabel(status);
-}
-
-/**
- * Decision 4 / UX-G — overview cards show enterprise connection status only.
- * Technical sync, token, and scope details belong on provider Manage/Review pages.
- */
-function SimpleProviderRow({
-  provider,
-  autoSync,
-}: {
-  provider: IntegrationProviderStatus;
-  autoSync?: IntegrationProviderAutoSyncStatus;
-}) {
-  const connectionStatus = deriveHubEnterpriseConnectionStatus(provider, autoSync);
-  const actionLabel = resolveHubOverviewActionLabel(connectionStatus, provider);
-  const actionHref = resolveHubEnterpriseActionHref(provider, connectionStatus);
-
-  return (
-    <article className="integrations-simple-row">
-      <div className="integrations-simple-row__main">
-        <strong>{provider.name}</strong>
-        <EnterpriseConnectionStatusLine status={connectionStatus} />
-        <p className="page-muted integrations-simple-row__description">{provider.description}</p>
-      </div>
-      <div className="integrations-simple-row__aside">
-        {actionHref ? (
-          <Link href={actionHref}>
-            <Button size="sm" variant="secondary">
-              {actionLabel}
-            </Button>
-          </Link>
-        ) : (
-          <Button size="sm" variant="secondary" disabled>
-            Not implemented
-          </Button>
-        )}
-      </div>
-    </article>
   );
 }
 
@@ -383,28 +334,33 @@ export function IntegrationsDashboardPage() {
       ) : null}
 
       {hubLoading && !hubDashboard ? (
-        <LoadingState label="Loading Providers…" />
+        PROVIDER_GROUPS.map((group) => (
+          <IntegrationOverviewSection
+            key={group.id}
+            title={group.label}
+            loading
+            skeletonCount={(HUB_LOADING_SKELETON_COUNTS[group.id] ?? group.providers.length) || 1}
+          />
+        ))
       ) : hubDashboard ? (
         <>
           {groupedProviders.length === 0 ? (
-            <EmptyState
-              title="No Integrations Configured Yet"
-              description="Connect accounting, communications, fleet or payment providers to sync data with TITAN."
+            <IntegrationOverviewSection
+              title="Integrations"
+              emptyTitle="No integrations available yet"
+              emptyDescription="Connect accounting, communications, fleet or payment providers to extend TITAN for your business."
             />
           ) : (
             groupedProviders.map((group) => (
-              <section key={group.id} className="integrations-section">
-                <h2 className="integrations-section__title">{group.label}</h2>
-                <div className="integrations-simple-list">
-                  {group.providers.map((provider) => (
-                    <SimpleProviderRow
-                      key={provider.provider}
-                      provider={provider}
-                      autoSync={autoSyncByProvider.get(provider.provider)}
-                    />
-                  ))}
-                </div>
-              </section>
+              <IntegrationOverviewSection key={group.id} title={group.label}>
+                {group.providers.map((provider) => (
+                  <HubProviderOverviewCard
+                    key={provider.provider}
+                    provider={provider}
+                    autoSync={autoSyncByProvider.get(provider.provider)}
+                  />
+                ))}
+              </IntegrationOverviewSection>
             ))
           )}
 

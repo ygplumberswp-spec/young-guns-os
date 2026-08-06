@@ -42,8 +42,8 @@ describe('facebook connection actions click path (J-6.7F8)', () => {
   });
 
   it('Integrations overview card links to Facebook Business workspace for Manage/Review', () => {
-    assert.ok(integrationsSource.includes('resolveSocialEnterpriseActionHref'));
-    assert.ok(integrationsSource.includes('EnterpriseConnectionStatusLine'));
+    assert.ok(integrationsSource.includes('SocialProviderOverviewCard'));
+    assert.ok(integrationsSource.includes('IntegrationOverviewSection'));
     const statusSource = readFileSync(join(here, 'enterprise-connection-status.ts'), 'utf8');
     assert.ok(statusSource.includes('managementPath'));
   });

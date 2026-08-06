@@ -174,26 +174,19 @@ test('Facebook connected_limited maps to Connected — limited access', () => {
 });
 
 test('integrations overview source does not render Synced on cards', () => {
-  const dashboardSource = readFileSync(
-    join(here, '../../pages/integrations/IntegrationsDashboardPage.tsx'),
-    'utf8',
-  );
+  const cardSource = readFileSync(join(here, 'IntegrationOverviewCard.tsx'), 'utf8');
+  const hubSource = readFileSync(join(here, 'HubProviderOverviewCard.tsx'), 'utf8');
   const socialSource = readFileSync(join(here, 'SocialConnectionsSection.tsx'), 'utf8');
-  const simpleRowSource = dashboardSource.slice(
-    dashboardSource.indexOf('function SimpleProviderRow'),
-    dashboardSource.indexOf('export function IntegrationsDashboardPage'),
-  );
 
-  assert.doesNotMatch(simpleRowSource, /uiStateLabel/);
-  assert.doesNotMatch(simpleRowSource, /status-pill/);
-  assert.doesNotMatch(simpleRowSource, /lastSyncAt/);
+  assert.doesNotMatch(hubSource, /uiStateLabel/);
+  assert.doesNotMatch(hubSource, /status-pill/);
   assert.doesNotMatch(socialSource, /status-pill/);
   assert.doesNotMatch(socialSource, /card\.statusLabel/);
-  assert.match(simpleRowSource, /EnterpriseConnectionStatusLine/);
-  assert.match(socialSource, /EnterpriseConnectionStatusLine/);
+  assert.match(hubSource, /IntegrationOverviewCard/);
+  assert.match(socialSource, /IntegrationOverviewSection/);
+  assert.match(cardSource, /EnterpriseConnectionStatusLine/);
 
   for (const word of FORBIDDEN_OVERVIEW_STATUS_WORDS) {
-    assert.doesNotMatch(simpleRowSource, new RegExp(`['"]${word}['"]`));
-    assert.doesNotMatch(socialSource, new RegExp(`['"]${word}['"]`));
+    assert.doesNotMatch(cardSource, new RegExp(`['"]${word}['"]`));
   }
 });
