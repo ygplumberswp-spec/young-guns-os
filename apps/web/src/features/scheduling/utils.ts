@@ -1,11 +1,16 @@
 import { hasAnyPermission } from '@titan/auth/browser';
 
 export function canAccessScheduling(permissions: string[]): boolean {
-  return hasAnyPermission(permissions, ['dispatch:read', 'dispatch:write']);
+  return hasAnyPermission(permissions, ['dispatch:read', 'dispatch:write', 'mobile:read']);
 }
 
 export function canManageScheduling(permissions: string[]): boolean {
   return hasAnyPermission(permissions, ['dispatch:write']);
+}
+
+/** Crew/vehicle writes reuse jobs crew API (`jobs:write`, including Owner `*`). */
+export function canAssignCrewFromCalendar(permissions: string[]): boolean {
+  return hasAnyPermission(permissions, ['jobs:write']);
 }
 
 export function startOfWeek(date: Date): Date {

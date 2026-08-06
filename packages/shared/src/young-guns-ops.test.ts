@@ -18,6 +18,8 @@ describe('young-guns-ops (UX-I)', () => {
   it('labels maps capability honestly', () => {
     assert.match(formatMapsEtaCapabilityLabel('not_implemented'), /NOT IMPLEMENTED/i);
     assert.match(formatMapsEtaCapabilityLabel('schedule_only'), /SCHEDULE ONLY/i);
+    assert.match(formatMapsEtaCapabilityLabel('connected'), /GOOGLE MAPS CONNECTED/i);
+    assert.match(formatMapsEtaCapabilityLabel('not_configured'), /NOT CONFIGURED/i);
   });
 
   it('resolves COC applicability for gas/geyser work', () => {

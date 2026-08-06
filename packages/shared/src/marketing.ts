@@ -47,10 +47,10 @@ export const MARKETING_ACTIVITY_TYPE_OPTIONS: Array<{
   value: MarketingActivityType;
   label: string;
 }> = [
-  { value: 'email_draft', label: 'Email draft' },
+  { value: 'email_draft', label: 'Email Draft' },
   { value: 'content', label: 'Content' },
   { value: 'outreach', label: 'Outreach' },
-  { value: 'social_draft', label: 'Social draft' },
+  { value: 'social_draft', label: 'Social Draft' },
   { value: 'note', label: 'Note' },
   { value: 'other', label: 'Other' },
 ];

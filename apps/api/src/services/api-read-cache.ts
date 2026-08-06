@@ -6,6 +6,8 @@ type CacheEntry<T> = {
 const DEFAULT_TTL_MS = 30_000;
 const STATS_TTL_MS = 30_000;
 const DASHBOARD_TTL_MS = 45_000;
+/** Short TTL for unfiltered authenticated list pages (CRM/Jobs/Finance). */
+const LIST_TTL_MS = 20_000;
 
 class ApiReadCacheStore {
   private readonly entries = new Map<string, CacheEntry<unknown>>();
@@ -72,7 +74,23 @@ export async function cachedTenantRead<T>(
 export const CACHE_TTLS = {
   stats: STATS_TTL_MS,
   dashboard: DASHBOARD_TTL_MS,
+  list: LIST_TTL_MS,
 } as const;
+
+export function invalidateCrmListCaches(companyId: string) {
+  apiReadCache.invalidatePrefix(`${companyId}:crm/list`);
+  apiReadCache.invalidatePrefix(`${companyId}:crm/stats`);
+}
+
+export function invalidateJobsListCaches(companyId: string) {
+  apiReadCache.invalidatePrefix(`${companyId}:jobs/list`);
+  apiReadCache.invalidatePrefix(`${companyId}:jobs/stats`);
+}
+
+export function invalidateFinanceListCaches(companyId: string) {
+  apiReadCache.invalidatePrefix(`${companyId}:finance/list`);
+  apiReadCache.invalidatePrefix(`${companyId}:finance/stats`);
+}
 
 /** Clears integration hub and platform read caches for a tenant. */
 export function invalidateIntegrationReadCaches(companyId: string) {
@@ -80,7 +98,24 @@ export function invalidateIntegrationReadCaches(companyId: string) {
   apiReadCache.invalidatePrefix(`${companyId}:integration-platform`);
 }
 
+/** Clears Owner dashboard + finance read caches after Xero import settles. */
+export function invalidateDashboardFinanceCaches(companyId: string) {
+  apiReadCache.invalidatePrefix(`${companyId}:dashboard/executive-summary`);
+  invalidateFinanceListCaches(companyId);
+}
+
+/** Clears background work status read caches for a tenant. */
+export function invalidateBackgroundWorkReadCaches(companyId: string) {
+  apiReadCache.invalidatePrefix(`${companyId}:background-work`);
+}
+
 /** Clears mission control read caches for a tenant. */
 export function invalidateMissionControlReadCaches(companyId: string) {
   apiReadCache.invalidatePrefix(`${companyId}:mission-control`);
+}
+
+/** Clears customer value classification read caches for a tenant. */
+export function invalidateCustomerValueReadCaches(companyId: string) {
+  apiReadCache.invalidatePrefix(`${companyId}:customers/value-metrics`);
+  apiReadCache.invalidatePrefix(`${companyId}:customers`);
 }

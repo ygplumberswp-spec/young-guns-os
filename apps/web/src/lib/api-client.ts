@@ -1,6 +1,12 @@
-import type { ApiResponse, AuthSession, AuthUser } from '@titan/shared';
+import type { ApiResponse, AuthSession, AuthUser, StaffSessionSummary } from '@titan/shared';
 import { isApiError } from '@titan/shared';
 import { resolveApiBase } from './runtime-env';
+import { publishStaffSessionEvent, withCrossTabRefreshLock } from './session-sync';
+
+/** Default bound so list/detail pages fail into error UI instead of spinning forever. */
+export const DEFAULT_REQUEST_TIMEOUT_MS = 20_000;
+/** Session restore/refresh must fail fast — ProtectedRoute blocks the whole shell on this. */
+export const AUTH_REFRESH_TIMEOUT_MS = 15_000;
 
 /** Resolve per-call so `/runtime-config.js` can force same-origin `/api/v1`. */
 function apiBase(): string {
@@ -13,8 +19,20 @@ type RequestOptions = {
   accessToken?: string | null;
   skipAuthRefresh?: boolean;
   signal?: AbortSignal | null;
+  /**
+   * Request timeout in ms. Defaults to DEFAULT_REQUEST_TIMEOUT_MS.
+   * Pass 0 to disable the default timeout (caller still may pass `signal`).
+   */
   timeoutMs?: number;
+  headers?: Record<string, string>;
 };
+
+function isAbortError(error: unknown): boolean {
+  return (
+    (error instanceof DOMException && (error.name === 'AbortError' || error.name === 'TimeoutError')) ||
+    (error instanceof Error && (error.name === 'AbortError' || error.name === 'TimeoutError'))
+  );
+}
 
 function combineSignals(signals: Array<AbortSignal | null | undefined>): AbortSignal | undefined {
   const active = signals.filter((signal): signal is AbortSignal => signal != null);
@@ -46,7 +64,13 @@ function timeoutSignal(timeoutMs: number): AbortSignal {
   return controller.signal;
 }
 
-let refreshPromise: Promise<AuthSession | null> | null = null;
+type RefreshOutcome =
+  | { status: 'refreshed'; session: AuthSession; user: AuthUser }
+  | { status: 'expired' }
+  | { status: 'unreachable' }
+  | { status: 'missing' };
+
+let refreshPromise: Promise<RefreshOutcome> | null = null;
 
 async function parseResponse<T>(response: Response): Promise<T> {
   const payload = (await response.json()) as ApiResponse<T>;
@@ -86,10 +110,14 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
     headers.Authorization = `Bearer ${options.accessToken}`;
   }
 
-  const signal = combineSignals([
-    options.signal,
-    options.timeoutMs ? timeoutSignal(options.timeoutMs) : undefined,
-  ]);
+  if (options.headers) {
+    Object.assign(headers, options.headers);
+  }
+
+  const resolvedTimeoutMs =
+    options.timeoutMs === 0 ? undefined : (options.timeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS);
+  const timeoutAbort = resolvedTimeoutMs ? timeoutSignal(resolvedTimeoutMs) : undefined;
+  const signal = combineSignals([options.signal, timeoutAbort]);
 
   const base = apiBase();
   const url = `${base}${path}`;
@@ -103,11 +131,15 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
       signal,
     });
   } catch (error) {
-    const aborted =
-      (error instanceof DOMException && error.name === 'AbortError') ||
-      (error instanceof Error && error.name === 'AbortError');
-    if (aborted) {
-      throw new ApiClientError('Request timed out', 408, 'REQUEST_TIMEOUT');
+    if (isAbortError(error)) {
+      const timedOut = Boolean(timeoutAbort?.aborted) && !options.signal?.aborted;
+      if (timedOut) {
+        throw new ApiClientError('Request timed out', 408, 'REQUEST_TIMEOUT');
+      }
+      // Preserve cancellation from navigation / query-cache abort so hooks can exit cleanly.
+      throw error instanceof Error
+        ? error
+        : new DOMException('The operation was aborted.', 'AbortError');
     }
     throw new ApiClientError(
       base.startsWith('/')
@@ -144,23 +176,162 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
   }
 }
 
+/** Fetch a binary response (e.g. application/pdf) without JSON parsing. */
+export async function requestBlob(path: string, options: RequestOptions = {}): Promise<Blob> {
+  const headers: Record<string, string> = {};
+
+  if (options.accessToken) {
+    headers.Authorization = `Bearer ${options.accessToken}`;
+  }
+
+  if (options.headers) {
+    Object.assign(headers, options.headers);
+  }
+
+  const body = options.body ? JSON.stringify(options.body) : undefined;
+  if (body !== undefined && !headers['Content-Type']) {
+    headers['Content-Type'] = 'application/json';
+  }
+
+  const resolvedTimeoutMs =
+    options.timeoutMs === 0 ? undefined : (options.timeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS);
+  const timeoutAbort = resolvedTimeoutMs ? timeoutSignal(resolvedTimeoutMs) : undefined;
+  const signal = combineSignals([options.signal, timeoutAbort]);
+
+  const base = apiBase();
+  const url = `${base}${path}`;
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method: options.method ?? 'GET',
+      headers,
+      credentials: 'include',
+      body,
+      signal,
+    });
+  } catch (error) {
+    if (isAbortError(error)) {
+      const timedOut = Boolean(timeoutAbort?.aborted) && !options.signal?.aborted;
+      if (timedOut) {
+        throw new ApiClientError('Request timed out', 408, 'REQUEST_TIMEOUT');
+      }
+      throw error instanceof Error
+        ? error
+        : new DOMException('The operation was aborted.', 'AbortError');
+    }
+    throw new ApiClientError(
+      base.startsWith('/')
+        ? 'Cannot reach the API from this UI deploy. Set API_PROXY_UPSTREAM on the web service (or VITE_API_BASE_URL) and redeploy.'
+        : 'Cannot reach the TITAN API. Check VITE_API_BASE_URL, API uptime, and that API APP_URL matches this web origin (CORS).',
+      0,
+      'NETWORK_ERROR',
+    );
+  }
+
+  if (response.status === 401 && !options.skipAuthRefresh && options.accessToken) {
+    const refreshed = await refreshAccessToken();
+    if (refreshed) {
+      return requestBlob(path, {
+        ...options,
+        accessToken: refreshed.accessToken,
+        skipAuthRefresh: true,
+      });
+    }
+  }
+
+  if (!response.ok) {
+    let message = 'Request failed';
+    let code = 'REQUEST_FAILED';
+    try {
+      const payload = (await response.json()) as ApiResponse<unknown>;
+      if (isApiError(payload)) {
+        message = payload.error.message;
+        code = payload.error.code;
+      }
+    } catch {
+      // Non-JSON error body — keep generic message.
+    }
+    throw new ApiClientError(message, response.status, code);
+  }
+
+  return response.blob();
+}
+
+async function executeRefreshRequest(): Promise<RefreshOutcome> {
+  try {
+    const response = await fetch(`${apiBase()}/auth/refresh`, {
+      method: 'POST',
+      credentials: 'include',
+      signal: timeoutSignal(AUTH_REFRESH_TIMEOUT_MS),
+    });
+
+    if (response.status === 401) {
+      let code = '';
+      try {
+        const payload = (await response.json()) as { error?: { code?: string } };
+        code = String(payload?.error?.code ?? '');
+      } catch {
+        code = '';
+      }
+      if (code === 'SESSION_MISSING') {
+        return { status: 'missing' };
+      }
+      publishStaffSessionEvent({ type: 'session_expired' });
+      return { status: 'expired' };
+    }
+
+    if (response.status >= 500) {
+      return { status: 'unreachable' };
+    }
+
+    if (!response.ok) {
+      publishStaffSessionEvent({ type: 'session_expired' });
+      return { status: 'expired' };
+    }
+
+    const data = await parseResponse<{ user: AuthUser; session: AuthSession }>(response);
+    publishStaffSessionEvent({
+      type: 'refresh',
+      accessToken: data.session.accessToken,
+      expiresIn: data.session.expiresIn,
+    });
+    return { status: 'refreshed', session: data.session, user: data.user };
+  } catch {
+    return { status: 'unreachable' };
+  }
+}
+
+export type ProactiveRefreshResult = RefreshOutcome['status'];
+
 async function refreshAccessToken(): Promise<AuthSession | null> {
+  const result = await proactiveRefreshSession();
+  return result.status === 'refreshed' ? result.session : null;
+}
+
+/** Cookie-based refresh with explicit outcome for silent renewal and session UX. */
+export async function proactiveRefreshSession(): Promise<RefreshOutcome> {
   if (!refreshPromise) {
     refreshPromise = (async () => {
       try {
-        const response = await fetch(`${apiBase()}/auth/refresh`, {
-          method: 'POST',
-          credentials: 'include',
+        let holderOutcome: RefreshOutcome | null = null;
+        const session = await withCrossTabRefreshLock(async () => {
+          const outcome = await executeRefreshRequest();
+          holderOutcome = outcome;
+          return outcome.status === 'refreshed' ? outcome.session : null;
         });
 
-        if (!response.ok) {
-          return null;
+        // Lock holder: return the real outcome (including expired/unreachable) — never re-hit refresh.
+        if (holderOutcome) {
+          return holderOutcome;
         }
 
-        const data = await parseResponse<{ user: AuthUser; session: AuthSession }>(response);
-        return data.session;
-      } catch {
-        return null;
+        // Waiter: another tab published a fresh access token.
+        if (session) {
+          return { status: 'refreshed' as const, session, user: {} as AuthUser };
+        }
+
+        // Waiter timed out with no published result — one bounded retry.
+        return executeRefreshRequest();
       } finally {
         refreshPromise = null;
       }
@@ -175,11 +346,48 @@ export type AuthPayload = {
   session: AuthSession;
 };
 
+export type LoginMfaChallenge = {
+  mfaRequired: true;
+  mfaChallengeToken: string;
+  expiresIn: number;
+};
+
+export type LoginResponse = AuthPayload | LoginMfaChallenge;
+
+export function isLoginMfaChallenge(value: LoginResponse): value is LoginMfaChallenge {
+  return (
+    'mfaRequired' in value &&
+    value.mfaRequired === true &&
+    typeof value.mfaChallengeToken === 'string' &&
+    value.mfaChallengeToken.length > 0
+  );
+}
+
+export const MFA_CHALLENGE_STORAGE_KEY = 'titan_mfa_challenge';
+export const MFA_LOGIN_REDIRECT_PATH = '/auth/mfa?required=1';
+
 export type RestoreSessionResult =
   | { status: 'authenticated'; payload: AuthPayload }
   | { status: 'missing' }
   | { status: 'expired' }
   | { status: 'unreachable' };
+
+/**
+ * Maps `/auth/refresh` HTTP outcomes to bootstrap state for ProtectedRoute.
+ * Keeps first visits (`SESSION_MISSING`) distinct from true expiry rejections.
+ */
+export function classifyRestoreSessionRefresh(
+  httpStatus: number,
+  errorCode?: string | null,
+): Exclude<RestoreSessionResult, { status: 'authenticated' }>['status'] {
+  if (httpStatus === 401) {
+    return errorCode === 'SESSION_MISSING' ? 'missing' : 'expired';
+  }
+  if (httpStatus >= 500) {
+    return 'unreachable';
+  }
+  return 'expired';
+}
 
 export async function signup(body: {
   companyName: string;
@@ -195,8 +403,19 @@ export async function signup(body: {
   });
 }
 
-export async function login(body: { email: string; password: string }): Promise<AuthPayload> {
-  return request<AuthPayload>('/auth/login', {
+export async function login(body: { email: string; password: string }): Promise<LoginResponse> {
+  return request<LoginResponse>('/auth/login', {
+    method: 'POST',
+    body,
+    skipAuthRefresh: true,
+  });
+}
+
+export async function completeLoginMfa(body: {
+  mfaChallengeToken: string;
+  code: string;
+}): Promise<AuthPayload> {
+  return request<AuthPayload>('/auth/login/mfa', {
     method: 'POST',
     body,
     skipAuthRefresh: true,
@@ -244,6 +463,7 @@ export async function restoreSession(): Promise<RestoreSessionResult> {
     response = await fetch(`${apiBase()}/auth/refresh`, {
       method: 'POST',
       credentials: 'include',
+      signal: timeoutSignal(AUTH_REFRESH_TIMEOUT_MS),
     });
   } catch {
     return { status: 'unreachable' };
@@ -257,20 +477,53 @@ export async function restoreSession(): Promise<RestoreSessionResult> {
     } catch {
       code = '';
     }
-    if (code === 'SESSION_MISSING') {
-      return { status: 'missing' };
-    }
-    return { status: 'expired' };
+    return { status: classifyRestoreSessionRefresh(response.status, code) };
   }
 
   if (!response.ok) {
-    return { status: 'expired' };
+    return { status: classifyRestoreSessionRefresh(response.status) };
   }
 
   try {
     const payload = await parseResponse<AuthPayload>(response);
+    publishStaffSessionEvent({
+      type: 'refresh',
+      accessToken: payload.session.accessToken,
+      expiresIn: payload.session.expiresIn,
+    });
     return { status: 'authenticated', payload };
   } catch {
     return { status: 'expired' };
   }
+}
+
+export async function fetchMySessions(accessToken: string): Promise<StaffSessionSummary[]> {
+  const data = await request<{ sessions: StaffSessionSummary[] }>('/auth/sessions', { accessToken });
+  return data.sessions;
+}
+
+export async function revokeMySession(accessToken: string, sessionId: string): Promise<void> {
+  await request<{ success: boolean }>(`/auth/sessions/${sessionId}/revoke`, {
+    method: 'POST',
+    accessToken,
+    skipAuthRefresh: true,
+  });
+}
+
+export async function revokeAllOtherMySessions(accessToken: string): Promise<number> {
+  const data = await request<{ success: boolean; revokedCount: number }>('/auth/sessions/revoke-others', {
+    method: 'POST',
+    accessToken,
+    skipAuthRefresh: true,
+  });
+  return data.revokedCount;
+}
+
+export async function confirmStepUp(accessToken: string, password: string): Promise<{ stepUpToken: string; expiresIn: number }> {
+  return request<{ stepUpToken: string; expiresIn: number }>('/auth/step-up', {
+    method: 'POST',
+    accessToken,
+    body: { password },
+    skipAuthRefresh: true,
+  });
 }

@@ -10,6 +10,8 @@ import type {
 import {
   buildJobAddressDisplay,
   generateJobTitle,
+  getCompletedJobPostCompletionAttempts,
+  getCompletedJobStructuralAttempts,
   isPlaceholderEmail,
   isValidEmailAddress,
   isValidSaMobile,
@@ -21,12 +23,20 @@ import {
   customers,
   cxCustomerProperties,
   documents,
+  invoices,
+  jobCompletionSnapshots,
+  jobMaterialLines,
   jobs,
   securityAuditLogs,
   users,
 } from '@titan/db';
 import { emitBusinessEvent } from '../lib/automation-events.js';
-import { buildTenantCacheKey, cachedTenantRead, CACHE_TTLS } from './api-read-cache.js';
+import {
+  buildTenantCacheKey,
+  cachedTenantRead,
+  CACHE_TTLS,
+  invalidateJobsListCaches,
+} from './api-read-cache.js';
 import { upsertPrimaryCrewMember } from './job-execution.service.js';
 import { allocateJobNumber } from './job-number.js';
 
@@ -65,14 +75,21 @@ export type AuraJobsContext = {
     id: string;
     title: string;
     status: string;
+    jobNumber: string | null;
+    executionPhase: string | null;
+    priority: string | null;
     description: string | null;
     notes: string | null;
     scheduledAt: string | null;
     scheduledEndAt: string | null;
     customerId: string;
     customerName: string;
+    propertyId: string | null;
+    siteAddress: string | null;
     assignedUserId: string | null;
     assignedUserName: string | null;
+    materialLineCount: number;
+    hasCompletionSnapshot: boolean;
   } | null;
 };
 
@@ -83,12 +100,18 @@ export class JobsService {
     const q = search?.trim();
 
     if (!q) {
-      const rows = await this.db.query.jobs.findMany({
-        where: eq(jobs.companyId, companyId),
-        with: { customer: true, assignedUser: true },
-        orderBy: [desc(jobs.updatedAt)],
-      });
-      return rows.map(toJobSummary);
+      return cachedTenantRead(
+        buildTenantCacheKey(companyId, 'jobs/list', 'all'),
+        async () => {
+          const rows = await this.db.query.jobs.findMany({
+            where: eq(jobs.companyId, companyId),
+            with: { customer: true, assignedUser: true },
+            orderBy: [desc(jobs.updatedAt)],
+          });
+          return rows.map(toJobSummary);
+        },
+        CACHE_TTLS.list,
+      );
     }
 
     const pattern = `%${escapeLike(q)}%`;
@@ -217,12 +240,25 @@ export class JobsService {
 
     let propertyId: string | null = input.propertyId ?? null;
     let address = input.address ? requireJobAddressSafe(input.address) : null;
+    let propertyGeo: {
+      latitude: number | null;
+      longitude: number | null;
+      placeId: string | null;
+      formattedAddress: string | null;
+    } | null = null;
 
     if (input.newProperty) {
       const newAddr = requireJobAddressSafe(input.newProperty);
       const propertyName =
         input.newProperty.propertyName?.trim() ||
         `${newAddr.suburb} — ${newAddr.street}`.slice(0, 200);
+      const geoLat = input.newProperty.latitude ?? null;
+      const geoLng = input.newProperty.longitude ?? null;
+      const hasVerifiedGeo =
+        typeof geoLat === 'number' &&
+        typeof geoLng === 'number' &&
+        Number.isFinite(geoLat) &&
+        Number.isFinite(geoLng);
 
       const [createdProperty] = await this.db
         .insert(cxCustomerProperties)
@@ -238,6 +274,14 @@ export class JobsService {
           postalCode: newAddr.postalCode,
           unitNumber: newAddr.unit,
           isPrimary: input.newProperty.isPrimary ?? false,
+          latitude: hasVerifiedGeo ? geoLat : null,
+          longitude: hasVerifiedGeo ? geoLng : null,
+          placeId: input.newProperty.placeId?.trim() || null,
+          formattedAddress: input.newProperty.formattedAddress?.trim() || null,
+          geocodeStatus: hasVerifiedGeo
+            ? (input.newProperty.geocodeStatus ?? 'verified')
+            : (input.newProperty.geocodeStatus ?? 'unverified'),
+          geocodedAt: hasVerifiedGeo ? new Date() : null,
         })
         .returning();
 
@@ -247,6 +291,12 @@ export class JobsService {
 
       propertyId = createdProperty.id;
       address = newAddr;
+      propertyGeo = {
+        latitude: createdProperty.latitude ?? null,
+        longitude: createdProperty.longitude ?? null,
+        placeId: createdProperty.placeId ?? null,
+        formattedAddress: createdProperty.formattedAddress ?? null,
+      };
     } else if (propertyId) {
       const property = await this.db.query.cxCustomerProperties.findFirst({
         where: and(
@@ -270,6 +320,13 @@ export class JobsService {
           unit: property.unitNumber ?? property.addressLine2,
         });
       }
+
+      propertyGeo = {
+        latitude: property.latitude ?? null,
+        longitude: property.longitude ?? null,
+        placeId: property.placeId ?? null,
+        formattedAddress: property.formattedAddress ?? null,
+      };
 
       if (input.updateVerifiedPropertyDetails) {
         await this.db
@@ -390,6 +447,10 @@ export class JobsService {
           snapshotProvince: address.province,
           snapshotPostalCode: address.postalCode,
           snapshotUnit: address.unit,
+          snapshotLatitude: propertyGeo?.latitude ?? null,
+          snapshotLongitude: propertyGeo?.longitude ?? null,
+          snapshotPlaceId: propertyGeo?.placeId ?? null,
+          snapshotFormattedAddress: propertyGeo?.formattedAddress ?? null,
           snapshotSiteContactName: siteContactName,
           snapshotSiteContactMobile: siteMobile,
           snapshotSiteContactEmail: siteEmailRaw,
@@ -455,21 +516,24 @@ export class JobsService {
 
     const jobDetail = (await this.getJob(companyId, created.id))!;
 
+    const createdPayload = {
+      job: {
+        id: created.id,
+        jobNumber: created.jobNumber,
+        status: created.status,
+        customerId: created.customerId,
+        scheduledAt: created.scheduledAt?.toISOString() ?? null,
+        assignedUserId: created.assignedUserId,
+      },
+      customerId: created.customerId,
+    };
+
     emitBusinessEvent({
       companyId,
       eventType: 'job.created',
       entityType: 'job',
       entityId: created.id,
-      payload: {
-        job: {
-          id: created.id,
-          jobNumber: created.jobNumber,
-          status: created.status,
-          customerId: created.customerId,
-          scheduledAt: created.scheduledAt?.toISOString() ?? null,
-        },
-        customerId: created.customerId,
-      },
+      payload: createdPayload,
     });
 
     if (created.scheduledAt) {
@@ -478,25 +542,54 @@ export class JobsService {
         eventType: 'job.scheduled',
         entityType: 'job',
         entityId: created.id,
+        payload: createdPayload,
+      });
+      emitBusinessEvent({
+        companyId,
+        eventType: 'job.booked',
+        entityType: 'job',
+        entityId: created.id,
+        payload: createdPayload,
+      });
+    }
+
+    if (created.assignedUserId) {
+      emitBusinessEvent({
+        companyId,
+        eventType: 'job.assigned',
+        entityType: 'job',
+        entityId: created.id,
         payload: {
-          job: {
-            id: created.id,
-            status: created.status,
-            customerId: created.customerId,
-          },
-          customerId: created.customerId,
+          ...createdPayload,
+          assignedUserId: created.assignedUserId,
         },
       });
     }
 
+    invalidateJobsListCaches(companyId);
     return jobDetail;
   }
 
-  async updateJob(companyId: string, jobId: string, input: UpdateJobRequest): Promise<JobDetail> {
+  async updateJob(
+    companyId: string,
+    jobId: string,
+    input: UpdateJobRequest,
+    actor?: { userId: string },
+  ): Promise<JobDetail> {
     const existing = await this.getJob(companyId, jobId);
 
     if (!existing) {
       throw new JobsError('NOT_FOUND', 'Job not found');
+    }
+
+    if (existing.status === 'completed') {
+      const attemptedStructural = getCompletedJobStructuralAttempts(input);
+      if (attemptedStructural.length > 0) {
+        throw new JobsError(
+          'JOB_COMPLETED_IMMUTABLE',
+          'Completed jobs cannot change operational fields. Reopen the job with a reason before editing.',
+        );
+      }
     }
 
     if (input.customerId) {
@@ -577,6 +670,24 @@ export class JobsService {
       throw new JobsError('UPDATE_FAILED', 'Unable to update job');
     }
 
+    if (existing.status === 'completed' && actor?.userId) {
+      const postCompletionFields = getCompletedJobPostCompletionAttempts(input);
+      if (postCompletionFields.length > 0) {
+        await this.db.insert(securityAuditLogs).values({
+          companyId,
+          category: 'workflow',
+          action: 'job_post_completion_update',
+          entityType: 'job',
+          entityId: jobId,
+          userId: actor.userId,
+          metadata: {
+            fields: postCompletionFields,
+            marked: 'post_completion',
+          },
+        });
+      }
+    }
+
     if (input.assignedUserId) {
       await upsertPrimaryCrewMember(this.db, {
         companyId,
@@ -592,6 +703,7 @@ export class JobsService {
         status: updated.status,
         customerId: updated.customerId,
         scheduledAt: updated.scheduledAt?.toISOString() ?? null,
+        assignedUserId: updated.assignedUserId,
       },
       customerId: updated.customerId,
     };
@@ -623,9 +735,64 @@ export class JobsService {
           entityId: jobId,
           payload: jobPayload,
         });
+        emitBusinessEvent({
+          companyId,
+          eventType: 'job.booked',
+          entityType: 'job',
+          entityId: jobId,
+          payload: jobPayload,
+        });
       }
     }
 
+    const previousScheduledMs = existing.scheduledAt
+      ? new Date(existing.scheduledAt).getTime()
+      : null;
+    const nextScheduledMs = updated.scheduledAt ? updated.scheduledAt.getTime() : null;
+    const scheduleBecameSet =
+      nextScheduledMs !== null && previousScheduledMs !== nextScheduledMs;
+    const alreadyEmittedBookedForStatus =
+      input.status !== undefined &&
+      input.status !== existing.status &&
+      updated.status === 'scheduled';
+    if (scheduleBecameSet && !alreadyEmittedBookedForStatus) {
+      emitBusinessEvent({
+        companyId,
+        eventType: 'job.booked',
+        entityType: 'job',
+        entityId: jobId,
+        payload: jobPayload,
+      });
+      if (input.scheduledAt !== undefined) {
+        emitBusinessEvent({
+          companyId,
+          eventType: 'job.scheduled',
+          entityType: 'job',
+          entityId: jobId,
+          payload: jobPayload,
+        });
+      }
+    }
+
+    const assigneeChanged =
+      input.assignedUserId !== undefined &&
+      input.assignedUserId !== existing.assignedUserId &&
+      Boolean(updated.assignedUserId);
+    if (assigneeChanged) {
+      emitBusinessEvent({
+        companyId,
+        eventType: 'job.assigned',
+        entityType: 'job',
+        entityId: jobId,
+        payload: {
+          ...jobPayload,
+          assignedUserId: updated.assignedUserId,
+          previousAssignedUserId: existing.assignedUserId,
+        },
+      });
+    }
+
+    invalidateJobsListCaches(companyId);
     return (await this.getJob(companyId, jobId))!;
   }
 
@@ -672,17 +839,28 @@ export class JobsService {
     );
   }
 
-  /** UX-012 — today's scheduled/in-progress jobs for dashboard Upcoming Work. */
-  async listTodaysScheduledJobs(companyId: string, limit = 20): Promise<JobSummary[]> {
+  /**
+   * UX-012 / Ops Slice 2 — today's jobs for dashboard + dispatcher board.
+   * Pass includeCompleted for dispatch end-of-day status flow; dashboard stays open work.
+   */
+  async listTodaysScheduledJobs(
+    companyId: string,
+    limit = 100,
+    options?: { includeCompleted?: boolean },
+  ): Promise<JobSummary[]> {
     const start = new Date();
     start.setHours(0, 0, 0, 0);
     const end = new Date(start);
     end.setDate(end.getDate() + 1);
 
+    const statuses = options?.includeCompleted
+      ? (['scheduled', 'in_progress', 'completed'] as const)
+      : (['scheduled', 'in_progress'] as const);
+
     const rows = await this.db.query.jobs.findMany({
       where: and(
         eq(jobs.companyId, companyId),
-        inArray(jobs.status, ['scheduled', 'in_progress']),
+        inArray(jobs.status, [...statuses]),
         gte(jobs.scheduledAt, start),
         lt(jobs.scheduledAt, end),
       ),
@@ -707,21 +885,45 @@ export class JobsService {
     let focusedJob: AuraJobsContext['focusedJob'] = null;
 
     if (jobId) {
-      const detail = await this.getJob(companyId, jobId);
+      const [detail, jobRow, materialCountRow, snapshotRow] = await Promise.all([
+        this.getJob(companyId, jobId),
+        this.db.query.jobs.findFirst({
+          where: and(eq(jobs.id, jobId), eq(jobs.companyId, companyId)),
+          columns: { executionPhase: true },
+        }),
+        this.db
+          .select({ count: sql<number>`count(*)::int` })
+          .from(jobMaterialLines)
+          .where(and(eq(jobMaterialLines.companyId, companyId), eq(jobMaterialLines.jobId, jobId))),
+        this.db.query.jobCompletionSnapshots.findFirst({
+          where: and(
+            eq(jobCompletionSnapshots.companyId, companyId),
+            eq(jobCompletionSnapshots.jobId, jobId),
+          ),
+          columns: { id: true },
+        }),
+      ]);
 
       if (detail) {
         focusedJob = {
           id: detail.id,
           title: detail.title,
           status: detail.status,
+          jobNumber: detail.jobNumber ?? null,
+          executionPhase: jobRow?.executionPhase ?? null,
+          priority: detail.priority ?? null,
           description: detail.description,
           notes: detail.notes,
           scheduledAt: detail.scheduledAt,
           scheduledEndAt: detail.scheduledEndAt,
           customerId: detail.customerId,
           customerName: detail.customerName,
+          propertyId: detail.propertyId ?? null,
+          siteAddress: detail.address?.display ?? null,
           assignedUserId: detail.assignedUserId,
           assignedUserName: detail.assignedUserName,
+          materialLineCount: materialCountRow[0]?.count ?? 0,
+          hasCompletionSnapshot: Boolean(snapshotRow),
         };
       }
     }
@@ -768,6 +970,60 @@ export class JobsService {
       throw new JobsError('ASSIGNEE_NOT_FOUND', 'Team member not found for this company');
     }
   }
+
+  async deleteJob(
+    scope: JobActor,
+    jobId: string,
+    opts: { isOwner?: boolean } = {},
+  ): Promise<void> {
+    if (!opts.isOwner) {
+      throw new JobsError('FORBIDDEN', 'Only the company owner may permanently delete jobs');
+    }
+
+    const job = await this.getJob(scope.companyId, jobId);
+    if (!job) {
+      throw new JobsError('NOT_FOUND', 'Job not found');
+    }
+
+    if (job.status !== 'new') {
+      throw new JobsError(
+        'VALIDATION_ERROR',
+        'Only empty draft jobs can be deleted. Cancel or archive instead.',
+      );
+    }
+
+    const [invoiceCount] = await this.db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(invoices)
+      .where(and(eq(invoices.jobId, jobId), eq(invoices.companyId, scope.companyId)));
+
+    if ((invoiceCount?.count ?? 0) > 0) {
+      throw new JobsError(
+        'VALIDATION_ERROR',
+        'Job has linked invoices. Cancel or archive instead.',
+      );
+    }
+
+    const deleted = await this.db
+      .delete(jobs)
+      .where(and(eq(jobs.id, jobId), eq(jobs.companyId, scope.companyId)))
+      .returning({ id: jobs.id });
+
+    if (deleted.length === 0) {
+      throw new JobsError('DELETE_FAILED', 'Unable to delete job');
+    }
+
+    emitBusinessEvent({
+      companyId: scope.companyId,
+      eventType: 'job.deleted',
+      entityType: 'job',
+      entityId: jobId,
+      payload: { job: { id: jobId, jobNumber: job.jobNumber } },
+      actorUserId: scope.userId,
+    });
+
+    invalidateJobsListCaches(scope.companyId);
+  }
 }
 
 type JobWithRelations = typeof jobs.$inferSelect & {
@@ -796,7 +1052,11 @@ function toJobSummary(job: JobWithRelations): JobSummary {
     jobType: job.jobType ?? null,
     priority: job.priority ?? 'normal',
     status: job.status,
+    executionPhase: job.executionPhase ?? null,
     addressDisplay,
+    latitude: job.snapshotLatitude ?? null,
+    longitude: job.snapshotLongitude ?? null,
+    placeId: job.snapshotPlaceId ?? null,
     siteContactMobile: job.snapshotSiteContactMobile ?? null,
     scheduledAt: job.scheduledAt ? job.scheduledAt.toISOString() : null,
     scheduledEndAt: job.scheduledEndAt ? job.scheduledEndAt.toISOString() : null,
@@ -806,6 +1066,7 @@ function toJobSummary(job: JobWithRelations): JobSummary {
       : null,
     createdAt: job.createdAt.toISOString(),
     updatedAt: job.updatedAt.toISOString(),
+    etaAt: null,
   };
 }
 
@@ -827,6 +1088,10 @@ function toJobDetail(job: JobWithRelations, docs: JobDocumentLink[]): JobDetail 
       postalCode: job.snapshotPostalCode ?? null,
       unit: job.snapshotUnit ?? null,
       display: summary.addressDisplay,
+      latitude: job.snapshotLatitude ?? null,
+      longitude: job.snapshotLongitude ?? null,
+      placeId: job.snapshotPlaceId ?? null,
+      formattedAddress: job.snapshotFormattedAddress ?? null,
     },
     siteContact: {
       name: job.snapshotSiteContactName ?? null,

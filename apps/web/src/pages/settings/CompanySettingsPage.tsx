@@ -1,5 +1,6 @@
+import { PageHeader } from '../../components/ux';
 import { FormEvent, useEffect, useRef, useState } from 'react';
-import { Button, Input, LoadingState, PageHeader } from '@titan/ui';
+import { Button, Input, LoadingState } from '@titan/ui';
 import type { AiTone, CocApplicability, CompanyProfile } from '@titan/shared';
 import {
   AI_TONE_OPTIONS,
@@ -20,6 +21,7 @@ import { getCachedCompanyProfile } from '../../lib/company-profile-cache';
 import { useCachedQuery } from '../../lib/use-cached-query';
 import { CompanyMediaImage } from '../../features/company/CompanyMediaImage';
 import { useAuth } from '../../lib/auth-context';
+import { SettingsNav } from '../../features/settings/SettingsNav';
 
 export function CompanySettingsPage() {
   const { accessToken, user } = useAuth();
@@ -44,6 +46,7 @@ export function CompanySettingsPage() {
   const [companyTelephone, setCompanyTelephone] = useState('');
   const [companyEmail, setCompanyEmail] = useState('');
   const [website, setWebsite] = useState('');
+  const [googleReviewUrl, setGoogleReviewUrl] = useState('');
   const [physicalAddress, setPhysicalAddress] = useState('');
   const [postalAddress, setPostalAddress] = useState('');
   const [companyRegistrationNumber, setCompanyRegistrationNumber] = useState('');
@@ -83,6 +86,8 @@ export function CompanySettingsPage() {
   const profileImageInputRef = useRef<HTMLInputElement>(null);
 
   const canEdit = user?.permissions.includes('*') ?? false;
+  const canEditGoogleReviewUrl =
+    user?.roleName === 'Company Owner' || user?.roleName === 'Owner' || canEdit;
 
   function applyProfileToForm(data: CompanyProfile) {
     setProfile(data);
@@ -100,6 +105,7 @@ export function CompanySettingsPage() {
     setCompanyTelephone(data.preferences.companyTelephone ?? '');
     setCompanyEmail(data.preferences.companyEmail ?? '');
     setWebsite(data.preferences.website ?? '');
+    setGoogleReviewUrl(data.preferences.googleReviewUrl ?? '');
     setPhysicalAddress(data.preferences.physicalAddress ?? '');
     setPostalAddress(data.preferences.postalAddress ?? '');
     setCompanyRegistrationNumber(data.preferences.companyRegistrationNumber ?? '');
@@ -191,6 +197,7 @@ export function CompanySettingsPage() {
           companyTelephone: companyTelephone.trim() || undefined,
           companyEmail: companyEmail.trim() || undefined,
           website: website.trim() || undefined,
+          googleReviewUrl: googleReviewUrl.trim() || null,
           physicalAddress: physicalAddress.trim() || undefined,
           postalAddress: postalAddress.trim() || undefined,
           companyRegistrationNumber: companyRegistrationNumber.trim() || undefined,
@@ -275,19 +282,20 @@ export function CompanySettingsPage() {
         title="Company Profile"
         description="Business information used by AURA to understand your workspace. No demo data — fill in your real company details."
       />
+      <SettingsNav />
 
       {error ? <p className="settings-alert settings-alert--error">{error}</p> : null}
       {success ? <p className="settings-alert settings-alert--success">{success}</p> : null}
 
       {isLoading && !profile ? (
-        <LoadingState label="Loading company profile…" />
+        <LoadingState label="Loading Company Profile…" />
       ) : (
         <form className="settings-form" onSubmit={(event) => void handleSubmit(event)}>
           <section className="settings-section">
             <h2 className="settings-section__title">Business information</h2>
             <div className="settings-grid">
               <Input
-                label="Company name"
+                label="Company Name"
                 name="name"
                 value={name}
                 onChange={(event) => setName(event.target.value)}
@@ -303,7 +311,7 @@ export function CompanySettingsPage() {
                 disabled={!canEdit}
               />
               <Input
-                label="Business type"
+                label="Business Type"
                 name="businessType"
                 placeholder="e.g. Service, SaaS, Agency"
                 value={businessType}
@@ -317,31 +325,31 @@ export function CompanySettingsPage() {
             <h2 className="settings-section__title">Contact & registration</h2>
             <div className="settings-grid">
               <Input
-                label="Trading name"
+                label="Trading Name"
                 value={tradingName}
                 onChange={(e) => setTradingName(e.target.value)}
                 disabled={!canEdit}
               />
               <Input
-                label="Owner name"
+                label="Owner Name"
                 value={ownerName}
                 onChange={(e) => setOwnerName(e.target.value)}
                 disabled={!canEdit}
               />
               <Input
-                label="Owner job title"
+                label="Owner Job Title"
                 value={ownerJobTitle}
                 onChange={(e) => setOwnerJobTitle(e.target.value)}
                 disabled={!canEdit}
               />
               <Input
-                label="Company telephone"
+                label="Company Telephone"
                 value={companyTelephone}
                 onChange={(e) => setCompanyTelephone(e.target.value)}
                 disabled={!canEdit}
               />
               <Input
-                label="Company email"
+                label="Company Email"
                 value={companyEmail}
                 onChange={(e) => setCompanyEmail(e.target.value)}
                 disabled={!canEdit}
@@ -353,13 +361,23 @@ export function CompanySettingsPage() {
                 disabled={!canEdit}
               />
               <Input
-                label="Registration number"
+                label="Google review URL"
+                value={googleReviewUrl}
+                onChange={(e) => setGoogleReviewUrl(e.target.value)}
+                disabled={!canEditGoogleReviewUrl}
+                placeholder="https://g.page/…/review (Owner only)"
+              />
+              <p className="settings-meta">
+                Used on sent invoice PDFs for the review request QR. Leave empty to hide the QR.
+              </p>
+              <Input
+                label="Registration Number"
                 value={companyRegistrationNumber}
                 onChange={(e) => setCompanyRegistrationNumber(e.target.value)}
                 disabled={!canEdit}
               />
               <Input
-                label="VAT number"
+                label="VAT Number"
                 value={vatNumber}
                 onChange={(e) => setVatNumber(e.target.value)}
                 disabled={!canEdit}
@@ -516,32 +534,32 @@ export function CompanySettingsPage() {
             </label>
             <div className="settings-grid">
               <Input
-                label="Operating hours"
+                label="Operating Hours"
                 value={operatingHours}
                 onChange={(e) => setOperatingHours(e.target.value)}
                 disabled={!canEdit}
               />
               <Input
-                label="Emergency contact name"
+                label="Emergency Contact Name"
                 value={emergencyContactName}
                 onChange={(e) => setEmergencyContactName(e.target.value)}
                 disabled={!canEdit}
               />
               <Input
-                label="Emergency contact phone"
+                label="Emergency Contact Phone"
                 value={emergencyContactPhone}
                 onChange={(e) => setEmergencyContactPhone(e.target.value)}
                 disabled={!canEdit}
               />
               <Input
-                label="Brand primary colour"
+                label="Brand Primary Colour"
                 value={brandPrimaryColor}
                 onChange={(e) => setBrandPrimaryColor(e.target.value)}
                 disabled={!canEdit}
                 placeholder="#1e3a5f"
               />
               <Input
-                label="Brand accent colour"
+                label="Brand Accent Colour"
                 value={brandAccentColor}
                 onChange={(e) => setBrandAccentColor(e.target.value)}
                 disabled={!canEdit}
@@ -551,20 +569,20 @@ export function CompanySettingsPage() {
           </section>
 
           <section className="settings-section">
-            <h2 className="settings-section__title">Young Guns service geography (Cape Town)</h2>
+            <h2 className="settings-section__title">Service geography (Cape Town)</h2>
             <p className="page-muted">
               UX-035 — encode Cape Town / Western Cape service area. Defaults favour Cape Town, not
               Johannesburg.
             </p>
             <div className="settings-grid">
               <Input
-                label="Primary city"
+                label="Primary City"
                 value={serviceCity}
                 onChange={(e) => setServiceCity(e.target.value)}
                 disabled={!canEdit}
               />
               <Input
-                label="Primary province"
+                label="Primary Province"
                 value={serviceProvince}
                 onChange={(e) => setServiceProvince(e.target.value)}
                 disabled={!canEdit}
@@ -630,7 +648,7 @@ export function CompanySettingsPage() {
                 </select>
               </label>
               <Input
-                label="COC document label"
+                label="COC Document Label"
                 value={cocDocumentLabel}
                 onChange={(e) => setCocDocumentLabel(e.target.value)}
                 disabled={!canEdit}

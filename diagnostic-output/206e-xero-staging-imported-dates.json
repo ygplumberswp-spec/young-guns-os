@@ -1,0 +1,238 @@
+{
+  "label": "206e-xero-staging-imported-dates",
+  "generatedAt": "2026-08-03T23:02:15.617Z",
+  "invoiceColumns": [
+    "id",
+    "company_id",
+    "customer_id",
+    "job_id",
+    "quote_id",
+    "invoice_number",
+    "title",
+    "status",
+    "amount_cents",
+    "amount_paid_cents",
+    "currency",
+    "due_date",
+    "notes",
+    "issued_at",
+    "created_at",
+    "updated_at",
+    "stage",
+    "property_id",
+    "quote_version_number",
+    "internal_number",
+    "xero_invoice_number",
+    "xero_reference",
+    "number_authority",
+    "subtotal_cents",
+    "vat_cents",
+    "total_cents",
+    "payment_terms",
+    "billing_name",
+    "billing_email",
+    "billing_phone",
+    "client_action_id",
+    "cancel_reason",
+    "billing_customer_id",
+    "recipient_name",
+    "recipient_email",
+    "recipient_phone",
+    "billing_address",
+    "vat_number",
+    "po_reference",
+    "attention_person"
+  ],
+  "quoteColumns": [
+    "id",
+    "company_id",
+    "customer_id",
+    "job_id",
+    "quote_number",
+    "title",
+    "status",
+    "amount_cents",
+    "currency",
+    "valid_until",
+    "notes",
+    "created_at",
+    "updated_at",
+    "property_id",
+    "lead_id",
+    "estimator_user_id",
+    "root_quote_id",
+    "supersedes_quote_id",
+    "version_number",
+    "is_immutable",
+    "scope_of_work",
+    "exclusions",
+    "assumptions",
+    "customer_notes",
+    "internal_notes",
+    "payment_terms",
+    "deposit_percent",
+    "option_tier",
+    "subtotal_cents",
+    "discount_cents",
+    "vat_cents",
+    "total_cents",
+    "estimated_cost_cents",
+    "gross_profit_cents",
+    "markup_bps",
+    "margin_bps",
+    "profit_floor_cents",
+    "target_price_cents",
+    "below_floor_override",
+    "below_floor_reason",
+    "below_floor_authorized_by",
+    "issued_at",
+    "accepted_at",
+    "declined_at",
+    "cancelled_at",
+    "cancel_reason",
+    "xero_quote_id",
+    "client_action_id",
+    "boq_document_id",
+    "billing_customer_id",
+    "recipient_name",
+    "recipient_email",
+    "recipient_phone",
+    "billing_address",
+    "vat_number",
+    "po_reference",
+    "attention_person"
+  ],
+  "xeroInvoices": [
+    {
+      "id": "360931e8-ac3a-40f7-bcd8-81bcc43cd585",
+      "invoice_number": "INV-0424",
+      "issued_at": "2026-08-01T11:43:40.497Z",
+      "due_date": null,
+      "status": "draft",
+      "amount_cents": 226639,
+      "currency": "ZAR",
+      "created_at": "2026-08-01T11:43:40.565Z"
+    },
+    {
+      "id": "1aaaa421-b74a-4cf3-9685-c2f60b1e007e",
+      "invoice_number": "INV-0423",
+      "issued_at": "2026-08-01T11:43:38.875Z",
+      "due_date": null,
+      "status": "draft",
+      "amount_cents": 247250,
+      "currency": "ZAR",
+      "created_at": "2026-08-01T11:43:38.943Z"
+    },
+    {
+      "id": "7c726b98-325b-4601-8b4a-9647c9f50540",
+      "invoice_number": "INV-0241",
+      "issued_at": "2026-08-01T11:42:01.529Z",
+      "due_date": null,
+      "status": "cancelled",
+      "amount_cents": 5487605,
+      "currency": "ZAR",
+      "created_at": "2026-08-01T11:42:01.597Z"
+    },
+    {
+      "id": "3138e9af-46b9-4c69-ae26-55aec9fb26d9",
+      "invoice_number": "INV-0267",
+      "issued_at": "2026-08-01T11:41:59.948Z",
+      "due_date": null,
+      "status": "cancelled",
+      "amount_cents": 517500,
+      "currency": "ZAR",
+      "created_at": "2026-08-01T11:42:00.017Z"
+    },
+    {
+      "id": "c93e4674-a123-4f81-817b-c67a31cfcfb8",
+      "invoice_number": "INV-0289",
+      "issued_at": "2026-08-01T11:41:58.366Z",
+      "due_date": null,
+      "status": "cancelled",
+      "amount_cents": 1318475,
+      "currency": "ZAR",
+      "created_at": "2026-08-01T11:41:58.436Z"
+    }
+  ],
+  "xeroInvoiceDateStats": {
+    "n": 5,
+    "with_issued_at": 5,
+    "with_due_date": 0,
+    "oldest_issued": "2026-08-01T11:41:58.366Z",
+    "newest_issued": "2026-08-01T11:43:40.497Z"
+  },
+  "xeroQuotes": [],
+  "customersFromXero": {
+    "n": 811,
+    "oldest": "2026-07-31T23:50:43.078Z",
+    "newest": "2026-08-03T21:56:35.334Z"
+  },
+  "totals": {
+    "invoices": 5,
+    "quotes": 0,
+    "payments": 0,
+    "customers": 811
+  },
+  "successfulInvoiceLogs": [
+    {
+      "message": "Updated invoice INV-0424 from Xero",
+      "xero_entity_id": "40ecd383-7e65-4c6d-8ace-f3873fcc0931",
+      "action": "pull",
+      "created_at": "2026-08-03T17:37:48.705Z"
+    },
+    {
+      "message": "Updated invoice INV-0423 from Xero",
+      "xero_entity_id": "50da9091-831b-4f33-9f0b-0fdd151cf639",
+      "action": "pull",
+      "created_at": "2026-08-03T17:37:46.963Z"
+    },
+    {
+      "message": "Updated invoice INV-0241 from Xero",
+      "xero_entity_id": "9e7f6618-a092-431d-8984-e4922ddad7b4",
+      "action": "pull",
+      "created_at": "2026-08-03T17:36:40.114Z"
+    },
+    {
+      "message": "Updated invoice INV-0267 from Xero",
+      "xero_entity_id": "00d36a96-4220-407a-aa78-e763e6555fa5",
+      "action": "pull",
+      "created_at": "2026-08-03T17:36:38.360Z"
+    },
+    {
+      "message": "Updated invoice INV-0289 from Xero",
+      "xero_entity_id": "0184e80c-a21c-49f6-9988-e3d7839c5c40",
+      "action": "pull",
+      "created_at": "2026-08-03T17:36:36.617Z"
+    },
+    {
+      "message": "Updated invoice INV-0424 from Xero",
+      "xero_entity_id": "40ecd383-7e65-4c6d-8ace-f3873fcc0931",
+      "action": "pull",
+      "created_at": "2026-08-03T16:26:44.874Z"
+    },
+    {
+      "message": "Updated invoice INV-0423 from Xero",
+      "xero_entity_id": "50da9091-831b-4f33-9f0b-0fdd151cf639",
+      "action": "pull",
+      "created_at": "2026-08-03T16:26:42.562Z"
+    },
+    {
+      "message": "Updated invoice INV-0241 from Xero",
+      "xero_entity_id": "9e7f6618-a092-431d-8984-e4922ddad7b4",
+      "action": "pull",
+      "created_at": "2026-08-03T16:25:28.470Z"
+    },
+    {
+      "message": "Updated invoice INV-0267 from Xero",
+      "xero_entity_id": "00d36a96-4220-407a-aa78-e763e6555fa5",
+      "action": "pull",
+      "created_at": "2026-08-03T16:25:26.685Z"
+    },
+    {
+      "message": "Updated invoice INV-0289 from Xero",
+      "xero_entity_id": "0184e80c-a21c-49f6-9988-e3d7839c5c40",
+      "action": "pull",
+      "created_at": "2026-08-03T16:25:24.343Z"
+    }
+  ]
+}
