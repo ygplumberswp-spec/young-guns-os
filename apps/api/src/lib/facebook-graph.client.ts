@@ -508,6 +508,25 @@ export class FacebookGraphClient {
     return this.buildAuthorizeUrl(state, [...FACEBOOK_OAUTH_BUSINESS_PORTFOLIO_SCOPES]);
   }
 
+  /** Reconnect wizard — pages_show_list + business_management + public_profile (J-6.7F10). */
+  buildReconnectWizardAuthorizeUrl(state: string): string {
+    const params = new URLSearchParams({
+      client_id: this.config.appId,
+      redirect_uri: this.config.redirectUri,
+      state,
+      response_type: 'code',
+      auth_type: 'rerequest',
+    });
+
+    if (this.config.loginConfigId?.trim()) {
+      params.set('config_id', this.config.loginConfigId.trim());
+    } else {
+      params.set('scope', 'pages_show_list,business_management,public_profile');
+    }
+
+    return `${FACEBOOK_OAUTH_DIALOG_URL}?${params.toString()}`;
+  }
+
   /** Builds OAuth URL for Page read access after selection (J-6.7F6). */
   buildPageReadAuthorizeUrl(state: string): string {
     return this.buildAuthorizeUrl(state, [...FACEBOOK_OAUTH_PAGE_READ_SCOPES]);

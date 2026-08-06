@@ -577,10 +577,10 @@ export class FacebookBusinessService {
     await this.audit(actor, 'connection.oauth_started', row.id, {
       oauthFlow: 'reconnect_wizard_scopes',
       requestedOAuthTier: 'reconnect_wizard',
-      requestedScopes: ['pages_show_list', 'business_management'],
+      requestedScopes: ['pages_show_list', 'business_management', 'public_profile'],
     });
 
-    return { authorizationUrl: this.graph().buildBusinessPortfolioAuthorizeUrl(state) };
+    return { authorizationUrl: this.graph().buildReconnectWizardAuthorizeUrl(state) };
   }
 
   /** Re-authorises with pages_read_engagement after Page selection (J-6.7F6). */

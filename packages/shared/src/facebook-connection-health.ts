@@ -22,6 +22,16 @@ export const FACEBOOK_OAUTH_PAGE_READ_SCOPES: FacebookPermission[] = [
 export const FACEBOOK_PAGE_READ_OAUTH_EXPLANATION =
   'TITAN needs Page read access to verify your Page and read Page content needed for connection health. This does not allow TITAN to publish posts, reply to messages, manage advertising or make payments.';
 
+export const FACEBOOK_RECONNECT_WIZARD_OAUTH_EXPLANATION =
+  'TITAN will open Meta so you can choose the Business and Facebook Page you want to connect. Your current connection remains unchanged until the new Page is verified successfully.';
+
+/** Reconnect wizard OAuth scopes (Meta Login also grants public_profile implicitly). */
+export const FACEBOOK_OAUTH_RECONNECT_WIZARD_SCOPES = [
+  'pages_show_list',
+  'business_management',
+  'public_profile',
+] as const;
+
 export const FACEBOOK_OAUTH_TIER_PAGE_READ_PREFIX = '__titan_oauth_tier=page_read__';
 export const FACEBOOK_OAUTH_TIER_RECONNECT_WIZARD_PREFIX = '__titan_oauth_tier=reconnect_wizard__';
 

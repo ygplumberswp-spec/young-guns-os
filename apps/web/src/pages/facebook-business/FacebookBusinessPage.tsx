@@ -12,6 +12,7 @@ import {
   FACEBOOK_BUSINESS_PORTFOLIO_STATUS_LABELS,
   FACEBOOK_BUSINESS_PORTFOLIO_OAUTH_EXPLANATION,
   FACEBOOK_PAGE_READ_OAUTH_EXPLANATION,
+  FACEBOOK_RECONNECT_WIZARD_OAUTH_EXPLANATION,
   FACEBOOK_SYNC_INACTIVE_UNTIL_READ_PERMISSION,
   hasFacebookPageReadEngagement,
   maskFacebookPageId,
@@ -983,6 +984,9 @@ function ConnectionTab({
 
       {canManage ? (
         <Panel title="Manage the connection">
+          {pageSelectionMismatch || connection.state === 'reauthorisation_required' ? (
+            <p className="page-muted">{FACEBOOK_RECONNECT_WIZARD_OAUTH_EXPLANATION}</p>
+          ) : null}
           {pageDiscovery?.needsBusinessPortfolioAccess && !isConnectedLimited && !pageSelectionMismatch ? (
             <p className="page-muted">{FACEBOOK_BUSINESS_PORTFOLIO_OAUTH_EXPLANATION}</p>
           ) : null}

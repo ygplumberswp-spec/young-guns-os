@@ -74,10 +74,11 @@ describe('Facebook Page selection path (J-6.7F9 / J-6.7F10 reconnect wizard)', (
   it('reconnect uses controlled wizard OAuth — not plain connect OAuth', () => {
     assert.ok(pageSource.includes('startFacebookReconnectWizardOAuth'));
     assert.ok(pageSource.includes('onReconnect={handleReconnect}'));
+    assert.ok(pageSource.includes('FACEBOOK_RECONNECT_WIZARD_OAUTH_EXPLANATION'));
     assert.ok(pageSource.includes("outcome === 'reconnect-wizard'"));
     assert.ok(apiClientSource.includes('/oauth/start-reconnect-wizard'));
     assert.ok(routeSource.includes("router.post('/oauth/start-reconnect-wizard'"));
-    assert.ok(serviceSource.includes('startReconnectWizardOAuth'));
+    assert.ok(serviceSource.includes('buildReconnectWizardAuthorizeUrl'));
   });
 
   it('API client posts authenticated pageId only — never Page tokens', () => {
