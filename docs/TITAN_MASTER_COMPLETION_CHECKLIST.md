@@ -21,6 +21,8 @@
 
 **INT-UI-001B (2026-08-06):** Dashboard Connections card aligned to enterprise status mapping (same truth as `/integrations`). **Pending Owner approval.**
 
+**PERF-001 (2026-08-06):** Performance foundation implemented — bundle split, dashboard deferred loading, request dedupe. See [TITAN_PERF_001_COMPLETION_REPORT.md](./TITAN_PERF_001_COMPLETION_REPORT.md). Staging deploy pending.
+
 **Integrations overview (2026-08-06):** Enterprise polish on PR #10 — unified cards, enterprise status lines, fine-details finishing. **Pending Owner approval** — not complete until signed off.
 
 ---

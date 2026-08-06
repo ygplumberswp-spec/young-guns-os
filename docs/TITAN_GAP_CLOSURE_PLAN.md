@@ -2,7 +2,7 @@
 
 **Audit type:** READ-ONLY planning artifact — no new features  
 **Generated (UTC):** 2026-08-05  
-**Last updated (UTC):** 2026-08-06 — Integrations overview enterprise polish complete (PR #10 pending Owner approval); next enterprise priorities recorded below  
+**Last updated (UTC):** 2026-08-06 — PERF-001 performance foundation implemented on `cursor/titan-perf-001-foundation`; staging deploy pending Owner/Railway action  
 **Base HEAD:** `cc0abbcde96902711fc0e141590144470abc5444` → task branch `cursor/titan-xero-002-p0-finance`  
 **Branch:** `cursor/titan-v1-integration`  
 **Scope:** Unmet **accepted** requirements only — deferred items at end  
@@ -46,7 +46,7 @@
 | Order | Task ID | Name | Gate |
 |------:|---------|------|------|
 | 0 | INT-OVERVIEW-001 | Integrations overview + Dashboard Connections alignment | **Pending Owner approval** |
-| 1 | **PERF-001** | **TITAN Performance Foundation** | Owner sequences after step 0 |
+| 1 | **PERF-001** | **TITAN Performance Foundation** | **Implemented** — [TITAN_PERF_001_COMPLETION_REPORT.md](./TITAN_PERF_001_COMPLETION_REPORT.md); staging deploy pending |
 | 2 | **XERO-003** | **Near-real-time Xero quote, invoice and payment intersync** | Owner sequences after PERF-001 |
 | 3 | **DASH-001** | **Owner Dashboard — Business Heartbeat** | Owner sequences after XERO-003 |
 | 4 | XERO-002 | Controlled Xero live proof (Owner gate) | **Blocked** until steps 0–3 formally sequenced |
@@ -55,25 +55,14 @@ Both tasks must meet the **Enterprise Product Quality Gate** and **Fine Details 
 
 ### PERF-001 — TITAN Performance Foundation
 
-**Gap:** Current page loading is too slow and feels unfinished. Actual and perceived speed must improve with measurable evidence.
+**Status (2026-08-06):** Implemented on branch `cursor/titan-perf-001-foundation`. Measured main bundle reduction 566 KB → 332 KB entry (+ vendor splits). Dashboard deferred panel loading, social connection dedupe, cache policies, prefetch alignment. See [TITAN_PERF_001_BASELINE_REPORT.md](./TITAN_PERF_001_BASELINE_REPORT.md) and [TITAN_PERF_001_COMPLETION_REPORT.md](./TITAN_PERF_001_COMPLETION_REPORT.md). Staging deploy and authenticated route verification **pending**.
 
-**Future audit and repair scope (not started):**
+**Gap (remaining):**
 
-- Initial application load
-- Route-to-route navigation
-- API request waterfalls
-- Duplicate requests
-- Oversized JavaScript bundles
-- Unnecessary full-page reloads
-- Slow database queries
-- Missing indexes
-- Large unpaginated lists
-- Blocking provider calls
-- Missing caching
-- Repeated authentication checks
-- Loading-state layout shifts
-- Blank screens
-- Slow mobile and tablet performance
+- Authenticated Owner route before/after timings
+- List pagination (CRM, jobs, quotes, invoices)
+- DB index audit with tenant query evidence
+- Post-deploy staging verification
 
 **Deliverable:** Measurable performance evidence (before/after metrics) plus improved perceived and actual speed.
 
