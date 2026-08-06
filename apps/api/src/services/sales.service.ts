@@ -456,7 +456,7 @@ export class SalesService {
         customerId: quote.customerId,
         customerName: quote.customer.name,
         title: `Unconverted quote — ${quote.quoteNumber}`,
-        description: `Quote "${quote.title}" (${quote.status}) has not converted. Follow up with ${quote.customer.name}.`,
+        description: `Quote ${quote.quoteNumber} (${quote.status}) has not converted. Follow up with ${quote.customer.name}.`,
         estimatedValueCents: quote.amountCents,
         currency: quote.currency,
         quoteId: quote.id,

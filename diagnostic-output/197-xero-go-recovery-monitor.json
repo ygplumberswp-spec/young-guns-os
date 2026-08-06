@@ -1,0 +1,5783 @@
+{
+  "label": "197-xero-go-recovery-monitor",
+  "generatedAt": "2026-08-01T17:39:09.532Z",
+  "stagingUrl": "https://young-guns-os-staging.up.railway.app",
+  "deployCommit": {
+    "full": "8c3e7b71c6ade132d90bf21faf92b6c2bc9269fe",
+    "short": "8c3e7b7",
+    "userConfirmedActive": true
+  },
+  "paymentsFixCommit": {
+    "full": "162cbf4",
+    "ancestryCheck": {
+      "command": "git merge-base --is-ancestor 162cbf4 8c3e7b7",
+      "pass": true
+    }
+  },
+  "health": {
+    "ready": {
+      "endpoint": "/api/v1/health/ready",
+      "httpStatus": 200,
+      "body": {
+        "status": "ready",
+        "database": "connected",
+        "redis": "not_configured",
+        "providersEnabled": true,
+        "workersEnabled": false,
+        "webhooksEnabled": false
+      },
+      "checkedAt": "2026-08-01T13:01:38.089Z"
+    },
+    "full": {
+      "endpoint": "/api/v1/health",
+      "body": {
+        "status": "ok",
+        "service": "titan-api",
+        "version": "0.2.0"
+      },
+      "checkedAt": "2026-08-01T13:01:38.727Z"
+    }
+  },
+  "xeroJobId": "81c5b8d8-839b-4875-b106-2ecece11a966",
+  "baselineAtDeploy": {
+    "jobStatus": "failed",
+    "checkpoint": {
+      "stage": "payments",
+      "paymentsPage": 1
+    },
+    "mappingCounts": {
+      "customer_mappings": 673,
+      "invoice_mappings": 5,
+      "payment_mappings": 0
+    },
+    "duplicateCustomerContactIds": 0
+  },
+  "polls": [
+    {
+      "pollNumber": 1,
+      "at": "2026-08-01T13:01:40.827Z",
+      "jobStatus": "failed",
+      "checkpoint": {
+        "stage": "payments",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 1,
+        "bankTransactionsPage": 1
+      },
+      "completedStages": [
+        "contacts",
+        "invoices"
+      ],
+      "heartbeatAt": "2026-08-01T12:48:40.984Z",
+      "activity": "processing",
+      "resumedFromAbandoned": false,
+      "lastSyncAt": null,
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 0
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "FAIL",
+      "checks": [
+        {
+          "name": "job_status_completed",
+          "pass": false
+        },
+        {
+          "name": "last_sync_at_populated",
+          "pass": false
+        },
+        {
+          "name": "contacts_mappings_present",
+          "pass": true,
+          "count": 673
+        },
+        {
+          "name": "invoice_mappings_present",
+          "pass": true
+        },
+        {
+          "name": "payment_mappings_present",
+          "pass": true
+        },
+        {
+          "name": "no_duplicate_customer_mappings",
+          "pass": true
+        },
+        {
+          "name": "cv_auto_recalc_fired",
+          "pass": false
+        },
+        {
+          "name": "recovery_checkpoint_or_resuming",
+          "pass": true
+        }
+      ]
+    },
+    {
+      "pollNumber": 2,
+      "at": "2026-08-01T13:04:26Z",
+      "jobStatus": "failed",
+      "checkpoint": {
+        "stage": "payments",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 1,
+        "bankTransactionsPage": 1
+      },
+      "completedStages": [
+        "contacts",
+        "invoices"
+      ],
+      "heartbeatAt": "2026-08-01T12:48:40.984Z",
+      "activity": "processing",
+      "resumedFromAbandoned": false,
+      "lastSyncAt": null,
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 0
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "FAIL",
+      "checks": [
+        {
+          "name": "job_status_completed",
+          "pass": false
+        },
+        {
+          "name": "last_sync_at_populated",
+          "pass": false
+        },
+        {
+          "name": "contacts_mappings_present",
+          "pass": true,
+          "count": 673
+        },
+        {
+          "name": "invoice_mappings_present",
+          "pass": true
+        },
+        {
+          "name": "payment_mappings_present",
+          "pass": true
+        },
+        {
+          "name": "no_duplicate_customer_mappings",
+          "pass": true
+        },
+        {
+          "name": "cv_auto_recalc_fired",
+          "pass": false
+        },
+        {
+          "name": "recovery_checkpoint_or_resuming",
+          "pass": true
+        }
+      ]
+    },
+    {
+      "pollNumber": 3,
+      "at": "2026-08-01T13:06:59Z",
+      "jobStatus": "failed",
+      "checkpoint": {
+        "stage": "payments",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 1,
+        "bankTransactionsPage": 1
+      },
+      "completedStages": [
+        "contacts",
+        "invoices"
+      ],
+      "heartbeatAt": "2026-08-01T12:48:40.984Z",
+      "activity": "processing",
+      "resumedFromAbandoned": false,
+      "lastSyncAt": null,
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 0
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "FAIL",
+      "checks": [
+        {
+          "name": "job_status_completed",
+          "pass": false
+        },
+        {
+          "name": "last_sync_at_populated",
+          "pass": false
+        },
+        {
+          "name": "contacts_mappings_present",
+          "pass": true,
+          "count": 673
+        },
+        {
+          "name": "invoice_mappings_present",
+          "pass": true
+        },
+        {
+          "name": "payment_mappings_present",
+          "pass": true
+        },
+        {
+          "name": "no_duplicate_customer_mappings",
+          "pass": true
+        },
+        {
+          "name": "cv_auto_recalc_fired",
+          "pass": false
+        },
+        {
+          "name": "recovery_checkpoint_or_resuming",
+          "pass": true
+        }
+      ]
+    },
+    {
+      "pollNumber": 4,
+      "at": "2026-08-01T13:09:32Z",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "contacts",
+        "contactsPage": 1,
+        "invoicesPage": 1,
+        "paymentsPage": 1,
+        "bankTransactionsPage": 1
+      },
+      "completedStages": [],
+      "heartbeatAt": "2026-08-01T13:09:27.675Z",
+      "activity": "processing",
+      "resumedFromAbandoned": false,
+      "lastSyncAt": null,
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 0
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS",
+      "checks": [
+        {
+          "name": "job_status_completed",
+          "pass": false
+        },
+        {
+          "name": "last_sync_at_populated",
+          "pass": false
+        },
+        {
+          "name": "contacts_mappings_present",
+          "pass": true,
+          "count": 673
+        },
+        {
+          "name": "invoice_mappings_present",
+          "pass": true
+        },
+        {
+          "name": "payment_mappings_present",
+          "pass": true
+        },
+        {
+          "name": "no_duplicate_customer_mappings",
+          "pass": true
+        },
+        {
+          "name": "cv_auto_recalc_fired",
+          "pass": false
+        },
+        {
+          "name": "recovery_checkpoint_or_resuming",
+          "pass": true
+        }
+      ]
+    },
+    {
+      "pollNumber": 5,
+      "at": "2026-08-01T13:12:05Z",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "contacts",
+        "contactsPage": 1,
+        "invoicesPage": 1,
+        "paymentsPage": 1,
+        "bankTransactionsPage": 1
+      },
+      "completedStages": [],
+      "heartbeatAt": "2026-08-01T13:11:43.437Z",
+      "activity": "processing",
+      "resumedFromAbandoned": false,
+      "lastSyncAt": null,
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 0
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS",
+      "checks": [
+        {
+          "name": "job_status_completed",
+          "pass": false
+        },
+        {
+          "name": "last_sync_at_populated",
+          "pass": false
+        },
+        {
+          "name": "contacts_mappings_present",
+          "pass": true,
+          "count": 673
+        },
+        {
+          "name": "invoice_mappings_present",
+          "pass": true
+        },
+        {
+          "name": "payment_mappings_present",
+          "pass": true
+        },
+        {
+          "name": "no_duplicate_customer_mappings",
+          "pass": true
+        },
+        {
+          "name": "cv_auto_recalc_fired",
+          "pass": false
+        },
+        {
+          "name": "recovery_checkpoint_or_resuming",
+          "pass": true
+        }
+      ]
+    },
+    {
+      "pollNumber": 6,
+      "at": "2026-08-01T13:14:38Z",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "contacts",
+        "contactsPage": 4,
+        "invoicesPage": 1,
+        "paymentsPage": 1,
+        "bankTransactionsPage": 1
+      },
+      "completedStages": [],
+      "heartbeatAt": "2026-08-01T13:14:36.336Z",
+      "activity": "waiting_next_batch",
+      "resumedFromAbandoned": false,
+      "lastSyncAt": null,
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 0
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS",
+      "checks": [
+        {
+          "name": "job_status_completed",
+          "pass": false
+        },
+        {
+          "name": "last_sync_at_populated",
+          "pass": false
+        },
+        {
+          "name": "contacts_mappings_present",
+          "pass": true,
+          "count": 673
+        },
+        {
+          "name": "invoice_mappings_present",
+          "pass": true
+        },
+        {
+          "name": "payment_mappings_present",
+          "pass": true
+        },
+        {
+          "name": "no_duplicate_customer_mappings",
+          "pass": true
+        },
+        {
+          "name": "cv_auto_recalc_fired",
+          "pass": false
+        },
+        {
+          "name": "recovery_checkpoint_or_resuming",
+          "pass": true
+        }
+      ]
+    },
+    {
+      "pollNumber": 7,
+      "at": "2026-08-01T13:17:11Z",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "contacts",
+        "contactsPage": 6,
+        "invoicesPage": 1,
+        "paymentsPage": 1,
+        "bankTransactionsPage": 1
+      },
+      "completedStages": [],
+      "heartbeatAt": "2026-08-01T13:16:43.299Z",
+      "activity": "processing",
+      "resumedFromAbandoned": false,
+      "lastSyncAt": null,
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 0
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS",
+      "checks": [
+        {
+          "name": "job_status_completed",
+          "pass": false
+        },
+        {
+          "name": "last_sync_at_populated",
+          "pass": false
+        },
+        {
+          "name": "contacts_mappings_present",
+          "pass": true,
+          "count": 673
+        },
+        {
+          "name": "invoice_mappings_present",
+          "pass": true
+        },
+        {
+          "name": "payment_mappings_present",
+          "pass": true
+        },
+        {
+          "name": "no_duplicate_customer_mappings",
+          "pass": true
+        },
+        {
+          "name": "cv_auto_recalc_fired",
+          "pass": false
+        },
+        {
+          "name": "recovery_checkpoint_or_resuming",
+          "pass": true
+        }
+      ]
+    },
+    {
+      "pollNumber": 8,
+      "at": "2026-08-01T13:19:44Z",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "invoices",
+        "contactsPage": 8,
+        "invoicesPage": 2,
+        "paymentsPage": 1,
+        "bankTransactionsPage": 1
+      },
+      "completedStages": [
+        "contacts"
+      ],
+      "heartbeatAt": "2026-08-01T13:19:43.433Z",
+      "activity": "processing",
+      "resumedFromAbandoned": false,
+      "lastSyncAt": null,
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 0
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS",
+      "checks": [
+        {
+          "name": "job_status_completed",
+          "pass": false
+        },
+        {
+          "name": "last_sync_at_populated",
+          "pass": false
+        },
+        {
+          "name": "contacts_mappings_present",
+          "pass": true,
+          "count": 673
+        },
+        {
+          "name": "invoice_mappings_present",
+          "pass": true
+        },
+        {
+          "name": "payment_mappings_present",
+          "pass": true
+        },
+        {
+          "name": "no_duplicate_customer_mappings",
+          "pass": true
+        },
+        {
+          "name": "cv_auto_recalc_fired",
+          "pass": false
+        },
+        {
+          "name": "recovery_checkpoint_or_resuming",
+          "pass": true
+        }
+      ]
+    },
+    {
+      "pollNumber": 9,
+      "at": "2026-08-01T13:22:17Z",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "invoices",
+        "contactsPage": 8,
+        "invoicesPage": 4,
+        "paymentsPage": 1,
+        "bankTransactionsPage": 1
+      },
+      "completedStages": [
+        "contacts"
+      ],
+      "heartbeatAt": "2026-08-01T13:21:43.296Z",
+      "activity": "processing",
+      "resumedFromAbandoned": false,
+      "lastSyncAt": null,
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 0
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS",
+      "checks": [
+        {
+          "name": "job_status_completed",
+          "pass": false
+        },
+        {
+          "name": "last_sync_at_populated",
+          "pass": false
+        },
+        {
+          "name": "contacts_mappings_present",
+          "pass": true,
+          "count": 673
+        },
+        {
+          "name": "invoice_mappings_present",
+          "pass": true
+        },
+        {
+          "name": "payment_mappings_present",
+          "pass": true
+        },
+        {
+          "name": "no_duplicate_customer_mappings",
+          "pass": true
+        },
+        {
+          "name": "cv_auto_recalc_fired",
+          "pass": false
+        },
+        {
+          "name": "recovery_checkpoint_or_resuming",
+          "pass": true
+        }
+      ]
+    },
+    {
+      "pollNumber": 10,
+      "at": "2026-08-01T13:24:50Z",
+      "jobStatus": "failed",
+      "checkpoint": {
+        "stage": "payments",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 1,
+        "bankTransactionsPage": 1
+      },
+      "completedStages": [
+        "contacts",
+        "invoices"
+      ],
+      "heartbeatAt": "2026-08-01T13:24:44.575Z",
+      "activity": "processing",
+      "resumedFromAbandoned": false,
+      "lastSyncAt": null,
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 0
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "FAIL",
+      "checks": [
+        {
+          "name": "job_status_completed",
+          "pass": false
+        },
+        {
+          "name": "last_sync_at_populated",
+          "pass": false
+        },
+        {
+          "name": "contacts_mappings_present",
+          "pass": true,
+          "count": 673
+        },
+        {
+          "name": "invoice_mappings_present",
+          "pass": true
+        },
+        {
+          "name": "payment_mappings_present",
+          "pass": true
+        },
+        {
+          "name": "no_duplicate_customer_mappings",
+          "pass": true
+        },
+        {
+          "name": "cv_auto_recalc_fired",
+          "pass": false
+        },
+        {
+          "name": "recovery_checkpoint_or_resuming",
+          "pass": true
+        }
+      ]
+    },
+    {
+      "pollNumber": 11,
+      "at": "2026-08-01T13:27:23Z",
+      "jobStatus": "failed",
+      "checkpoint": {
+        "stage": "payments",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 1,
+        "bankTransactionsPage": 1
+      },
+      "completedStages": [
+        "contacts",
+        "invoices"
+      ],
+      "heartbeatAt": "2026-08-01T13:26:43.884Z",
+      "activity": "processing",
+      "resumedFromAbandoned": true,
+      "lastSyncAt": null,
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 0
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "FAIL",
+      "checks": [
+        {
+          "name": "job_status_completed",
+          "pass": false
+        },
+        {
+          "name": "last_sync_at_populated",
+          "pass": false
+        },
+        {
+          "name": "contacts_mappings_present",
+          "pass": true,
+          "count": 673
+        },
+        {
+          "name": "invoice_mappings_present",
+          "pass": true
+        },
+        {
+          "name": "payment_mappings_present",
+          "pass": true
+        },
+        {
+          "name": "no_duplicate_customer_mappings",
+          "pass": true
+        },
+        {
+          "name": "cv_auto_recalc_fired",
+          "pass": false
+        },
+        {
+          "name": "recovery_checkpoint_or_resuming",
+          "pass": true
+        }
+      ]
+    },
+    {
+      "pollNumber": 12,
+      "at": "2026-08-01T13:29:56Z",
+      "jobStatus": "failed",
+      "checkpoint": {
+        "stage": "payments",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 1,
+        "bankTransactionsPage": 1
+      },
+      "completedStages": [
+        "contacts",
+        "invoices"
+      ],
+      "heartbeatAt": "2026-08-01T13:29:43.732Z",
+      "activity": "processing",
+      "resumedFromAbandoned": true,
+      "lastSyncAt": null,
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 0
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "FAIL",
+      "checks": [
+        {
+          "name": "job_status_completed",
+          "pass": false
+        },
+        {
+          "name": "last_sync_at_populated",
+          "pass": false
+        },
+        {
+          "name": "contacts_mappings_present",
+          "pass": true,
+          "count": 673
+        },
+        {
+          "name": "invoice_mappings_present",
+          "pass": true
+        },
+        {
+          "name": "payment_mappings_present",
+          "pass": true
+        },
+        {
+          "name": "no_duplicate_customer_mappings",
+          "pass": true
+        },
+        {
+          "name": "cv_auto_recalc_fired",
+          "pass": false
+        },
+        {
+          "name": "recovery_checkpoint_or_resuming",
+          "pass": true
+        }
+      ]
+    },
+    {
+      "pollNumber": 13,
+      "at": "2026-08-01T13:32:29Z",
+      "jobStatus": "failed",
+      "checkpoint": {
+        "stage": "payments",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 1,
+        "bankTransactionsPage": 1
+      },
+      "completedStages": [
+        "contacts",
+        "invoices"
+      ],
+      "heartbeatAt": "2026-08-01T13:31:43.933Z",
+      "activity": "processing",
+      "resumedFromAbandoned": true,
+      "lastSyncAt": null,
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 0
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "FAIL",
+      "checks": [
+        {
+          "name": "job_status_completed",
+          "pass": false
+        },
+        {
+          "name": "last_sync_at_populated",
+          "pass": false
+        },
+        {
+          "name": "contacts_mappings_present",
+          "pass": true,
+          "count": 673
+        },
+        {
+          "name": "invoice_mappings_present",
+          "pass": true
+        },
+        {
+          "name": "payment_mappings_present",
+          "pass": true
+        },
+        {
+          "name": "no_duplicate_customer_mappings",
+          "pass": true
+        },
+        {
+          "name": "cv_auto_recalc_fired",
+          "pass": false
+        },
+        {
+          "name": "recovery_checkpoint_or_resuming",
+          "pass": true
+        }
+      ]
+    },
+    {
+      "pollNumber": 14,
+      "at": "2026-08-01T13:35:02Z",
+      "jobStatus": "failed",
+      "checkpoint": {
+        "stage": "payments",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 1,
+        "bankTransactionsPage": 1
+      },
+      "completedStages": [
+        "contacts",
+        "invoices"
+      ],
+      "heartbeatAt": "2026-08-01T13:34:43.733Z",
+      "activity": "processing",
+      "resumedFromAbandoned": true,
+      "lastSyncAt": null,
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 0
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "FAIL",
+      "checks": [
+        {
+          "name": "job_status_completed",
+          "pass": false
+        },
+        {
+          "name": "last_sync_at_populated",
+          "pass": false
+        },
+        {
+          "name": "contacts_mappings_present",
+          "pass": true,
+          "count": 673
+        },
+        {
+          "name": "invoice_mappings_present",
+          "pass": true
+        },
+        {
+          "name": "payment_mappings_present",
+          "pass": true
+        },
+        {
+          "name": "no_duplicate_customer_mappings",
+          "pass": true
+        },
+        {
+          "name": "cv_auto_recalc_fired",
+          "pass": false
+        },
+        {
+          "name": "recovery_checkpoint_or_resuming",
+          "pass": true
+        }
+      ]
+    },
+    {
+      "pollNumber": 15,
+      "at": "2026-08-01T13:37:35Z",
+      "jobStatus": "failed",
+      "checkpoint": {
+        "stage": "payments",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 1,
+        "bankTransactionsPage": 1
+      },
+      "completedStages": [
+        "contacts",
+        "invoices"
+      ],
+      "heartbeatAt": "2026-08-01T13:36:43.691Z",
+      "activity": "processing",
+      "resumedFromAbandoned": true,
+      "lastSyncAt": null,
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 0
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "FAIL",
+      "checks": [
+        {
+          "name": "job_status_completed",
+          "pass": false
+        },
+        {
+          "name": "last_sync_at_populated",
+          "pass": false
+        },
+        {
+          "name": "contacts_mappings_present",
+          "pass": true,
+          "count": 673
+        },
+        {
+          "name": "invoice_mappings_present",
+          "pass": true
+        },
+        {
+          "name": "payment_mappings_present",
+          "pass": true
+        },
+        {
+          "name": "no_duplicate_customer_mappings",
+          "pass": true
+        },
+        {
+          "name": "cv_auto_recalc_fired",
+          "pass": false
+        },
+        {
+          "name": "recovery_checkpoint_or_resuming",
+          "pass": true
+        }
+      ]
+    },
+    {
+      "pollNumber": 16,
+      "at": "2026-08-01T13:40:08Z",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "payments",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 6,
+        "bankTransactionsPage": 1
+      },
+      "completedStages": [
+        "contacts",
+        "invoices"
+      ],
+      "heartbeatAt": "2026-08-01T13:39:14.927Z",
+      "activity": "waiting_next_batch",
+      "resumedFromAbandoned": true,
+      "lastSyncAt": null,
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 0
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS",
+      "checks": [
+        {
+          "name": "job_status_completed",
+          "pass": false
+        },
+        {
+          "name": "last_sync_at_populated",
+          "pass": false
+        },
+        {
+          "name": "contacts_mappings_present",
+          "pass": true,
+          "count": 673
+        },
+        {
+          "name": "invoice_mappings_present",
+          "pass": true
+        },
+        {
+          "name": "payment_mappings_present",
+          "pass": true
+        },
+        {
+          "name": "no_duplicate_customer_mappings",
+          "pass": true
+        },
+        {
+          "name": "cv_auto_recalc_fired",
+          "pass": false
+        },
+        {
+          "name": "recovery_checkpoint_or_resuming",
+          "pass": true
+        }
+      ]
+    },
+    {
+      "pollNumber": 17,
+      "at": "2026-08-01T13:42:41Z",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 2
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "heartbeatAt": "2026-08-01T13:42:10.152Z",
+      "activity": "processing",
+      "resumedFromAbandoned": true,
+      "lastSyncAt": null,
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 153
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS",
+      "checks": [
+        {
+          "name": "job_status_completed",
+          "pass": false
+        },
+        {
+          "name": "last_sync_at_populated",
+          "pass": false
+        },
+        {
+          "name": "contacts_mappings_present",
+          "pass": true,
+          "count": 673
+        },
+        {
+          "name": "invoice_mappings_present",
+          "pass": true
+        },
+        {
+          "name": "payment_mappings_present",
+          "pass": true
+        },
+        {
+          "name": "no_duplicate_customer_mappings",
+          "pass": true
+        },
+        {
+          "name": "cv_auto_recalc_fired",
+          "pass": false
+        },
+        {
+          "name": "recovery_checkpoint_or_resuming",
+          "pass": true
+        }
+      ]
+    },
+    {
+      "pollNumber": 18,
+      "at": "2026-08-01T13:45:14Z",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 4
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "heartbeatAt": "2026-08-01T13:45:11.143Z",
+      "activity": "waiting_next_batch",
+      "resumedFromAbandoned": true,
+      "lastSyncAt": null,
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 300
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS",
+      "checks": [
+        {
+          "name": "job_status_completed",
+          "pass": false
+        },
+        {
+          "name": "last_sync_at_populated",
+          "pass": false
+        },
+        {
+          "name": "contacts_mappings_present",
+          "pass": true,
+          "count": 673
+        },
+        {
+          "name": "invoice_mappings_present",
+          "pass": true
+        },
+        {
+          "name": "payment_mappings_present",
+          "pass": true
+        },
+        {
+          "name": "no_duplicate_customer_mappings",
+          "pass": true
+        },
+        {
+          "name": "cv_auto_recalc_fired",
+          "pass": false
+        },
+        {
+          "name": "recovery_checkpoint_or_resuming",
+          "pass": true
+        }
+      ]
+    },
+    {
+      "pollNumber": 19,
+      "at": "2026-08-01T13:45:25Z",
+      "jobId": "6a8304c4-753f-4994-a99d-8c4365c21aee",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 4
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "heartbeatAt": "2026-08-01T13:45:11.143Z",
+      "activity": "waiting_next_batch",
+      "lastSyncAt": null,
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 300
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 20,
+      "at": "2026-08-01T13:47:28Z",
+      "jobId": "6a8304c4-753f-4994-a99d-8c4365c21aee",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 5
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "heartbeatAt": "2026-08-01T13:47:11.130Z",
+      "activity": "waiting_next_batch",
+      "lastSyncAt": null,
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 400
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 21,
+      "at": "2026-08-01T13:49:22Z",
+      "jobId": "6a8304c4-753f-4994-a99d-8c4365c21aee",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 6
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "heartbeatAt": "2026-08-01T13:49:11.426Z",
+      "activity": "waiting_next_batch",
+      "lastSyncAt": null,
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 500
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 21,
+      "at": "2026-08-01T13:49:31Z",
+      "jobId": "6a8304c4-753f-4994-a99d-8c4365c21aee",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 6
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "heartbeatAt": "2026-08-01T13:49:11.426Z",
+      "activity": "waiting_next_batch",
+      "lastSyncAt": null,
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 500
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 22,
+      "at": "2026-08-01T13:51:25Z",
+      "jobId": "6a8304c4-753f-4994-a99d-8c4365c21aee",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 7
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "heartbeatAt": "2026-08-01T13:51:11.264Z",
+      "activity": "waiting_next_batch",
+      "lastSyncAt": null,
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 600
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 22,
+      "at": "2026-08-01T13:51:34Z",
+      "jobId": "6a8304c4-753f-4994-a99d-8c4365c21aee",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 7
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "heartbeatAt": "2026-08-01T13:51:11.264Z",
+      "activity": "waiting_next_batch",
+      "lastSyncAt": null,
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 600
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 23,
+      "at": "2026-08-01T13:53:28Z",
+      "jobId": "6a8304c4-753f-4994-a99d-8c4365c21aee",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 8
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "heartbeatAt": "2026-08-01T13:53:10.997Z",
+      "activity": "waiting_next_batch",
+      "lastSyncAt": null,
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 700
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 23,
+      "at": "2026-08-01T13:53:37Z",
+      "jobId": "6a8304c4-753f-4994-a99d-8c4365c21aee",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 8
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "heartbeatAt": "2026-08-01T13:53:10.997Z",
+      "activity": "waiting_next_batch",
+      "lastSyncAt": null,
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 700
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 24,
+      "at": "2026-08-01T13:55:31Z",
+      "jobId": "6a8304c4-753f-4994-a99d-8c4365c21aee",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 9
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "heartbeatAt": "2026-08-01T13:55:11.340Z",
+      "activity": "waiting_next_batch",
+      "lastSyncAt": null,
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 800
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 24,
+      "at": "2026-08-01T13:55:40Z",
+      "jobId": "6a8304c4-753f-4994-a99d-8c4365c21aee",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 9
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "heartbeatAt": "2026-08-01T13:55:11.340Z",
+      "activity": "waiting_next_batch",
+      "lastSyncAt": null,
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 800
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 25,
+      "at": "2026-08-01T13:57:34Z",
+      "jobId": "6a8304c4-753f-4994-a99d-8c4365c21aee",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 10
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "heartbeatAt": "2026-08-01T13:57:11.433Z",
+      "activity": "waiting_next_batch",
+      "lastSyncAt": null,
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 900
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 25,
+      "at": "2026-08-01T13:57:42Z",
+      "jobId": "6a8304c4-753f-4994-a99d-8c4365c21aee",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 10
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "heartbeatAt": "2026-08-01T13:57:11.433Z",
+      "activity": "waiting_next_batch",
+      "lastSyncAt": null,
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 900
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 26,
+      "at": "2026-08-01T13:59:37Z",
+      "jobId": "6a8304c4-753f-4994-a99d-8c4365c21aee",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 11
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "heartbeatAt": "2026-08-01T13:59:11.341Z",
+      "activity": "waiting_next_batch",
+      "lastSyncAt": null,
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 1000
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 26,
+      "at": "2026-08-01T13:59:45Z",
+      "jobId": "6a8304c4-753f-4994-a99d-8c4365c21aee",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 11
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "heartbeatAt": "2026-08-01T13:59:11.341Z",
+      "activity": "waiting_next_batch",
+      "lastSyncAt": null,
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 1000
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 27,
+      "at": "2026-08-01T14:01:40Z",
+      "jobId": "6a8304c4-753f-4994-a99d-8c4365c21aee",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 12
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "heartbeatAt": "2026-08-01T14:01:11.244Z",
+      "activity": "waiting_next_batch",
+      "lastSyncAt": null,
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 1100
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 27,
+      "at": "2026-08-01T14:01:48Z",
+      "jobId": "6a8304c4-753f-4994-a99d-8c4365c21aee",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 12
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "heartbeatAt": "2026-08-01T14:01:11.244Z",
+      "activity": "waiting_next_batch",
+      "lastSyncAt": null,
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 1100
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 28,
+      "at": "2026-08-01T14:03:43Z",
+      "jobId": "6a8304c4-753f-4994-a99d-8c4365c21aee",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 13
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "heartbeatAt": "2026-08-01T14:03:11.528Z",
+      "activity": "waiting_next_batch",
+      "lastSyncAt": null,
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 1200
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 28,
+      "at": "2026-08-01T14:03:51Z",
+      "jobId": "6a8304c4-753f-4994-a99d-8c4365c21aee",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 13
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "heartbeatAt": "2026-08-01T14:03:11.528Z",
+      "activity": "waiting_next_batch",
+      "lastSyncAt": null,
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 1200
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 29,
+      "at": "2026-08-01T14:05:46Z",
+      "jobId": "6a8304c4-753f-4994-a99d-8c4365c21aee",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 14
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "heartbeatAt": "2026-08-01T14:05:11.259Z",
+      "activity": "waiting_next_batch",
+      "lastSyncAt": null,
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 1300
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 29,
+      "at": "2026-08-01T14:05:54Z",
+      "jobId": "6a8304c4-753f-4994-a99d-8c4365c21aee",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 14
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "heartbeatAt": "2026-08-01T14:05:11.259Z",
+      "activity": "waiting_next_batch",
+      "lastSyncAt": null,
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 1300
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 30,
+      "at": "2026-08-01T14:07:48Z",
+      "jobId": "6a8304c4-753f-4994-a99d-8c4365c21aee",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 15
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "heartbeatAt": "2026-08-01T14:07:11.202Z",
+      "activity": "waiting_next_batch",
+      "lastSyncAt": null,
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 1400
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 30,
+      "at": "2026-08-01T14:07:57Z",
+      "jobId": "6a8304c4-753f-4994-a99d-8c4365c21aee",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 15
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "heartbeatAt": "2026-08-01T14:07:11.202Z",
+      "activity": "waiting_next_batch",
+      "lastSyncAt": null,
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 1400
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 31,
+      "at": "2026-08-01T14:09:51Z",
+      "jobId": "6a8304c4-753f-4994-a99d-8c4365c21aee",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 16
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "heartbeatAt": "2026-08-01T14:09:11.864Z",
+      "activity": "waiting_next_batch",
+      "lastSyncAt": null,
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 1500
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 31,
+      "at": "2026-08-01T14:10:00Z",
+      "jobId": "6a8304c4-753f-4994-a99d-8c4365c21aee",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 16
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "heartbeatAt": "2026-08-01T14:09:11.864Z",
+      "activity": "waiting_next_batch",
+      "lastSyncAt": null,
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 1500
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 32,
+      "at": "2026-08-01T14:11:54Z",
+      "jobId": "6a8304c4-753f-4994-a99d-8c4365c21aee",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 17
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "heartbeatAt": "2026-08-01T14:11:11.344Z",
+      "activity": "waiting_next_batch",
+      "lastSyncAt": null,
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 1600
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 32,
+      "at": "2026-08-01T14:12:03Z",
+      "jobId": "6a8304c4-753f-4994-a99d-8c4365c21aee",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 17
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "heartbeatAt": "2026-08-01T14:11:11.344Z",
+      "activity": "waiting_next_batch",
+      "lastSyncAt": null,
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 1600
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 33,
+      "at": "2026-08-01T14:13:57Z",
+      "jobId": "6a8304c4-753f-4994-a99d-8c4365c21aee",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 18
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "heartbeatAt": "2026-08-01T14:13:11.987Z",
+      "activity": "waiting_next_batch",
+      "lastSyncAt": null,
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 1700
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 33,
+      "at": "2026-08-01T14:14:06Z",
+      "jobId": "6a8304c4-753f-4994-a99d-8c4365c21aee",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 18
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "heartbeatAt": "2026-08-01T14:13:11.987Z",
+      "activity": "waiting_next_batch",
+      "lastSyncAt": null,
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 1700
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 34,
+      "at": "2026-08-01T14:16:00Z",
+      "jobId": "6a8304c4-753f-4994-a99d-8c4365c21aee",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 19
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "heartbeatAt": "2026-08-01T14:15:11.606Z",
+      "activity": "waiting_next_batch",
+      "lastSyncAt": null,
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 1800
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 35,
+      "at": "2026-08-01T14:18:03Z",
+      "jobId": "6a8304c4-753f-4994-a99d-8c4365c21aee",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 20
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "heartbeatAt": "2026-08-01T14:17:11.734Z",
+      "activity": "waiting_next_batch",
+      "lastSyncAt": null,
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 1900
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 49,
+      "at": "2026-08-01T14:21:41Z",
+      "jobId": "6a8304c4-753f-4994-a99d-8c4365c21aee",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 22
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "heartbeatAt": "2026-08-01T14:21:11.816Z",
+      "activity": "waiting_next_batch",
+      "lastSyncAt": null,
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 2100
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 50,
+      "at": "2026-08-01T14:23:14Z",
+      "jobId": "6a8304c4-753f-4994-a99d-8c4365c21aee",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 23
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "heartbeatAt": "2026-08-01T14:23:11.744Z",
+      "activity": "waiting_next_batch",
+      "lastSyncAt": null,
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 2200
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 51,
+      "at": "2026-08-01T14:24:47Z",
+      "jobId": "6a8304c4-753f-4994-a99d-8c4365c21aee",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 23
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "heartbeatAt": "2026-08-01T14:24:10.229Z",
+      "activity": "processing",
+      "lastSyncAt": null,
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 2262
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 52,
+      "at": "2026-08-01T14:26:20Z",
+      "jobId": "6a8304c4-753f-4994-a99d-8c4365c21aee",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 24
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "heartbeatAt": "2026-08-01T14:26:10.197Z",
+      "activity": "processing",
+      "lastSyncAt": null,
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 2317
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 53,
+      "at": "2026-08-01T14:27:52Z",
+      "jobId": "6a8304c4-753f-4994-a99d-8c4365c21aee",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 25
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "heartbeatAt": "2026-08-01T14:27:11.379Z",
+      "activity": "waiting_next_batch",
+      "lastSyncAt": null,
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 2400
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 54,
+      "at": "2026-08-01T14:29:25Z",
+      "jobId": "6a8304c4-753f-4994-a99d-8c4365c21aee",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 26
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "heartbeatAt": "2026-08-01T14:29:11.517Z",
+      "activity": "waiting_next_batch",
+      "lastSyncAt": null,
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 2500
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 55,
+      "at": "2026-08-01T14:30:58Z",
+      "jobId": "6a8304c4-753f-4994-a99d-8c4365c21aee",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 26
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "heartbeatAt": "2026-08-01T14:30:10.176Z",
+      "activity": "processing",
+      "lastSyncAt": null,
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 2584
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 56,
+      "at": "2026-08-01T14:32:31Z",
+      "jobId": "6a8304c4-753f-4994-a99d-8c4365c21aee",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 27
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "heartbeatAt": "2026-08-01T14:32:10.165Z",
+      "activity": "processing",
+      "lastSyncAt": null,
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 2638
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 57,
+      "at": "2026-08-01T14:34:04Z",
+      "jobId": "6a8304c4-753f-4994-a99d-8c4365c21aee",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 28
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "heartbeatAt": "2026-08-01T14:33:09.816Z",
+      "activity": "waiting_next_batch",
+      "lastSyncAt": null,
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 2700
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 58,
+      "at": "2026-08-01T14:35:37Z",
+      "jobId": "6a8304c4-753f-4994-a99d-8c4365c21aee",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 28
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "heartbeatAt": "2026-08-01T14:34:10.167Z",
+      "activity": "processing",
+      "lastSyncAt": null,
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 2716
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 59,
+      "at": "2026-08-01T14:37:10Z",
+      "jobId": "6a8304c4-753f-4994-a99d-8c4365c21aee",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 28
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "heartbeatAt": "2026-08-01T14:36:39.942Z",
+      "activity": "processing",
+      "lastSyncAt": null,
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 2759
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 60,
+      "at": "2026-08-01T14:38:43Z",
+      "jobId": "6a8304c4-753f-4994-a99d-8c4365c21aee",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 30
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "heartbeatAt": "2026-08-01T14:38:39.942Z",
+      "activity": "processing",
+      "lastSyncAt": null,
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 2908
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 61,
+      "at": "2026-08-01T14:40:16Z",
+      "jobId": "6a8304c4-753f-4994-a99d-8c4365c21aee",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 31
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "heartbeatAt": "2026-08-01T14:39:40.067Z",
+      "activity": "processing",
+      "lastSyncAt": null,
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3070
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 62,
+      "at": "2026-08-01T14:41:49Z",
+      "jobId": "6a8304c4-753f-4994-a99d-8c4365c21aee",
+      "jobStatus": "failed",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 34
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments",
+        "bank_transactions"
+      ],
+      "heartbeatAt": "2026-08-01T14:41:40.543Z",
+      "activity": "processing",
+      "lastSyncAt": null,
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "FAIL"
+    },
+    {
+      "pollNumber": 63,
+      "at": "2026-08-01T14:43:22Z",
+      "jobId": "6a8304c4-753f-4994-a99d-8c4365c21aee",
+      "jobStatus": "failed",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 35
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments",
+        "bank_transactions"
+      ],
+      "heartbeatAt": "2026-08-01T14:42:40.322Z",
+      "activity": "processing",
+      "lastSyncAt": null,
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "FAIL"
+    },
+    {
+      "pollNumber": 64,
+      "at": "2026-08-01T14:44:55Z",
+      "jobId": "6a8304c4-753f-4994-a99d-8c4365c21aee",
+      "jobStatus": "failed",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 37
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments",
+        "bank_transactions"
+      ],
+      "heartbeatAt": "2026-08-01T14:44:40.360Z",
+      "activity": "processing",
+      "lastSyncAt": null,
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "FAIL"
+    },
+    {
+      "pollNumber": 65,
+      "at": "2026-08-01T14:46:28Z",
+      "jobId": "08d2da82-7fb0-4636-8c3c-32cccc60a642",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "contacts",
+        "contactsPage": 1,
+        "invoicesPage": 1,
+        "paymentsPage": 1,
+        "bankTransactionsPage": 1
+      },
+      "completedStages": [],
+      "heartbeatAt": "2026-08-01T14:46:28.286Z",
+      "activity": "processing",
+      "lastSyncAt": "2026-08-01T14:46:23.597Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 66,
+      "at": "2026-08-01T14:48:01Z",
+      "jobId": "08d2da82-7fb0-4636-8c3c-32cccc60a642",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "contacts",
+        "contactsPage": 2,
+        "invoicesPage": 1,
+        "paymentsPage": 1,
+        "bankTransactionsPage": 1
+      },
+      "completedStages": [],
+      "heartbeatAt": "2026-08-01T14:47:22.920Z",
+      "activity": "waiting_next_batch",
+      "lastSyncAt": "2026-08-01T14:46:23.597Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 67,
+      "at": "2026-08-01T14:49:33Z",
+      "jobId": "08d2da82-7fb0-4636-8c3c-32cccc60a642",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "contacts",
+        "contactsPage": 3,
+        "invoicesPage": 1,
+        "paymentsPage": 1,
+        "bankTransactionsPage": 1
+      },
+      "completedStages": [],
+      "heartbeatAt": "2026-08-01T14:49:21.641Z",
+      "activity": "processing",
+      "lastSyncAt": "2026-08-01T14:46:23.597Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 68,
+      "at": "2026-08-01T14:51:06Z",
+      "jobId": "08d2da82-7fb0-4636-8c3c-32cccc60a642",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "contacts",
+        "contactsPage": 4,
+        "invoicesPage": 1,
+        "paymentsPage": 1,
+        "bankTransactionsPage": 1
+      },
+      "completedStages": [],
+      "heartbeatAt": "2026-08-01T14:50:21.644Z",
+      "activity": "processing",
+      "lastSyncAt": "2026-08-01T14:46:23.597Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 69,
+      "at": "2026-08-01T14:52:39Z",
+      "jobId": "08d2da82-7fb0-4636-8c3c-32cccc60a642",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "contacts",
+        "contactsPage": 6,
+        "invoicesPage": 1,
+        "paymentsPage": 1,
+        "bankTransactionsPage": 1
+      },
+      "completedStages": [],
+      "heartbeatAt": "2026-08-01T14:52:21.776Z",
+      "activity": "processing",
+      "lastSyncAt": "2026-08-01T14:46:23.597Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 70,
+      "at": "2026-08-01T14:54:12Z",
+      "jobId": "08d2da82-7fb0-4636-8c3c-32cccc60a642",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "invoices",
+        "contactsPage": 8,
+        "invoicesPage": 1,
+        "paymentsPage": 1,
+        "bankTransactionsPage": 1
+      },
+      "completedStages": [
+        "contacts"
+      ],
+      "heartbeatAt": "2026-08-01T14:54:01.686Z",
+      "activity": "processing",
+      "lastSyncAt": "2026-08-01T14:46:23.597Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 71,
+      "at": "2026-08-01T14:55:45Z",
+      "jobId": "08d2da82-7fb0-4636-8c3c-32cccc60a642",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "invoices",
+        "contactsPage": 8,
+        "invoicesPage": 2,
+        "paymentsPage": 1,
+        "bankTransactionsPage": 1
+      },
+      "completedStages": [
+        "contacts"
+      ],
+      "heartbeatAt": "2026-08-01T14:55:21.647Z",
+      "activity": "processing",
+      "lastSyncAt": "2026-08-01T14:46:23.597Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 72,
+      "at": "2026-08-01T14:57:18Z",
+      "jobId": "08d2da82-7fb0-4636-8c3c-32cccc60a642",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "invoices",
+        "contactsPage": 8,
+        "invoicesPage": 4,
+        "paymentsPage": 1,
+        "bankTransactionsPage": 1
+      },
+      "completedStages": [
+        "contacts"
+      ],
+      "heartbeatAt": "2026-08-01T14:57:15.670Z",
+      "activity": "waiting_next_batch",
+      "lastSyncAt": "2026-08-01T14:46:23.597Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 73,
+      "at": "2026-08-01T14:58:51Z",
+      "jobId": "08d2da82-7fb0-4636-8c3c-32cccc60a642",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "invoices",
+        "contactsPage": 8,
+        "invoicesPage": 5,
+        "paymentsPage": 1,
+        "bankTransactionsPage": 1
+      },
+      "completedStages": [
+        "contacts"
+      ],
+      "heartbeatAt": "2026-08-01T14:58:21.644Z",
+      "activity": "processing",
+      "lastSyncAt": "2026-08-01T14:46:23.597Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 74,
+      "at": "2026-08-01T14:59:05Z",
+      "jobId": "08d2da82-7fb0-4636-8c3c-32cccc60a642",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "invoices",
+        "contactsPage": 8,
+        "invoicesPage": 5,
+        "paymentsPage": 1,
+        "bankTransactionsPage": 1
+      },
+      "completedStages": [
+        "contacts"
+      ],
+      "lastSyncAt": "2026-08-01T14:46:23.597Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 75,
+      "at": "2026-08-01T15:00:38Z",
+      "jobId": "08d2da82-7fb0-4636-8c3c-32cccc60a642",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "payments",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 6,
+        "bankTransactionsPage": 1
+      },
+      "completedStages": [
+        "contacts",
+        "invoices"
+      ],
+      "lastSyncAt": "2026-08-01T14:46:23.597Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 76,
+      "at": "2026-08-01T15:02:11Z",
+      "jobId": "08d2da82-7fb0-4636-8c3c-32cccc60a642",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 1
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T14:46:23.597Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 77,
+      "at": "2026-08-01T15:03:44Z",
+      "jobId": "08d2da82-7fb0-4636-8c3c-32cccc60a642",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 2
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T14:46:23.597Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 78,
+      "at": "2026-08-01T15:05:17Z",
+      "jobId": "08d2da82-7fb0-4636-8c3c-32cccc60a642",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 3
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T14:46:23.597Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 79,
+      "at": "2026-08-01T15:06:50Z",
+      "jobId": "08d2da82-7fb0-4636-8c3c-32cccc60a642",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 4
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T14:46:23.597Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 80,
+      "at": "2026-08-01T15:08:23Z",
+      "jobId": "08d2da82-7fb0-4636-8c3c-32cccc60a642",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 5
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T14:46:23.597Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 81,
+      "at": "2026-08-01T15:09:56Z",
+      "jobId": "08d2da82-7fb0-4636-8c3c-32cccc60a642",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 5
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T14:46:23.597Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 82,
+      "at": "2026-08-01T15:11:29Z",
+      "jobId": "08d2da82-7fb0-4636-8c3c-32cccc60a642",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 7
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T14:46:23.597Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 83,
+      "at": "2026-08-01T15:13:02Z",
+      "jobId": "08d2da82-7fb0-4636-8c3c-32cccc60a642",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 8
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T14:46:23.597Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 84,
+      "at": "2026-08-01T15:14:35Z",
+      "jobId": "08d2da82-7fb0-4636-8c3c-32cccc60a642",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 9
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T14:46:23.597Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 85,
+      "at": "2026-08-01T15:16:08Z",
+      "jobId": "08d2da82-7fb0-4636-8c3c-32cccc60a642",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 10
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T14:46:23.597Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 86,
+      "at": "2026-08-01T15:17:40Z",
+      "jobId": "08d2da82-7fb0-4636-8c3c-32cccc60a642",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 12
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T14:46:23.597Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 87,
+      "at": "2026-08-01T15:19:13Z",
+      "jobId": "08d2da82-7fb0-4636-8c3c-32cccc60a642",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 13
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T14:46:23.597Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 88,
+      "at": "2026-08-01T15:20:46Z",
+      "jobId": "08d2da82-7fb0-4636-8c3c-32cccc60a642",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 14
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T14:46:23.597Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 89,
+      "at": "2026-08-01T15:22:19Z",
+      "jobId": "08d2da82-7fb0-4636-8c3c-32cccc60a642",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 16
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T14:46:23.597Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 90,
+      "at": "2026-08-01T15:23:52Z",
+      "jobId": "08d2da82-7fb0-4636-8c3c-32cccc60a642",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 16
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T14:46:23.597Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 91,
+      "at": "2026-08-01T15:25:25Z",
+      "jobId": "08d2da82-7fb0-4636-8c3c-32cccc60a642",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 18
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T14:46:23.597Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 92,
+      "at": "2026-08-01T15:26:58Z",
+      "jobId": "08d2da82-7fb0-4636-8c3c-32cccc60a642",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 19
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T14:46:23.597Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 93,
+      "at": "2026-08-01T15:28:31Z",
+      "jobId": "08d2da82-7fb0-4636-8c3c-32cccc60a642",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 20
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T14:46:23.597Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 94,
+      "at": "2026-08-01T15:28:42Z",
+      "jobId": "08d2da82-7fb0-4636-8c3c-32cccc60a642",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 20
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T14:46:23.597Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 95,
+      "at": "2026-08-01T15:30:45Z",
+      "jobId": "08d2da82-7fb0-4636-8c3c-32cccc60a642",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 21
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T14:46:23.597Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 96,
+      "at": "2026-08-01T15:32:48Z",
+      "jobId": "08d2da82-7fb0-4636-8c3c-32cccc60a642",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 23
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T14:46:23.597Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 97,
+      "at": "2026-08-01T15:34:51Z",
+      "jobId": "08d2da82-7fb0-4636-8c3c-32cccc60a642",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 24
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T14:46:23.597Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 98,
+      "at": "2026-08-01T15:36:54Z",
+      "jobId": "08d2da82-7fb0-4636-8c3c-32cccc60a642",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 25
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T14:46:23.597Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 99,
+      "at": "2026-08-01T15:38:57Z",
+      "jobId": "08d2da82-7fb0-4636-8c3c-32cccc60a642",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 25
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T14:46:23.597Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 100,
+      "at": "2026-08-01T15:41:00Z",
+      "jobId": "08d2da82-7fb0-4636-8c3c-32cccc60a642",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 25
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T14:46:23.597Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 101,
+      "at": "2026-08-01T15:43:03Z",
+      "jobId": "08d2da82-7fb0-4636-8c3c-32cccc60a642",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 26
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T14:46:23.597Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 102,
+      "at": "2026-08-01T15:45:06Z",
+      "jobId": "08d2da82-7fb0-4636-8c3c-32cccc60a642",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 27
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T14:46:23.597Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 103,
+      "at": "2026-08-01T15:47:09Z",
+      "jobId": "08d2da82-7fb0-4636-8c3c-32cccc60a642",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 27
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T14:46:23.597Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 104,
+      "at": "2026-08-01T15:49:12Z",
+      "jobId": "08d2da82-7fb0-4636-8c3c-32cccc60a642",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 28
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T14:46:23.597Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 105,
+      "at": "2026-08-01T15:51:09Z",
+      "jobId": "08d2da82-7fb0-4636-8c3c-32cccc60a642",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 29
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T14:46:23.597Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 105,
+      "at": "2026-08-01T15:51:15Z",
+      "jobId": "08d2da82-7fb0-4636-8c3c-32cccc60a642",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 29
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T14:46:23.597Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 106,
+      "at": "2026-08-01T15:53:12Z",
+      "jobId": "08d2da82-7fb0-4636-8c3c-32cccc60a642",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 30
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T14:46:23.597Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 106,
+      "at": "2026-08-01T15:53:18Z",
+      "jobId": "08d2da82-7fb0-4636-8c3c-32cccc60a642",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 30
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T14:46:23.597Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 107,
+      "at": "2026-08-01T15:55:15Z",
+      "jobId": "08d2da82-7fb0-4636-8c3c-32cccc60a642",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 31
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T14:46:23.597Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 107,
+      "at": "2026-08-01T15:55:21Z",
+      "jobId": "08d2da82-7fb0-4636-8c3c-32cccc60a642",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 31
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T14:46:23.597Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 108,
+      "at": "2026-08-01T15:57:18Z",
+      "jobId": "81c5b8d8-839b-4875-b106-2ecece11a966",
+      "jobStatus": "pending",
+      "checkpoint": {
+        "stage": "payments",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 6,
+        "bankTransactionsPage": 1
+      },
+      "completedStages": [
+        "contacts",
+        "invoices"
+      ],
+      "lastSyncAt": "2026-08-01T15:55:39.931Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 108,
+      "at": "2026-08-01T15:57:24Z",
+      "jobId": "81c5b8d8-839b-4875-b106-2ecece11a966",
+      "jobStatus": "pending",
+      "checkpoint": {
+        "stage": "payments",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 6,
+        "bankTransactionsPage": 1
+      },
+      "completedStages": [
+        "contacts",
+        "invoices"
+      ],
+      "lastSyncAt": "2026-08-01T15:55:39.931Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 109,
+      "at": "2026-08-01T15:59:21Z",
+      "jobId": "81c5b8d8-839b-4875-b106-2ecece11a966",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 2
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T15:55:39.931Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 109,
+      "at": "2026-08-01T15:59:27Z",
+      "jobId": "81c5b8d8-839b-4875-b106-2ecece11a966",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 2
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T15:55:39.931Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 110,
+      "at": "2026-08-01T16:01:24Z",
+      "jobId": "81c5b8d8-839b-4875-b106-2ecece11a966",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 3
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T15:55:39.931Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 110,
+      "at": "2026-08-01T16:01:30Z",
+      "jobId": "81c5b8d8-839b-4875-b106-2ecece11a966",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 3
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T15:55:39.931Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 111,
+      "at": "2026-08-01T16:03:27Z",
+      "jobId": "81c5b8d8-839b-4875-b106-2ecece11a966",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 4
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T15:55:39.931Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 111,
+      "at": "2026-08-01T16:03:33Z",
+      "jobId": "81c5b8d8-839b-4875-b106-2ecece11a966",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 4
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T15:55:39.931Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 112,
+      "at": "2026-08-01T16:05:30Z",
+      "jobId": "81c5b8d8-839b-4875-b106-2ecece11a966",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 5
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T15:55:39.931Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 112,
+      "at": "2026-08-01T16:05:36Z",
+      "jobId": "81c5b8d8-839b-4875-b106-2ecece11a966",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 5
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T15:55:39.931Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 113,
+      "at": "2026-08-01T16:07:33Z",
+      "jobId": "81c5b8d8-839b-4875-b106-2ecece11a966",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 5
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T15:55:39.931Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 113,
+      "at": "2026-08-01T16:07:39Z",
+      "jobId": "81c5b8d8-839b-4875-b106-2ecece11a966",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 5
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T15:55:39.931Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 114,
+      "at": "2026-08-01T16:09:36Z",
+      "jobId": "81c5b8d8-839b-4875-b106-2ecece11a966",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 6
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T15:55:39.931Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 115,
+      "at": "2026-08-01T16:11:39Z",
+      "jobId": "81c5b8d8-839b-4875-b106-2ecece11a966",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 6
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T15:55:39.931Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 116,
+      "at": "2026-08-01T16:13:43Z",
+      "jobId": "81c5b8d8-839b-4875-b106-2ecece11a966",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 7
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T15:55:39.931Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 117,
+      "at": "2026-08-01T16:15:46Z",
+      "jobId": "81c5b8d8-839b-4875-b106-2ecece11a966",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 8
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T15:55:39.931Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 118,
+      "at": "2026-08-01T16:17:49Z",
+      "jobId": "81c5b8d8-839b-4875-b106-2ecece11a966",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 9
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T15:55:39.931Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 119,
+      "at": "2026-08-01T16:19:52Z",
+      "jobId": "81c5b8d8-839b-4875-b106-2ecece11a966",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 10
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T15:55:39.931Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 120,
+      "at": "2026-08-01T16:21:55Z",
+      "jobId": "81c5b8d8-839b-4875-b106-2ecece11a966",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 11
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T15:55:39.931Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 121,
+      "at": "2026-08-01T16:23:58Z",
+      "jobId": "81c5b8d8-839b-4875-b106-2ecece11a966",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 12
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T15:55:39.931Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 131,
+      "at": "2026-08-01T16:24:16Z",
+      "jobId": "81c5b8d8-839b-4875-b106-2ecece11a966",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 12
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T15:55:39.931Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 122,
+      "at": "2026-08-01T16:26:01Z",
+      "jobId": "81c5b8d8-839b-4875-b106-2ecece11a966",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 12
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T15:55:39.931Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 132,
+      "at": "2026-08-01T16:26:19Z",
+      "jobId": "81c5b8d8-839b-4875-b106-2ecece11a966",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 12
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T15:55:39.931Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 123,
+      "at": "2026-08-01T16:28:04Z",
+      "jobId": "81c5b8d8-839b-4875-b106-2ecece11a966",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 13
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T15:55:39.931Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 133,
+      "at": "2026-08-01T16:28:22Z",
+      "jobId": "81c5b8d8-839b-4875-b106-2ecece11a966",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 13
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T15:55:39.931Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 124,
+      "at": "2026-08-01T16:30:07Z",
+      "jobId": "81c5b8d8-839b-4875-b106-2ecece11a966",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 14
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T15:55:39.931Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 134,
+      "at": "2026-08-01T16:30:25Z",
+      "jobId": "81c5b8d8-839b-4875-b106-2ecece11a966",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 14
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T15:55:39.931Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 135,
+      "at": "2026-08-01T16:32:28Z",
+      "jobId": "81c5b8d8-839b-4875-b106-2ecece11a966",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 15
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T15:55:39.931Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 136,
+      "at": "2026-08-01T16:34:31Z",
+      "jobId": "81c5b8d8-839b-4875-b106-2ecece11a966",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 16
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T15:55:39.931Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 137,
+      "at": "2026-08-01T16:36:34Z",
+      "jobId": "81c5b8d8-839b-4875-b106-2ecece11a966",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 17
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T15:55:39.931Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 138,
+      "at": "2026-08-01T16:38:37Z",
+      "jobId": "81c5b8d8-839b-4875-b106-2ecece11a966",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 18
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T15:55:39.931Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 139,
+      "at": "2026-08-01T16:40:40Z",
+      "jobId": "81c5b8d8-839b-4875-b106-2ecece11a966",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 19
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T15:55:39.931Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 140,
+      "at": "2026-08-01T16:42:43Z",
+      "jobId": "81c5b8d8-839b-4875-b106-2ecece11a966",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 20
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T15:55:39.931Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 141,
+      "at": "2026-08-01T16:44:46Z",
+      "jobId": "81c5b8d8-839b-4875-b106-2ecece11a966",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 20
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T15:55:39.931Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 142,
+      "at": "2026-08-01T16:46:50Z",
+      "jobId": "81c5b8d8-839b-4875-b106-2ecece11a966",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 21
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T15:55:39.931Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 143,
+      "at": "2026-08-01T16:48:53Z",
+      "jobId": "81c5b8d8-839b-4875-b106-2ecece11a966",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 22
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T15:55:39.931Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 144,
+      "at": "2026-08-01T16:50:56Z",
+      "jobId": "81c5b8d8-839b-4875-b106-2ecece11a966",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 23
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T15:55:39.931Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 145,
+      "at": "2026-08-01T16:52:59Z",
+      "jobId": "81c5b8d8-839b-4875-b106-2ecece11a966",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 23
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T15:55:39.931Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 146,
+      "at": "2026-08-01T16:55:02Z",
+      "jobId": "81c5b8d8-839b-4875-b106-2ecece11a966",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 25
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T15:55:39.931Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 147,
+      "at": "2026-08-01T16:57:05Z",
+      "jobId": "81c5b8d8-839b-4875-b106-2ecece11a966",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 27
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T15:55:39.931Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 148,
+      "at": "2026-08-01T16:59:08Z",
+      "jobId": "81c5b8d8-839b-4875-b106-2ecece11a966",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 29
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T15:55:39.931Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 149,
+      "at": "2026-08-01T17:01:12Z",
+      "jobId": "81c5b8d8-839b-4875-b106-2ecece11a966",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 31
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T15:55:39.931Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 150,
+      "at": "2026-08-01T17:03:15Z",
+      "jobId": "8e6aec9b-2d99-493c-85b8-75f61d7f414b",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 7,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 1
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "lastSyncAt": "2026-08-01T17:01:23.594Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 154,
+      "at": "2026-08-01T17:03:28Z",
+      "jobId": "8e6aec9b-2d99-493c-85b8-75f61d7f414b",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 7,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 1
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "contactsPulled": 673,
+      "invoicesPulled": 5,
+      "lastSyncAt": "2026-08-01T17:01:23.594Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 155,
+      "at": "2026-08-01T17:05:31Z",
+      "jobId": "8e6aec9b-2d99-493c-85b8-75f61d7f414b",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 7,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 3
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "contactsPulled": 673,
+      "invoicesPulled": 5,
+      "lastSyncAt": "2026-08-01T17:01:23.594Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 156,
+      "at": "2026-08-01T17:07:34Z",
+      "jobId": "8e6aec9b-2d99-493c-85b8-75f61d7f414b",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 7,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 6
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "contactsPulled": 673,
+      "invoicesPulled": 5,
+      "lastSyncAt": "2026-08-01T17:01:23.594Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 157,
+      "at": "2026-08-01T17:09:37Z",
+      "jobId": "8e6aec9b-2d99-493c-85b8-75f61d7f414b",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 7,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 8
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "contactsPulled": 673,
+      "invoicesPulled": 5,
+      "lastSyncAt": "2026-08-01T17:01:23.594Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 158,
+      "at": "2026-08-01T17:11:40Z",
+      "jobId": "8e6aec9b-2d99-493c-85b8-75f61d7f414b",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 7,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 10
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "contactsPulled": 673,
+      "invoicesPulled": 5,
+      "lastSyncAt": "2026-08-01T17:01:23.594Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 159,
+      "at": "2026-08-01T17:13:43Z",
+      "jobId": "8e6aec9b-2d99-493c-85b8-75f61d7f414b",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 7,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 11
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "contactsPulled": 673,
+      "invoicesPulled": 5,
+      "lastSyncAt": "2026-08-01T17:01:23.594Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 160,
+      "at": "2026-08-01T17:15:46Z",
+      "jobId": "8e6aec9b-2d99-493c-85b8-75f61d7f414b",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 7,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 13
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "contactsPulled": 673,
+      "invoicesPulled": 5,
+      "lastSyncAt": "2026-08-01T17:01:23.594Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 161,
+      "at": "2026-08-01T17:16:32Z",
+      "jobId": "8e6aec9b-2d99-493c-85b8-75f61d7f414b",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 7,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 14
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "contactsPulled": 673,
+      "invoicesPulled": 5,
+      "lastSyncAt": "2026-08-01T17:01:23.594Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 161,
+      "at": "2026-08-01T17:17:49Z",
+      "jobId": "8e6aec9b-2d99-493c-85b8-75f61d7f414b",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 7,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 15
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "contactsPulled": 673,
+      "invoicesPulled": 5,
+      "lastSyncAt": "2026-08-01T17:01:23.594Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 162,
+      "at": "2026-08-01T17:18:35Z",
+      "jobId": "8e6aec9b-2d99-493c-85b8-75f61d7f414b",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 7,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 16
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "contactsPulled": 673,
+      "invoicesPulled": 5,
+      "lastSyncAt": "2026-08-01T17:01:23.594Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 162,
+      "at": "2026-08-01T17:19:52Z",
+      "jobId": "8e6aec9b-2d99-493c-85b8-75f61d7f414b",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 7,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 17
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "contactsPulled": 673,
+      "invoicesPulled": 5,
+      "lastSyncAt": "2026-08-01T17:01:23.594Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 163,
+      "at": "2026-08-01T17:20:38Z",
+      "jobId": "8e6aec9b-2d99-493c-85b8-75f61d7f414b",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 7,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 18
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "contactsPulled": 673,
+      "invoicesPulled": 5,
+      "lastSyncAt": "2026-08-01T17:01:23.594Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 163,
+      "at": "2026-08-01T17:21:55Z",
+      "jobId": "8e6aec9b-2d99-493c-85b8-75f61d7f414b",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 7,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 19
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "contactsPulled": 673,
+      "invoicesPulled": 5,
+      "lastSyncAt": "2026-08-01T17:01:23.594Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 164,
+      "at": "2026-08-01T17:22:42Z",
+      "jobId": "8e6aec9b-2d99-493c-85b8-75f61d7f414b",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 7,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 19
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "contactsPulled": 673,
+      "invoicesPulled": 5,
+      "lastSyncAt": "2026-08-01T17:01:23.594Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 164,
+      "at": "2026-08-01T17:23:58Z",
+      "jobId": "8e6aec9b-2d99-493c-85b8-75f61d7f414b",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 7,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 20
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "contactsPulled": 673,
+      "invoicesPulled": 5,
+      "lastSyncAt": "2026-08-01T17:01:23.594Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 165,
+      "at": "2026-08-01T17:24:45Z",
+      "jobId": "8e6aec9b-2d99-493c-85b8-75f61d7f414b",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 7,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 21
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "contactsPulled": 673,
+      "invoicesPulled": 5,
+      "lastSyncAt": "2026-08-01T17:01:23.594Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 165,
+      "at": "2026-08-01T17:26:01Z",
+      "jobId": "8e6aec9b-2d99-493c-85b8-75f61d7f414b",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 7,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 22
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "contactsPulled": 673,
+      "invoicesPulled": 5,
+      "lastSyncAt": "2026-08-01T17:01:23.594Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 166,
+      "at": "2026-08-01T17:26:48Z",
+      "jobId": "8e6aec9b-2d99-493c-85b8-75f61d7f414b",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 7,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 23
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "contactsPulled": 673,
+      "invoicesPulled": 5,
+      "lastSyncAt": "2026-08-01T17:01:23.594Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 166,
+      "at": "2026-08-01T17:28:04Z",
+      "jobId": "8e6aec9b-2d99-493c-85b8-75f61d7f414b",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 7,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 24
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "contactsPulled": 673,
+      "invoicesPulled": 5,
+      "lastSyncAt": "2026-08-01T17:01:23.594Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 167,
+      "at": "2026-08-01T17:28:51Z",
+      "jobId": "8e6aec9b-2d99-493c-85b8-75f61d7f414b",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 7,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 25
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "contactsPulled": 673,
+      "invoicesPulled": 5,
+      "lastSyncAt": "2026-08-01T17:01:23.594Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 167,
+      "at": "2026-08-01T17:30:07Z",
+      "jobId": "8e6aec9b-2d99-493c-85b8-75f61d7f414b",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 7,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 26
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "contactsPulled": 673,
+      "invoicesPulled": 5,
+      "lastSyncAt": "2026-08-01T17:01:23.594Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 168,
+      "at": "2026-08-01T17:30:54Z",
+      "jobId": "8e6aec9b-2d99-493c-85b8-75f61d7f414b",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 7,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 27
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "contactsPulled": 673,
+      "invoicesPulled": 5,
+      "lastSyncAt": "2026-08-01T17:01:23.594Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 168,
+      "at": "2026-08-01T17:32:11Z",
+      "jobId": "8e6aec9b-2d99-493c-85b8-75f61d7f414b",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 7,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 28
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "contactsPulled": 673,
+      "invoicesPulled": 5,
+      "lastSyncAt": "2026-08-01T17:01:23.594Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 169,
+      "at": "2026-08-01T17:32:57Z",
+      "jobId": "8e6aec9b-2d99-493c-85b8-75f61d7f414b",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 7,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 29
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "contactsPulled": 673,
+      "invoicesPulled": 5,
+      "lastSyncAt": "2026-08-01T17:01:23.594Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 169,
+      "at": "2026-08-01T17:34:14Z",
+      "jobId": "8e6aec9b-2d99-493c-85b8-75f61d7f414b",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 7,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 29
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "contactsPulled": 673,
+      "invoicesPulled": 5,
+      "lastSyncAt": "2026-08-01T17:01:23.594Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 170,
+      "at": "2026-08-01T17:35:00Z",
+      "jobId": "8e6aec9b-2d99-493c-85b8-75f61d7f414b",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 7,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 30
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "contactsPulled": 673,
+      "invoicesPulled": 5,
+      "lastSyncAt": "2026-08-01T17:01:23.594Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 170,
+      "at": "2026-08-01T17:36:17Z",
+      "jobId": "8e6aec9b-2d99-493c-85b8-75f61d7f414b",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 7,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 30
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "contactsPulled": 673,
+      "invoicesPulled": 5,
+      "lastSyncAt": "2026-08-01T17:01:23.594Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 171,
+      "at": "2026-08-01T17:37:03Z",
+      "jobId": "8e6aec9b-2d99-493c-85b8-75f61d7f414b",
+      "jobStatus": "running",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 7,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 31
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments"
+      ],
+      "contactsPulled": 673,
+      "invoicesPulled": 5,
+      "lastSyncAt": "2026-08-01T17:01:23.594Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "IN_PROGRESS"
+    },
+    {
+      "pollNumber": 171,
+      "at": "2026-08-01T17:38:20Z",
+      "jobId": "8e6aec9b-2d99-493c-85b8-75f61d7f414b",
+      "jobStatus": "completed",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 7,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 32
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments",
+        "bank_transactions"
+      ],
+      "contactsPulled": 673,
+      "invoicesPulled": 5,
+      "lastSyncAt": "2026-08-01T17:37:22.876Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "FAIL"
+    },
+    {
+      "pollNumber": 172,
+      "at": "2026-08-01T17:39:06Z",
+      "jobId": "8e6aec9b-2d99-493c-85b8-75f61d7f414b",
+      "jobStatus": "completed",
+      "checkpoint": {
+        "stage": "bank_transactions",
+        "contactsPage": 7,
+        "invoicesPage": 7,
+        "paymentsPage": 7,
+        "bankTransactionsPage": 32
+      },
+      "completedStages": [
+        "contacts",
+        "invoices",
+        "payments",
+        "bank_transactions"
+      ],
+      "contactsPulled": 673,
+      "invoicesPulled": 5,
+      "lastSyncAt": "2026-08-01T17:37:22.876Z",
+      "mappingCounts": {
+        "customer_mappings": 673,
+        "invoice_mappings": 5,
+        "payment_mappings": 0,
+        "bank_tx_logs": 3078
+      },
+      "duplicateCustomerContactIds": 0,
+      "verdict": "FAIL"
+    }
+  ],
+  "notes": [
+    "Read-only monitoring; no manual sync or restart from zero.",
+    "Initial poll: job still failed at payments checkpoint; recovery_checkpoint_or_resuming check passed (checkpoint preserved).",
+    "Recovery timeline: failed@payments (81c5b8d8) → auto-resume → payments fix validated → bank_transactions → job 8e6aec9b completed 2026-08-01T17:37:22Z; CV-001b probe run, connector refresh flag pending."
+  ],
+  "finalSnapshotAt": "2026-08-01T17:44:48.390Z",
+  "xeroGo": "NO"
+}

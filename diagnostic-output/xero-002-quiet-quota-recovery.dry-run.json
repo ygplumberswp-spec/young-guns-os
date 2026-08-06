@@ -1,0 +1,117 @@
+{
+  "label": "xero-002-quiet-quota-recovery",
+  "mode": "dry-run",
+  "generatedAt": "2026-08-06T20:32:51.744Z",
+  "companyId": "095aef76-fef5-4139-af37-a42f2d7e2faf",
+  "jobId": "63b31706-52a9-42f6-aa1c-e0dd7ad6feb8",
+  "pauseReason": "gate5b_waiting_for_daily_quota",
+  "before": {
+    "budget": {
+      "min_limit_remaining": 60,
+      "day_limit_remaining": 0,
+      "rate_limit_problem": "day",
+      "retry_after_until": "2026-08-06T20:31:52.913Z",
+      "last_request_at": "2026-08-06T20:26:53.218Z",
+      "sync_pause_reason": null,
+      "sync_paused_until": null,
+      "updated_at": "2026-08-06T20:26:53.218Z"
+    },
+    "jobInvestigation": {
+      "jobId": "63b31706-52a9-42f6-aa1c-e0dd7ad6feb8",
+      "status": "running",
+      "jobType": "scheduled",
+      "syncScope": "import",
+      "startedAt": "2026-08-06T20:26:50.910Z",
+      "createdAt": "2026-08-06T18:14:33.098Z",
+      "lastHeartbeat": "2026-08-06T20:26:53.528Z",
+      "lastProgressTime": "2026-08-06T20:26:53.528Z",
+      "currentStage": "bank_transactions",
+      "activity": "rate_limited",
+      "processingLeaseOwner": "3232def0e446-1",
+      "processingLeaseExpiresAt": "2026-08-06T20:28:53.528Z",
+      "ownsActiveLease": false,
+      "nextRetryAt": "2026-08-06T20:28:53.528Z",
+      "nextRetryPassed": true,
+      "stageError": "Xero rate limit — retry after 120s (inline wait exceeds 30s budget)",
+      "abandonReason": "stale_running_job",
+      "minutesSinceHeartbeat": 6,
+      "staleByHeartbeatThreshold": false,
+      "operationallyStale": true,
+      "genuinelyRunning": false,
+      "madeXeroRequestsThisRun": true
+    },
+    "openXeroJobs": [
+      {
+        "id": "63b31706-52a9-42f6-aa1c-e0dd7ad6feb8",
+        "status": "running",
+        "job_type": "scheduled",
+        "sync_scope": "import",
+        "started_at": "2026-08-06T20:26:50.910Z"
+      }
+    ],
+    "xeroSchedules": [
+      {
+        "id": "4a5b8436-c759-4222-b9c8-dde31f11b97b",
+        "enabled": true,
+        "sync_scope": "incremental",
+        "next_run_at": "2026-08-06T20:36:53.956Z",
+        "last_run_at": "2026-08-06T20:16:53.956Z"
+      }
+    ],
+    "pendingTargetedRefresh": [
+      {
+        "n": 0
+      }
+    ]
+  },
+  "pausePlan": {
+    "mechanism": "xero_rate_budget_state tenant-scoped pause (pauseTenantSync semantics)",
+    "syncPauseReason": "gate5b_waiting_for_daily_quota",
+    "syncPausedUntil": null,
+    "note": "NULL until = indefinite pause until Owner resume-sync"
+  },
+  "jobActionPlan": "cancel safely — preserve checkpoint/history, audit event, no restart",
+  "after": {
+    "budget": {
+      "min_limit_remaining": 60,
+      "day_limit_remaining": 0,
+      "rate_limit_problem": "day",
+      "retry_after_until": "2026-08-06T20:31:52.913Z",
+      "last_request_at": "2026-08-06T20:26:53.218Z",
+      "sync_pause_reason": null,
+      "sync_paused_until": null,
+      "updated_at": "2026-08-06T20:26:53.218Z"
+    },
+    "job": {
+      "id": "63b31706-52a9-42f6-aa1c-e0dd7ad6feb8",
+      "status": "running",
+      "completedAt": null,
+      "deferredForQuotaRecovery": false
+    },
+    "openXeroJobs": [
+      {
+        "id": "63b31706-52a9-42f6-aa1c-e0dd7ad6feb8",
+        "status": "running"
+      }
+    ],
+    "xeroSchedules": [
+      {
+        "id": "4a5b8436-c759-4222-b9c8-dde31f11b97b",
+        "enabled": true,
+        "sync_scope": "incremental",
+        "next_run_at": "2026-08-06T20:36:53.956Z"
+      }
+    ],
+    "pendingTargetedRefresh": 0,
+    "requestsAfterPause": null
+  },
+  "confirmations": {
+    "syncPauseActive": false,
+    "noActiveXeroJobs": false,
+    "dayLimitUnchanged": true,
+    "lastXeroRequestAt": "2026-08-06T20:26:53.218Z",
+    "productionUntouched": true,
+    "outboundQuiet": false
+  },
+  "nextAction": "Run one coordinated Gate 5B proof after a clean cooldown (retry_after_until clear + ≥120s quiet since last_request_at). Owner must resume-sync before proof if pause still active."
+}

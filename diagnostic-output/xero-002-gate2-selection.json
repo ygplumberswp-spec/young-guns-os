@@ -1,0 +1,36 @@
+{
+  "label": "xero-002-gate2-selection",
+  "generatedAt": "2026-08-06T16:19:45.525Z",
+  "companyId": "095aef76-fef5-4139-af37-a42f2d7e2faf",
+  "organisationName": "Young Guns Plumbing",
+  "tenantId": "20176b90-a093-4da1-a04e-8ae616f89fef",
+  "grantedScopes": [
+    "accounting.attachments.read",
+    "accounting.banktransactions",
+    "accounting.contacts",
+    "accounting.invoices",
+    "accounting.payments",
+    "accounting.settings",
+    "email",
+    "offline_access",
+    "openid",
+    "profile"
+  ],
+  "selected": {
+    "customerId": "5834ee96-b9e0-48ae-aa48-bae07e18c0ab",
+    "xeroContactId": "3307015e-0ab2-463f-83a4-e0b9ec0543be",
+    "mappingClassification": "confirmed_linked",
+    "syncStatus": "synced",
+    "invoiceId": "a58f98a7-187a-4155-b5e1-0f0b13edd28e",
+    "xeroInvoiceId": "dcccdb37-e949-4aab-bcd8-20df143fd452",
+    "invoiceNumber": "INV-0280",
+    "invoiceStatus": "paid"
+  },
+  "masked": {
+    "customerId": "5834ee96…",
+    "xeroContactId": "3307015e…",
+    "invoiceId": "a58f98a7…",
+    "xeroInvoiceId": "dcccdb37…",
+    "invoiceNumber": "INV-0280"
+  }
+}

@@ -5,6 +5,7 @@ import type {
   InventoryLocationSummary,
   InventoryStats,
   InventoryStockLevelSummary,
+  InventoryStockMovementSummary,
   SetInventoryStockRequest,
 } from '@titan/shared';
 import { request } from './api-client';
@@ -60,6 +61,22 @@ export async function fetchInventoryStock(
     accessToken,
   });
   return data.stockLevels;
+}
+
+export async function fetchInventoryStockMovements(
+  accessToken: string,
+  filters: { itemId?: string; locationId?: string; jobId?: string } = {},
+): Promise<InventoryStockMovementSummary[]> {
+  const params = new URLSearchParams();
+  if (filters.itemId) params.set('itemId', filters.itemId);
+  if (filters.locationId) params.set('locationId', filters.locationId);
+  if (filters.jobId) params.set('jobId', filters.jobId);
+  const query = params.toString() ? `?${params.toString()}` : '';
+  const data = await request<{ movements: InventoryStockMovementSummary[] }>(
+    `/inventory/movements${query}`,
+    { accessToken },
+  );
+  return data.movements;
 }
 
 export async function setInventoryStock(

@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Link } from 'wouter';
-import { Button, EmptyState, Input, PageHeader, Panel } from '@titan/ui';
+import { Button, EmptyState, Input, Panel } from '@titan/ui';
 import type {
   InventoryItemSummary,
   InventoryLocationSummary,
@@ -183,21 +184,21 @@ export function StockOverviewPage() {
       {formError ? <p className="form-error">{formError}</p> : null}
 
       {canWrite && showLocationForm ? (
-        <Panel title="New location">
+        <Panel title="New Location">
           <form className="inventory-form" onSubmit={(event) => void handleCreateLocation(event)}>
             <Input
-              label="Location name"
+              label="Location Name"
               value={locationName}
               onChange={(e) => setLocationName(e.target.value)}
               required
             />
             <Input
-              label="Code (optional)"
+              label="Code (Optional)"
               value={locationCode}
               onChange={(e) => setLocationCode(e.target.value)}
             />
             <Input
-              label="Address (optional)"
+              label="Address (Optional)"
               value={locationAddress}
               onChange={(e) => setLocationAddress(e.target.value)}
             />
@@ -240,7 +241,7 @@ export function StockOverviewPage() {
       ) : null}
 
       {canWrite && showStockForm ? (
-        <Panel title="Set stock level">
+        <Panel title="Set Stock Level">
           {items.length === 0 ? (
             <p className="page-muted">
               <Link href="/inventory/products/new" className="inventory-link">
@@ -284,7 +285,7 @@ export function StockOverviewPage() {
                 </select>
               </label>
               <Input
-                label="Quantity on hand"
+                label="Quantity On Hand"
                 type="number"
                 min="0"
                 value={quantityOnHand}
@@ -340,18 +341,18 @@ export function StockOverviewPage() {
 
           {stockLevels.length === 0 ? (
             <EmptyState
-              title="No stock recorded yet"
+              title="No Stock Recorded Yet"
               description="Create products and locations, then set stock levels to track inventory."
               action={
                 canWrite ? (
                   <Link href="/inventory/products/new">
-                    <Button>New product</Button>
+                    <Button>New Product</Button>
                   </Link>
                 ) : undefined
               }
             />
           ) : (
-            <Panel title="Stock levels">
+            <Panel title="Stock Levels">
               <div className="inventory-table-wrap">
                 <table className="inventory-table">
                   <thead>

@@ -1,4 +1,4 @@
-import { integer, pgEnum, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { integer, pgEnum, pgTable, text, timestamp, uuid, boolean } from 'drizzle-orm/pg-core';
 import { companies } from './companies';
 import { users } from './users';
 
@@ -18,8 +18,10 @@ export const auraMemory = pgTable('aura_memory', {
   category: auraMemoryCategoryEnum('category').notNull().default('business_rule'),
   information: text('information').notNull(),
   importance: integer('importance').notNull().default(3),
+  enabled: boolean('enabled').notNull().default(true),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedByUserId: uuid('updated_by_user_id').references(() => users.id, { onDelete: 'set null' }),
 });
 
 export type AuraMemory = typeof auraMemory.$inferSelect;

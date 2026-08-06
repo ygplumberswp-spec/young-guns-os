@@ -37,8 +37,10 @@ export function MobileLayout({ children }: MobileLayoutProps) {
           <span className="brand-sub">
             Powered by <span className="brand-sub__accent">{AI_NAME}</span>
           </span>
-          <span className="brand-credit">Built by Young Guns Plumbing</span>
-          {user ? <span className="portal-brand-sub">{user.companyName}</span> : null}
+          <span className="brand-credit">
+            <span className="brand-credit__by">Built by</span>{' '}
+            <span className="brand-credit__org">Young Guns Plumbing</span>
+          </span>
         </div>
         <div className="portal-header__user">
           {user ? (
@@ -47,10 +49,11 @@ export function MobileLayout({ children }: MobileLayoutProps) {
                 <span className="portal-header__name">
                   {user.firstName} {user.lastName}
                 </span>
-                <span className="portal-header__company">{user.roleName}</span>
+                <span className="portal-header__company">{user.companyName}</span>
+                <span className="portal-header__role">{user.roleName}</span>
               </div>
               <Button variant="ghost" size="sm" onClick={() => void logout()}>
-                Sign out
+                Sign Out
               </Button>
             </>
           ) : null}

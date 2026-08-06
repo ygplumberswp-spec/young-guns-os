@@ -1,15 +1,18 @@
 import type {
   CreatePurchaseOrderRequest,
   CreateSupplierActivityRequest,
+  CreateSupplierProductRequest,
   CreateSupplierRequest,
   ProcurementStats,
   PurchaseOrderDetail,
   PurchaseOrderSummary,
   ReceivePurchaseOrderRequest,
   SupplierActivitySummary,
+  SupplierProductSummary,
   SupplierSummary,
   UpdatePurchaseOrderRequest,
   UpdatePurchaseOrderStatusRequest,
+  UpdateSupplierProductRequest,
   UpdateSupplierRequest,
 } from '@titan/shared';
 import { request } from './api-client';
@@ -71,6 +74,39 @@ export async function createSupplierActivity(
     { method: 'POST', accessToken, body },
   );
   return data.activity;
+}
+
+export async function fetchSupplierProducts(
+  accessToken: string,
+): Promise<SupplierProductSummary[]> {
+  const data = await request<{ products: SupplierProductSummary[] }>(
+    '/procurement/supplier-products',
+    { accessToken },
+  );
+  return data.products;
+}
+
+export async function createSupplierProduct(
+  accessToken: string,
+  body: CreateSupplierProductRequest,
+): Promise<SupplierProductSummary> {
+  const data = await request<{ product: SupplierProductSummary }>(
+    '/procurement/supplier-products',
+    { method: 'POST', accessToken, body },
+  );
+  return data.product;
+}
+
+export async function updateSupplierProduct(
+  accessToken: string,
+  productId: string,
+  body: UpdateSupplierProductRequest,
+): Promise<SupplierProductSummary> {
+  const data = await request<{ product: SupplierProductSummary }>(
+    `/procurement/supplier-products/${productId}`,
+    { method: 'PATCH', accessToken, body },
+  );
+  return data.product;
 }
 
 export async function fetchPurchaseOrders(accessToken: string): Promise<PurchaseOrderSummary[]> {

@@ -1,0 +1,229 @@
+{
+  "schemaVersion": "current-state-reconciliation-v1",
+  "label": "193-current-state-reconciliation",
+  "generatedAt": "2026-08-01T12:26:30.000Z",
+  "repository": "/Users/keanuventer/Downloads/Titan Aura V1",
+  "branch": "cursor/titan-frozen-scope-completion",
+  "headCommit": "1ebd09f",
+  "productionTouched": false,
+  "stagingRef": "cpkuwtaipjxeipvbssvn",
+  "forbiddenProductionRef": "rshuiaghmtrvvilhqpwm",
+  "mergedResumeWorkers": ["bf815d2f", "cc48def9"],
+  "priorResumeArtifact": "diagnostic-output/192-cursor-resume-reconciliation.json",
+  "bindingDocumentsRead": [
+    "TITAN_FINAL_SCOPE_FREEZE.md",
+    "TITAN_MASTER_EXECUTION_PLAN.md",
+    "TITAN_BINDING_ACCEPTANCE_RULE.md",
+    "TITAN_COMPLETE_APP_AUDIT.md",
+    "TITAN_AUTO_WORK_PIPELINE.md",
+    "TITAN_ACCEPTANCE_REGISTER.md",
+    "TITAN_GAP_BACKLOG.md",
+    "TITAN_AUTONOMOUS_SPRINT_LOG.md"
+  ],
+  "git": {
+    "branch": "cursor/titan-frozen-scope-completion",
+    "tracking": "origin/cursor/titan-frozen-scope-completion",
+    "syncWithRemote": "up to date",
+    "worktrees": [
+      {
+        "path": "/Users/keanuventer/Downloads/Titan Aura V1",
+        "commit": "1ebd09f",
+        "branch": "cursor/titan-frozen-scope-completion"
+      }
+    ],
+    "recentCommits": [
+      "1ebd09f Add PRN-001 complete-app printing to auto work pipeline.",
+      "21b8705 Queue PRINT-001 printing and document output in auto pipeline.",
+      "c7cea86 Add JOB-DEL-001 to auto work pipeline after pricing phases.",
+      "00fbd31 Update auto work pipeline status with phase commit hashes.",
+      "0b6b911 Add SPI-001 supplier price intelligence scaffold.",
+      "1e87410 Fix staging session verify script API health paths.",
+      "4410a02 Implement secure persistent session across staff auth surfaces.",
+      "71f27fe Document FRZ-018h Xero import recovery and refresh staging evidence.",
+      "9bec8c3 Fix Xero import heartbeat recovery and checkpoint auto-resume.",
+      "0dd0643 Add Xero two-way sync binding scaffold (Sprint 186).",
+      "0e86821 Add CV-001b post-Xero-import customer value recalculation automation.",
+      "4f665d1 Add WhatsApp customer contact enrichment scaffold (COM-013).",
+      "fb04a51 Add global binding acceptance rule and complete-app audit."
+    ],
+    "uncommittedTracked": [
+      "diagnostic-output/187-xero-import-recovery-verify.json",
+      "diagnostic-output/182-customer-value-classification-staging-probe.json",
+      "storage/company-media/.gitkeep"
+    ]
+  },
+  "stagingHealth": {
+    "apiBase": "https://young-guns-os-staging.up.railway.app",
+    "health": {
+      "url": "/api/v1/health",
+      "status": "ok",
+      "service": "titan-api",
+      "version": "0.2.0",
+      "probedAt": "2026-08-01T12:25:30.964Z"
+    },
+    "ready": {
+      "url": "/api/v1/health/ready",
+      "status": "ready",
+      "database": "connected",
+      "redis": "not_configured",
+      "providersEnabled": true,
+      "workersEnabled": false,
+      "webhooksEnabled": false,
+      "probedAt": "2026-08-01T12:25:40.015Z"
+    },
+    "recoveryBundleDeployed": {
+      "verdict": "CONFIRMED",
+      "indicators": [
+        "Active job 81c5b8d8 heartbeat updating (12:25:39Z)",
+        "activity=processing",
+        "checkpoint preserved at contacts page 3",
+        "resumeAbandonedImportJobs path in codebase 9bec8c3",
+        "Prior failed job 8e6aec9b abandoned without mapping loss"
+      ]
+    }
+  },
+  "xeroReadOnly": {
+    "youngGunsCompanyId": "095aef76-fef5-4139-af37-a42f2d7e2faf",
+    "verdict": "IN_PROGRESS",
+    "activeJob": {
+      "id": "81c5b8d8-839b-4875-b106-2ecece11a966",
+      "status": "running",
+      "startedAt": "2026-08-01T12:21:44.639Z",
+      "heartbeatAt": "2026-08-01T12:25:39.959Z",
+      "activity": "processing",
+      "checkpoint": {
+        "stage": "contacts",
+        "contactsPage": 3,
+        "invoicesPage": 1,
+        "paymentsPage": 1,
+        "bankTransactionsPage": 1
+      }
+    },
+    "priorFailedJob": {
+      "id": "8e6aec9b-2d99-493c-85b8-75f61d7f414b",
+      "status": "failed",
+      "failedStage": "payments",
+      "reason": "Invoice mapping lateral join query error"
+    },
+    "mappingCounts": {
+      "customer_mappings": 673,
+      "invoice_mappings": 5,
+      "payment_mappings": 0,
+      "bank_tx_logs": 0
+    },
+    "duplicateCustomerContactIds": 0,
+    "lastSyncAt": null,
+    "cvMetricsRefreshJobId": null,
+    "connectionStatus": "connected",
+    "evidence": "diagnostic-output/187-xero-import-recovery-verify.json"
+  },
+  "migrationJournal": {
+    "localRepoLatestTag": "0109_xero_two_way_sync_scaffolding",
+    "localJournalEntryCount": 108,
+    "localSqlNotInJournal": [
+      "0107_whatsapp_contact_enrichment",
+      "0110_supplier_price_intelligence"
+    ],
+    "stagingAppliedCount": 106,
+    "stagingLatestAppliedId": 106,
+    "pendingSafeWhenQuiescent": ["0107", "0108", "0109", "0110"],
+    "blockedDuringActiveImport": true
+  },
+  "classificationSummary": {
+    "verifiedPass": 4,
+    "implementedStagingVerificationRequired": 6,
+    "partial": 22,
+    "queued": 10,
+    "blocked": 3,
+    "failed": 2,
+    "notAudited": 3
+  },
+  "sectionsForParent": {
+    "completedAndVerified": [
+      "FRZ-021 build-control protocol",
+      "FRZ-005 lead→customer→property→job chain (Phase 5 staging 10/10 GO)",
+      "FRZ-006 crew/vehicle mobile (Phase 6 staging 12/12 GO)",
+      "PIPE-1 Xero recovery code (9bec8c3) deployed with live heartbeat on staging",
+      "RBAC cross-tenant + forbidden-action local test matrix (Sprint 028)",
+      "BIND-001 binding acceptance rule document (fb04a51)"
+    ],
+    "implementedButUnverified": [
+      "SPI-001 supplier price intelligence code (0b6b911) — staging migration 0110 not applied",
+      "Secure persistent session (4410a02) — 184 partial (Owner token click-path skipped)",
+      "CV-001 customer value API + classifier — buckets await Xero finance data",
+      "FRZ-015 AURA live verify — requires Owner-configured keys per run",
+      "WhatsApp enrichment scaffold (4f665d1) — migration 0107 pending",
+      "Xero two-way scaffold (0dd0643) — migration 0109 pending"
+    ],
+    "active": [
+      "PIPE-2 Xero import GO gate — job 81c5b8d8 running, 673 mappings, last_sync_at null",
+      "Recovery auto-resume from checkpoint — do not manual Sync or restart from zero"
+    ],
+    "queued": [
+      "PIPE-4 YGP-001 (after SPI staging PASS)",
+      "PIPE-5 E2E margin verify",
+      "PIPE-6 JOB-DEL-001 (audit only; no code)",
+      "PIPE-7 PRN-001 (pipeline docs only)",
+      "PIPE-8 PHSL, PIPE-9 GSL pricing hygiene",
+      "PIPE-10 performance/speed (Master Plan Phase 22)",
+      "PIPE-14 frozen-scope binding enforcement (Clean Data UX Phases B–F)",
+      "PIPE-16 FRZ-023 final launch",
+      "CV-001b post-import auto-recalc on GO",
+      "Xero two-way verify queue after GO"
+    ],
+    "blocked": [
+      "FRZ-022 pilot readiness — Owner sign-off + chain gaps",
+      "DATA-CLEANUP 59 E2E tenants — Owner approval required",
+      "SPI-001 staging migration 0110 — deferred during active Xero batches"
+    ],
+    "failed": [
+      "SPI-001 staging verify (189) — SPI tables absent",
+      "ENTERPRISE-PAGES useful-function audit (decorative modules)",
+      "Prior Xero job 8e6aec9b payments-stage SQL error (monitor on re-entry)"
+    ],
+    "migrationsPending": [
+      "0107_whatsapp_contact_enrichment — apply when quiescent",
+      "0108_secure_session_enhancements — apply when quiescent",
+      "0109_xero_two_way_sync_scaffolding — apply when quiescent",
+      "0110_supplier_price_intelligence — apply when quiescent",
+      "0111_job_lifecycle — not authored; after JOB-DEL implementation"
+    ],
+    "providerGates": [
+      "Xero — OAuth connected; import IN_PROGRESS; live write approval required",
+      "AURA/AI — FRZ-015 GO when keys configured",
+      "Cartrack — NOT AUDITED; credentials not on staging",
+      "WhatsApp/Meta — NOT AUDITED; staging disconnected",
+      "Gmail — FAIL honesty card; NOT IMPLEMENTED per Decision 4",
+      "Yoco/payment links — PARTIAL; FIN-014 missing"
+    ],
+    "exactNextAutomaticAction": "Poll read-only via diagnostic-output/187-xero-import-recovery-verify.mjs until verdict=PASS; on GO run CV-001b verify; when quiescent apply migrations 0107–0110; then continue pipeline YGP→margin→JOB-DEL→PRN→PHSL→GSL→perf→frozen scope→pilot→launch. No production; no duplicate workers; no mapping restart."
+  },
+  "pipelinePhasesAddedThisSession": [
+    "PIPE-8 PHSL",
+    "PIPE-9 GSL",
+    "PIPE-10 performance/speed",
+    "PIPE-11 workforce/timesheet/overtime",
+    "PIPE-12 remaining providers",
+    "PIPE-13 security completion",
+    "PIPE-14 frozen-scope enforcement",
+    "PIPE-15 pilot FRZ-022",
+    "PIPE-16 launch FRZ-023"
+  ],
+  "sessionActions": {
+    "performed": [
+      "Merged bf815d2f/cc48def9 resume context from 192 artifact",
+      "Read binding docs, acceptance register, gap backlog, sprint log, migration journal",
+      "curl staging health + ready",
+      "Fresh 187 Xero read-only probe (heartbeat confirmed)",
+      "Read-only staging DB migration count probe",
+      "Wrote TITAN_CURRENT_STATE_RECONCILIATION.md and this JSON"
+    ],
+    "notPerformed": [
+      "No migration apply",
+      "No manual Xero Sync",
+      "No JOB-DEL/PRN implementation",
+      "No production access",
+      "No Railway env changes (workersEnabled remains false on API ready probe)"
+    ]
+  }
+}

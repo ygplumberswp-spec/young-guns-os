@@ -11,12 +11,21 @@ import type {
   MessageTemplateSummary,
 } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
-import { communications, customers, jobs, messageTemplates, users } from '@titan/db';
+import {
+  communications,
+  customers,
+  integrationConnections,
+  jobs,
+  messageTemplates,
+  users,
+} from '@titan/db';
 import { emitBusinessEvent } from '../lib/automation-events.js';
 import {
   getJobIdsForUserIncludingCrew,
   userHasJobAccess,
 } from './job-execution.service.js';
+import type { ResendEmailService } from './resend-email.service.js';
+import { ResendEmailError } from './resend-email.service.js';
 
 export class CommunicationsError extends Error {
   constructor(
@@ -27,6 +36,9 @@ export class CommunicationsError extends Error {
     this.name = 'CommunicationsError';
   }
 }
+
+/** Marker stored in failureReason after Owner approves an outbound email request. */
+const RESEND_APPROVED_MARKER = 'Approved — ready to execute via Resend';
 
 export type AuraCommunicationsContext = {
   messageCount: number;
@@ -64,7 +76,10 @@ type TenantScope = {
 };
 
 export class CommunicationsService {
-  constructor(private readonly db: DatabaseClient) {}
+  constructor(
+    private readonly db: DatabaseClient,
+    private readonly resendEmailService?: ResendEmailService,
+  ) {}
 
   async listMessages(scope: TenantScope | string): Promise<CommunicationSummary[]> {
     const companyId = typeof scope === 'string' ? scope : scope.companyId;
@@ -192,7 +207,11 @@ export class CommunicationsService {
     const channel: CommunicationChannel = input.channel ?? 'note';
     const direction = input.direction ?? 'outbound';
     const visibility = resolveVisibility(channel, direction, input.visibility);
-    const { deliveryState, failureReason } = resolveDeliveryOutcome(channel, visibility);
+    const { deliveryState, failureReason } = await this.resolveDeliveryOutcome(
+      scope.companyId,
+      channel,
+      visibility,
+    );
 
     const [created] = await this.db
       .insert(communications)
@@ -245,6 +264,121 @@ export class CommunicationsService {
     }
 
     return toCommunicationSummary(row);
+  }
+
+  /**
+   * Owner approve step for outbound email requests (draft → approve → execute).
+   * Does not send — executeOutboundEmail performs the Resend dispatch.
+   */
+  async approveOutboundEmail(
+    scope: TenantScope,
+    messageId: string,
+  ): Promise<CommunicationSummary> {
+    this.assertCanApproveOrExecute(scope);
+
+    const row = await this.loadOutboundEmailRequest(scope.companyId, messageId);
+
+    if (row.deliveryState !== 'requested') {
+      throw new CommunicationsError(
+        'INVALID_STATE',
+        `Cannot approve a message in delivery state "${row.deliveryState}"`,
+      );
+    }
+
+    const [updated] = await this.db
+      .update(communications)
+      .set({
+        failureReason: RESEND_APPROVED_MARKER,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(communications.id, row.id), eq(communications.companyId, scope.companyId)))
+      .returning();
+
+    if (!updated) {
+      throw new CommunicationsError('UPDATE_FAILED', 'Unable to approve outbound email');
+    }
+
+    const loaded = await this.db.query.communications.findFirst({
+      where: eq(communications.id, updated.id),
+      with: { customer: true, author: true, template: true, job: true },
+    });
+    if (!loaded) {
+      throw new CommunicationsError('UPDATE_FAILED', 'Unable to load approved message');
+    }
+    return toCommunicationSummary(loaded);
+  }
+
+  /**
+   * Execute an approved outbound email via Resend.
+   * Requires EMAIL_SENDING_ENABLED + connected Resend + prior approve.
+   */
+  async executeOutboundEmail(
+    scope: TenantScope,
+    messageId: string,
+  ): Promise<CommunicationSummary> {
+    this.assertCanApproveOrExecute(scope);
+
+    if (!this.resendEmailService) {
+      throw new CommunicationsError(
+        'NOT_CONFIGURED',
+        'Resend email delivery is not configured on this API instance',
+      );
+    }
+
+    const row = await this.loadOutboundEmailRequest(scope.companyId, messageId);
+
+    if (row.deliveryState !== 'requested') {
+      throw new CommunicationsError(
+        'INVALID_STATE',
+        `Cannot execute a message in delivery state "${row.deliveryState}"`,
+      );
+    }
+
+    if (row.failureReason !== RESEND_APPROVED_MARKER) {
+      throw new CommunicationsError(
+        'NOT_APPROVED',
+        'Outbound email must be approved before execute (approve → execute)',
+      );
+    }
+
+    const customer = await this.db.query.customers.findFirst({
+      where: and(eq(customers.id, row.customerId), eq(customers.companyId, scope.companyId)),
+    });
+    const toEmail = customer?.email?.trim().toLowerCase() ?? '';
+    if (!toEmail) {
+      throw new CommunicationsError(
+        'VALIDATION_ERROR',
+        'Customer has no email address — cannot execute Resend delivery',
+      );
+    }
+
+    try {
+      await this.resendEmailService.sendTransactionalEmail({
+        companyId: scope.companyId,
+        purpose: 'outbound_message',
+        toEmail,
+        subject: row.subject?.trim() || 'Message from TITAN',
+        text: row.body,
+        html: `<p>${escapeHtml(row.body).replace(/\n/g, '<br/>')}</p>`,
+        communicationId: row.id,
+        actorUserId: scope.userId,
+        idempotencyKey: `comm-${row.id}`,
+      });
+    } catch (error) {
+      if (error instanceof ResendEmailError) {
+        throw new CommunicationsError(error.code, error.message);
+      }
+      throw error;
+    }
+
+    const loaded = await this.db.query.communications.findFirst({
+      where: eq(communications.id, row.id),
+      with: { customer: true, author: true, template: true, job: true },
+    });
+    if (!loaded) {
+      throw new CommunicationsError('EXECUTE_FAILED', 'Unable to load executed message');
+    }
+    return toCommunicationSummary(loaded);
   }
 
   async createTemplate(
@@ -392,6 +526,64 @@ export class CommunicationsService {
       throw new CommunicationsError('JOB_NOT_FOUND', 'Job not found');
     }
   }
+
+  private async resolveDeliveryOutcome(
+    companyId: string,
+    channel: CommunicationChannel,
+    visibility: CommunicationVisibility,
+  ) {
+    let resendConnected = false;
+    if (channel === 'email') {
+      const connection = await this.db.query.integrationConnections.findFirst({
+        where: and(
+          eq(integrationConnections.companyId, companyId),
+          eq(integrationConnections.provider, 'resend'),
+        ),
+      });
+      resendConnected =
+        connection?.status === 'connected' && Boolean(connection.credentialsEncrypted);
+    }
+
+    return resolveDeliveryOutcomeStatic(channel, visibility, {
+      resendConnected,
+      emailSendingEnabled: this.resendEmailService?.isEmailSendingEnabled() ?? false,
+    });
+  }
+
+  private assertCanApproveOrExecute(scope: TenantScope) {
+    const isTechnician =
+      Boolean(scope.roleName) &&
+      isTechnicianRole({
+        roleName: scope.roleName!,
+        permissions: scope.permissions ?? [],
+      });
+
+    if (isTechnician) {
+      throw new CommunicationsError(
+        'FORBIDDEN',
+        'Technicians cannot approve or execute outbound email sends',
+      );
+    }
+  }
+
+  private async loadOutboundEmailRequest(companyId: string, messageId: string) {
+    const row = await this.db.query.communications.findFirst({
+      where: and(eq(communications.id, messageId), eq(communications.companyId, companyId)),
+    });
+
+    if (!row) {
+      throw new CommunicationsError('NOT_FOUND', 'Communication not found');
+    }
+
+    if (row.channel !== 'email' || row.visibility !== 'outbound_request') {
+      throw new CommunicationsError(
+        'INVALID_STATE',
+        'Only outbound email requests can be approved or executed via Resend',
+      );
+    }
+
+    return row;
+  }
 }
 
 /**
@@ -420,18 +612,19 @@ function resolveVisibility(
 }
 
 /**
- * Decision 4 / UX-G comms honesty contract: this batch never calls a live
- * provider, so `provider_delivered` must never be produced here.
- * - internal_note is always logged_only — it never leaves TITAN.
- * - customer_visible is logged_only — it is recorded/shown, not dispatched.
- * - outbound_request is requested — a human or a future connector still has
- *   to actually send it. email/sms get an explicit failureReason explaining
- *   why nothing was sent, since those channels most obviously imply "sent".
+ * Decision 4 / UX-G comms honesty contract:
+ * - internal_note / customer_visible are logged_only — never dispatched here.
+ * - outbound_request stays requested until Owner approve → execute via Resend
+ *   (when connected and EMAIL_SENDING_ENABLED). Creating a message never auto-sends.
  */
-function resolveDeliveryOutcome(
+async function resolveDeliveryOutcomeStatic(
   channel: CommunicationChannel,
   visibility: CommunicationVisibility,
-): { deliveryState: CommunicationDeliveryState; failureReason: string | null } {
+  options: {
+    resendConnected: boolean;
+    emailSendingEnabled: boolean;
+  },
+): Promise<{ deliveryState: CommunicationDeliveryState; failureReason: string | null }> {
   if (visibility === 'internal_note') {
     return { deliveryState: 'logged_only', failureReason: null };
   }
@@ -440,12 +633,33 @@ function resolveDeliveryOutcome(
     return { deliveryState: 'logged_only', failureReason: null };
   }
 
-  // outbound_request
-  if (channel === 'email' || channel === 'sms') {
+  if (channel === 'email') {
+    if (options.resendConnected && options.emailSendingEnabled) {
+      return {
+        deliveryState: 'requested',
+        failureReason:
+          'Resend is connected — awaiting Owner approve → execute. TITAN has not sent this email yet.',
+      };
+    }
+    if (options.resendConnected && !options.emailSendingEnabled) {
+      return {
+        deliveryState: 'requested',
+        failureReason:
+          'Resend is connected but EMAIL_SENDING_ENABLED is false — logged as requested only. TITAN did not send.',
+      };
+    }
     return {
       deliveryState: 'requested',
       failureReason:
-        `No connected ${channel === 'email' ? 'email' : 'SMS'} provider dispatch path exists yet — ` +
+        'No connected Resend provider — this send was logged as requested only. TITAN did not call a provider.',
+    };
+  }
+
+  if (channel === 'sms') {
+    return {
+      deliveryState: 'requested',
+      failureReason:
+        'No connected SMS provider dispatch path exists yet — ' +
         'this send was logged as requested only. TITAN did not call a provider.',
     };
   }
@@ -454,6 +668,14 @@ function resolveDeliveryOutcome(
     deliveryState: 'requested',
     failureReason: 'Logged as requested only — no automated dispatch has run for this channel.',
   };
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 }
 
 function toCommunicationSummary(

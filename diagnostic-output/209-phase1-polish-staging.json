@@ -1,0 +1,74 @@
+{
+  "label": "PHASE1-POLISH-209",
+  "startedAt": "2026-08-01T15:44:00.000Z",
+  "finishedAt": "2026-08-01T15:48:00.000Z",
+  "environment": "staging",
+  "productionTouched": false,
+  "targetBranch": "cursor/titan-frozen-scope-completion",
+  "commitsExpected": ["2b6851d"],
+  "migration": {
+    "tag": "0112_draft_workspace",
+    "applied": true,
+    "method": "isolated_staging_apply (apply-0112-staging-only.mjs)",
+    "status": "already_applied",
+    "draftWorkspaceTable": "draft_workspace"
+  },
+  "validation": {
+    "typecheck": "pass",
+    "webBuild": "pass",
+    "apiBuild": "pass",
+    "sharedTests": { "count": 122, "pass": 122 },
+    "webTests": { "count": 121, "pass": 121 },
+    "draftKeyDedupeTest": "pass",
+    "backButtonRoutingTest": "pass",
+    "notifyDedupeTest": "pass"
+  },
+  "deploy": {
+    "railwayProject": "sweet-victory",
+    "railwayEnvironment": "staging",
+    "services": [
+      {
+        "name": "young-guns-os",
+        "role": "api",
+        "url": "https://young-guns-os-staging.up.railway.app",
+        "status": "SUCCESS",
+        "branch": "cursor/titan-frozen-scope-completion",
+        "commit": "2b6851d",
+        "deploymentId": "469667fc-2935-4c98-92c5-dc48208ffa43"
+      },
+      {
+        "name": "comfortable-determination",
+        "role": "web",
+        "url": "https://comfortable-determination-staging.up.railway.app",
+        "status": "SUCCESS",
+        "branch": "cursor/titan-frozen-scope-completion",
+        "commit": "2b6851d",
+        "deploymentId": "be4ccfab-33ed-4958-a9ca-137aeaf4be90"
+      }
+    ]
+  },
+  "verify": {
+    "api_health_ready": {
+      "url": "/api/v1/health/ready",
+      "status": 200,
+      "database": "connected"
+    },
+    "web_root": { "url": "/", "status": 200 },
+    "web_healthz": { "url": "/healthz", "status": 200 },
+    "web_drafts_route": { "url": "/drafts", "status": 200 },
+    "drafts_api_unauthenticated": {
+      "url": "/api/v1/drafts",
+      "status": 401,
+      "expected": true
+    }
+  },
+  "ownerManualVerify": [
+    "Open Finance → Drafts or /drafts — confirm grouped list (empty or existing drafts).",
+    "Create a new quote — edit fields; confirm Draft saved toast and status line.",
+    "Navigate Back with unsaved edits — confirm guard modal (Stay / Save draft / Discard).",
+    "Repeat on invoice create and job create.",
+    "Open Cmd+K — confirm Recently viewed after visiting quote/job detail.",
+    "Settings → Documents, Notifications, Data protection — confirm scaffolds render."
+  ],
+  "overall": "PASS"
+}

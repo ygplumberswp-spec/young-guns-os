@@ -1,0 +1,5 @@
+{
+  "verdict": "GO",
+  "passed": 10,
+  "failed": 0
+}
