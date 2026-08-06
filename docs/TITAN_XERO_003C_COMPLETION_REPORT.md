@@ -69,9 +69,8 @@ All expected tables and indexes present (verified via migration verify script).
 |------|-----:|------|
 | Missing signature | 401 | `INVALID_SIGNATURE` |
 | Invalid signature | 401 | `INVALID_SIGNATURE` |
-| Malformed body + invalid sig | 500 | Rejected before event processing |
-
-Valid-signature + invalid JSON → **400 INVALID_PAYLOAD** verified via service code path and `xero-webhook-signing.test.ts` (cannot exercise live without exposing key).
+| Malformed body + invalid sig | ~~500~~ **401** after XERO-003D (raw body preserved; no JSON parser 500) |
+| Valid signature + malformed JSON | **400** `INVALID_PAYLOAD` (service + route tests; live invalid-sig probe cannot sign without key) |
 
 ---
 
