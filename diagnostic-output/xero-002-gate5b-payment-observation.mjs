@@ -364,7 +364,7 @@ async function main() {
       observation = await api('/api/v1/integrations/xero/gate5b-payment-observation', {
         method: 'POST',
         token,
-        timeoutMs: 300000,
+        timeoutMs: 120_000,
         body: {
           invoiceId: selection.selected.invoiceId,
           runTargetedRefresh: true,
@@ -383,7 +383,15 @@ async function main() {
       observation.json?.error?.code === 'NOT_FOUND' ||
       observation.json?.error?.code === 'REQUEST_ABORTED';
 
-    if (gate5bUnavailable) {
+    const liveOnly = process.env.GATE5B_LIVE_ONLY === '1';
+    if (gate5bUnavailable && liveOnly) {
+      report.verdict = observation.status === 0 ? 'FAIL' : 'BLOCKED';
+      report.blocker =
+        observation.status === 0
+          ? 'Gate 5B live read timed out — no historical fallback in Gate 5B-R mode.'
+          : 'Gate 5B route not available — deploy required.';
+      report.observation = { status: observation.status, error: observation.json?.error ?? null };
+    } else if (gate5bUnavailable) {
       if (process.env.INTEGRATIONS_ENCRYPTION_KEY?.trim()) {
         const { spawnSync } = await import('node:child_process');
         const tsx = path.join(repoRoot, 'apps/api/node_modules/.bin/tsx');
@@ -478,11 +486,17 @@ async function main() {
     } else if (observation.status === 200) {
       report.observation = observation.json?.data?.result ?? null;
       report.mode = 'live-staging-api';
-      report.verdict = report.observation?.payment?.providerOk ? 'PASS' : 'PARTIAL';
+      const liveProviderOk =
+        report.observation?.payment?.providerOk === true &&
+        report.observation?.invoice?.providerOk === true;
+      report.verdict = liveProviderOk ? 'PASS' : 'PARTIAL';
+      if (!liveProviderOk) {
+        report.blocker = 'Gate 5B live provider read incomplete — historical fallback disabled for Gate 5B-R.';
+      }
     } else if (observation.status === 503) {
-      report.verdict = 'BLOCKED';
-      report.blocker = 'Gate 5B endpoint not configured on staging API — deploy then re-run.';
       report.observation = { status: observation.status, error: observation.json?.error ?? null };
+      report.verdict = 'FAIL';
+      report.blocker = observation.json?.error?.message ?? 'Gate 5B provider unavailable';
     } else {
       report.observation = { status: observation.status, error: observation.json?.error ?? null };
       report.verdict = 'FAIL';

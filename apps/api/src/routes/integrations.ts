@@ -784,7 +784,9 @@ export function createIntegrationsRouter({
           const status =
             error.code === 'ORG_MISMATCH'
               ? 409
-              : error.code === 'MAPPING_INVALID' ||
+              : error.code === 'PROVIDER_UNAVAILABLE' || error.code === 'PROVIDER_AUTH_FAILED'
+                ? 503
+                : error.code === 'MAPPING_INVALID' ||
                   error.code === 'PAYMENT_MAPPING_MISSING' ||
                   error.code === 'PAYMENT_MAPPING_INVALID' ||
                   error.code === 'PAYMENT_MAPPING_MISMATCH' ||

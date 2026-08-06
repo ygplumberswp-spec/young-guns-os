@@ -1,4 +1,4 @@
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq, or, sql } from 'drizzle-orm';
 import type { DatabaseClient } from '@titan/db';
 import {
   invoices,
@@ -14,6 +14,7 @@ import {
 } from '@titan/shared';
 import type { XeroOAuthService } from './xero-oauth.service.js';
 import type { XeroSyncService } from './xero-sync.service.js';
+import { XeroError } from '../lib/xero.client.js';
 
 export class XeroGate5bPaymentObservationError extends Error {
   constructor(
@@ -28,6 +29,28 @@ export class XeroGate5bPaymentObservationError extends Error {
 function maskId(value: string | null | undefined): string | null {
   if (!value) return null;
   return value.length > 8 ? `${value.slice(0, 8)}…` : value;
+}
+
+function rethrowProviderReadError(scope: 'invoice' | 'payment', error: unknown): never {
+  if (error instanceof XeroError) {
+    if (error.code === 'TIMEOUT' || error.code === 'RATE_LIMIT') {
+      throw new XeroGate5bPaymentObservationError(
+        'PROVIDER_UNAVAILABLE',
+        `Xero ${scope} read unavailable: ${error.message}`,
+      );
+    }
+    if (error.code === 'AUTH_FAILED') {
+      throw new XeroGate5bPaymentObservationError(
+        'PROVIDER_AUTH_FAILED',
+        `Xero ${scope} read rejected: ${error.message}`,
+      );
+    }
+  }
+
+  throw new XeroGate5bPaymentObservationError(
+    scope === 'invoice' ? 'INVOICE_READ_FAILED' : 'PAYMENT_READ_FAILED',
+    error instanceof Error ? error.message : `${scope} read failed`,
+  );
 }
 
 export type XeroGate5bPaymentObservationResult = {
@@ -209,10 +232,7 @@ export class XeroGate5bPaymentObservationService {
       xeroAmountPaid = remoteInvoice.amountPaid;
       xeroAmountDue = remoteInvoice.amountDue;
     } catch (error) {
-      throw new XeroGate5bPaymentObservationError(
-        'INVOICE_READ_FAILED',
-        error instanceof Error ? error.message : 'Invoice read failed',
-      );
+      rethrowProviderReadError('invoice', error);
     }
 
     let paymentOk = false;
@@ -225,22 +245,26 @@ export class XeroGate5bPaymentObservationService {
       paymentIdMatch = remotePayment.paymentId === paymentMapping.xeroPaymentId;
       xeroPaymentAmountCents = Math.round(remotePayment.amount * 100);
     } catch (error) {
-      throw new XeroGate5bPaymentObservationError(
-        'PAYMENT_READ_FAILED',
-        error instanceof Error ? error.message : 'Payment read failed',
-      );
+      rethrowProviderReadError('payment', error);
     }
 
-    const bankTxRows = await this.db.query.xeroBankTransactions.findMany({
-      where: eq(xeroBankTransactions.companyId, input.companyId),
-    });
-    const bankMatch = bankTxRows.find((tx) => {
-      if (!invoiceMapping.xeroInvoiceId) return false;
-      const paymentRef = paymentMapping.xeroPaymentId ?? '';
-      return (
-        tx.reference?.includes(invoiceMapping.xeroInvoiceId) ||
-        (paymentRef.length > 0 && tx.reference?.includes(paymentRef))
-      );
+    const paymentRef = paymentMapping.xeroPaymentId ?? '';
+    const bankMatch = await this.db.query.xeroBankTransactions.findFirst({
+      where: and(
+        eq(xeroBankTransactions.companyId, input.companyId),
+        or(
+          invoiceMapping.xeroInvoiceId
+            ? sql`${xeroBankTransactions.reference} ILIKE ${'%' + invoiceMapping.xeroInvoiceId + '%'}`
+            : sql`false`,
+          paymentRef.length > 0
+            ? sql`${xeroBankTransactions.reference} ILIKE ${'%' + paymentRef + '%'}`
+            : sql`false`,
+        ),
+      ),
+      columns: {
+        xeroBankTransactionId: true,
+        isReconciled: true,
+      },
     });
 
     const titanAmountDueCents = Math.max(invoiceRow.totalCents - invoiceRow.amountPaidCents, 0);

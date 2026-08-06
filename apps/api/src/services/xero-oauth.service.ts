@@ -24,6 +24,8 @@ const AUTHORIZE_URL = 'https://login.xero.com/identity/connect/authorize';
 const TOKEN_URL = 'https://identity.xero.com/connect/token';
 const REVOKE_URL = 'https://identity.xero.com/connect/revocation';
 const CONNECTIONS_URL = 'https://api.xero.com/connections';
+/** Bounded timeout for Xero identity HTTP calls — prevents unbounded hangs during token refresh. */
+export const OAUTH_HTTP_TIMEOUT_MS = 25_000;
 /**
  * Granular Xero accounting scopes.
  * - accounting.settings  → organisation, chart of accounts, tracking categories
@@ -467,7 +469,40 @@ export class XeroOAuthService {
     return new XeroClient({
       tenantId,
       getAccessToken: () => this.getValidAccessToken(companyId),
+      onAuthRetry: () => this.forceRefreshAccessToken(companyId).then(() => undefined),
     });
+  }
+
+  /** Force-refresh OAuth tokens when Xero returns 401 despite local expiry metadata. */
+  async forceRefreshAccessToken(companyId: string): Promise<string> {
+    const connection = await this.requireOAuthConnection(companyId);
+    const credentials = decryptXeroCredentials(
+      connection.credentialsEncrypted!,
+      this.encryptionKey!,
+    );
+
+    if (!isXeroOAuthCredentials(credentials)) {
+      throw new XeroOAuthError(
+        'RECONNECT_REQUIRED',
+        'Reconnect Xero using Sign in with Xero before continuing.',
+      );
+    }
+
+    const inflight = this.refreshInflight.get(companyId);
+    if (inflight) {
+      return inflight;
+    }
+
+    const refreshPromise = this.refreshAndPersistTokens(
+      companyId,
+      connection.id,
+      credentials,
+    ).finally(() => {
+      this.refreshInflight.delete(companyId);
+    });
+
+    this.refreshInflight.set(companyId, refreshPromise);
+    return refreshPromise;
   }
 
   async getValidAccessToken(companyId: string): Promise<string> {
@@ -672,8 +707,21 @@ export class XeroOAuthService {
           Accept: 'application/json',
         },
         body,
+        signal: AbortSignal.timeout(OAUTH_HTTP_TIMEOUT_MS),
       });
     } catch (error) {
+      if (
+        error instanceof Error &&
+        (error.name === 'TimeoutError' ||
+          error.name === 'AbortError' ||
+          /timed out/i.test(error.message))
+      ) {
+        throw new XeroOAuthError(
+          'TIMEOUT',
+          `Xero token request timed out after ${OAUTH_HTTP_TIMEOUT_MS}ms`,
+        );
+      }
+
       throw new XeroOAuthError(
         'NETWORK_ERROR',
         error instanceof Error ? error.message : 'Unable to reach Xero identity service',
@@ -707,8 +755,21 @@ export class XeroOAuthService {
           Authorization: `Bearer ${accessToken}`,
           Accept: 'application/json',
         },
+        signal: AbortSignal.timeout(OAUTH_HTTP_TIMEOUT_MS),
       });
     } catch (error) {
+      if (
+        error instanceof Error &&
+        (error.name === 'TimeoutError' ||
+          error.name === 'AbortError' ||
+          /timed out/i.test(error.message))
+      ) {
+        throw new XeroOAuthError(
+          'TIMEOUT',
+          `Xero connections request timed out after ${OAUTH_HTTP_TIMEOUT_MS}ms`,
+        );
+      }
+
       throw new XeroOAuthError(
         'NETWORK_ERROR',
         error instanceof Error ? error.message : 'Unable to reach Xero connections API',

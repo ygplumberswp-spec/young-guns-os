@@ -144,6 +144,8 @@ export type XeroListOptions = {
 type XeroClientOptions = {
   tenantId: string;
   getAccessToken: () => Promise<string>;
+  /** Called once before an auth retry — should force-refresh OAuth tokens when Xero returns 401. */
+  onAuthRetry?: () => Promise<void>;
   /** Per-request timeout for Xero HTTP calls. Default 20s. */
   requestTimeoutMs?: number;
 };
@@ -152,6 +154,8 @@ const API_BASE_URL = 'https://api.xero.com/api.xro/2.0';
 export const XERO_REQUEST_TIMEOUT_MS = 20_000;
 export const XERO_PAGE_SIZE = 100;
 export const XERO_RATE_LIMIT_MAX_RETRIES = 5;
+/** Live read paths honour at most one rate-limit retry within this wall-clock budget. */
+export const XERO_RATE_LIMIT_RETRY_BUDGET_MS = 30_000;
 export const XERO_RATE_LIMIT_BASE_DELAY_MS = 2_000;
 /**
  * Absolute page ceiling used only to detect a non-terminating pager. Reaching it raises
@@ -213,17 +217,21 @@ function timeoutSignal(timeoutMs: number): AbortSignal {
   return controller.signal;
 }
 
+export { timeoutSignal };
+
 export class XeroClient {
   private readonly tenantId: string;
   private readonly getAccessToken: () => Promise<string>;
+  private readonly onAuthRetry?: () => Promise<void>;
   private readonly requestTimeoutMs: number;
   private cachedAccessToken: string | null = null;
   private cachedSalesAccountCode: string | null = null;
   private cachedBankAccountCode: string | null = null;
 
-  constructor({ tenantId, getAccessToken, requestTimeoutMs }: XeroClientOptions) {
+  constructor({ tenantId, getAccessToken, onAuthRetry, requestTimeoutMs }: XeroClientOptions) {
     this.tenantId = tenantId.trim();
     this.getAccessToken = getAccessToken;
+    this.onAuthRetry = onAuthRetry;
     this.requestTimeoutMs = requestTimeoutMs ?? XERO_REQUEST_TIMEOUT_MS;
   }
 
@@ -674,19 +682,29 @@ export class XeroClient {
     modifiedSince?: string | null,
   ): Promise<unknown> {
     let attempt = 0;
+    let retryBudgetRemainingMs = XERO_RATE_LIMIT_RETRY_BUDGET_MS;
 
     while (attempt <= XERO_RATE_LIMIT_MAX_RETRIES) {
       attempt += 1;
 
       try {
-        return await this.apiRequestOnce(method, path, body, modifiedSince);
+        return await this.apiRequestOnce(method, path, body, modifiedSince, attempt === 1);
       } catch (error) {
         if (
           error instanceof XeroError &&
           error.code === 'RATE_LIMIT' &&
           attempt <= XERO_RATE_LIMIT_MAX_RETRIES
         ) {
-          await sleep(error.retryAfterMs ?? resolveRateLimitDelayMs(null, attempt));
+          const delayMs = error.retryAfterMs ?? resolveRateLimitDelayMs(null, attempt);
+          if (delayMs > retryBudgetRemainingMs) {
+            throw new XeroError(
+              'RATE_LIMIT',
+              `Xero rate limit retry budget exhausted (${XERO_RATE_LIMIT_RETRY_BUDGET_MS}ms)`,
+              retryBudgetRemainingMs,
+            );
+          }
+          retryBudgetRemainingMs -= delayMs;
+          await sleep(delayMs);
           continue;
         }
 
@@ -702,6 +720,7 @@ export class XeroClient {
     path: string,
     body?: unknown,
     modifiedSince?: string | null,
+    allowAuthRetry = true,
   ): Promise<unknown> {
     const accessToken = await this.fetchAccessToken();
     const url = `${API_BASE_URL}${path.startsWith('/') ? path : `/${path}`}`;
@@ -740,7 +759,22 @@ export class XeroClient {
       );
     }
 
-    if (response.status === 401 || response.status === 403) {
+    if (response.status === 401) {
+      if (allowAuthRetry) {
+        this.cachedAccessToken = null;
+        if (this.onAuthRetry) {
+          await this.onAuthRetry();
+        }
+        return this.apiRequestOnce(method, path, body, modifiedSince, false);
+      }
+
+      throw new XeroError(
+        'AUTH_FAILED',
+        'Xero rejected the request after one auth retry. Verify the tenant ID and granted scopes.',
+      );
+    }
+
+    if (response.status === 403) {
       throw new XeroError(
         'AUTH_FAILED',
         'Xero rejected the request. Verify the tenant ID and granted scopes.',
