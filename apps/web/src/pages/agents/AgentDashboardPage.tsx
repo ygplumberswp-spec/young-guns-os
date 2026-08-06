@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { useMemo, useState } from 'react';
 import { Link } from 'wouter';
-import { Button, EmptyState, LoadingState, PageHeader, Panel } from '@titan/ui';
+import { Button, EmptyState, LoadingState, Panel } from '@titan/ui';
 import type {
   AgentProfileSummary,
   AgentRegistryEntry,
@@ -217,7 +218,7 @@ export function AgentDashboardPage() {
             />
             {canManage ? (
               <Link href="/aura/capabilities/create">
-                <Button size="sm">Create capability</Button>
+                <Button size="sm">Create Capability</Button>
               </Link>
             ) : null}
             <Link href="/aura">
@@ -230,17 +231,17 @@ export function AgentDashboardPage() {
       />
       <AgentsNav />
 
-      {isLoading ? <LoadingState label="Loading AURA capabilities…" /> : null}
+      {isLoading ? <LoadingState label="Loading AURA Capabilities…" /> : null}
 
       {stats ? (
         <section className="capability-summary">
           <div className="stat-grid">
-            <Panel title="AURA status">{aiConfigured ? 'Ready' : 'Provider required'}</Panel>
-            <Panel title="AI provider">{aiConfigured ? 'Configured' : 'Not configured'}</Panel>
-            <Panel title="Active capabilities">{activeGroups + activeCustomCount}</Panel>
-            <Panel title="Needs setup">{needsSetupGroups}</Panel>
-            <Panel title="Approval mode">Ask before external actions</Panel>
-            <Panel title="Configured profiles">{stats.configuredProfileCount}</Panel>
+            <Panel title="AURA Status">{aiConfigured ? 'Ready' : 'Provider required'}</Panel>
+            <Panel title="AI Provider">{aiConfigured ? 'Configured' : 'Not configured'}</Panel>
+            <Panel title="Active Capabilities">{activeGroups + activeCustomCount}</Panel>
+            <Panel title="Needs Setup">{needsSetupGroups}</Panel>
+            <Panel title="Approval Mode">Ask before external actions</Panel>
+            <Panel title="Configured Profiles">{stats.configuredProfileCount}</Panel>
           </div>
         </section>
       ) : null}
@@ -265,11 +266,11 @@ export function AgentDashboardPage() {
 
       {!aiConfigured ? (
         <EmptyState
-          title="AI provider not configured"
+          title="AI Provider Not Configured"
           description="Configure an AI provider before AURA can coordinate specialist capabilities."
           action={
             <Link href="/integrations">
-              <Button variant="secondary">Integration settings</Button>
+              <Button variant="secondary">Integration Settings</Button>
             </Link>
           }
         />
@@ -288,7 +289,7 @@ export function AgentDashboardPage() {
 
           {advancedOpen ? (
             <div className="integrations-advanced__content">
-              <Panel title="Agent registry">
+              <Panel title="Agent Registry">
                 <p className="page-muted">
                   Individual agent profiles, tool grants and execution rules. AURA maintains safe
                   defaults — adjust only when required.
@@ -314,7 +315,7 @@ export function AgentDashboardPage() {
               </Panel>
 
               {profiles.length > 0 ? (
-                <Panel title="Configured profiles">
+                <Panel title="Configured Profiles">
                   <div className="agents-table-wrap">
                     <table className="agents-table">
                       <thead>
@@ -345,7 +346,7 @@ export function AgentDashboardPage() {
               ) : null}
 
               {tenantCapabilities.length > 0 ? (
-                <Panel title="Tenant capabilities">
+                <Panel title="Tenant Capabilities">
                   <p className="page-muted">
                     Custom capabilities created for this business. Each entry is tenant-scoped with
                     version history and audit logging.

@@ -1,0 +1,2805 @@
+{
+  "totalUniqueAgents": 307,
+  "recoveredFromCommit": "363111f5df0f0ffa6e06e915320b4a88a0824aad",
+  "departmentTotals": {
+    "AURA": 1,
+    "EXEC": 20,
+    "FIN": 19,
+    "QS": 17,
+    "OPS": 17,
+    "CRM": 22,
+    "COM": 16,
+    "MKT": 31,
+    "CRE": 14,
+    "VID": 20,
+    "HR": 20,
+    "LEG": 16,
+    "SW": 26,
+    "DAT": 10,
+    "INV": 17,
+    "FLT": 13,
+    "SaaS": 14,
+    "AUD": 14
+  },
+  "implementationTotals": {
+    "Partial": 21,
+    "Missing": 283,
+    "Provider-blocked": 3
+  },
+  "activationTotals": {
+    "Supervised": 1,
+    "Defined": 283,
+    "Shadow mode": 20,
+    "Planned": 3
+  },
+  "statusTotals": {
+    "Partial": 21,
+    "Missing": 283,
+    "Provider-blocked": 3
+  },
+  "agents": [
+    {
+      "id": "AURA-001",
+      "dept": "AURA",
+      "name": "AURA Central Intelligence",
+      "registryKey": "decision_intelligence",
+      "implementationStatus": "Partial",
+      "activationLifecycleStatus": "Supervised",
+      "status": "Partial"
+    },
+    {
+      "id": "EXEC-001",
+      "dept": "EXEC",
+      "name": "Chief Executive Officer Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "EXEC-002",
+      "dept": "EXEC",
+      "name": "Chief Operating Officer Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "EXEC-003",
+      "dept": "EXEC",
+      "name": "Chief Financial Officer Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "EXEC-004",
+      "dept": "EXEC",
+      "name": "Chief Technology Officer Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "EXEC-005",
+      "dept": "EXEC",
+      "name": "Chief Product Officer Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "EXEC-006",
+      "dept": "EXEC",
+      "name": "Chief Data Officer Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "EXEC-007",
+      "dept": "EXEC",
+      "name": "Executive Command Agent",
+      "registryKey": "executive",
+      "implementationStatus": "Partial",
+      "activationLifecycleStatus": "Shadow mode",
+      "status": "Partial"
+    },
+    {
+      "id": "EXEC-008",
+      "dept": "EXEC",
+      "name": "Daily Owner Briefing Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "EXEC-009",
+      "dept": "EXEC",
+      "name": "Business Coach Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "EXEC-010",
+      "dept": "EXEC",
+      "name": "Business Strategist Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "EXEC-011",
+      "dept": "EXEC",
+      "name": "Business Analyst Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "EXEC-012",
+      "dept": "EXEC",
+      "name": "Business Development Specialist",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "EXEC-013",
+      "dept": "EXEC",
+      "name": "Market Research Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "EXEC-014",
+      "dept": "EXEC",
+      "name": "Competitor Intelligence Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "EXEC-015",
+      "dept": "EXEC",
+      "name": "Profit Improvement Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "EXEC-016",
+      "dept": "EXEC",
+      "name": "Risk and Opportunity Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "EXEC-017",
+      "dept": "EXEC",
+      "name": "Programme Manager Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "EXEC-018",
+      "dept": "EXEC",
+      "name": "Senior Project Manager Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "EXEC-019",
+      "dept": "EXEC",
+      "name": "Executive Assistant Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "EXEC-020",
+      "dept": "EXEC",
+      "name": "Administrative Manager Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "FIN-001",
+      "dept": "FIN",
+      "name": "Chartered Accountant-Level Finance Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "FIN-002",
+      "dept": "FIN",
+      "name": "Management Accountant Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "FIN-003",
+      "dept": "FIN",
+      "name": "Bookkeeper Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "FIN-004",
+      "dept": "FIN",
+      "name": "Financial Controller Agent",
+      "registryKey": "finance",
+      "implementationStatus": "Partial",
+      "activationLifecycleStatus": "Shadow mode",
+      "status": "Partial"
+    },
+    {
+      "id": "FIN-005",
+      "dept": "FIN",
+      "name": "Tax and Compliance Preparation Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "FIN-006",
+      "dept": "FIN",
+      "name": "Xero Reconciliation Agent",
+      "registryKey": "finance",
+      "implementationStatus": "Partial",
+      "activationLifecycleStatus": "Shadow mode",
+      "status": "Partial"
+    },
+    {
+      "id": "FIN-007",
+      "dept": "FIN",
+      "name": "Cash-Flow Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "FIN-008",
+      "dept": "FIN",
+      "name": "Financial Forecasting Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "FIN-009",
+      "dept": "FIN",
+      "name": "Budgeting Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "FIN-010",
+      "dept": "FIN",
+      "name": "Invoice Follow-Up Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "FIN-011",
+      "dept": "FIN",
+      "name": "Debtors and Collections Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "FIN-012",
+      "dept": "FIN",
+      "name": "Credit Risk Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "FIN-013",
+      "dept": "FIN",
+      "name": "Job Costing and Margin Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "FIN-014",
+      "dept": "FIN",
+      "name": "Payroll Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "FIN-015",
+      "dept": "FIN",
+      "name": "Fraud and Financial Anomaly Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "FIN-016",
+      "dept": "FIN",
+      "name": "Project Profitability Controller",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "FIN-017",
+      "dept": "FIN",
+      "name": "Pricing Director Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "FIN-018",
+      "dept": "FIN",
+      "name": "Pricebook Intelligence Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "FIN-019",
+      "dept": "FIN",
+      "name": "Contract Pricing Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "QS-001",
+      "dept": "QS",
+      "name": "Quantity Surveyor Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "QS-002",
+      "dept": "QS",
+      "name": "Floor Plan Take-Off Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "QS-003",
+      "dept": "QS",
+      "name": "Plumbing Estimator Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "QS-004",
+      "dept": "QS",
+      "name": "General Trade Estimator Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "QS-005",
+      "dept": "QS",
+      "name": "BOQ Generation Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "QS-006",
+      "dept": "QS",
+      "name": "Tender and Commercial Quote Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "QS-007",
+      "dept": "QS",
+      "name": "Tender Compliance Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "QS-008",
+      "dept": "QS",
+      "name": "Cost Engineering Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "QS-009",
+      "dept": "QS",
+      "name": "Variation and Claims Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "QS-010",
+      "dept": "QS",
+      "name": "Site Survey Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "QS-011",
+      "dept": "QS",
+      "name": "Project Cost Controller",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "QS-012",
+      "dept": "QS",
+      "name": "Quote Quality Controller",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "QS-013",
+      "dept": "QS",
+      "name": "Supplier Price-Hunting Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "QS-014",
+      "dept": "QS",
+      "name": "Market Pricing Analyst",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "QS-015",
+      "dept": "QS",
+      "name": "Competitor Pricing Research Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "QS-016",
+      "dept": "QS",
+      "name": "Procurement Cost Analyst",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "QS-017",
+      "dept": "QS",
+      "name": "Insurance Estimate Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "OPS-001",
+      "dept": "OPS",
+      "name": "Operations Manager Agent",
+      "registryKey": "operations",
+      "implementationStatus": "Partial",
+      "activationLifecycleStatus": "Shadow mode",
+      "status": "Partial"
+    },
+    {
+      "id": "OPS-002",
+      "dept": "OPS",
+      "name": "Dispatch Coordinator Agent",
+      "registryKey": "operations",
+      "implementationStatus": "Partial",
+      "activationLifecycleStatus": "Shadow mode",
+      "status": "Partial"
+    },
+    {
+      "id": "OPS-003",
+      "dept": "OPS",
+      "name": "Scheduling Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "OPS-004",
+      "dept": "OPS",
+      "name": "Emergency Triage Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "OPS-005",
+      "dept": "OPS",
+      "name": "Capacity Planning Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "OPS-006",
+      "dept": "OPS",
+      "name": "Job Progress Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "OPS-007",
+      "dept": "OPS",
+      "name": "Service Delivery Quality Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "OPS-008",
+      "dept": "OPS",
+      "name": "Recurring Maintenance Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "OPS-009",
+      "dept": "OPS",
+      "name": "Technician ETA Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "OPS-010",
+      "dept": "OPS",
+      "name": "Field Execution Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "OPS-011",
+      "dept": "OPS",
+      "name": "Variation Management Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "OPS-012",
+      "dept": "OPS",
+      "name": "Job Completion Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "OPS-013",
+      "dept": "OPS",
+      "name": "Preventive Maintenance Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "OPS-014",
+      "dept": "OPS",
+      "name": "Equipment Lifecycle Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "OPS-015",
+      "dept": "OPS",
+      "name": "Site Progress Verification Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "OPS-016",
+      "dept": "OPS",
+      "name": "Snag List and Handover Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "OPS-017",
+      "dept": "OPS",
+      "name": "Subcontractor Management Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "CRM-001",
+      "dept": "CRM",
+      "name": "Sales Director Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "CRM-002",
+      "dept": "CRM",
+      "name": "Sales Specialist Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "CRM-003",
+      "dept": "CRM",
+      "name": "Lead Qualification Agent",
+      "registryKey": "lead_generation",
+      "implementationStatus": "Partial",
+      "activationLifecycleStatus": "Shadow mode",
+      "status": "Partial"
+    },
+    {
+      "id": "CRM-004",
+      "dept": "CRM",
+      "name": "Sales Follow-Up Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "CRM-005",
+      "dept": "CRM",
+      "name": "Quote Follow-Up Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "CRM-006",
+      "dept": "CRM",
+      "name": "Objection Handling Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "CRM-007",
+      "dept": "CRM",
+      "name": "Commercial Negotiation Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "CRM-008",
+      "dept": "CRM",
+      "name": "Customer Support Manager",
+      "registryKey": "customer_support",
+      "implementationStatus": "Partial",
+      "activationLifecycleStatus": "Shadow mode",
+      "status": "Partial"
+    },
+    {
+      "id": "CRM-009",
+      "dept": "CRM",
+      "name": "Customer Service Agent",
+      "registryKey": "sales",
+      "implementationStatus": "Partial",
+      "activationLifecycleStatus": "Shadow mode",
+      "status": "Partial"
+    },
+    {
+      "id": "CRM-010",
+      "dept": "CRM",
+      "name": "Customer Success Agent",
+      "registryKey": "customer_experience",
+      "implementationStatus": "Partial",
+      "activationLifecycleStatus": "Shadow mode",
+      "status": "Partial"
+    },
+    {
+      "id": "CRM-011",
+      "dept": "CRM",
+      "name": "Customer Experience Director",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "CRM-012",
+      "dept": "CRM",
+      "name": "Customer Journey Designer",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "CRM-013",
+      "dept": "CRM",
+      "name": "Complaint Resolution Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "CRM-014",
+      "dept": "CRM",
+      "name": "Service Recovery Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "CRM-015",
+      "dept": "CRM",
+      "name": "Customer Escalation Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "CRM-016",
+      "dept": "CRM",
+      "name": "Customer Retention Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "CRM-017",
+      "dept": "CRM",
+      "name": "Customer Churn Prediction Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "CRM-018",
+      "dept": "CRM",
+      "name": "Review and Referral Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "CRM-019",
+      "dept": "CRM",
+      "name": "Loyalty Programme Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "CRM-020",
+      "dept": "CRM",
+      "name": "Membership/HomeShield Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "CRM-021",
+      "dept": "CRM",
+      "name": "VIP Customer Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "CRM-022",
+      "dept": "CRM",
+      "name": "Reputation Crisis Manager",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "COM-001",
+      "dept": "COM",
+      "name": "AI Phone Receptionist",
+      "registryKey": "voice_receptionist",
+      "implementationStatus": "Partial",
+      "activationLifecycleStatus": "Shadow mode",
+      "status": "Partial"
+    },
+    {
+      "id": "COM-002",
+      "dept": "COM",
+      "name": "Receptionist Training Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "COM-003",
+      "dept": "COM",
+      "name": "Call Quality Reviewer",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "COM-004",
+      "dept": "COM",
+      "name": "WhatsApp Business Agent",
+      "registryKey": "communications",
+      "implementationStatus": "Partial",
+      "activationLifecycleStatus": "Shadow mode",
+      "status": "Partial"
+    },
+    {
+      "id": "COM-005",
+      "dept": "COM",
+      "name": "SMS Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "COM-006",
+      "dept": "COM",
+      "name": "Email Inbox Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "COM-007",
+      "dept": "COM",
+      "name": "Facebook Messenger Agent",
+      "registryKey": null,
+      "implementationStatus": "Provider-blocked",
+      "activationLifecycleStatus": "Planned",
+      "status": "Provider-blocked"
+    },
+    {
+      "id": "COM-008",
+      "dept": "COM",
+      "name": "Unified Communications Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "COM-009",
+      "dept": "COM",
+      "name": "Conversation Compliance Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "COM-010",
+      "dept": "COM",
+      "name": "Translation and Language Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "COM-011",
+      "dept": "COM",
+      "name": "Afrikaans Communications Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "COM-012",
+      "dept": "COM",
+      "name": "English Communications Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "COM-013",
+      "dept": "COM",
+      "name": "Tone and Brand Voice Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "COM-014",
+      "dept": "COM",
+      "name": "Message Delivery Monitoring Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "COM-015",
+      "dept": "COM",
+      "name": "Spam and Abuse Protection Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "COM-016",
+      "dept": "COM",
+      "name": "Escalation Routing Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "MKT-001",
+      "dept": "MKT",
+      "name": "Marketing Director Agent",
+      "registryKey": "marketing",
+      "implementationStatus": "Partial",
+      "activationLifecycleStatus": "Shadow mode",
+      "status": "Partial"
+    },
+    {
+      "id": "MKT-002",
+      "dept": "MKT",
+      "name": "Marketing Specialist Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "MKT-003",
+      "dept": "MKT",
+      "name": "Marketing Analytics Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "MKT-004",
+      "dept": "MKT",
+      "name": "Advertising and Campaign Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "MKT-005",
+      "dept": "MKT",
+      "name": "Local SEO Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "MKT-006",
+      "dept": "MKT",
+      "name": "Google Business Profile Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "MKT-007",
+      "dept": "MKT",
+      "name": "Social Media Agent",
+      "registryKey": null,
+      "implementationStatus": "Provider-blocked",
+      "activationLifecycleStatus": "Planned",
+      "status": "Provider-blocked"
+    },
+    {
+      "id": "MKT-008",
+      "dept": "MKT",
+      "name": "Community Management Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "MKT-009",
+      "dept": "MKT",
+      "name": "Content Director Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "MKT-010",
+      "dept": "MKT",
+      "name": "Content Strategy Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "MKT-011",
+      "dept": "MKT",
+      "name": "Content Calendar Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "MKT-012",
+      "dept": "MKT",
+      "name": "Copywriting Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "MKT-013",
+      "dept": "MKT",
+      "name": "Advertising Copy Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "MKT-014",
+      "dept": "MKT",
+      "name": "SEO Content Writer",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "MKT-015",
+      "dept": "MKT",
+      "name": "Blog and Website Writer",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "MKT-016",
+      "dept": "MKT",
+      "name": "Email Campaign Writer",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "MKT-017",
+      "dept": "MKT",
+      "name": "Case Study Writer",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "MKT-018",
+      "dept": "MKT",
+      "name": "Customer Education Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "MKT-019",
+      "dept": "MKT",
+      "name": "Campaign Planning Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "MKT-020",
+      "dept": "MKT",
+      "name": "Content Approval Coordinator",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "MKT-021",
+      "dept": "MKT",
+      "name": "Publishing and Scheduling Agent",
+      "registryKey": null,
+      "implementationStatus": "Provider-blocked",
+      "activationLifecycleStatus": "Planned",
+      "status": "Provider-blocked"
+    },
+    {
+      "id": "MKT-022",
+      "dept": "MKT",
+      "name": "Global Trend Research Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "MKT-023",
+      "dept": "MKT",
+      "name": "Cape Town Trend Research Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "MKT-024",
+      "dept": "MKT",
+      "name": "Industry Trend Analyst",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "MKT-025",
+      "dept": "MKT",
+      "name": "Social Media Trend Hunter",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "MKT-026",
+      "dept": "MKT",
+      "name": "Viral Content Research Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "MKT-027",
+      "dept": "MKT",
+      "name": "Customer Behaviour Research Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "MKT-028",
+      "dept": "MKT",
+      "name": "Competitor Content Analyst",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "MKT-029",
+      "dept": "MKT",
+      "name": "Platform Algorithm Research Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "MKT-030",
+      "dept": "MKT",
+      "name": "Seasonal Campaign Research Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "MKT-031",
+      "dept": "MKT",
+      "name": "Emerging Technology Research Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "CRE-001",
+      "dept": "CRE",
+      "name": "Creative Director Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "CRE-002",
+      "dept": "CRE",
+      "name": "Senior Graphic Designer Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "CRE-003",
+      "dept": "CRE",
+      "name": "Brand Identity Designer Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "CRE-004",
+      "dept": "CRE",
+      "name": "Social Media Designer Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "CRE-005",
+      "dept": "CRE",
+      "name": "Advertising Designer Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "CRE-006",
+      "dept": "CRE",
+      "name": "Document and Proposal Designer Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "CRE-007",
+      "dept": "CRE",
+      "name": "Web and UI Designer Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "CRE-008",
+      "dept": "CRE",
+      "name": "Presentation Designer Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "CRE-009",
+      "dept": "CRE",
+      "name": "Infographic Designer Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "CRE-010",
+      "dept": "CRE",
+      "name": "Image Retouching and Quality Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "CRE-011",
+      "dept": "CRE",
+      "name": "Brand Consistency Reviewer Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "CRE-012",
+      "dept": "CRE",
+      "name": "Photography Director Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "CRE-013",
+      "dept": "CRE",
+      "name": "Shot List Planner Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "CRE-014",
+      "dept": "CRE",
+      "name": "On-Site Content Coordinator Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "VID-001",
+      "dept": "VID",
+      "name": "Video Creative Director Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "VID-002",
+      "dept": "VID",
+      "name": "Video Content Strategist Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "VID-003",
+      "dept": "VID",
+      "name": "Scriptwriting Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "VID-004",
+      "dept": "VID",
+      "name": "Hook and Storytelling Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "VID-005",
+      "dept": "VID",
+      "name": "Short-Form Video Creator Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "VID-006",
+      "dept": "VID",
+      "name": "Long-Form Video Creator Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "VID-007",
+      "dept": "VID",
+      "name": "Professional Video Editor Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "VID-008",
+      "dept": "VID",
+      "name": "Motion Graphics Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "VID-009",
+      "dept": "VID",
+      "name": "Animation Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "VID-010",
+      "dept": "VID",
+      "name": "Voice-Over Planning Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "VID-011",
+      "dept": "VID",
+      "name": "Caption and Subtitle Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "VID-012",
+      "dept": "VID",
+      "name": "Thumbnail Designer Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "VID-013",
+      "dept": "VID",
+      "name": "Podcast and Audio Editor Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "VID-014",
+      "dept": "VID",
+      "name": "Audio Engineer Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "VID-015",
+      "dept": "VID",
+      "name": "Colour-Grading Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "VID-016",
+      "dept": "VID",
+      "name": "Visual Effects Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "VID-017",
+      "dept": "VID",
+      "name": "Video Quality Controller Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "VID-018",
+      "dept": "VID",
+      "name": "Content Repurposing Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "VID-019",
+      "dept": "VID",
+      "name": "Content Rights and Licensing Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "VID-020",
+      "dept": "VID",
+      "name": "Creative Performance Analyst Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "HR-001",
+      "dept": "HR",
+      "name": "HR Manager Agent",
+      "registryKey": "workforce_intelligence",
+      "implementationStatus": "Partial",
+      "activationLifecycleStatus": "Shadow mode",
+      "status": "Partial"
+    },
+    {
+      "id": "HR-002",
+      "dept": "HR",
+      "name": "Recruitment Specialist Agent",
+      "registryKey": "recruiting",
+      "implementationStatus": "Partial",
+      "activationLifecycleStatus": "Shadow mode",
+      "status": "Partial"
+    },
+    {
+      "id": "HR-003",
+      "dept": "HR",
+      "name": "Employee Relations Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "HR-004",
+      "dept": "HR",
+      "name": "Performance Management Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "HR-005",
+      "dept": "HR",
+      "name": "Attendance Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "HR-006",
+      "dept": "HR",
+      "name": "Payroll and Overtime Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "HR-007",
+      "dept": "HR",
+      "name": "Technician Performance Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "HR-008",
+      "dept": "HR",
+      "name": "Training and Development Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "HR-009",
+      "dept": "HR",
+      "name": "Leadership Development Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "HR-010",
+      "dept": "HR",
+      "name": "Employee Onboarding Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "HR-011",
+      "dept": "HR",
+      "name": "Skills Assessment Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "HR-012",
+      "dept": "HR",
+      "name": "Technical Training Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "HR-013",
+      "dept": "HR",
+      "name": "Health and Safety Training Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "HR-014",
+      "dept": "HR",
+      "name": "Customer Service Coach Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "HR-015",
+      "dept": "HR",
+      "name": "Sales Coach Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "HR-016",
+      "dept": "HR",
+      "name": "Knowledge Manager Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "HR-017",
+      "dept": "HR",
+      "name": "SOP Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "HR-018",
+      "dept": "HR",
+      "name": "Knowledge Quality Reviewer Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "HR-019",
+      "dept": "HR",
+      "name": "Document and Filing Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "HR-020",
+      "dept": "HR",
+      "name": "Compliance Administration Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "LEG-001",
+      "dept": "LEG",
+      "name": "Legal Counsel Agent",
+      "registryKey": "legal_compliance",
+      "implementationStatus": "Partial",
+      "activationLifecycleStatus": "Shadow mode",
+      "status": "Partial"
+    },
+    {
+      "id": "LEG-002",
+      "dept": "LEG",
+      "name": "Contract Review Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "LEG-003",
+      "dept": "LEG",
+      "name": "Employment Compliance Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "LEG-004",
+      "dept": "LEG",
+      "name": "Consumer Protection Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "LEG-005",
+      "dept": "LEG",
+      "name": "POPIA and Privacy Officer Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "LEG-006",
+      "dept": "LEG",
+      "name": "Commercial Risk Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "LEG-007",
+      "dept": "LEG",
+      "name": "Plumbing and Trade Compliance Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "LEG-008",
+      "dept": "LEG",
+      "name": "Health and Safety Officer Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "LEG-009",
+      "dept": "LEG",
+      "name": "Incident Investigation Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "LEG-010",
+      "dept": "LEG",
+      "name": "Insurance Claims Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "LEG-011",
+      "dept": "LEG",
+      "name": "Occupational Health Compliance Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "LEG-012",
+      "dept": "LEG",
+      "name": "Municipal Permit and Approval Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "LEG-013",
+      "dept": "LEG",
+      "name": "Trade Certification Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "LEG-014",
+      "dept": "LEG",
+      "name": "Environmental Compliance Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "LEG-015",
+      "dept": "LEG",
+      "name": "Emergency and Disaster Response Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "LEG-016",
+      "dept": "LEG",
+      "name": "Audit and Governance Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "SW-001",
+      "dept": "SW",
+      "name": "AURA Developer Coordinator",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "SW-002",
+      "dept": "SW",
+      "name": "Software Engineering Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "SW-003",
+      "dept": "SW",
+      "name": "Frontend Engineering Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "SW-004",
+      "dept": "SW",
+      "name": "Backend Engineering Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "SW-005",
+      "dept": "SW",
+      "name": "Mobile App Engineer Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "SW-006",
+      "dept": "SW",
+      "name": "Database Engineering Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "SW-007",
+      "dept": "SW",
+      "name": "IT Systems Engineer Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "SW-008",
+      "dept": "SW",
+      "name": "Cloud and Infrastructure Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "SW-009",
+      "dept": "SW",
+      "name": "Integration Engineer Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "SW-010",
+      "dept": "SW",
+      "name": "DevOps Engineer Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "SW-011",
+      "dept": "SW",
+      "name": "Site Reliability Engineer Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "SW-012",
+      "dept": "SW",
+      "name": "Cybersecurity Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "SW-013",
+      "dept": "SW",
+      "name": "AI Systems Engineer Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "SW-014",
+      "dept": "SW",
+      "name": "Prompt and Agent Engineer Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "SW-015",
+      "dept": "SW",
+      "name": "Architecture Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "SW-016",
+      "dept": "SW",
+      "name": "Product Manager Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "SW-017",
+      "dept": "SW",
+      "name": "Product Owner Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "SW-018",
+      "dept": "SW",
+      "name": "UX Research Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "SW-019",
+      "dept": "SW",
+      "name": "Accessibility Testing Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "SW-020",
+      "dept": "SW",
+      "name": "Automated Testing Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "SW-021",
+      "dept": "SW",
+      "name": "Integration Testing Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "SW-022",
+      "dept": "SW",
+      "name": "Release Manager Agent",
+      "registryKey": "release_manager",
+      "implementationStatus": "Partial",
+      "activationLifecycleStatus": "Shadow mode",
+      "status": "Partial"
+    },
+    {
+      "id": "SW-023",
+      "dept": "SW",
+      "name": "Technical Documentation Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "SW-024",
+      "dept": "SW",
+      "name": "System Health and Self-Healing Agent",
+      "registryKey": "platform_health",
+      "implementationStatus": "Partial",
+      "activationLifecycleStatus": "Shadow mode",
+      "status": "Partial"
+    },
+    {
+      "id": "SW-025",
+      "dept": "SW",
+      "name": "Disaster Recovery Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "SW-026",
+      "dept": "SW",
+      "name": "Technical Support Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "DAT-001",
+      "dept": "DAT",
+      "name": "Data Analyst Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "DAT-002",
+      "dept": "DAT",
+      "name": "Analytics Engineer Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "DAT-003",
+      "dept": "DAT",
+      "name": "Data Quality Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "DAT-004",
+      "dept": "DAT",
+      "name": "Data Governance Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "DAT-005",
+      "dept": "DAT",
+      "name": "Master Data Management Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "DAT-006",
+      "dept": "DAT",
+      "name": "CRM Data-Cleaning Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "DAT-007",
+      "dept": "DAT",
+      "name": "Forecasting and Predictive Analytics Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "DAT-008",
+      "dept": "DAT",
+      "name": "KPI Design Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "DAT-009",
+      "dept": "DAT",
+      "name": "Report Automation Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "DAT-010",
+      "dept": "DAT",
+      "name": "Business Intelligence Agent",
+      "registryKey": "business_intelligence",
+      "implementationStatus": "Partial",
+      "activationLifecycleStatus": "Shadow mode",
+      "status": "Partial"
+    },
+    {
+      "id": "INV-001",
+      "dept": "INV",
+      "name": "Inventory Control Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "INV-002",
+      "dept": "INV",
+      "name": "Warehouse Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "INV-003",
+      "dept": "INV",
+      "name": "Tool Tracking Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "INV-004",
+      "dept": "INV",
+      "name": "Procurement Agent",
+      "registryKey": "procurement",
+      "implementationStatus": "Partial",
+      "activationLifecycleStatus": "Shadow mode",
+      "status": "Partial"
+    },
+    {
+      "id": "INV-005",
+      "dept": "INV",
+      "name": "Supplier Price Comparison Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "INV-006",
+      "dept": "INV",
+      "name": "Vendor Relationship Manager Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "INV-007",
+      "dept": "INV",
+      "name": "Supplier Contract Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "INV-008",
+      "dept": "INV",
+      "name": "Purchase Approval Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "INV-009",
+      "dept": "INV",
+      "name": "Demand Forecasting Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "INV-010",
+      "dept": "INV",
+      "name": "Stock Replenishment Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "INV-011",
+      "dept": "INV",
+      "name": "Dead-Stock Detection Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "INV-012",
+      "dept": "INV",
+      "name": "Tool Maintenance Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "INV-013",
+      "dept": "INV",
+      "name": "Tool Loss Investigation Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "INV-014",
+      "dept": "INV",
+      "name": "Asset Lifecycle Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "INV-015",
+      "dept": "INV",
+      "name": "Facilities Manager Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "INV-016",
+      "dept": "INV",
+      "name": "Warehouse Layout Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "INV-017",
+      "dept": "INV",
+      "name": "Delivery and Logistics Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "FLT-001",
+      "dept": "FLT",
+      "name": "Fleet Manager Agent",
+      "registryKey": "asset_intelligence",
+      "implementationStatus": "Partial",
+      "activationLifecycleStatus": "Shadow mode",
+      "status": "Partial"
+    },
+    {
+      "id": "FLT-002",
+      "dept": "FLT",
+      "name": "Google Maps and Routing Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "FLT-003",
+      "dept": "FLT",
+      "name": "Cartrack Telemetry Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "FLT-004",
+      "dept": "FLT",
+      "name": "Vehicle Maintenance Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "FLT-005",
+      "dept": "FLT",
+      "name": "Driver Behaviour Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "FLT-006",
+      "dept": "FLT",
+      "name": "Fuel Consumption Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "FLT-007",
+      "dept": "FLT",
+      "name": "Vehicle Utilisation Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "FLT-008",
+      "dept": "FLT",
+      "name": "Accident and Incident Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "FLT-009",
+      "dept": "FLT",
+      "name": "Licence and Registration Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "FLT-010",
+      "dept": "FLT",
+      "name": "Fleet Insurance Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "FLT-011",
+      "dept": "FLT",
+      "name": "Route Efficiency Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "FLT-012",
+      "dept": "FLT",
+      "name": "Vehicle Replacement Planning Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "FLT-013",
+      "dept": "FLT",
+      "name": "Driver Coaching Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "SaaS-001",
+      "dept": "SaaS",
+      "name": "Tenant Onboarding Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "SaaS-002",
+      "dept": "SaaS",
+      "name": "Subscription and Billing Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "SaaS-003",
+      "dept": "SaaS",
+      "name": "SaaS Customer Success Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "SaaS-004",
+      "dept": "SaaS",
+      "name": "Platform Usage and Health Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "SaaS-005",
+      "dept": "SaaS",
+      "name": "Partnerships Director Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "SaaS-006",
+      "dept": "SaaS",
+      "name": "Franchise Development Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "SaaS-007",
+      "dept": "SaaS",
+      "name": "Corporate Accounts Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "SaaS-008",
+      "dept": "SaaS",
+      "name": "Property Manager Relationship Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "SaaS-009",
+      "dept": "SaaS",
+      "name": "Construction Partnership Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "SaaS-010",
+      "dept": "SaaS",
+      "name": "Supplier Partnership Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "SaaS-011",
+      "dept": "SaaS",
+      "name": "Geographic Expansion Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "SaaS-012",
+      "dept": "SaaS",
+      "name": "New Industry Research Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "SaaS-013",
+      "dept": "SaaS",
+      "name": "Acquisition and Merger Research Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "SaaS-014",
+      "dept": "SaaS",
+      "name": "Investor Relations Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "AUD-001",
+      "dept": "AUD",
+      "name": "Chief Audit Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "AUD-002",
+      "dept": "AUD",
+      "name": "Application Auditor",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "AUD-003",
+      "dept": "AUD",
+      "name": "Browser and User-Journey Auditor",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "AUD-004",
+      "dept": "AUD",
+      "name": "Role and Permission Auditor",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "AUD-005",
+      "dept": "AUD",
+      "name": "Tenant-Isolation Auditor",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "AUD-006",
+      "dept": "AUD",
+      "name": "Financial Data Auditor",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "AUD-007",
+      "dept": "AUD",
+      "name": "Integration Auditor",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "AUD-008",
+      "dept": "AUD",
+      "name": "Mobile and Responsive Auditor",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "AUD-009",
+      "dept": "AUD",
+      "name": "Accessibility Auditor",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "AUD-010",
+      "dept": "AUD",
+      "name": "Security and Privacy Auditor",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "AUD-011",
+      "dept": "AUD",
+      "name": "Data Quality Auditor",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "AUD-012",
+      "dept": "AUD",
+      "name": "Document and Compliance Auditor",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "AUD-013",
+      "dept": "AUD",
+      "name": "Performance and Reliability Auditor",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    },
+    {
+      "id": "AUD-014",
+      "dept": "AUD",
+      "name": "Acceptance Register Reconciliation Agent",
+      "registryKey": null,
+      "implementationStatus": "Missing",
+      "activationLifecycleStatus": "Defined",
+      "status": "Missing"
+    }
+  ]
+}

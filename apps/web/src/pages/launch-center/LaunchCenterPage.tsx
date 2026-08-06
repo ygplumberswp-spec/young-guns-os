@@ -1,5 +1,6 @@
+import { PageHeader } from '../../components/ux';
 import { useEffect, useMemo, useState } from 'react';
-import { Button, EmptyState, PageHeader, Panel, StatCard } from '@titan/ui';
+import { Button, EmptyState, Panel, StatCard } from '@titan/ui';
 import type { EnterpriseLaunchCenterDashboard } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import {
@@ -157,7 +158,7 @@ export function LaunchCenterPage() {
     return (
       <div className="p-6">
         <EmptyState
-          title="Access denied"
+          title="Access Denied"
           description="You do not have permission to view the launch center."
         />
       </div>
@@ -237,7 +238,7 @@ export function LaunchCenterPage() {
           </div>
           <Panel title="Summary">{dashboard.summary}</Panel>
           {readiness.criticalBlockerCount > 0 ? (
-            <Panel title="Critical blockers">
+            <Panel title="Critical Blockers">
               <p className="text-sm text-red-700">
                 Critical failures detected — production go-live is blocked until resolved.
               </p>
@@ -269,7 +270,7 @@ export function LaunchCenterPage() {
               </p>
             ) : (
               <EmptyState
-                title="No readiness scans"
+                title="No Readiness Scans"
                 description="Run an automated readiness scan using real platform data."
               />
             )}
@@ -277,7 +278,7 @@ export function LaunchCenterPage() {
           <Panel title="Check Results">
             {dashboard.latestCheckResults.length === 0 ? (
               <EmptyState
-                title="No check results"
+                title="No Check Results"
                 description="Run a readiness scan to evaluate authentication, RBAC, integrations, backup, and monitoring."
               />
             ) : (
@@ -343,7 +344,7 @@ export function LaunchCenterPage() {
           <Panel title="Recent Runs">
             {dashboard.acceptanceTestRuns.length === 0 ? (
               <EmptyState
-                title="No acceptance test runs"
+                title="No Acceptance Test Runs"
                 description="Run configurable acceptance test suites against real tenant data."
               />
             ) : (
@@ -364,7 +365,7 @@ export function LaunchCenterPage() {
         <Panel title="Integration Readiness">
           {dashboard.integrations.length === 0 ? (
             <EmptyState
-              title="No integrations"
+              title="No Integrations"
               description="Configure integrations via the Universal Connector Platform."
             />
           ) : (
@@ -428,7 +429,7 @@ export function LaunchCenterPage() {
           <Panel title="Go-Live Wizards">
             {dashboard.goLiveWizards.length === 0 ? (
               <EmptyState
-                title="No go-live wizards"
+                title="No Go-Live Wizards"
                 description="Create a guided go-live wizard with explicit owner approval before production."
               />
             ) : (
@@ -461,7 +462,7 @@ export function LaunchCenterPage() {
           <Panel title="Deployment Validations">
             {dashboard.deploymentValidations.length === 0 ? (
               <EmptyState
-                title="No validations"
+                title="No Validations"
                 description="Run post-deployment validation after go-live confirmation."
               />
             ) : (
@@ -483,7 +484,7 @@ export function LaunchCenterPage() {
           <Panel title="Rollback Plans">
             {dashboard.rollbackPlanLinks.length === 0 ? (
               <EmptyState
-                title="No rollback plans"
+                title="No Rollback Plans"
                 description="Rollback plans are synced from Business Continuity recovery plans."
               />
             ) : (
@@ -548,7 +549,7 @@ export function LaunchCenterPage() {
               </ul>
             ) : (
               <EmptyState
-                title="No readiness score"
+                title="No Readiness Score"
                 description="Run a readiness scan to generate a weighted deployment readiness score."
               />
             )}
@@ -562,7 +563,7 @@ export function LaunchCenterPage() {
             <p className="text-sm text-slate-500">Loading audit logs...</p>
           ) : auditLogs.length === 0 ? (
             <EmptyState
-              title="No audit logs"
+              title="No Audit Logs"
               description="Launch center actions are fully audited."
             />
           ) : (

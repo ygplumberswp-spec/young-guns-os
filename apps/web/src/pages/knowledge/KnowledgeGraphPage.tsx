@@ -1,5 +1,6 @@
+import { PageHeader } from '../../components/ux';
 import { useEffect, useMemo, useState } from 'react';
-import { Button, EmptyState, PageHeader, Panel, StatCard } from '@titan/ui';
+import { Button, EmptyState, Panel, StatCard } from '@titan/ui';
 import type {
   EnterpriseKnowledgeGraphDashboard,
   KnowledgeSemanticSearchResult,
@@ -152,7 +153,7 @@ export function KnowledgeGraphPage() {
         }
       />
 
-      <nav className="automation-nav" aria-label="Knowledge graph sections">
+      <nav className="automation-nav" aria-label="Knowledge Graph Sections">
         {tabs.map((tab) => (
           <button
             key={tab.id}
@@ -176,10 +177,10 @@ export function KnowledgeGraphPage() {
       {dashboard && activeTab === 'dashboard' ? (
         <>
           <section className="stat-grid">
-            <StatCard label="Graph entities" value={String(dashboard.entityCount)} />
+            <StatCard label="Graph Entities" value={String(dashboard.entityCount)} />
             <StatCard label="Relationships" value={String(dashboard.relationshipCount)} />
-            <StatCard label="Memory entries" value={String(dashboard.memoryEntryCount)} />
-            <StatCard label="Indexed records" value={String(dashboard.indexedCount)} />
+            <StatCard label="Memory Entries" value={String(dashboard.memoryEntryCount)} />
+            <StatCard label="Indexed Records" value={String(dashboard.indexedCount)} />
             <StatCard
               label="Coverage"
               value={
@@ -189,11 +190,11 @@ export function KnowledgeGraphPage() {
               }
             />
             <StatCard
-              label="Published articles"
+              label="Published Articles"
               value={String(dashboard.knowledgeStats.publishedArticleCount)}
             />
-            <StatCard label="Search activity" value={String(dashboard.searchActivityCount)} />
-            <StatCard label="Pending actions" value={String(dashboard.pendingActionCount)} />
+            <StatCard label="Search Activity" value={String(dashboard.searchActivityCount)} />
+            <StatCard label="Pending Actions" value={String(dashboard.pendingActionCount)} />
           </section>
           <p className="page-muted">{dashboard.summary}</p>
         </>
@@ -201,10 +202,10 @@ export function KnowledgeGraphPage() {
 
       {dashboard && activeTab === 'graph' ? (
         <div className="analytics-page__grid">
-          <Panel title="Indexed entities">
+          <Panel title="Indexed Entities">
             {dashboard.recentEntities.length === 0 ? (
               <EmptyState
-                title="No entities indexed"
+                title="No Entities Indexed"
                 description="Sync the graph to index real module data."
               />
             ) : (
@@ -254,10 +255,10 @@ export function KnowledgeGraphPage() {
               Search
             </Button>
           </form>
-          <Panel title="Search results">
+          <Panel title="Search Results">
             {searchResults.length === 0 ? (
               <EmptyState
-                title="No results yet"
+                title="No Results Yet"
                 description="Run a hybrid semantic search query."
               />
             ) : (
@@ -279,10 +280,10 @@ export function KnowledgeGraphPage() {
       ) : null}
 
       {dashboard && activeTab === 'memory' ? (
-        <Panel title="Organizational memory">
+        <Panel title="Organizational Memory">
           {dashboard.recentMemory.length === 0 ? (
             <EmptyState
-              title="No memory entries yet"
+              title="No Memory Entries Yet"
               description="Memory entries are created from real business records and user-authored content."
             />
           ) : (
@@ -318,10 +319,10 @@ export function KnowledgeGraphPage() {
               </Button>
             </div>
           ) : null}
-          <Panel title="AI knowledge intelligence">
+          <Panel title="AI Knowledge Intelligence">
             {dashboard.recommendations.length === 0 ? (
               <EmptyState
-                title="No recommendations yet"
+                title="No Recommendations Yet"
                 description="Generate recommendations when knowledge data is available."
               />
             ) : (

@@ -48,7 +48,7 @@ export function AuraConversationList({
               <button
                 type="button"
                 className="aura-sidebar__delete"
-                aria-label="Delete conversation"
+                aria-label="Delete Conversation"
                 onClick={() => onDelete(conversation.id)}
               >
                 ×

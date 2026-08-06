@@ -21,7 +21,7 @@ export function AgentsNav() {
   const [location] = useLocation();
 
   return (
-    <nav className="agents-nav" aria-label="AURA agent sections">
+    <nav className="agents-nav" aria-label="AURA Agent Sections">
       {tabs.map((tab) => (
         <Link
           key={tab.href}

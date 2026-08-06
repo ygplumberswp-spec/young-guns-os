@@ -756,9 +756,60 @@ export class LeadsService {
           `Changed from ${existingRow.status} to ${nextStatus}`,
         authorUserId: scope.userId,
       });
+
+      emitBusinessEvent({
+        companyId: scope.companyId,
+        eventType: 'lead.status_changed',
+        entityType: 'lead',
+        entityId: leadId,
+        payload: {
+          lead: {
+            id: leadId,
+            fromStatus: existingRow.status,
+            toStatus: nextStatus,
+          },
+        },
+        actorUserId: scope.userId,
+      });
     }
 
     return (await this.getLead(scope.companyId, leadId))!;
+  }
+
+  async deleteLead(scope: TenantScope, leadId: string): Promise<void> {
+    const existing = await this.db.query.leads.findFirst({
+      where: and(eq(leads.id, leadId), eq(leads.companyId, scope.companyId)),
+    });
+    if (!existing) {
+      throw new LeadsError('NOT_FOUND', 'Lead not found');
+    }
+    if (existing.status === 'converted' || existing.jobId) {
+      throw new LeadsError(
+        'VALIDATION_ERROR',
+        'Cannot delete a converted or linked lead. Archive instead.',
+      );
+    }
+
+    await this.db
+      .delete(leadActivities)
+      .where(and(eq(leadActivities.companyId, scope.companyId), eq(leadActivities.leadId, leadId)));
+    await this.db
+      .delete(leadStatusHistory)
+      .where(
+        and(eq(leadStatusHistory.companyId, scope.companyId), eq(leadStatusHistory.leadId, leadId)),
+      );
+    await this.db
+      .delete(leads)
+      .where(and(eq(leads.id, leadId), eq(leads.companyId, scope.companyId)));
+
+    emitBusinessEvent({
+      companyId: scope.companyId,
+      eventType: 'lead.deleted',
+      entityType: 'lead',
+      entityId: leadId,
+      payload: { lead: { id: leadId, contactName: existing.contactName } },
+      actorUserId: scope.userId,
+    });
   }
 
   async listActivities(companyId: string, leadId: string): Promise<LeadActivitySummary[]> {

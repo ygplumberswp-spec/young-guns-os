@@ -1,0 +1,140 @@
+{
+  "label": "210-step5-migration-bookkeeping-diagnose",
+  "generatedAt": "2026-08-03T23:20:21.459Z",
+  "appliedRowCount": 121,
+  "journalEntryCount": 168,
+  "matchedCount": 121,
+  "orphanCount": 0,
+  "orphans": [],
+  "driftedCount": 5,
+  "sampleDrifted": [
+    {
+      "id": 104,
+      "tag": "0104_n8n_hybrid_orchestration",
+      "journalWhen": "1754146800000",
+      "dbCreatedAt": "1785500562904",
+      "drifted": true
+    },
+    {
+      "id": 105,
+      "tag": "0105_boq_workspace",
+      "journalWhen": "1754150400000",
+      "dbCreatedAt": "1785572698599",
+      "drifted": true
+    },
+    {
+      "id": 106,
+      "tag": "0106_job_document_packs",
+      "journalWhen": "1754154000000",
+      "dbCreatedAt": "1785572699469",
+      "drifted": true
+    },
+    {
+      "id": 108,
+      "tag": "0111_aura_memory_quick_entry",
+      "journalWhen": "1754168400000",
+      "dbCreatedAt": "1754175600000",
+      "drifted": true
+    },
+    {
+      "id": 114,
+      "tag": "0117_scheduling_calendar",
+      "journalWhen": "1754251200000",
+      "dbCreatedAt": "1785602191614",
+      "drifted": true
+    }
+  ],
+  "sampleAligned": [
+    {
+      "id": 1,
+      "tag": "0000_auth_milestone_1",
+      "journalWhen": "1753776000000",
+      "dbCreatedAt": "1753776000000",
+      "drifted": false
+    },
+    {
+      "id": 2,
+      "tag": "0001_aura_core",
+      "journalWhen": "1753779600000",
+      "dbCreatedAt": "1753779600000",
+      "drifted": false
+    },
+    {
+      "id": 3,
+      "tag": "0002_company_profile",
+      "journalWhen": "1753783200000",
+      "dbCreatedAt": "1753783200000",
+      "drifted": false
+    },
+    {
+      "id": 4,
+      "tag": "0003_team_management",
+      "journalWhen": "1753786800000",
+      "dbCreatedAt": "1753786800000",
+      "drifted": false
+    },
+    {
+      "id": 5,
+      "tag": "0004_crm_foundation",
+      "journalWhen": "1753790400000",
+      "dbCreatedAt": "1753790400000",
+      "drifted": false
+    }
+  ],
+  "pendingTags": [
+    "0124_resend_email_deliveries",
+    "0125_email_centre_communication_timeline",
+    "0126_completion_reports",
+    "0127_personal_whatsapp_intelligence",
+    "0128_technician_intelligence",
+    "0129_workflow_automation_engine",
+    "0130_recurring_maintenance_engine",
+    "0131_personal_whatsapp_connection_layer",
+    "0132_communication_aura_intelligence",
+    "0133_aura_command_centre",
+    "0134_aura_agent_network",
+    "0135_aura_evolution",
+    "0136_marketing_agent_foundation",
+    "0137_social_media_integrations",
+    "0138_content_reputation_intelligence",
+    "0139_finance_aura_agent_foundation",
+    "0140_finance_cashflow_profit_intelligence",
+    "0141_finance_reporting_forecast",
+    "0142_inventory_intelligence",
+    "0143_procurement_intelligence",
+    "0145_xero_finance_foundation_repair",
+    "0146_portal_expansion",
+    "0151_hr_employee_intelligence",
+    "0150_vehicle_intelligence",
+    "0144_stock_forecasting",
+    "0149_payroll_timesheet_intelligence",
+    "0148_homeshield_experience",
+    "0153_voice_ai_receptionist",
+    "0154_fleet_ai_recommendations",
+    "0152_recruitment_performance_intelligence",
+    "0147_customer_engagement_intelligence",
+    "0155_driver_intelligence",
+    "0156_call_intelligence",
+    "0157_sales_intelligence_agent_foundation",
+    "0159_sales_followup_intelligence",
+    "0158_sales_analytics_intelligence",
+    "0165_hr_employee_intelligence_compliance",
+    "0160_customer_360_intelligence",
+    "0161_property_intelligence",
+    "0163_document_intelligence",
+    "0164_compliance_intelligence",
+    "0166_executive_command_centre",
+    "0167_smart_notification_intelligence",
+    "0168_market_intelligence",
+    "0169_security_monitoring",
+    "0170_industry_templates",
+    "0171_xero_complete_historical_sync"
+  ],
+  "pendingCount": 47,
+  "migratorComparison": {
+    "maxAppliedCreatedAt": 1785602191614,
+    "maxJournalWhen": 1754573400171,
+    "everyJournalWhenBelowMaxApplied": true,
+    "explanation": "drizzle-orm applies a migration only when journal `when` (folderMillis) is greater than the newest created_at already in drizzle.__drizzle_migrations. Past migrations were stamped with wall-clock time instead of the journal `when`, so every genuinely pending migration now looks older."
+  }
+}

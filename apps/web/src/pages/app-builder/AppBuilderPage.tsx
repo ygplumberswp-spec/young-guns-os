@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'wouter';
-import { Button, EmptyState, PageHeader, Panel, StatCard } from '@titan/ui';
+import { Button, EmptyState, Panel, StatCard } from '@titan/ui';
 import type {
   AbAppBuilderAlertSummary,
   AbApprovalRecordSummary,
@@ -235,7 +236,7 @@ export function AppBuilderPage() {
     if (items.length === 0) {
       return (
         <EmptyState
-          title="No feature requests"
+          title="No Feature Requests"
           description="Submit a feature request to begin the build pipeline."
         />
       );
@@ -261,7 +262,7 @@ export function AppBuilderPage() {
     if (items.length === 0) {
       return (
         <EmptyState
-          title="No requirements analyses"
+          title="No Requirements Analyses"
           description="Analyze requirements from a feature request."
         />
       );
@@ -287,7 +288,7 @@ export function AppBuilderPage() {
     if (items.length === 0) {
       return (
         <EmptyState
-          title="No architecture impact analyses"
+          title="No Architecture Impact Analyses"
           description="Run architecture impact analysis on a feature request."
         />
       );
@@ -313,7 +314,7 @@ export function AppBuilderPage() {
     if (items.length === 0) {
       return (
         <EmptyState
-          title="No development workspaces"
+          title="No Development Workspaces"
           description="Create an isolated workspace for a feature request."
         />
       );
@@ -338,7 +339,7 @@ export function AppBuilderPage() {
     if (items.length === 0) {
       return (
         <EmptyState
-          title="No code generation records"
+          title="No Code Generation Records"
           description="Code generation records are created when artifacts are explicitly generated."
         />
       );
@@ -364,7 +365,7 @@ export function AppBuilderPage() {
     if (items.length === 0) {
       return (
         <EmptyState
-          title="No database change plans"
+          title="No Database Change Plans"
           description="Schema change plans require owner approval."
         />
       );
@@ -392,7 +393,7 @@ export function AppBuilderPage() {
     if (items.length === 0) {
       return (
         <EmptyState
-          title="No test runs"
+          title="No Test Runs"
           description="Run test validation after code changes are ready."
         />
       );
@@ -417,7 +418,7 @@ export function AppBuilderPage() {
     if (items.length === 0) {
       return (
         <EmptyState
-          title="No previews"
+          title="No Previews"
           description="Create a preview after workspace changes are ready."
         />
       );
@@ -443,7 +444,7 @@ export function AppBuilderPage() {
     if (items.length === 0) {
       return (
         <EmptyState
-          title="No approval records"
+          title="No Approval Records"
           description="Submit feature requests for approval before deployment."
         />
       );
@@ -468,7 +469,7 @@ export function AppBuilderPage() {
     if (items.length === 0) {
       return (
         <EmptyState
-          title="No deployments"
+          title="No Deployments"
           description="Deploy approved features through the governed pipeline."
         />
       );
@@ -494,7 +495,7 @@ export function AppBuilderPage() {
     if (items.length === 0) {
       return (
         <EmptyState
-          title="No rollbacks"
+          title="No Rollbacks"
           description="Rollbacks are recorded when deployments are reverted."
         />
       );
@@ -519,7 +520,7 @@ export function AppBuilderPage() {
     if (items.length === 0) {
       return (
         <EmptyState
-          title="No documentation updates"
+          title="No Documentation Updates"
           description="Documentation updates are tracked per feature."
         />
       );
@@ -544,7 +545,7 @@ export function AppBuilderPage() {
     if (items.length === 0) {
       return (
         <EmptyState
-          title="No registry entries"
+          title="No Registry Entries"
           description="Feature registry tracks deployed platform capabilities."
         />
       );
@@ -819,7 +820,7 @@ export function AppBuilderPage() {
           {isSupplementaryLoading ? <p>Loading audit logs...</p> : null}
           {supplementary.auditLogs.length === 0 ? (
             <EmptyState
-              title="No audit logs"
+              title="No Audit Logs"
               description="Audit entries are recorded for every app builder action."
             />
           ) : (

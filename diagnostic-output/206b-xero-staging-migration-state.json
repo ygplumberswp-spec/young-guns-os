@@ -1,0 +1,87 @@
+{
+  "label": "206b-xero-staging-migration-state",
+  "generatedAt": "2026-08-03T22:57:36.350Z",
+  "appliedCount": 121,
+  "journalCount": 168,
+  "lastAppliedRows": [
+    {
+      "createdAt": "1785572698599",
+      "matchedJournalTag": "unmatched"
+    },
+    {
+      "createdAt": "1785572699469",
+      "matchedJournalTag": "unmatched"
+    },
+    {
+      "createdAt": "1785602191614",
+      "matchedJournalTag": "unmatched"
+    }
+  ],
+  "missingMigrations": [
+    "0104_n8n_hybrid_orchestration",
+    "0105_boq_workspace",
+    "0106_job_document_packs",
+    "0111_aura_memory_quick_entry",
+    "0117_scheduling_calendar",
+    "0124_resend_email_deliveries",
+    "0125_email_centre_communication_timeline",
+    "0126_completion_reports",
+    "0127_personal_whatsapp_intelligence",
+    "0128_technician_intelligence",
+    "0129_workflow_automation_engine",
+    "0130_recurring_maintenance_engine",
+    "0131_personal_whatsapp_connection_layer",
+    "0132_communication_aura_intelligence",
+    "0133_aura_command_centre",
+    "0134_aura_agent_network",
+    "0135_aura_evolution",
+    "0136_marketing_agent_foundation",
+    "0137_social_media_integrations",
+    "0138_content_reputation_intelligence",
+    "0139_finance_aura_agent_foundation",
+    "0140_finance_cashflow_profit_intelligence",
+    "0141_finance_reporting_forecast",
+    "0142_inventory_intelligence",
+    "0143_procurement_intelligence",
+    "0145_xero_finance_foundation_repair",
+    "0146_portal_expansion",
+    "0151_hr_employee_intelligence",
+    "0150_vehicle_intelligence",
+    "0144_stock_forecasting",
+    "0149_payroll_timesheet_intelligence",
+    "0148_homeshield_experience",
+    "0153_voice_ai_receptionist",
+    "0154_fleet_ai_recommendations",
+    "0152_recruitment_performance_intelligence",
+    "0147_customer_engagement_intelligence",
+    "0155_driver_intelligence",
+    "0156_call_intelligence",
+    "0157_sales_intelligence_agent_foundation",
+    "0159_sales_followup_intelligence",
+    "0158_sales_analytics_intelligence",
+    "0165_hr_employee_intelligence_compliance",
+    "0160_customer_360_intelligence",
+    "0161_property_intelligence",
+    "0163_document_intelligence",
+    "0164_compliance_intelligence",
+    "0166_executive_command_centre",
+    "0167_smart_notification_intelligence",
+    "0168_market_intelligence",
+    "0169_security_monitoring",
+    "0170_industry_templates",
+    "0171_xero_complete_historical_sync"
+  ],
+  "xeroTables": [
+    "xero_contact_sync_back_requests",
+    "xero_customer_mappings",
+    "xero_invoice_mappings",
+    "xero_payment_mappings",
+    "xero_quote_mappings",
+    "xero_sync_logs",
+    "xero_write_approvals"
+  ],
+  "importJobTables": [
+    "dm_import_jobs",
+    "supplier_price_import_jobs"
+  ]
+}

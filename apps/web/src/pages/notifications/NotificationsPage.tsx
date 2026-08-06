@@ -1,5 +1,6 @@
+import { PageHeader } from '../../components/ux';
 import { useEffect, useMemo, useState } from 'react';
-import { Button, EmptyState, PageHeader, Panel, StatCard } from '@titan/ui';
+import { Button, EmptyState, Panel, StatCard } from '@titan/ui';
 import type { EnterpriseNotificationsDashboard } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import {
@@ -158,7 +159,7 @@ export function NotificationsPage() {
     return (
       <div className="p-6">
         <EmptyState
-          title="Access denied"
+          title="Access Denied"
           description="You do not have permission to view the notification center."
         />
       </div>
@@ -263,7 +264,7 @@ export function NotificationsPage() {
           <Panel title="Inbox">
             {dashboard.inboxItems.length === 0 ? (
               <EmptyState
-                title="No notifications"
+                title="No Notifications"
                 description="Your inbox is empty. Notifications appear here when modules dispatch legitimate events."
               />
             ) : (
@@ -309,7 +310,7 @@ export function NotificationsPage() {
           <Panel title="Alerts">
             {dashboard.alerts.length === 0 ? (
               <EmptyState
-                title="No active alerts"
+                title="No Active Alerts"
                 description="Alerts appear when modules raise notification events."
               />
             ) : (
@@ -368,7 +369,7 @@ export function NotificationsPage() {
         <Panel title="Escalations">
           {dashboard.escalations.length === 0 ? (
             <EmptyState
-              title="No pending escalations"
+              title="No Pending Escalations"
               description="Escalations are created when alerts are not acknowledged within configured time limits."
             />
           ) : (
@@ -414,7 +415,7 @@ export function NotificationsPage() {
           <Panel title="Templates">
             {dashboard.templates.length === 0 ? (
               <EmptyState
-                title="No templates"
+                title="No Templates"
                 description="Create reusable notification templates with variables and localization."
               />
             ) : (
@@ -444,7 +445,7 @@ export function NotificationsPage() {
           <Panel title="Delivery Jobs">
             {dashboard.deliveryJobs.length === 0 ? (
               <EmptyState
-                title="No delivery jobs"
+                title="No Delivery Jobs"
                 description="Delivery jobs are created when notifications are dispatched through configured channels."
               />
             ) : (
@@ -490,7 +491,7 @@ export function NotificationsPage() {
           <Panel title="Notification Rules">
             {dashboard.rules.length === 0 ? (
               <EmptyState
-                title="No rules configured"
+                title="No Rules Configured"
                 description="Configure rules by user, role, department, severity, module, and event type."
               />
             ) : (
@@ -514,7 +515,7 @@ export function NotificationsPage() {
         <Panel title="User Preferences">
           {dashboard.userPreferences.length === 0 ? (
             <EmptyState
-              title="No channel preferences"
+              title="No Channel Preferences"
               description="Configure delivery preferences per channel, module, and event type."
             />
           ) : (
@@ -540,7 +541,7 @@ export function NotificationsPage() {
             </pre>
           ) : (
             <EmptyState
-              title="No analytics captured"
+              title="No Analytics Captured"
               description="Capture analytics to track notification platform health and delivery metrics."
             />
           )}
@@ -553,7 +554,7 @@ export function NotificationsPage() {
             <p className="text-sm text-slate-500">Loading audit logs...</p>
           ) : auditLogs.length === 0 ? (
             <EmptyState
-              title="No audit entries"
+              title="No Audit Entries"
               description="All notification platform actions are logged for auditability."
             />
           ) : (

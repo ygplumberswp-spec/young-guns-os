@@ -1,11 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'wouter';
-import { Button, EmptyState, PageHeader, Panel, StatCard } from '@titan/ui';
+import { Button, EmptyState, Panel, StatCard } from '@titan/ui';
+import { NAV_LABELS } from '@titan/shared';
 import type { MobileDispatcherWorkspace } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import { fetchMobileDispatcherWorkspace } from '../../lib/enterprise-mobile-api-client';
 import { useAuth } from '../../lib/auth-context';
 import { canAccessMobilePlatform, formatDeviceStatus } from '../../features/mobile-platform/utils';
+import { LiveDispatchNav } from '../../features/dispatch/LiveDispatchNav';
+import { LiveDispatchPositionsPanel } from '../../features/dispatch/LiveDispatchPositionsPanel';
+import { PageHeader } from '../../components/ux';
 
 export function MobileDispatcherPage() {
   const { accessToken, user } = useAuth();
@@ -62,21 +66,23 @@ export function MobileDispatcherPage() {
   return (
     <div className="automation-page">
       <PageHeader
-        title="Dispatcher Workspace"
+        title={NAV_LABELS.liveDispatch}
         description="Live technician status, dispatch overview, fleet tracking, and AI recommendations from real data."
+        breadcrumbs={[{ label: NAV_LABELS.liveDispatch }]}
         actions={
           <Link href="/mobile-platform">
             <Button variant="secondary">Mobile Platform Admin</Button>
           </Link>
         }
       />
+      <LiveDispatchNav />
 
       {error ? <p className="form-error">{error}</p> : null}
 
       {isLoading ? (
         <Panel title="Loading">Loading dispatcher workspace…</Panel>
       ) : !workspace ? (
-        <EmptyState title="No data" description="Dispatcher workspace is unavailable." />
+        <EmptyState title="No Data" description="Dispatcher workspace is unavailable." />
       ) : (
         <>
           <Panel title="Dispatch Summary">
@@ -93,10 +99,12 @@ export function MobileDispatcherPage() {
             />
           </div>
 
+          <LiveDispatchPositionsPanel accessToken={accessToken} />
+
           <Panel title="Technician Status">
             {workspace.technicianStatuses.length === 0 ? (
               <EmptyState
-                title="No technicians"
+                title="No Technicians"
                 description="Technician status appears when team members are registered."
               />
             ) : (

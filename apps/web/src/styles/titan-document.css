@@ -1,0 +1,538 @@
+/*
+ * TITAN document engine styling.
+ *
+ * One token set drives invoices, quotes and all three report kinds on screen,
+ * on mobile and in A4 print. The artwork is CSS, not a flattened image, so text
+ * stays selectable and the PDF stays vector.
+ *
+ * Font sizes below are floors agreed with the Owner. `validateDocumentTypography`
+ * in @titan/shared fails the test suite if these are shrunk to force one page.
+ */
+
+.titan-doc {
+  --doc-page-bg: #04070d;
+  --doc-panel: #0a0f18;
+  --doc-panel-raised: #0e1522;
+  --doc-border: #233043;
+  --doc-chrome: #3c4c63;
+  --doc-blue: #1f7aec;
+  --doc-blue-bright: #3e9bff;
+  --doc-blue-deep: #0e4fa8;
+  --doc-banner-from: #1668d6;
+  --doc-banner-to: #2e88f0;
+  --doc-text: #ffffff;
+  --doc-body: #e6edf6;
+  --doc-muted: #a4b3c6;
+  --doc-label: #54a6ff;
+  --doc-positive: #2fbf6b;
+  --doc-warning: #f2b33d;
+  --doc-danger: #e5484d;
+
+  --doc-font-body: 15px;
+  --doc-font-important: 16px;
+  --doc-font-label: 14px;
+  --doc-font-heading: 18px;
+  --doc-font-title: 30px;
+  --doc-font-totals: 20px;
+  --doc-line-body: 1.45;
+  --doc-line-tight: 1.35;
+  --doc-radius: 14px;
+  --doc-gap: 18px;
+
+  background: var(--doc-page-bg);
+  color: var(--doc-body);
+  font-size: var(--doc-font-body);
+  line-height: var(--doc-line-body);
+  font-variant-numeric: tabular-nums;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--doc-gap);
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* Natural dark-blue water artwork, drawn with gradients so it never stretches. */
+.titan-doc__artwork {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 90% at 12% -10%, rgba(31, 122, 236, 0.28) 0%, transparent 60%),
+    radial-gradient(90% 70% at 100% 0%, rgba(14, 79, 168, 0.22) 0%, transparent 55%),
+    radial-gradient(140% 120% at 50% 120%, rgba(31, 122, 236, 0.14) 0%, transparent 65%);
+  opacity: 0.9;
+}
+
+.titan-doc__panel {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(180deg, var(--doc-panel-raised) 0%, var(--doc-panel) 100%);
+  border: 1px solid var(--doc-border);
+  border-radius: var(--doc-radius);
+  padding: 20px 22px;
+}
+
+/* Chrome hairline along the top edge of each panel. */
+.titan-doc__panel::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--doc-chrome), transparent);
+}
+
+.titan-doc__panel > * {
+  position: relative;
+}
+
+/* --- Header ------------------------------------------------------------- */
+
+.titan-doc__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.titan-doc__brand-name {
+  margin: 0;
+  font-size: var(--doc-font-title);
+  font-weight: 800;
+  font-style: italic;
+  font-stretch: condensed;
+  letter-spacing: 0.01em;
+  line-height: var(--doc-line-tight);
+  color: var(--doc-text);
+  text-transform: uppercase;
+}
+
+.titan-doc__brand-tagline {
+  margin: 4px 0 0;
+  font-size: var(--doc-font-label);
+  color: var(--doc-label);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.titan-doc__doc-type {
+  text-align: right;
+}
+
+.titan-doc__doc-type-label {
+  margin: 0;
+  font-size: var(--doc-font-title);
+  font-weight: 800;
+  font-style: italic;
+  color: var(--doc-blue-bright);
+  line-height: var(--doc-line-tight);
+  text-transform: uppercase;
+}
+
+.titan-doc__doc-number {
+  margin: 4px 0 0;
+  font-size: var(--doc-font-important);
+  color: var(--doc-text);
+  font-weight: 600;
+}
+
+/* --- Sections ----------------------------------------------------------- */
+
+.titan-doc__section-title {
+  margin: 0 0 12px;
+  font-size: var(--doc-font-heading);
+  font-weight: 700;
+  color: var(--doc-text);
+  line-height: var(--doc-line-tight);
+}
+
+.titan-doc__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px 24px;
+}
+
+.titan-doc__field-label {
+  display: block;
+  font-size: var(--doc-font-label);
+  color: var(--doc-label);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 2px;
+}
+
+.titan-doc__field-value {
+  font-size: var(--doc-font-important);
+  color: var(--doc-text);
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.titan-doc__body-text {
+  font-size: var(--doc-font-body);
+  color: var(--doc-body);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.titan-doc__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: var(--doc-font-label);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border: 1px solid var(--doc-chrome);
+  background: rgba(31, 122, 236, 0.16);
+  color: var(--doc-text);
+}
+
+.titan-doc__status--paid {
+  background: rgba(47, 191, 107, 0.16);
+  border-color: var(--doc-positive);
+}
+
+.titan-doc__status--overdue {
+  background: rgba(229, 72, 77, 0.16);
+  border-color: var(--doc-danger);
+}
+
+/* --- Checklist and findings --------------------------------------------- */
+
+.titan-doc__checklist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.titan-doc__checklist li {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  font-size: var(--doc-font-body);
+}
+
+.titan-doc__check {
+  color: var(--doc-blue-bright);
+  font-weight: 700;
+}
+
+/* --- Tables ------------------------------------------------------------- */
+
+.titan-doc__table-wrap {
+  overflow-x: auto;
+}
+
+.titan-doc__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--doc-font-body);
+}
+
+.titan-doc__table thead th {
+  background: linear-gradient(90deg, var(--doc-banner-from), var(--doc-banner-to));
+  color: var(--doc-text);
+  font-size: var(--doc-font-label);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 10px 12px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.titan-doc__table thead th:first-child {
+  border-top-left-radius: 8px;
+}
+
+.titan-doc__table thead th:last-child {
+  border-top-right-radius: 8px;
+}
+
+.titan-doc__table td {
+  padding: 11px 12px;
+  border-bottom: 1px solid var(--doc-border);
+  color: var(--doc-body);
+  vertical-align: top;
+}
+
+.titan-doc__num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* --- Totals ------------------------------------------------------------- */
+
+.titan-doc__totals {
+  margin-left: auto;
+  width: min(360px, 100%);
+  display: grid;
+  gap: 8px;
+}
+
+.titan-doc__totals-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: var(--doc-font-important);
+}
+
+.titan-doc__totals-row--grand {
+  margin-top: 6px;
+  padding-top: 10px;
+  border-top: 1px solid var(--doc-chrome);
+  font-size: var(--doc-font-totals);
+  font-weight: 700;
+  color: var(--doc-text);
+}
+
+.titan-doc__totals-row--balance {
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--doc-banner-from), var(--doc-banner-to));
+  color: var(--doc-text);
+  font-size: var(--doc-font-totals);
+  font-weight: 700;
+}
+
+/* --- Warranty stamp ----------------------------------------------------- */
+
+.titan-doc__stamp {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: 108px;
+  height: 108px;
+  border-radius: 50%;
+  border: 2px solid var(--doc-blue-bright);
+  background: rgba(31, 122, 236, 0.14);
+  color: var(--doc-text);
+  text-align: center;
+  padding: 8px;
+  font-size: var(--doc-font-label);
+  line-height: 1.2;
+}
+
+.titan-doc__stamp strong {
+  font-size: var(--doc-font-important);
+  font-weight: 800;
+  color: var(--doc-blue-bright);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* --- Photos ------------------------------------------------------------- */
+
+.titan-doc__photos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 14px;
+}
+
+.titan-doc__photo {
+  border: 1px solid var(--doc-border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--doc-panel);
+}
+
+.titan-doc__photo img {
+  display: block;
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+}
+
+.titan-doc__photo figcaption {
+  padding: 8px 10px;
+  font-size: var(--doc-font-label);
+  color: var(--doc-body);
+}
+
+/* --- Attachments and payment ------------------------------------------- */
+
+.titan-doc__attachment {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--doc-blue);
+  background: rgba(31, 122, 236, 0.12);
+  color: var(--doc-text);
+  font-size: var(--doc-font-important);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.titan-doc__attachment--missing {
+  border-color: var(--doc-border);
+  background: transparent;
+  color: var(--doc-muted);
+  font-weight: 500;
+}
+
+.titan-doc__pay {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.titan-doc__pay-qr {
+  width: 30mm;
+  min-width: 30mm;
+}
+
+.titan-doc__pay-qr svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: #ffffff;
+  padding: 4px;
+  border-radius: 8px;
+}
+
+.titan-doc__pay-button {
+  display: inline-block;
+  padding: 12px 22px;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--doc-banner-from), var(--doc-banner-to));
+  color: var(--doc-text);
+  font-size: var(--doc-font-important);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.titan-doc__bank {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px 24px;
+}
+
+/* --- Footer ------------------------------------------------------------- */
+
+.titan-doc__footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  flex-wrap: wrap;
+  font-size: var(--doc-font-label);
+  color: var(--doc-muted);
+}
+
+.titan-doc__footer strong {
+  color: var(--doc-text);
+}
+
+/* --- Mobile ------------------------------------------------------------- */
+
+@media (max-width: 640px) {
+  .titan-doc {
+    padding: 14px;
+  }
+
+  .titan-doc__panel {
+    padding: 16px;
+  }
+
+  .titan-doc__doc-type {
+    text-align: left;
+  }
+
+  .titan-doc__totals {
+    width: 100%;
+  }
+}
+
+/* --- A4 print ----------------------------------------------------------- */
+
+@page {
+  size: A4 portrait;
+  margin: 10mm;
+}
+
+@media print {
+  /* Keep the dark brand on paper instead of letting the browser strip it. */
+  .titan-doc {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    gap: 8mm;
+    /* 10.5pt matches the 15px screen floor. */
+    font-size: 10.5pt;
+  }
+
+  .titan-doc {
+    --doc-font-body: 10.5pt;
+    --doc-font-important: 11.5pt;
+    --doc-font-label: 9.5pt;
+    --doc-font-heading: 12.5pt;
+    --doc-font-title: 20pt;
+    --doc-font-totals: 13pt;
+  }
+
+  .titan-doc__panel {
+    border-radius: 8px;
+    padding: 5mm 6mm;
+    /* Never split a panel mid-way if it can be avoided. */
+    break-inside: avoid;
+  }
+
+  /* Long line-item tables may span pages, so repeat the blue heading row. */
+  .titan-doc__table thead {
+    display: table-header-group;
+  }
+
+  .titan-doc__table tfoot {
+    display: table-footer-group;
+  }
+
+  .titan-doc__table tr {
+    break-inside: avoid;
+  }
+
+  /* Totals, payment area and sign-off must never be orphaned. */
+  .titan-doc__totals,
+  .titan-doc__pay,
+  .titan-doc__stamp,
+  .titan-doc__signoff {
+    break-inside: avoid;
+  }
+
+  .titan-doc__section--totals,
+  .titan-doc__section--payment_options {
+    break-before: auto;
+    break-inside: avoid;
+  }
+
+  .titan-doc__photo img {
+    height: 40mm;
+  }
+
+  /* The QR stays vector at a scannable printed size. */
+  .titan-doc__pay-qr {
+    width: 30mm;
+    min-width: 30mm;
+  }
+
+  .titan-doc__no-print {
+    display: none !important;
+  }
+
+  a {
+    color: var(--doc-blue-bright);
+    text-decoration: underline;
+  }
+}
