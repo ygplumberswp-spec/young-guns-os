@@ -154,7 +154,9 @@ const API_BASE_URL = 'https://api.xero.com/api.xro/2.0';
 export const XERO_REQUEST_TIMEOUT_MS = 20_000;
 export const XERO_PAGE_SIZE = 100;
 export const XERO_RATE_LIMIT_MAX_RETRIES = 5;
-/** Live read paths honour at most one rate-limit retry within this wall-clock budget. */
+/** At most one rate-limit retry per provider request; delay honours Retry-After up to 60s. */
+export const XERO_RATE_LIMIT_READ_MAX_RETRIES = 1;
+export const XERO_RATE_LIMIT_READ_MAX_DELAY_MS = 60_000;
 export const XERO_RATE_LIMIT_RETRY_BUDGET_MS = 30_000;
 export const XERO_RATE_LIMIT_BASE_DELAY_MS = 2_000;
 /**
@@ -682,7 +684,7 @@ export class XeroClient {
     modifiedSince?: string | null,
   ): Promise<unknown> {
     let attempt = 0;
-    let retryBudgetRemainingMs = XERO_RATE_LIMIT_RETRY_BUDGET_MS;
+    let rateLimitRetries = 0;
 
     while (attempt <= XERO_RATE_LIMIT_MAX_RETRIES) {
       attempt += 1;
@@ -690,20 +692,20 @@ export class XeroClient {
       try {
         return await this.apiRequestOnce(method, path, body, modifiedSince, attempt === 1);
       } catch (error) {
-        if (
-          error instanceof XeroError &&
-          error.code === 'RATE_LIMIT' &&
-          attempt <= XERO_RATE_LIMIT_MAX_RETRIES
-        ) {
-          const delayMs = error.retryAfterMs ?? resolveRateLimitDelayMs(null, attempt);
-          if (delayMs > retryBudgetRemainingMs) {
+        if (error instanceof XeroError && error.code === 'RATE_LIMIT') {
+          if (rateLimitRetries >= XERO_RATE_LIMIT_READ_MAX_RETRIES) {
             throw new XeroError(
               'RATE_LIMIT',
-              `Xero rate limit retry budget exhausted (${XERO_RATE_LIMIT_RETRY_BUDGET_MS}ms)`,
-              retryBudgetRemainingMs,
+              'Xero rate limit — one controlled retry already attempted',
+              error.retryAfterMs,
             );
           }
-          retryBudgetRemainingMs -= delayMs;
+
+          const delayMs = Math.min(
+            error.retryAfterMs ?? resolveRateLimitDelayMs(null, rateLimitRetries + 1),
+            XERO_RATE_LIMIT_READ_MAX_DELAY_MS,
+          );
+          rateLimitRetries += 1;
           await sleep(delayMs);
           continue;
         }

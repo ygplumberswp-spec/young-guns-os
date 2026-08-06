@@ -4,7 +4,8 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import {
   resolveRateLimitDelayMs,
-  XERO_RATE_LIMIT_RETRY_BUDGET_MS,
+  XERO_RATE_LIMIT_READ_MAX_DELAY_MS,
+  XERO_RATE_LIMIT_READ_MAX_RETRIES,
   XERO_REQUEST_TIMEOUT_MS,
 } from './xero.client.js';
 
@@ -20,11 +21,12 @@ test('provider read timeout default is 20 seconds', () => {
   assert.equal(XERO_REQUEST_TIMEOUT_MS, 20_000);
 });
 
-test('rate-limit retry budget caps cumulative wait for live reads', () => {
-  assert.equal(XERO_RATE_LIMIT_RETRY_BUDGET_MS, 30_000);
+test('rate-limit read path allows one retry up to 60 seconds', () => {
+  assert.equal(XERO_RATE_LIMIT_READ_MAX_RETRIES, 1);
+  assert.equal(XERO_RATE_LIMIT_READ_MAX_DELAY_MS, 60_000);
   const retryAfterDelay = resolveRateLimitDelayMs('45', 1);
   assert.equal(retryAfterDelay, 45_000);
-  assert.ok(retryAfterDelay > XERO_RATE_LIMIT_RETRY_BUDGET_MS);
+  assert.ok(retryAfterDelay <= XERO_RATE_LIMIT_READ_MAX_DELAY_MS);
 });
 
 test('XeroClient exposes single auth retry on 401', () => {
@@ -34,7 +36,7 @@ test('XeroClient exposes single auth retry on 401', () => {
   assert.doesNotMatch(clientSource, /while \(true\)/);
 });
 
-test('XeroClient bounds rate-limit retries by wall-clock budget', () => {
-  assert.match(clientSource, /retryBudgetRemainingMs/);
-  assert.match(clientSource, /XERO_RATE_LIMIT_RETRY_BUDGET_MS/);
+test('XeroClient bounds rate-limit retries to one controlled retry', () => {
+  assert.match(clientSource, /XERO_RATE_LIMIT_READ_MAX_RETRIES/);
+  assert.match(clientSource, /XERO_RATE_LIMIT_READ_MAX_DELAY_MS/);
 });
