@@ -113,6 +113,52 @@ export function createCommunicationsRouter({
     }
   });
 
+  router.post(
+    '/messages/:id/approve',
+    requireAnyPermission('communications:write'),
+    async (req, res) => {
+      const auth = getAuth(req);
+      const messageId = Array.isArray(req.params.id) ? req.params.id[0]! : req.params.id;
+      try {
+        const message = await communicationsService.approveOutboundEmail(
+          {
+            companyId: auth.companyId,
+            userId: auth.userId,
+            roleName: auth.roleName,
+            permissions: auth.permissions,
+          },
+          messageId,
+        );
+        res.json({ data: { message } });
+      } catch (error) {
+        handleCommunicationsError(res, error);
+      }
+    },
+  );
+
+  router.post(
+    '/messages/:id/execute',
+    requireAnyPermission('communications:write'),
+    async (req, res) => {
+      const auth = getAuth(req);
+      const messageId = Array.isArray(req.params.id) ? req.params.id[0]! : req.params.id;
+      try {
+        const message = await communicationsService.executeOutboundEmail(
+          {
+            companyId: auth.companyId,
+            userId: auth.userId,
+            roleName: auth.roleName,
+            permissions: auth.permissions,
+          },
+          messageId,
+        );
+        res.json({ data: { message } });
+      } catch (error) {
+        handleCommunicationsError(res, error);
+      }
+    },
+  );
+
   router.get(
     '/templates',
     requireAnyPermission('communications:read', 'communications:write'),
@@ -154,13 +200,20 @@ function handleCommunicationsError(res: import('express').Response, error: unkno
     const status =
       error.code === 'CUSTOMER_NOT_FOUND' ||
       error.code === 'TEMPLATE_NOT_FOUND' ||
-      error.code === 'JOB_NOT_FOUND'
+      error.code === 'JOB_NOT_FOUND' ||
+      error.code === 'NOT_FOUND'
         ? 404
         : error.code === 'FORBIDDEN'
           ? 403
-          : error.code === 'VALIDATION_ERROR'
-            ? 400
-            : 400;
+          : error.code === 'FEATURE_DISABLED' || error.code === 'NOT_CONFIGURED'
+            ? 503
+            : error.code === 'NOT_CONNECTED'
+              ? 409
+              : error.code === 'VALIDATION_ERROR' ||
+                  error.code === 'INVALID_STATE' ||
+                  error.code === 'NOT_APPROVED'
+                ? 400
+                : 400;
 
     res.status(status).json({
       error: {

@@ -1,5 +1,6 @@
+import { PageHeader } from '../../components/ux';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { Button, EmptyState, PageHeader, Panel } from '@titan/ui';
+import { Button, EmptyState, Panel } from '@titan/ui';
 import type {
   N8nConnectionSummary,
   N8nExecutionSummary,
@@ -100,7 +101,7 @@ export function N8nOrchestrationPage() {
       setConnection(conn);
       setApiKey('');
       setWebhookSecret('');
-      setSuccess('Configuration saved as SETUP REQUIRED — verify before use.');
+      setSuccess('Configuration saved as Setup Required — verify before use.');
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : 'Configure failed');
     } finally {
@@ -176,7 +177,7 @@ export function N8nOrchestrationPage() {
     return (
       <div className="automation-page">
         <PageHeader
-          title="n8n orchestration"
+          title="n8n Orchestration"
           description="You do not have permission to view automation."
         />
       </div>
@@ -186,7 +187,7 @@ export function N8nOrchestrationPage() {
   return (
     <div className="automation-page">
       <PageHeader
-        title="n8n orchestration"
+        title="n8n Orchestration"
         description="Hybrid external orchestration — TITAN owns rules, approvals and writes; n8n only runs approved outbound work."
       />
       <AutomationNav />
@@ -195,7 +196,7 @@ export function N8nOrchestrationPage() {
       {error ? <p className="form-error" role="alert">{error}</p> : null}
       {success ? <p className="page-muted" role="status">{success}</p> : null}
 
-      <Panel title="Connector status">
+      <Panel title="Connector Status">
         {connection ? (
           <div className="automation-n8n-status">
             <p>
@@ -280,7 +281,7 @@ export function N8nOrchestrationPage() {
         )}
       </Panel>
 
-      <Panel title="Registered n8n workflows">
+      <Panel title="Registered n8n Workflows">
         {canConfigure ? (
           <form className="form-stack" onSubmit={onRegisterWorkflow}>
             <label>
@@ -303,7 +304,7 @@ export function N8nOrchestrationPage() {
 
         {workflows.length === 0 ? (
           <EmptyState
-            title="No n8n workflows registered"
+            title="No n8n Workflows Registered"
             description="Register an external workflow key after the connector is configured."
           />
         ) : (
@@ -336,10 +337,10 @@ export function N8nOrchestrationPage() {
         )}
       </Panel>
 
-      <Panel title="External executions">
+      <Panel title="External Executions">
         {executions.length === 0 ? (
           <EmptyState
-            title="No external executions"
+            title="No External Executions"
             description="Dispatched n8n runs appear here with correlation IDs, retries and outcomes."
           />
         ) : (

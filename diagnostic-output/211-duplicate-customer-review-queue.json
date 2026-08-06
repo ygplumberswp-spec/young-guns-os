@@ -1,0 +1,148 @@
+{
+  "label": "211-duplicate-customer-review-queue",
+  "generatedAt": "2026-08-01T16:15:16.140Z",
+  "action": "queue_for_review_no_auto_merge",
+  "duplicateGroups": [
+    {
+      "key": "095aef76-fef5-4139-af37-a42f2d7e2faf::keanu",
+      "count": 3,
+      "records": [
+        {
+          "id": "c9e87948-4e30-4708-af49-5bca5b96efa5",
+          "name": "keanu",
+          "email": null,
+          "xeroContactId": null,
+          "syncStatus": null,
+          "createdAt": "2026-08-01T11:43:45.319Z"
+        },
+        {
+          "id": "d16eb563-d26c-4673-ac93-578a59ac7cf5",
+          "name": "keanu",
+          "email": null,
+          "xeroContactId": null,
+          "syncStatus": null,
+          "createdAt": "2026-08-01T11:43:44.262Z"
+        },
+        {
+          "id": "b9526bfc-58c3-4a41-a1a3-d247e8044719",
+          "name": "keanu",
+          "email": null,
+          "xeroContactId": null,
+          "syncStatus": null,
+          "createdAt": "2026-08-01T11:43:46.369Z"
+        }
+      ],
+      "reviewStatus": "queued"
+    }
+  ],
+  "keanuMatches": [
+    {
+      "id": "10d6caf0-18ab-4193-87a5-d2374ed82883",
+      "name": "Keanu Staging Crew Test",
+      "xeroContactId": null,
+      "reviewStatus": "queued"
+    },
+    {
+      "id": "c9e87948-4e30-4708-af49-5bca5b96efa5",
+      "name": "keanu",
+      "xeroContactId": null,
+      "reviewStatus": "queued"
+    },
+    {
+      "id": "d16eb563-d26c-4673-ac93-578a59ac7cf5",
+      "name": "keanu",
+      "xeroContactId": null,
+      "reviewStatus": "queued"
+    },
+    {
+      "id": "b9526bfc-58c3-4a41-a1a3-d247e8044719",
+      "name": "keanu",
+      "xeroContactId": null,
+      "reviewStatus": "queued"
+    },
+    {
+      "id": "40d8910a-72bf-4829-8ed9-6d349debdda6",
+      "name": "Keanu Venter",
+      "xeroContactId": null,
+      "reviewStatus": "queued"
+    },
+    {
+      "id": "cf742cd3-a072-4471-9be4-49786048f582",
+      "name": "Keanu Staging Crew Test",
+      "xeroContactId": null,
+      "reviewStatus": "queued"
+    },
+    {
+      "id": "4886a855-e0be-420a-8b7b-38d1630c6df1",
+      "name": "Keanu Staging Test",
+      "xeroContactId": null,
+      "reviewStatus": "queued"
+    },
+    {
+      "id": "46f81429-eba6-4b78-98cf-90c133e710ac",
+      "name": "Keanu Staging Test",
+      "xeroContactId": null,
+      "reviewStatus": "queued"
+    },
+    {
+      "id": "c4864d94-0272-4a0e-a640-acadf731b370",
+      "name": "Keanu Staging Crew Test",
+      "xeroContactId": null,
+      "reviewStatus": "queued"
+    },
+    {
+      "id": "d318ca0f-4c06-4759-809c-6768a9940590",
+      "name": "Keanu Staging Crew Test",
+      "xeroContactId": null,
+      "reviewStatus": "queued"
+    },
+    {
+      "id": "d89beef0-9189-4eb0-90ea-6a167803e5ee",
+      "name": "Keanu Staging Test",
+      "xeroContactId": null,
+      "reviewStatus": "queued"
+    },
+    {
+      "id": "a81c8543-c6c7-497d-8c48-f866e16038b0",
+      "name": "Keanu Staging Crew Test",
+      "xeroContactId": null,
+      "reviewStatus": "queued"
+    },
+    {
+      "id": "9e641daa-c841-4de1-a11f-94a81964edfa",
+      "name": "Keanu Staging Crew Test",
+      "xeroContactId": null,
+      "reviewStatus": "queued"
+    },
+    {
+      "id": "d0d297c2-4790-4b8a-ba56-26e7a3f9b004",
+      "name": "Keanu Staging Crew Test",
+      "xeroContactId": null,
+      "reviewStatus": "queued"
+    },
+    {
+      "id": "85346fd2-13ff-4100-8f85-6cd8e453c121",
+      "name": "Keanu Staging Test",
+      "xeroContactId": null,
+      "reviewStatus": "queued"
+    },
+    {
+      "id": "55a25b3b-fee7-4621-b5f6-0b1350fd4990",
+      "name": "Keanu Staging Test",
+      "xeroContactId": null,
+      "reviewStatus": "queued"
+    },
+    {
+      "id": "b67da9d4-4cff-45c2-a0f4-ee691ab068e6",
+      "name": "Keanu Staging Test",
+      "xeroContactId": null,
+      "reviewStatus": "queued"
+    },
+    {
+      "id": "5410792e-f6e4-4dec-aae6-789b91f2b908",
+      "name": "Keanu Staging Test",
+      "xeroContactId": null,
+      "reviewStatus": "queued"
+    }
+  ]
+}

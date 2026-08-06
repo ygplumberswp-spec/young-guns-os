@@ -1,0 +1,251 @@
+/*
+ * Fleet live map, vehicle overview rows and the expanded vehicle card.
+ *
+ * Kept out of index.css so Fleet styling stays reviewable on its own.
+ */
+
+/* Motion state sits directly under the plate on the existing position card. */
+.vehicle-position-card__status {
+  font-weight: 600;
+}
+
+/* Coordinates stay reachable but never compete with the readable address. */
+.vehicle-position-card__coords,
+.fleet-card__coords {
+  font-size: 0.8125rem;
+}
+
+/* ---------------------------------------------------------------- *
+ * Fleet status indicator, overview rows and vehicle cards
+ * ---------------------------------------------------------------- */
+
+.fleet-status-dot {
+  display: inline-block;
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: 50%;
+  flex: 0 0 auto;
+  /* A ring keeps the dot visible against both surface tones. */
+  box-shadow: 0 0 0 1px var(--titan-border-subtle);
+}
+
+.fleet-status-dot--active {
+  background: #22c55e;
+}
+
+.fleet-status-dot--attention {
+  background: #f59e0b;
+}
+
+.fleet-status-dot--neutral {
+  background: #e2e8f0;
+}
+
+.fleet-status-dot--muted {
+  background: #94a3b8;
+}
+
+.fleet-overview-list {
+  list-style: none;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  display: grid;
+  gap: 0.625rem;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
+
+.fleet-overview-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.75rem 0.875rem;
+  border: 1px solid var(--titan-border-subtle);
+  border-radius: var(--titan-radius-lg);
+  background: var(--titan-surface-muted);
+}
+
+.fleet-overview-row--selected {
+  border-color: var(--yg-map-marker-fill, var(--yg-blue-primary));
+}
+
+.fleet-overview-row__head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.fleet-overview-row__plate {
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: 0.02em;
+}
+
+/* The plate doubles as the select-vehicle control, so it must not look like a button. */
+button.fleet-overview-row__plate {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: inherit;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.fleet-overview-row__field {
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+.fleet-overview-row__actions {
+  margin-top: 0.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.fleet-vehicle-card {
+  padding: 0.875rem 1rem;
+  border: 1px solid var(--titan-border-subtle);
+  border-radius: var(--titan-radius-lg);
+  background: var(--titan-surface-muted);
+}
+
+.fleet-vehicle-card p {
+  margin: 0.3rem 0 0;
+}
+
+.fleet-vehicle-card__head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.fleet-vehicle-card__plate {
+  font-size: 1.0625rem;
+  letter-spacing: 0.02em;
+}
+
+.fleet-vehicle-card__status {
+  font-weight: 600;
+}
+
+.fleet-vehicle-card__location {
+  margin-top: 0.35rem;
+  font-size: 1rem;
+  line-height: 1.4;
+}
+
+/* Town and province sit under the street, quieter than the primary line. */
+.fleet-vehicle-card__location-area {
+  margin-top: 0.1rem;
+  color: var(--titan-text-muted);
+  font-size: 0.9375rem;
+}
+
+.fleet-vehicle-card__telemetry {
+  margin: 0.6rem 0 0;
+  display: grid;
+  gap: 0.15rem 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+}
+
+.fleet-vehicle-card__telemetry-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.875rem;
+}
+
+.fleet-vehicle-card__telemetry-row dt {
+  color: var(--titan-text-muted);
+}
+
+.fleet-vehicle-card__telemetry-row dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.fleet-vehicle-card__field {
+  font-size: 0.9375rem;
+}
+
+.fleet-vehicle-card__actions {
+  margin-top: 0.6rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* ---------------------------------------------------------------- *
+ * Follow Vehicle
+ * ---------------------------------------------------------------- */
+
+.follow-vehicle {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.follow-vehicle__controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.follow-vehicle__select {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 12rem;
+}
+
+.follow-vehicle__select select {
+  /* Comfortable one-handed tap target on mobile. */
+  min-height: 2.5rem;
+}
+
+.follow-vehicle__state {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.follow-vehicle__refresh {
+  font-size: 0.8125rem;
+}
+
+.follow-vehicle__map {
+  /* Height comes from the breakpoints below rather than a fixed pixel prop. */
+  height: 420px;
+}
+
+@media (max-width: 900px) {
+  .follow-vehicle__map {
+    height: 340px;
+  }
+
+  .fleet-overview-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .follow-vehicle__map {
+    height: 280px;
+  }
+
+  .follow-vehicle__controls,
+  .follow-vehicle__select {
+    width: 100%;
+  }
+
+  .fleet-vehicle-card__telemetry {
+    grid-template-columns: 1fr;
+  }
+}

@@ -9,6 +9,7 @@ export const integrationProviderEnum = pgEnum('integration_provider', [
   'whatsapp',
   'google_calendar',
   'google_maps',
+  'gmail',
   'microsoft_365',
   'resend',
   'custom',
@@ -36,7 +37,53 @@ export type IntegrationConnectionConfig = {
   fromName?: string;
   businessName?: string;
   businessId?: string;
+  /** SHA-256 prefix of the Yoco secret key (safe identifier; not the secret). */
+  keyFingerprint?: string;
+  /** Optional Checkout API webhook-list probe result (unknown when list endpoint fails). */
+  webhookCapability?: 'available' | 'unavailable' | 'unknown';
   environment?: 'test' | 'live';
+  lastCredentialChangeAt?: string;
+  /** Google Maps Platform — tenant service flags and defaults. */
+  services?: {
+    places?: boolean;
+    geocoding?: boolean;
+    directions?: boolean;
+    distanceMatrix?: boolean;
+    routes?: boolean;
+    mapsJavascript?: boolean;
+  };
+  defaultRegion?: string;
+  defaultLanguage?: string;
+  lastValidatedAt?: string | null;
+  /** Most recent Google Maps connection probe (stored JSON; shape matches shared GoogleMapsTestResult). */
+  lastTest?: {
+    ok: boolean;
+    message: string;
+    testedAt: string;
+    servicesChecked: string[];
+    serviceResults: Array<{
+      service: string;
+      status: string;
+      message: string;
+      keyStatus: string | null;
+    }>;
+    serverKeyStatus: string;
+    browserKeyStatus: string;
+  } | null;
+  /** Resend — last outbound delivery snapshot for Integrations UI. */
+  lastDeliveryAt?: string | null;
+  lastDeliveryStatus?: 'sent' | 'delivered' | 'failed' | null;
+  lastDeliveryError?: string | null;
+  domainCount?: number;
+  /** Xero — OAuth scope and token health (XERO-002). */
+  grantedScopes?: string[];
+  requestedScopes?: string[];
+  scopeGrantedAt?: string;
+  lastTokenRefreshAt?: string;
+  tokenExpiresAt?: string;
+  lastConnectionCheckAt?: string;
+  connectionHealthState?: string;
+  declinedScopes?: string[];
 };
 
 export const integrationConnections = pgTable('integration_connections', {

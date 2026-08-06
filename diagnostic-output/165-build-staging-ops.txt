@@ -1,0 +1,321 @@
+
+> titan-aura-v1@0.0.0 build /Users/keanuventer/Downloads/Titan Aura V1
+> pnpm run typecheck && pnpm -r --if-present run build
+
+
+> titan-aura-v1@0.0.0 typecheck /Users/keanuventer/Downloads/Titan Aura V1
+> tsc --build && pnpm -r --if-present run typecheck
+
+Scope: 7 of 8 workspace projects
+packages/auth typecheck$ tsc -p tsconfig.json --noEmit
+packages/db typecheck$ tsc -p tsconfig.json --noEmit
+packages/shared typecheck$ tsc -p tsconfig.json --noEmit
+packages/ui typecheck$ tsc -p tsconfig.json --noEmit
+packages/auth typecheck: Done
+packages/shared typecheck: Done
+packages/ui typecheck: Done
+packages/db typecheck: Done
+packages/aura typecheck$ tsc -p tsconfig.json --noEmit
+apps/web typecheck$ tsc -p tsconfig.json --noEmit
+packages/aura typecheck: Done
+apps/web typecheck: Done
+apps/api typecheck$ tsc -p tsconfig.json --noEmit
+apps/api typecheck: Done
+Scope: 7 of 8 workspace projects
+packages/auth build$ tsc -p tsconfig.build.json && tsc -p tsconfig.browser.build.json
+packages/db build$ tsc -p tsconfig.build.json
+packages/shared build$ tsc -p tsconfig.build.json
+packages/ui build$ tsc -p tsconfig.build.json
+packages/shared build: Done
+packages/ui build: Done
+packages/db build: Done
+packages/auth build: Done
+apps/web build$ tsc -p tsconfig.json --noEmit && vite build
+packages/aura build$ tsc -p tsconfig.build.json
+packages/aura build: Done
+apps/web build: vite v6.4.3 building for production...
+apps/web build: (!) %VITE_APP_ENV% is not defined in env variables found in /index.html. Is the variable mistyped?
+apps/web build: (!) %VITE_APP_ENV% is not defined in env variables found in /index.html. Is the variable mistyped?
+apps/web build: transforming...
+apps/web build: ✓ 802 modules transformed.
+apps/web build: rendering chunks...
+apps/web build: [plugin vite:reporter] 
+apps/web build: (!) /Users/keanuventer/Downloads/Titan Aura V1/apps/web/src/pages/portal/PortalDashboardPage.tsx is dynamically imported by /Users/keanuventer/Downloads/Titan Aura V1/apps/web/src/lib/route-prefetch-registry.ts but also statically imported by /Users/keanuventer/Downloads/Titan Aura V1/apps/web/src/App.tsx, dynamic import will not move module into another chunk.
+apps/web build: [plugin vite:reporter] 
+apps/web build: (!) /Users/keanuventer/Downloads/Titan Aura V1/apps/web/src/pages/portal/PortalJobsPage.tsx is dynamically imported by /Users/keanuventer/Downloads/Titan Aura V1/apps/web/src/lib/route-prefetch-registry.ts but also statically imported by /Users/keanuventer/Downloads/Titan Aura V1/apps/web/src/App.tsx, dynamic import will not move module into another chunk.
+apps/web build: [plugin vite:reporter] 
+apps/web build: (!) /Users/keanuventer/Downloads/Titan Aura V1/apps/web/src/pages/portal/PortalQuotesPage.tsx is dynamically imported by /Users/keanuventer/Downloads/Titan Aura V1/apps/web/src/lib/route-prefetch-registry.ts but also statically imported by /Users/keanuventer/Downloads/Titan Aura V1/apps/web/src/App.tsx, dynamic import will not move module into another chunk.
+apps/web build: [plugin vite:reporter] 
+apps/web build: (!) /Users/keanuventer/Downloads/Titan Aura V1/apps/web/src/pages/portal/PortalFinancePage.tsx is dynamically imported by /Users/keanuventer/Downloads/Titan Aura V1/apps/web/src/lib/route-prefetch-registry.ts but also statically imported by /Users/keanuventer/Downloads/Titan Aura V1/apps/web/src/App.tsx, dynamic import will not move module into another chunk.
+apps/web build: [plugin vite:reporter] 
+apps/web build: (!) /Users/keanuventer/Downloads/Titan Aura V1/apps/web/src/pages/portal/PortalAppointmentsPage.tsx is dynamically imported by /Users/keanuventer/Downloads/Titan Aura V1/apps/web/src/lib/route-prefetch-registry.ts but also statically imported by /Users/keanuventer/Downloads/Titan Aura V1/apps/web/src/App.tsx, dynamic import will not move module into another chunk.
+apps/web build: [plugin vite:reporter] 
+apps/web build: (!) /Users/keanuventer/Downloads/Titan Aura V1/apps/web/src/pages/portal/PortalCommunicationsPage.tsx is dynamically imported by /Users/keanuventer/Downloads/Titan Aura V1/apps/web/src/lib/route-prefetch-registry.ts but also statically imported by /Users/keanuventer/Downloads/Titan Aura V1/apps/web/src/App.tsx, dynamic import will not move module into another chunk.
+apps/web build: [plugin vite:reporter] 
+apps/web build: (!) /Users/keanuventer/Downloads/Titan Aura V1/apps/web/src/pages/portal/PortalDocumentsPage.tsx is dynamically imported by /Users/keanuventer/Downloads/Titan Aura V1/apps/web/src/lib/route-prefetch-registry.ts but also statically imported by /Users/keanuventer/Downloads/Titan Aura V1/apps/web/src/App.tsx, dynamic import will not move module into another chunk.
+apps/web build: [plugin vite:reporter] 
+apps/web build: (!) /Users/keanuventer/Downloads/Titan Aura V1/apps/web/src/pages/mobile/MobileDashboardPage.tsx is dynamically imported by /Users/keanuventer/Downloads/Titan Aura V1/apps/web/src/lib/route-prefetch-registry.ts but also statically imported by /Users/keanuventer/Downloads/Titan Aura V1/apps/web/src/App.tsx, dynamic import will not move module into another chunk.
+apps/web build: [plugin vite:reporter] 
+apps/web build: (!) /Users/keanuventer/Downloads/Titan Aura V1/apps/web/src/pages/mobile/MobileJobsPage.tsx is dynamically imported by /Users/keanuventer/Downloads/Titan Aura V1/apps/web/src/lib/route-prefetch-registry.ts but also statically imported by /Users/keanuventer/Downloads/Titan Aura V1/apps/web/src/App.tsx, dynamic import will not move module into another chunk.
+apps/web build: [plugin vite:reporter] 
+apps/web build: (!) /Users/keanuventer/Downloads/Titan Aura V1/apps/web/src/pages/mobile/MobileRoutePage.tsx is dynamically imported by /Users/keanuventer/Downloads/Titan Aura V1/apps/web/src/lib/route-prefetch-registry.ts but also statically imported by /Users/keanuventer/Downloads/Titan Aura V1/apps/web/src/App.tsx, dynamic import will not move module into another chunk.
+apps/web build: [plugin vite:reporter] 
+apps/web build: (!) /Users/keanuventer/Downloads/Titan Aura V1/apps/web/src/pages/mobile/MobileInventoryPage.tsx is dynamically imported by /Users/keanuventer/Downloads/Titan Aura V1/apps/web/src/lib/route-prefetch-registry.ts but also statically imported by /Users/keanuventer/Downloads/Titan Aura V1/apps/web/src/App.tsx, dynamic import will not move module into another chunk.
+apps/web build: [plugin vite:reporter] 
+apps/web build: (!) /Users/keanuventer/Downloads/Titan Aura V1/apps/web/src/pages/mobile/MobileTimePage.tsx is dynamically imported by /Users/keanuventer/Downloads/Titan Aura V1/apps/web/src/lib/route-prefetch-registry.ts but also statically imported by /Users/keanuventer/Downloads/Titan Aura V1/apps/web/src/App.tsx, dynamic import will not move module into another chunk.
+apps/web build: [plugin vite:reporter] 
+apps/web build: (!) /Users/keanuventer/Downloads/Titan Aura V1/apps/web/src/pages/mobile/MobileNotificationsPage.tsx is dynamically imported by /Users/keanuventer/Downloads/Titan Aura V1/apps/web/src/lib/route-prefetch-registry.ts but also statically imported by /Users/keanuventer/Downloads/Titan Aura V1/apps/web/src/App.tsx, dynamic import will not move module into another chunk.
+apps/web build: computing gzip size...
+apps/web build: dist/index.html                                                   0.83 kB │ gzip:   0.47 kB
+apps/web build: dist/assets/inter-vietnamese-400-normal-DMkecbls.woff2            4.97 kB
+apps/web build: dist/assets/inter-vietnamese-600-normal-Cc8MFFhd.woff2            5.10 kB
+apps/web build: dist/assets/inter-vietnamese-500-normal-DOriooB6.woff2            5.11 kB
+apps/web build: dist/assets/inter-vietnamese-700-normal-CGpBpxLq.woff2            5.20 kB
+apps/web build: dist/assets/inter-greek-ext-400-normal-Bput3-QP.woff2             5.23 kB
+apps/web build: dist/assets/inter-greek-ext-500-normal-B6guLgqG.woff2             5.40 kB
+apps/web build: dist/assets/inter-greek-ext-700-normal-SzCdnevJ.woff2             5.42 kB
+apps/web build: dist/assets/inter-greek-ext-600-normal-Cnui8OiR.woff2             5.43 kB
+apps/web build: dist/assets/inter-vietnamese-400-normal-BUNmGMP1.woff             6.68 kB
+apps/web build: dist/assets/inter-vietnamese-500-normal-DQPw2Hwd.woff             6.77 kB
+apps/web build: dist/assets/inter-vietnamese-700-normal-dAnkLlTo.woff             6.82 kB
+apps/web build: dist/assets/inter-vietnamese-600-normal-Cm6aH8_k.woff             6.83 kB
+apps/web build: dist/assets/inter-greek-ext-400-normal-DCpCPQOf.woff              7.14 kB
+apps/web build: dist/assets/inter-greek-ext-500-normal-M2hEX8vc.woff              7.27 kB
+apps/web build: dist/assets/inter-greek-ext-700-normal-DXvzx4Na.woff              7.30 kB
+apps/web build: dist/assets/inter-greek-ext-600-normal-C9WLioJ8.woff              7.30 kB
+apps/web build: dist/assets/montserrat-vietnamese-700-normal-DUoPxeMJ.woff        7.53 kB
+apps/web build: dist/assets/montserrat-vietnamese-800-normal-ftT3KYNK.woff        7.54 kB
+apps/web build: dist/assets/inter-cyrillic-400-normal-BLGc9T1a.woff2              7.71 kB
+apps/web build: dist/assets/inter-greek-400-normal-DxZsaF_h.woff2                 7.84 kB
+apps/web build: dist/assets/inter-cyrillic-500-normal-D4Vwzodn.woff2              7.90 kB
+apps/web build: dist/assets/inter-greek-500-normal-CeQXL5ds.woff2                 7.90 kB
+apps/web build: dist/assets/inter-greek-700-normal-Cxpycf-U.woff2                 7.93 kB
+apps/web build: dist/assets/montserrat-vietnamese-800-normal-DiIWv5hQ.woff2       7.95 kB
+apps/web build: dist/assets/montserrat-vietnamese-700-normal-D8RPk-a5.woff2       7.95 kB
+apps/web build: dist/assets/inter-greek-600-normal-Dhlb-90d.woff2                 7.96 kB
+apps/web build: dist/assets/inter-cyrillic-600-normal-BGBWG807.woff2              7.97 kB
+apps/web build: dist/assets/inter-cyrillic-700-normal-bGtGjVdZ.woff2              8.00 kB
+apps/web build: dist/assets/inter-greek-400-normal-BZzXV7-1.woff                  9.96 kB
+apps/web build: dist/assets/inter-greek-700-normal-BRYTaFLL.woff                 10.03 kB
+apps/web build: dist/assets/inter-greek-500-normal-d_eO-yCQ.woff                 10.04 kB
+apps/web build: dist/assets/inter-greek-600-normal-CwicyhtI.woff                 10.08 kB
+apps/web build: dist/assets/inter-cyrillic-400-normal-ZzOtrSSW.woff              10.14 kB
+apps/web build: dist/assets/inter-cyrillic-ext-400-normal-Dc4VJyIJ.woff2         10.22 kB
+apps/web build: dist/assets/inter-cyrillic-700-normal-Bc8_fv8J.woff              10.29 kB
+apps/web build: dist/assets/inter-cyrillic-500-normal-DH2hs3aW.woff              10.30 kB
+apps/web build: dist/assets/inter-cyrillic-600-normal-BuzJQFbW.woff              10.32 kB
+apps/web build: dist/assets/inter-cyrillic-ext-500-normal-BShVwWPj.woff2         10.44 kB
+apps/web build: dist/assets/inter-cyrillic-ext-600-normal-CaqZN2hq.woff2         10.46 kB
+apps/web build: dist/assets/inter-cyrillic-ext-700-normal-ClVoMEGq.woff2         10.46 kB
+apps/web build: dist/assets/montserrat-cyrillic-800-normal-CLtp-TCj.woff         11.02 kB
+apps/web build: dist/assets/montserrat-cyrillic-700-normal-CF3jbqy3.woff         11.03 kB
+apps/web build: dist/assets/montserrat-cyrillic-800-normal-Ig6d_s0p.woff2        11.15 kB
+apps/web build: dist/assets/montserrat-cyrillic-700-normal-DO8I1zZZ.woff2        11.21 kB
+apps/web build: dist/assets/montserrat-cyrillic-ext-800-normal-CLeBDsrR.woff2    12.05 kB
+apps/web build: dist/assets/montserrat-cyrillic-ext-700-normal-D3s9QaN5.woff2    12.07 kB
+apps/web build: dist/assets/montserrat-cyrillic-ext-800-normal-D-HnP27I.woff     12.67 kB
+apps/web build: dist/assets/montserrat-cyrillic-ext-700-normal-B5jSujIz.woff     12.68 kB
+apps/web build: dist/assets/inter-cyrillic-ext-400-normal-BPnxn4xp.woff          14.19 kB
+apps/web build: dist/assets/inter-cyrillic-ext-500-normal-CUiC4oBV.woff          14.34 kB
+apps/web build: dist/assets/inter-cyrillic-ext-700-normal-Ced3hgUT.woff          14.34 kB
+apps/web build: dist/assets/inter-cyrillic-ext-600-normal-Bt9VVOA-.woff          14.35 kB
+apps/web build: dist/assets/montserrat-latin-700-normal-BYRy5CoC.woff2           18.84 kB
+apps/web build: dist/assets/montserrat-latin-800-normal-Cp9CdP19.woff2           19.04 kB
+apps/web build: dist/assets/montserrat-latin-700-normal-DHOpyQza.woff            20.60 kB
+apps/web build: dist/assets/montserrat-latin-800-normal-CwdtYla9.woff            20.78 kB
+apps/web build: dist/assets/inter-latin-400-normal-BOOGhInR.woff2                23.69 kB
+apps/web build: dist/assets/inter-latin-600-normal-D273HNI0.woff2                24.30 kB
+apps/web build: dist/assets/inter-latin-700-normal-Sckx8rpT.woff2                24.35 kB
+apps/web build: dist/assets/inter-latin-500-normal-D2bGa7uu.woff2                24.37 kB
+apps/web build: dist/assets/inter-latin-ext-400-normal-hnt3BR84.woff2            30.68 kB
+apps/web build: dist/assets/inter-latin-400-normal-gitzw0hO.woff                 31.20 kB
+apps/web build: dist/assets/inter-latin-ext-500-normal-CIS2RHJS.woff2            31.76 kB
+apps/web build: dist/assets/inter-latin-500-normal-deR1Tlfd.woff                 31.77 kB
+apps/web build: dist/assets/inter-latin-600-normal-B5cFAncS.woff                 31.78 kB
+apps/web build: dist/assets/inter-latin-ext-700-normal-CzikT_rs.woff2            31.79 kB
+apps/web build: dist/assets/inter-latin-700-normal-B8MtJ_2k.woff                 31.83 kB
+apps/web build: dist/assets/inter-latin-ext-600-normal-BnYJhD27.woff2            31.97 kB
+apps/web build: dist/assets/montserrat-latin-ext-700-normal-DTfQ8iG5.woff2       33.37 kB
+apps/web build: dist/assets/montserrat-latin-ext-800-normal-DfsuAC1q.woff2       33.78 kB
+apps/web build: dist/assets/montserrat-latin-ext-700-normal-DdSde0HZ.woff        41.63 kB
+apps/web build: dist/assets/montserrat-latin-ext-800-normal-lLvDuRkp.woff        41.96 kB
+apps/web build: dist/assets/inter-latin-ext-400-normal-C1t-h-pH.woff             42.88 kB
+apps/web build: dist/assets/inter-latin-ext-500-normal-UMdmhHu2.woff             43.84 kB
+apps/web build: dist/assets/inter-latin-ext-700-normal-6V9MnIL5.woff             43.94 kB
+apps/web build: dist/assets/inter-latin-ext-600-normal-CAF0vJDd.woff             43.98 kB
+apps/web build: dist/assets/index-6MZuPB7G.css                                  110.32 kB │ gzip:  17.54 kB
+apps/web build: dist/assets/utils-Cy0sy87C.js                                     0.38 kB │ gzip:   0.25 kB
+apps/web build: dist/assets/utils-8BJRXPUw.js                                     0.39 kB │ gzip:   0.16 kB
+apps/web build: dist/assets/inventory-Bj0bq3xS.js                                 0.41 kB │ gzip:   0.21 kB
+apps/web build: dist/assets/AboutSettingsPage-sJiywakk.js                         0.47 kB │ gzip:   0.32 kB
+apps/web build: dist/assets/FinanceNav-B_Yfm9tt.js                                0.50 kB │ gzip:   0.30 kB
+apps/web build: dist/assets/leads-Zj-SmS1H.js                                     0.52 kB │ gzip:   0.25 kB
+apps/web build: dist/assets/utils-C08qkE9t.js                                     0.56 kB │ gzip:   0.22 kB
+apps/web build: dist/assets/utils-BHRrhuw3.js                                     0.57 kB │ gzip:   0.32 kB
+apps/web build: dist/assets/SimpleAdvancedToggle-ZH_sztt0.js                      0.57 kB │ gzip:   0.30 kB
+apps/web build: dist/assets/IntegrationsNav-Cw-YSnxQ.js                           0.58 kB │ gzip:   0.32 kB
+apps/web build: dist/assets/NotFoundPage-BwNdJf9K.js                              0.59 kB │ gzip:   0.33 kB
+apps/web build: dist/assets/ProcurementNav-DUgovhrW.js                            0.61 kB │ gzip:   0.34 kB
+apps/web build: dist/assets/job-contract-iVsgoDjX.js                              0.61 kB │ gzip:   0.39 kB
+apps/web build: dist/assets/fleet-api-CkMXNbIj.js                                 0.61 kB │ gzip:   0.25 kB
+apps/web build: dist/assets/utils-USCKHWuX.js                                     0.68 kB │ gzip:   0.29 kB
+apps/web build: dist/assets/AutomationNav-CDrmoeQ8.js                             0.69 kB │ gzip:   0.33 kB
+apps/web build: dist/assets/documents-api-Beuua0wv.js                             0.69 kB │ gzip:   0.25 kB
+apps/web build: dist/assets/DocumentsNav-MDQLeUPV.js                              0.70 kB │ gzip:   0.34 kB
+apps/web build: dist/assets/utils-DbJNfNfD.js                                     0.70 kB │ gzip:   0.37 kB
+apps/web build: dist/assets/formatters-DakjBrOi.js                                0.77 kB │ gzip:   0.38 kB
+apps/web build: dist/assets/tenant-capabilities-api-DjfS0dhK.js                   0.77 kB │ gzip:   0.28 kB
+apps/web build: dist/assets/portal-admin-api-BCUPaPbq.js                          0.84 kB │ gzip:   0.31 kB
+apps/web build: dist/assets/utils-DXED1Qik.js                                     0.90 kB │ gzip:   0.45 kB
+apps/web build: dist/assets/inventory-api-DcyA3cez.js                             1.01 kB │ gzip:   0.38 kB
+apps/web build: dist/assets/utils-RkXSVkZ7.js                                     1.04 kB │ gzip:   0.48 kB
+apps/web build: dist/assets/leads-api-Dp0KHvSA.js                                 1.10 kB │ gzip:   0.43 kB
+apps/web build: dist/assets/cache-invalidation-Ce741c_5.js                        1.11 kB │ gzip:   0.46 kB
+apps/web build: dist/assets/utils-BmUd7YEl.js                                     1.19 kB │ gzip:   0.41 kB
+apps/web build: dist/assets/JobListPage-xO51qDku.js                               1.22 kB │ gzip:   0.70 kB
+apps/web build: dist/assets/whatsapp-api-Cp6kINkJ.js                              1.24 kB │ gzip:   0.40 kB
+apps/web build: dist/assets/contact-validation-Bt_QDaSb.js                        1.28 kB │ gzip:   0.65 kB
+apps/web build: dist/assets/utils-BvFRdKpv.js                                     1.33 kB │ gzip:   0.42 kB
+apps/web build: dist/assets/procurement-api-C-4Lw-Za.js                           1.35 kB │ gzip:   0.40 kB
+apps/web build: dist/assets/utils-C88OX-aa.js                                     1.43 kB │ gzip:   0.48 kB
+apps/web build: dist/assets/job-finance-workflow-D9cMf0iz.js                      1.44 kB │ gzip:   0.73 kB
+apps/web build: dist/assets/ai-orchestration-api-client-CyjxgN0n.js               1.53 kB │ gzip:   0.39 kB
+apps/web build: dist/assets/CategoryCreatePage-BBI7hfci.js                        1.54 kB │ gzip:   0.80 kB
+apps/web build: dist/assets/utils-C4csD4Zd.js                                     1.55 kB │ gzip:   0.70 kB
+apps/web build: dist/assets/job-document-pack-api-DtWyKt2E.js                     1.69 kB │ gzip:   0.66 kB
+apps/web build: dist/assets/CustomerListPage-C4uIJhWY.js                          1.69 kB │ gzip:   0.89 kB
+apps/web build: dist/assets/VehicleList-DD6kjBRH.js                               1.71 kB │ gzip:   0.75 kB
+apps/web build: dist/assets/tab-nav-riSUL6Ry.js                                   1.76 kB │ gzip:   0.66 kB
+apps/web build: dist/assets/automation-api-BdEiQ5VD.js                            1.80 kB │ gzip:   0.44 kB
+apps/web build: dist/assets/utils-BgHKWs3m.js                                     1.89 kB │ gzip:   0.79 kB
+apps/web build: dist/assets/TemplateCreatePage-GGeXQuag.js                        1.93 kB │ gzip:   0.89 kB
+apps/web build: dist/assets/CustomerList-CfqUHqZ1.js                              1.97 kB │ gzip:   0.83 kB
+apps/web build: dist/assets/CategoryListPage-BVBiZmle.js                          2.09 kB │ gzip:   0.90 kB
+apps/web build: dist/assets/CustomerCreatePage-DaPvT88e.js                        2.10 kB │ gzip:   0.98 kB
+apps/web build: dist/assets/JobPackListPage-CBEvhgTh.js                           2.19 kB │ gzip:   1.01 kB
+apps/web build: dist/assets/TemplateListPage-B6GbUrVB.js                          2.21 kB │ gzip:   0.94 kB
+apps/web build: dist/assets/SyncJobListPage-B7fctemS.js                           2.24 kB │ gzip:   0.99 kB
+apps/web build: dist/assets/boq-api-D5ttinIS.js                                   2.27 kB │ gzip:   1.06 kB
+apps/web build: dist/assets/AgentExecutionListPage-CevcoCQb.js                    2.28 kB │ gzip:   0.98 kB
+apps/web build: dist/assets/ProductListPage-CNy-_0dB.js                           2.29 kB │ gzip:   0.95 kB
+apps/web build: dist/assets/PurchaseOrderListPage-Bn6jR1Vq.js                     2.32 kB │ gzip:   0.94 kB
+apps/web build: dist/assets/utils-B0NkxMoP.js                                     2.38 kB │ gzip:   0.59 kB
+apps/web build: dist/assets/ExecutionListPage-CMZDaD5H.js                         2.39 kB │ gzip:   1.02 kB
+apps/web build: dist/assets/PaymentListPage-DE53NJLN.js                           2.51 kB │ gzip:   1.07 kB
+apps/web build: dist/assets/ProductCreatePage-CWBNfEVH.js                         2.52 kB │ gzip:   1.04 kB
+apps/web build: dist/assets/WorkflowCreatePage-BFjleOsk.js                        2.59 kB │ gzip:   1.01 kB
+apps/web build: dist/assets/MobileDispatcherPage-w_gayqvA.js                      2.59 kB │ gzip:   1.17 kB
+apps/web build: dist/assets/DocumentListPage-B7esCfee.js                          2.60 kB │ gzip:   1.02 kB
+apps/web build: dist/assets/integrations-api-C99mvMLw.js                          2.65 kB │ gzip:   0.51 kB
+apps/web build: dist/assets/BoqListPage-C5lfDU6f.js                               2.71 kB │ gzip:   1.14 kB
+apps/web build: dist/assets/JobList-C5Q7Grha.js                                   2.73 kB │ gzip:   1.04 kB
+apps/web build: dist/assets/WorkflowListPage-CmO35Jhg.js                          2.76 kB │ gzip:   1.14 kB
+apps/web build: dist/assets/SelfServicePage-AYAf9UKf.js                           2.84 kB │ gzip:   1.12 kB
+apps/web build: dist/assets/StockMovementsPage-CtrOsBG6.js                        3.02 kB │ gzip:   1.27 kB
+apps/web build: dist/assets/SupplierListPage-B58VExzB.js                          3.03 kB │ gzip:   1.25 kB
+apps/web build: dist/assets/QuoteListPage-BmrMyKah.js                             3.15 kB │ gzip:   1.25 kB
+apps/web build: dist/assets/PartsRequestsPage-DUsP_FR0.js                         3.17 kB │ gzip:   1.37 kB
+apps/web build: dist/assets/VehicleCreatePage-CLwUxBsi.js                         3.19 kB │ gzip:   1.30 kB
+apps/web build: dist/assets/ManagerWorkspacePage-Cit_YMMG.js                      3.22 kB │ gzip:   1.20 kB
+apps/web build: dist/assets/MessageListPage-D2-TErnU.js                           3.36 kB │ gzip:   1.24 kB
+apps/web build: dist/assets/PaymentDetailPage-BhAVOiJ7.js                         3.45 kB │ gzip:   1.25 kB
+apps/web build: dist/assets/AgentProfileCreatePage-J6Lgds8S.js                    3.46 kB │ gzip:   1.41 kB
+apps/web build: dist/assets/InvoiceListPage-B2rec6b6.js                           3.58 kB │ gzip:   1.37 kB
+apps/web build: dist/assets/PaymentCreatePage-CYuCiVZS.js                         3.59 kB │ gzip:   1.54 kB
+apps/web build: dist/assets/EnterpriseModulesPage-D9IF51eO.js                     3.65 kB │ gzip:   1.33 kB
+apps/web build: dist/assets/DocumentCreatePage-COSOOHvZ.js                        3.71 kB │ gzip:   1.40 kB
+apps/web build: dist/assets/VehicleListPage-DixJ61fP.js                           3.91 kB │ gzip:   1.67 kB
+apps/web build: dist/assets/YocoSettingsPage-CxbOjjVd.js                          3.97 kB │ gzip:   1.46 kB
+apps/web build: dist/assets/OwnerBillingPage-BRMSn1wt.js                          4.19 kB │ gzip:   1.53 kB
+apps/web build: dist/assets/BusinessDayTimelinePage-2ZvpzktG.js                   4.33 kB │ gzip:   1.76 kB
+apps/web build: dist/assets/LeadListPage-CtPGHM9l.js                              4.49 kB │ gzip:   1.63 kB
+apps/web build: dist/assets/BoqDetailPage-BWTjmSOo.js                             4.61 kB │ gzip:   1.69 kB
+apps/web build: dist/assets/BoqCreatePage--gvVwFlA.js                             4.63 kB │ gzip:   1.74 kB
+apps/web build: dist/assets/WebhookFoundationPage-D-sn8hhm.js                     4.64 kB │ gzip:   1.69 kB
+apps/web build: dist/assets/EmailSettingsPage-blQIkIRC.js                         4.69 kB │ gzip:   1.70 kB
+apps/web build: dist/assets/utils-281luET1.js                                     4.80 kB │ gzip:   1.32 kB
+apps/web build: dist/assets/InvoiceCreatePage-BY_2SViY.js                         4.81 kB │ gzip:   1.78 kB
+apps/web build: dist/assets/JobPackDetailPage-BLJXX1zk.js                         4.94 kB │ gzip:   1.74 kB
+apps/web build: dist/assets/MessageCreatePage-CQVEJ-kX.js                         5.21 kB │ gzip:   1.82 kB
+apps/web build: dist/assets/SupplierDetailPage-D-ZUJ6yO.js                        5.23 kB │ gzip:   1.81 kB
+apps/web build: dist/assets/VehicleDetailPage-Do4jRFde.js                         5.25 kB │ gzip:   1.89 kB
+apps/web build: dist/assets/SchedulingPage-B65dL6zP.js                            5.82 kB │ gzip:   2.12 kB
+apps/web build: dist/assets/DocumentDetailPage-BumoXDrP.js                        5.82 kB │ gzip:   1.86 kB
+apps/web build: dist/assets/PurchaseOrderCreatePage-B6FcLR5T.js                   5.84 kB │ gzip:   2.06 kB
+apps/web build: dist/assets/RecruitingPage-uAuNsbew.js                            5.91 kB │ gzip:   1.83 kB
+apps/web build: dist/assets/InvoiceDetailPage-6JDrFSpz.js                         6.14 kB │ gzip:   1.69 kB
+apps/web build: dist/assets/CartrackSettingsPage-DXbgpxHD.js                      6.37 kB │ gzip:   2.15 kB
+apps/web build: dist/assets/PortalSettingsPage-BooWVk2O.js                        6.52 kB │ gzip:   2.17 kB
+apps/web build: dist/assets/TeamSettingsPage-bAPgmPnY.js                          6.71 kB │ gzip:   2.29 kB
+apps/web build: dist/assets/AgentProfileDetailPage--w_iFYNg.js                    6.74 kB │ gzip:   2.23 kB
+apps/web build: dist/assets/AutomationStudioPage-7gPggPGN.js                      6.79 kB │ gzip:   2.08 kB
+apps/web build: dist/assets/PurchaseOrderDetailPage-vYh4vZM4.js                   6.99 kB │ gzip:   2.33 kB
+apps/web build: dist/assets/KnowledgeGraphPage-CGE4XTbw.js                        7.05 kB │ gzip:   2.20 kB
+apps/web build: dist/assets/StockOverviewPage-oVyRVYuF.js                         7.16 kB │ gzip:   2.24 kB
+apps/web build: dist/assets/CommunicationsIntelligencePage-Co6ecIJ-.js            7.37 kB │ gzip:   2.30 kB
+apps/web build: dist/assets/PersonalCommunicationsIntelligencePage-BEw41t0G.js    7.41 kB │ gzip:   2.12 kB
+apps/web build: dist/assets/MobilePlatformPage-VOAvW73d.js                        7.43 kB │ gzip:   2.53 kB
+apps/web build: dist/assets/QuoteEditPage-BSaVdB7t.js                             7.54 kB │ gzip:   2.44 kB
+apps/web build: dist/assets/XeroSettingsPage-BDvUejBJ.js                          7.79 kB │ gzip:   2.64 kB
+apps/web build: dist/assets/WorkforceIntelligencePage-BUjMTWrb.js                 7.81 kB │ gzip:   2.64 kB
+apps/web build: dist/assets/LeadCreatePage-x4_fcuAh.js                            7.87 kB │ gzip:   2.73 kB
+apps/web build: dist/assets/AssetEquipmentPage-B_R0Wel6.js                        7.92 kB │ gzip:   2.33 kB
+apps/web build: dist/assets/EvolutionPage-BnTJqinf.js                             8.15 kB │ gzip:   2.26 kB
+apps/web build: dist/assets/CustomerExperiencePage-CoTofYUT.js                    8.27 kB │ gzip:   2.52 kB
+apps/web build: dist/assets/QuoteCreatePage-Da5PtgoK.js                           8.48 kB │ gzip:   2.63 kB
+apps/web build: dist/assets/DigitalTwinPage-1XXjdolG.js                           8.57 kB │ gzip:   2.45 kB
+apps/web build: dist/assets/AuraPage-CsblL8Ix.js                                  8.67 kB │ gzip:   3.11 kB
+apps/web build: dist/assets/WhatsappSettingsPage-A0pYN4rd.js                      8.72 kB │ gzip:   2.61 kB
+apps/web build: dist/assets/CapabilityBuilderPage-DYZOkZ-n.js                     8.79 kB │ gzip:   2.91 kB
+apps/web build: dist/assets/QualityPage-BrcU2i96.js                               8.95 kB │ gzip:   2.57 kB
+apps/web build: dist/assets/AssetIntelligencePage-DzLxFYCR.js                     9.15 kB │ gzip:   2.84 kB
+apps/web build: dist/assets/MissionControlPage-Dwa01HeC.js                        9.18 kB │ gzip:   2.87 kB
+apps/web build: dist/assets/AgentDashboardPage-CC4HkkDv.js                        9.18 kB │ gzip:   2.98 kB
+apps/web build: dist/assets/N8nOrchestrationPage-Cjq-hTtH.js                      9.35 kB │ gzip:   2.88 kB
+apps/web build: dist/assets/CommunicationsHubPage-CfLJ1-3h.js                     9.63 kB │ gzip:   2.90 kB
+apps/web build: dist/assets/IntegrationsDashboardPage-D71KoyVo.js                 9.97 kB │ gzip:   3.33 kB
+apps/web build: dist/assets/ServiceDeliveryPage-C2tgWOp7.js                      10.19 kB │ gzip:   3.20 kB
+apps/web build: dist/assets/LegalCompliancePage-DElPmb-A.js                      10.71 kB │ gzip:   3.22 kB
+apps/web build: dist/assets/IndustryPacksPage-CqdHMHes.js                        10.80 kB │ gzip:   3.03 kB
+apps/web build: dist/assets/WorkflowDetailPage-DN3cgbdk.js                       10.85 kB │ gzip:   2.88 kB
+apps/web build: dist/assets/QuoteDetailPage-BktiTFvR.js                          11.05 kB │ gzip:   2.98 kB
+apps/web build: dist/assets/DispatchIntelligencePage-B_JWNimA.js                 11.21 kB │ gzip:   2.88 kB
+apps/web build: dist/assets/DevelopersPage-DzrdU2J0.js                           11.41 kB │ gzip:   3.42 kB
+apps/web build: dist/assets/FleetIntelligencePage-dVNJoKa-.js                    11.57 kB │ gzip:   3.30 kB
+apps/web build: dist/assets/BusinessContinuityPage-hMkVzg7L.js                   11.61 kB │ gzip:   3.22 kB
+apps/web build: dist/assets/DocumentAiPage-Bi01a6H-.js                           11.64 kB │ gzip:   3.24 kB
+apps/web build: dist/assets/ReleasePage-C5GsQP1o.js                              11.94 kB │ gzip:   3.29 kB
+apps/web build: dist/assets/GlobalSearchPage-BQ9WpgkM.js                         12.45 kB │ gzip:   3.67 kB
+apps/web build: dist/assets/OperationsPage-CgV7atD7.js                           12.50 kB │ gzip:   3.49 kB
+apps/web build: dist/assets/VoiceReceptionPage-CjR6xR5f.js                       12.71 kB │ gzip:   3.45 kB
+apps/web build: dist/assets/DataMigrationPage-C65Do7Xs.js                        12.86 kB │ gzip:   3.60 kB
+apps/web build: dist/assets/FinancialPlanningPage-Dyi_mBMW.js                    12.93 kB │ gzip:   3.69 kB
+apps/web build: dist/assets/EnterpriseSecurityPage-DGn-YWPa.js                   13.18 kB │ gzip:   3.71 kB
+apps/web build: dist/assets/LaunchCenterPage-BzdjB64Y.js                         13.28 kB │ gzip:   3.51 kB
+apps/web build: dist/assets/NotificationsPage-BWpQZlH6.js                        13.29 kB │ gzip:   3.49 kB
+apps/web build: dist/assets/AiOrchestrationPage-Bq0JfkjX.js                      13.33 kB │ gzip:   3.68 kB
+apps/web build: dist/assets/SaasManagementPage-CJi5af2p.js                       13.68 kB │ gzip:   3.68 kB
+apps/web build: dist/assets/LeadDetailPage-DEpjbnMe.js                           13.68 kB │ gzip:   4.20 kB
+apps/web build: dist/assets/ReleaseCenterPage-DEyF5xkC.js                        13.78 kB │ gzip:   3.57 kB
+apps/web build: dist/assets/DashboardPage-D1pv4Erb.js                            13.80 kB │ gzip:   4.13 kB
+apps/web build: dist/assets/PlatformHealthPage-DXgmAgr_.js                       13.82 kB │ gzip:   3.53 kB
+apps/web build: dist/assets/CustomerDetailPage-CE3Fu1jQ.js                       14.19 kB │ gzip:   4.01 kB
+apps/web build: dist/assets/GoLivePage-DkUtIfn4.js                               14.57 kB │ gzip:   3.69 kB
+apps/web build: dist/assets/SalesIntelligencePage-cLHEd5ax.js                    15.41 kB │ gzip:   4.52 kB
+apps/web build: dist/assets/JobCreatePage-BOp0ocO3.js                            15.48 kB │ gzip:   4.71 kB
+apps/web build: dist/assets/CompanySettingsPage-CU0GQGi6.js                      15.73 kB │ gzip:   4.01 kB
+apps/web build: dist/assets/DeveloperPortalPage-DnU5YSE-.js                      16.33 kB │ gzip:   4.08 kB
+apps/web build: dist/assets/AppBuilderPage-BzIYuiVp.js                           17.91 kB │ gzip:   4.33 kB
+apps/web build: dist/assets/PlatformPage-D1hkSX9f.js                             18.28 kB │ gzip:   4.87 kB
+apps/web build: dist/assets/AnalyticsPage-ChXezvi6.js                            22.29 kB │ gzip:   5.04 kB
+apps/web build: dist/assets/ItOperationsPage-D4sK57Gu.js                         23.12 kB │ gzip:   5.20 kB
+apps/web build: dist/assets/BusinessEvolutionPage-B0eSYsCa.js                    26.46 kB │ gzip:   5.61 kB
+apps/web build: dist/assets/MarketingIntelligencePage-BH8NTFfB.js                28.24 kB │ gzip:   7.42 kB
+apps/web build: dist/assets/JobDetailPage-B_R8beQZ.js                            34.80 kB │ gzip:   9.15 kB
+apps/web build: dist/assets/agents-0soLQ1Eo.js                                   52.00 kB │ gzip:  11.24 kB
+apps/web build: dist/assets/useAuraChat-DStxHG-K.js                             198.59 kB │ gzip:  59.61 kB
+apps/web build: dist/assets/index-h67Lcifr.js                                   407.76 kB │ gzip: 115.30 kB
+apps/web build: ✓ built in 1.80s
+apps/web build: Done
+apps/api build$ tsc -p tsconfig.build.json
+apps/api build: Done

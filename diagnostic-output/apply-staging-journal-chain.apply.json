@@ -1,0 +1,24 @@
+{
+  "label": "apply-staging-journal-chain",
+  "mode": "apply",
+  "startedAt": "2026-08-03T23:33:12.320Z",
+  "through": null,
+  "realignedRows": [],
+  "applied": [
+    {
+      "tag": "0172_payments_yoco_payment_id",
+      "ms": 845
+    }
+  ],
+  "skippedAlreadyApplied": 168,
+  "failure": null,
+  "appliedBefore": 168,
+  "plannedCount": 1,
+  "plannedTags": [
+    "0172_payments_yoco_payment_id"
+  ],
+  "appliedAfter": 169,
+  "journalCount": 169,
+  "complete": true,
+  "finishedAt": "2026-08-03T23:33:14.897Z"
+}

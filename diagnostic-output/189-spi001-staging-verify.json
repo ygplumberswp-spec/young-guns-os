@@ -1,0 +1,32 @@
+{
+  "label": "189-spi001-staging-verify",
+  "generatedAt": "2026-08-01T11:55:31.268Z",
+  "verdict": "FAIL",
+  "checks": [
+    {
+      "name": "table_supplier_price_import_jobs",
+      "pass": false
+    },
+    {
+      "name": "table_supplier_price_import_lines",
+      "pass": false
+    },
+    {
+      "name": "table_supplier_price_catalogue_items",
+      "pass": false
+    },
+    {
+      "name": "table_supplier_price_review_queue",
+      "pass": false
+    }
+  ],
+  "tableExists": {
+    "supplier_price_import_jobs": false,
+    "supplier_price_import_lines": false,
+    "supplier_price_catalogue_items": false,
+    "supplier_price_review_queue": false
+  },
+  "notes": [
+    "Apply migration 0110_supplier_price_intelligence.sql on staging"
+  ]
+}
