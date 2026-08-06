@@ -343,7 +343,7 @@ export function CommunicationsHubPage() {
               />
               <StatCard
                 label="Business WhatsApp"
-                value={dashboard.whatsappConnected ? 'Connected' : 'Not Connected'}
+                value={dashboard.whatsappConnected ? 'Connected' : 'Not connected'}
               />
               <StatCard
                 label="Voice Sessions"

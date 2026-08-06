@@ -1,104 +1,134 @@
 import { Link } from 'wouter';
+import { useMemo } from 'react';
 import { Button, Panel } from '@titan/ui';
+import type { IntegrationProviderAutoSyncStatus } from '@titan/shared';
 import { useAuth } from '../../lib/auth-context';
+import { fetchIntegrationAutoSyncStatuses } from '../../lib/integration-auto-sync-api-client';
 import { fetchIntegrationHubDashboard } from '../../lib/integration-hub-api';
+import { fetchSocialConnectionsDashboard } from '../../lib/social-connection-api-client';
+import { EnterpriseConnectionStatusLine } from '../integrations/EnterpriseConnectionStatusLine';
 import { useStaffCachedQuery } from '../../lib/use-scoped-cached-query';
+import {
+  buildDashboardConnectionOverviewRows,
+  dashboardConnectionsFooterState,
+} from './dashboard-connection-overview';
 import { DashboardSectionSkeleton } from './DashboardSectionSkeleton';
 import { DashboardSourceMeta, useReceivedAt } from './DashboardSourceMeta';
-import {
-  formatOwnerIntegrationHonesty,
-  ownerHonestyCtaLabel,
-  pickOwnerDashboardProviders,
-  toOwnerIntegrationHonesty,
-} from './integration-honesty';
+
+const DASHBOARD_CONNECTION_SKELETON_ROWS = 9;
 
 /**
- * Core provider status straight from the integration hub. A provider is only "Connected"
- * when the hub reports a usable capability — configuration alone is never enough.
+ * Core provider status from the same enterprise truth mapping as /integrations.
+ * Connected requires persisted hub capability evidence — never config or routes alone.
  */
 export function ConnectionsPanel() {
   const { accessToken } = useAuth();
 
   const hubQuery = useStaffCachedQuery({
-    queryKey: 'integrations/hub/dashboard?simple=true',
+    queryKey: 'integrations/hub-dashboard',
     enabled: Boolean(accessToken),
-    fetcher: async () => fetchIntegrationHubDashboard(accessToken!, { simple: true }),
+    fetcher: async (signal) =>
+      fetchIntegrationHubDashboard(accessToken!, { signal, simple: true }),
   });
 
-  const coreProviders = pickOwnerDashboardProviders(hubQuery.data?.providers ?? []);
-  const receivedAt = useReceivedAt(hubQuery.data);
-  const disconnectedCount = coreProviders.filter(
-    (provider) => toOwnerIntegrationHonesty(provider.capabilityState) !== 'connected',
-  ).length;
+  const autoSyncQuery = useStaffCachedQuery({
+    queryKey: 'integrations/auto-sync-statuses',
+    enabled: Boolean(accessToken),
+    staleTimeMs: 30_000,
+    fetcher: (signal) => fetchIntegrationAutoSyncStatuses(accessToken!, { signal }),
+  });
+
+  const socialQuery = useStaffCachedQuery({
+    queryKey: 'integrations/social-connections-dashboard',
+    enabled: Boolean(accessToken),
+    staleTimeMs: 30_000,
+    fetcher: async (signal) => {
+      const data = await fetchSocialConnectionsDashboard(accessToken!, { signal });
+      return data;
+    },
+  });
+
+  const autoSyncByProvider = useMemo(() => {
+    const map = new Map<string, IntegrationProviderAutoSyncStatus>();
+    for (const entry of autoSyncQuery.data ?? []) {
+      if (entry.integrationProvider) {
+        map.set(entry.integrationProvider, entry);
+      }
+      map.set(entry.provider, entry);
+    }
+    return map;
+  }, [autoSyncQuery.data]);
+
+  const rows = useMemo(
+    () =>
+      buildDashboardConnectionOverviewRows({
+        hubProviders: hubQuery.data?.providers ?? [],
+        autoSyncByProvider,
+        socialCards: socialQuery.data?.providers ?? [],
+      }),
+    [hubQuery.data?.providers, autoSyncByProvider, socialQuery.data?.providers],
+  );
+
+  const receivedAt = useReceivedAt(hubQuery.data ?? socialQuery.data);
+  const footerState = dashboardConnectionsFooterState(rows);
+  const attentionCount = rows.filter((row) => row.status !== 'connected').length;
+
+  const isLoading =
+    (hubQuery.isLoading && !hubQuery.data) ||
+    (autoSyncQuery.isLoading && !autoSyncQuery.data) ||
+    (socialQuery.isLoading && !socialQuery.data);
+
+  const loadError = hubQuery.error ?? socialQuery.error;
 
   return (
     <Panel
       title="Connections"
-      description="Live hub status"
+      description="Integration connection status"
       headerAction={<Link href="/integrations">Manage</Link>}
     >
-      {hubQuery.isLoading && !hubQuery.data ? (
-        <DashboardSectionSkeleton rows={6} />
-      ) : hubQuery.error && !hubQuery.data ? (
+      {isLoading ? (
+        <DashboardSectionSkeleton rows={DASHBOARD_CONNECTION_SKELETON_ROWS} />
+      ) : loadError && rows.length === 0 ? (
         <div>
-          <p className="form-error">{hubQuery.error}</p>
-          <Button size="sm" variant="secondary" onClick={() => void hubQuery.refetch()}>
+          <p className="form-error">{loadError}</p>
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => {
+              void hubQuery.refetch();
+              void autoSyncQuery.refetch();
+              void socialQuery.refetch();
+            }}
+          >
             Retry
           </Button>
         </div>
-      ) : coreProviders.length === 0 ? (
+      ) : rows.length === 0 ? (
         <p className="exec-utility-empty">Connection status unavailable.</p>
       ) : (
         <ul className="exec-utility-connections">
-          {coreProviders.map((provider) => {
-            const honesty = toOwnerIntegrationHonesty(provider.capabilityState);
-            const label = formatOwnerIntegrationHonesty(honesty);
-            const href = provider.settingsPath || '/integrations';
-            const cta = ownerHonestyCtaLabel(honesty, provider.canConnect);
-            const tone =
-              honesty === 'connected' ? 'is-ok' : honesty === 'attention' ? 'is-warn' : 'is-muted';
-
-            const lastSyncHint =
-              String(provider.provider) === 'xero' && honesty === 'connected'
-                ? provider.lastSyncAt
-                  ? `Synced ${new Date(provider.lastSyncAt).toLocaleString(undefined, {
-                      month: 'short',
-                      day: 'numeric',
-                      hour: 'numeric',
-                      minute: '2-digit',
-                    })}`
-                  : 'Connected — awaiting first sync'
-                : null;
-
-            return (
-              <li key={String(provider.provider)}>
-                <span className={`exec-utility-status__dot ${tone}`} />
-                <div className="exec-utility-connections__meta">
-                  <span className="exec-utility-connections__name">{provider.name}</span>
-                  <strong className={`exec-utility-connections__status ${tone}`}>{label}</strong>
-                  {lastSyncHint ? (
-                    <em className="exec-utility-connections__sync">{lastSyncHint}</em>
-                  ) : null}
-                </div>
-                <Link href={href} className="exec-utility-connections__cta">
-                  {cta}
-                </Link>
-              </li>
-            );
-          })}
+          {rows.map((row) => (
+            <li key={row.providerKey} data-connection-status={row.status}>
+              <div className="exec-utility-connections__meta">
+                <span className="exec-utility-connections__name">{row.name}</span>
+                <EnterpriseConnectionStatusLine status={row.status} />
+              </div>
+              <Link href={row.actionHref} className="exec-utility-connections__cta">
+                {row.actionLabel}
+              </Link>
+            </li>
+          ))}
         </ul>
       )}
       <DashboardSourceMeta
-        source="Integration hub connection records"
+        source="Integration hub and social connection records"
         updatedAt={receivedAt}
-        state={
-          coreProviders.length === 0 ? 'unavailable' : disconnectedCount > 0 ? 'partial' : 'live'
-        }
+        state={footerState}
         href="/integrations"
         linkLabel="Open integrations"
         note={
-          disconnectedCount > 0
-            ? `${disconnectedCount} of ${coreProviders.length} core providers are not fully connected.`
+          attentionCount > 0
+            ? `${attentionCount} of ${rows.length} providers need attention or setup.`
             : null
         }
       />

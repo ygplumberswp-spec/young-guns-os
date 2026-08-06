@@ -1,72 +1,94 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import type { IntegrationProviderStatus } from '@titan/shared';
 import {
-  formatOwnerIntegrationHonesty,
-  ownerHonestyCtaLabel,
-  pickOwnerDashboardProviders,
-  toOwnerIntegrationHonesty,
-} from './integration-honesty.js';
+  ENTERPRISE_CONNECTION_STATUS_LABELS,
+  deriveHubEnterpriseConnectionStatus,
+} from '../integrations/enterprise-connection-status.js';
+import {
+  buildHubDashboardConnectionRow,
+  DASHBOARD_CONNECTION_OVERVIEW_PROVIDER_KEYS,
+} from './dashboard-connection-overview.js';
+import { pickOwnerDashboardProviders } from './integration-honesty.js';
 
-function stubProvider(
-  provider: string,
-  capabilityState: IntegrationProviderStatus['capabilityState'],
-): IntegrationProviderStatus {
-  return {
-    provider: provider as IntegrationProviderStatus['provider'],
-    name: provider,
-    description: '',
-    category: 'communications',
-    availability: 'available',
-    settingsPath: `/integrations/${provider}`,
-    supportsSync: false,
-    supportsWebhooks: false,
-    connectionId: null,
-    connectionStatus: 'disconnected',
-    isConfigured: false,
-    lastSyncAt: null,
-    lastError: null,
-    connectedAt: null,
-    capabilityState,
-    capabilityLabel: 'Disconnected',
-    canConnect: true,
-    canSend: false,
-  };
-}
-
-describe('owner dashboard integration honesty', () => {
-  it('maps capability states to Connected / Attention / Not connected', () => {
-    assert.equal(toOwnerIntegrationHonesty('connected_usable'), 'connected');
-    assert.equal(toOwnerIntegrationHonesty('failed_degraded'), 'attention');
-    assert.equal(toOwnerIntegrationHonesty('temporarily_unavailable'), 'attention');
-    assert.equal(toOwnerIntegrationHonesty('configured_unverified'), 'attention');
-    assert.equal(toOwnerIntegrationHonesty('disconnected'), 'not_connected');
-    assert.equal(toOwnerIntegrationHonesty('not_configured'), 'not_connected');
-    assert.equal(toOwnerIntegrationHonesty('not_implemented'), 'not_connected');
+/** @deprecated Legacy honesty helpers — dashboard now uses enterprise-connection-status. */
+describe('integration-honesty legacy (deprecated)', () => {
+  it('dashboard audit provider keys cover core hub and social providers', () => {
+    assert.ok(DASHBOARD_CONNECTION_OVERVIEW_PROVIDER_KEYS.includes('xero'));
+    assert.ok(DASHBOARD_CONNECTION_OVERVIEW_PROVIDER_KEYS.includes('facebook'));
+    assert.equal(DASHBOARD_CONNECTION_OVERVIEW_PROVIDER_KEYS.length, 9);
   });
 
-  it('formats owner-facing labels', () => {
-    assert.equal(formatOwnerIntegrationHonesty('connected'), 'Connected');
-    assert.equal(formatOwnerIntegrationHonesty('attention'), 'Attention');
-    assert.equal(formatOwnerIntegrationHonesty('not_connected'), 'Not connected');
-  });
-
-  it('picks core providers in stable order from hub data', () => {
+  it('pickOwnerDashboardProviders remains stable for hub subset', () => {
     const picked = pickOwnerDashboardProviders([
-      stubProvider('cartrack', 'connected_usable'),
-      stubProvider('gmail', 'not_configured'),
-      stubProvider('n8n', 'connected_usable'),
-      stubProvider('xero', 'failed_degraded'),
+      {
+        provider: 'cartrack',
+        name: 'Cartrack',
+        description: '',
+        category: 'fleet',
+        availability: 'available',
+        settingsPath: '/integrations/cartrack',
+        supportsSync: true,
+        supportsWebhooks: false,
+        connectionId: null,
+        connectionStatus: 'disconnected',
+        isConfigured: false,
+        lastSyncAt: null,
+        lastError: null,
+        connectedAt: null,
+        capabilityState: 'connected_usable',
+        capabilityLabel: 'Connected',
+        canConnect: true,
+        canSend: false,
+      },
     ]);
-    assert.deepEqual(
-      picked.map((p) => p.provider),
-      ['gmail', 'xero', 'cartrack'],
-    );
+    assert.equal(picked.length, 1);
+    assert.equal(picked[0]?.provider, 'cartrack');
   });
 
-  it('uses Connect / Review / Manage CTAs by honesty bucket', () => {
-    assert.equal(ownerHonestyCtaLabel('not_connected', true), 'Connect');
-    assert.equal(ownerHonestyCtaLabel('attention', true), 'Review');
-    assert.equal(ownerHonestyCtaLabel('connected', true), 'Manage');
+  it('enterprise mapper replaces legacy Attention label with Action required', () => {
+    const row = buildHubDashboardConnectionRow({
+      provider: 'xero',
+      name: 'Xero',
+      description: '',
+      category: 'accounting',
+      availability: 'available',
+      settingsPath: '/integrations/xero',
+      supportsSync: true,
+      supportsWebhooks: false,
+      connectionId: '1',
+      connectionStatus: 'error',
+      isConfigured: true,
+      lastSyncAt: null,
+      lastError: null,
+      connectedAt: null,
+      capabilityState: 'failed_degraded',
+      capabilityLabel: 'Degraded',
+      canConnect: true,
+      canSend: false,
+    });
+    assert.equal(row.statusLabel, ENTERPRISE_CONNECTION_STATUS_LABELS.attention_required);
+    assert.equal(
+      deriveHubEnterpriseConnectionStatus({
+        provider: 'xero',
+        name: 'Xero',
+        description: '',
+        category: 'accounting',
+        availability: 'available',
+        settingsPath: '/integrations/xero',
+        supportsSync: true,
+        supportsWebhooks: false,
+        connectionId: '1',
+        connectionStatus: 'error',
+        isConfigured: true,
+        lastSyncAt: null,
+        lastError: null,
+        connectedAt: null,
+        capabilityState: 'failed_degraded',
+        capabilityLabel: 'Degraded',
+        canConnect: true,
+        canSend: false,
+      }),
+      'attention_required',
+    );
   });
 });

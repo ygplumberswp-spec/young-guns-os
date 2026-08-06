@@ -41,14 +41,15 @@
 
 **Status:** High-priority enterprise gaps — **documented only**. No implementation during Integrations overview or before Owner formal sequencing.
 
-**Formal sequence after Integrations overview approval:**
+**Formal sequence after Integrations overview approval (INT-UI-001B):**
 
 | Order | Task ID | Name | Gate |
 |------:|---------|------|------|
-| 0 | INT-OVERVIEW-001 | Integrations overview enterprise polish | **Pending Owner approval** (PR #10) |
+| 0 | INT-OVERVIEW-001 | Integrations overview + Dashboard Connections alignment | **Pending Owner approval** |
 | 1 | **PERF-001** | **TITAN Performance Foundation** | Owner sequences after step 0 |
-| 2 | **DASH-001** | **Owner Dashboard — Business Heartbeat** | Owner sequences after PERF-001 (or parallel if explicitly approved) |
-| 3 | XERO-002 | Xero live proof (Owner gate) | **Blocked** until steps 0–2 formally sequenced |
+| 2 | **XERO-003** | **Near-real-time Xero quote, invoice and payment intersync** | Owner sequences after PERF-001 |
+| 3 | **DASH-001** | **Owner Dashboard — Business Heartbeat** | Owner sequences after XERO-003 |
+| 4 | XERO-002 | Controlled Xero live proof (Owner gate) | **Blocked** until steps 0–3 formally sequenced |
 
 Both tasks must meet the **Enterprise Product Quality Gate** and **Fine Details & Finishing** standard applied to the Integrations overview.
 
@@ -98,6 +99,12 @@ Both tasks must meet the **Enterprise Product Quality Gate** and **Fine Details 
 
 **Quality bar:** Same Enterprise Product Quality Gate + Fine Details & Finishing as Integrations overview.
 
+### XERO-003 — Near-real-time Xero quote, invoice and payment intersync
+
+**Gap:** Quote → invoice → payment state changes are not reflected near-real-time across TITAN and Xero.
+
+**Future scope (not started):** Near-real-time intersync for quotes, invoices and payments — incremental sync, webhook-driven updates where available, honest UI freshness, and measurable latency evidence. **Does not replace** XERO-002 controlled live proof; runs as a separate sequenced task before DASH-001.
+
 ---
 
 ## Xero gaps (XERO-001 audit 2026-08-06)
@@ -126,7 +133,7 @@ Both tasks must meet the **Enterprise Product Quality Gate** and **Fine Details 
 | X-P1-4 | Playwright authenticated Xero journeys |
 | X-P1-5 | Reduce sync log failure noise / date parsing |
 
-**Next locked task:** **PERF-001 — TITAN Performance Foundation** (after Integrations overview Owner approval). **XERO-002 LIVE PROOF remains blocked** until PERF-001 and DASH-001 are formally sequenced — see [TITAN_XERO_002_LIVE_PROOF_PLAN.md](./TITAN_XERO_002_LIVE_PROOF_PLAN.md).
+**Next locked task:** **PERF-001 — TITAN Performance Foundation** (after INT-OVERVIEW-001 Owner approval). **XERO-002 live proof remains blocked** until PERF-001, XERO-003 and DASH-001 are formally sequenced.
 
 ---
 
@@ -238,4 +245,4 @@ Both tasks must meet the **Enterprise Product Quality Gate** and **Fine Details 
 | 5 | Partial modules | Implementation |
 | 6 | Deferred | Owner approval gates |
 
-**Next recommended action:** Owner approve Integrations overview (PR #10) → formally sequence **PERF-001** then **DASH-001** → then approve Xero live proof.
+**Next recommended action:** Owner approve INT-OVERVIEW-001 → formally sequence **PERF-001 → XERO-003 → DASH-001** → then approve Xero live proof.
