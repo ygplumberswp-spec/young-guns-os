@@ -25,6 +25,8 @@ import type { XeroCustomerMappingService } from '../services/xero-customer-mappi
 import { XeroCustomerMappingError } from '../services/xero-customer-mapping.service.js';
 import type { XeroReconciliationService } from '../services/xero-reconciliation.service.js';
 import type { XeroRealtimeIntersyncService } from '../services/xero-realtime-intersync.service.js';
+import type { XeroGate2ReadonlyProofService } from '../services/xero-gate2-readonly-proof.service.js';
+import { XeroGate2ReadonlyProofError } from '../services/xero-gate2-readonly-proof.service.js';
 import type { TeamService } from '../services/team.service.js';
 import { createAuthMiddleware, type AuthenticatedRequest } from '../middleware/auth.js';
 import { requireAnyPermission } from '../middleware/rbac.js';
@@ -179,6 +181,11 @@ const rejectXeroWriteSchema = z.object({
   reason: z.string().trim().max(1000).optional(),
 });
 
+const gate2ReadonlyProofSchema = z.object({
+  customerId: z.string().uuid(),
+  invoiceId: z.string().uuid(),
+});
+
 const resolveXeroConflictSchema = z.object({
   entityType: z.enum(['invoice', 'contact', 'payment']),
   entityId: z.string().uuid(),
@@ -199,6 +206,7 @@ type IntegrationsRouterDeps = {
   xeroCustomerMappingService?: XeroCustomerMappingService;
   xeroReconciliationService?: XeroReconciliationService;
   xeroRealtimeIntersyncService?: XeroRealtimeIntersyncService;
+  xeroGate2ReadonlyProofService?: XeroGate2ReadonlyProofService;
   teamService: TeamService;
   appUrl: string;
   jwtSecret: string;
@@ -239,6 +247,7 @@ export function createIntegrationsRouter({
   xeroCustomerMappingService,
   xeroReconciliationService,
   xeroRealtimeIntersyncService,
+  xeroGate2ReadonlyProofService,
   teamService,
   appUrl,
   jwtSecret,
@@ -573,6 +582,50 @@ export function createIntegrationsRouter({
       handleXeroOAuthError(res, error);
     }
   });
+
+  router.post(
+    '/xero/gate2-readonly-proof',
+    requireAnyPermission('integrations:manage'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+
+      if (!xeroGate2ReadonlyProofService) {
+        res.status(503).json({
+          error: { code: 'NOT_CONFIGURED', message: 'Gate 2 read-only proof is not configured.' },
+        });
+        return;
+      }
+
+      const parsed = gate2ReadonlyProofSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({
+          error: { code: 'VALIDATION_ERROR', message: parsed.error.issues[0]?.message ?? 'Invalid body' },
+        });
+        return;
+      }
+
+      try {
+        const result = await xeroGate2ReadonlyProofService.proveReadOnly({
+          companyId,
+          customerId: parsed.data.customerId,
+          invoiceId: parsed.data.invoiceId,
+        });
+        res.json({ data: { result } });
+      } catch (error) {
+        if (error instanceof XeroGate2ReadonlyProofError) {
+          const status =
+            error.code === 'ATTACHMENT_SCOPE_INSUFFICIENT'
+              ? 403
+              : error.code === 'ORG_MISMATCH'
+                ? 409
+                : 502;
+          res.status(status).json({ error: { code: error.code, message: error.message } });
+          return;
+        }
+        handleXeroOAuthError(res, error);
+      }
+    },
+  );
 
   router.put('/xero', requireAnyPermission('integrations:manage'), async (_req, res) => {
     res.status(410).json({

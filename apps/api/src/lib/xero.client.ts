@@ -437,6 +437,17 @@ export class XeroClient {
     return invoices[0]!;
   }
 
+  async fetchContact(contactId: string): Promise<XeroContactRecord> {
+    const payload = await this.apiRequest('GET', `/Contacts/${contactId}`);
+    const contacts = extractContacts(payload);
+
+    if (contacts.length === 0) {
+      throw new XeroError('NOT_FOUND', 'Xero contact not found');
+    }
+
+    return contacts[0]!;
+  }
+
   /**
    * Page an entity to exhaustion. There is no record or page cap: the loop ends only when Xero
    * returns a short/empty page. A runaway pager raises instead of returning partial history.

@@ -94,6 +94,7 @@ import { XeroWriteApprovalWorkflowService } from './services/xero-write-approval
 import { XeroTwoWayVerifyService } from './services/xero-two-way-verify.service.js';
 import { XeroRateBudgetService } from './services/xero-rate-budget.service.js';
 import { XeroRealtimeIntersyncService } from './services/xero-realtime-intersync.service.js';
+import { XeroGate2ReadonlyProofService } from './services/xero-gate2-readonly-proof.service.js';
 import { createXeroWebhookRouter } from './routes/xero-webhook.js';
 import { WhatsappService } from './services/whatsapp.service.js';
 import { WhatsappContactEnrichmentService } from './services/whatsapp-contact-enrichment.service.js';
@@ -569,6 +570,7 @@ const xeroOAuthService = XeroOAuthService.create({
   appUrl: env.APP_URL,
   oauthConfig: xeroOAuthConfig,
 });
+const xeroGate2ReadonlyProofService = new XeroGate2ReadonlyProofService(db, xeroOAuthService);
 const gmailOAuthConfig = resolveGmailOAuthConfig(env, apiPublicUrl);
 bootLog('gmail oauth resolved', {
   oauthConfigured: gmailOAuthConfig.configured,
@@ -1957,6 +1959,7 @@ app.use(
     xeroCustomerMappingService,
     xeroReconciliationService,
     xeroRealtimeIntersyncService,
+    xeroGate2ReadonlyProofService,
     teamService,
     appUrl: env.APP_URL,
     jwtSecret: env.JWT_SECRET,
