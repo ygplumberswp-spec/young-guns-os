@@ -37,10 +37,21 @@ export type BusinessHeartbeatMetric = {
 };
 
 export type BusinessHeartbeatSummary = {
-  metrics: BusinessHeartbeatMetric[];
+  primaryMetrics: BusinessHeartbeatMetric[];
+  secondaryMetrics: BusinessHeartbeatMetric[];
   freshness: DashboardFreshnessLabel;
   sectionStatus: ExecutiveSectionStatus | null;
 };
+
+/** DASH-001A — compact list limits for executive dashboard panels. */
+export const DASHBOARD_LIST_LIMITS = {
+  attentionItems: 5,
+  auraRecommendations: 3,
+  outstandingInvoices: 3,
+  activeJobs: 4,
+  salesOpportunities: 4,
+  alertStrip: 3,
+} as const;
 
 export type FinancialTruthLine = {
   key: string;
@@ -50,6 +61,8 @@ export type FinancialTruthLine = {
   caption: string;
   estimate: boolean;
   href: string | null;
+  /** User-facing value when amount is not yet available — never a bare dash. */
+  displayValue: string;
 };
 
 export type FinancialTruthSummary = {
@@ -180,6 +193,27 @@ function formatCurrency(cents: number, currency: string): string {
   }).format(cents / 100);
 }
 
+function formatMetricValue(
+  formatted: string,
+  input: { unavailable: boolean; estimate: boolean; rawValue: number | null },
+): string {
+  if (input.unavailable) return '—';
+  if (input.estimate && input.rawValue == null) return 'Not available yet';
+  return formatted;
+}
+
+function formatFinancialDisplayValue(
+  amountCents: number | null,
+  currency: string,
+  input: { estimate: boolean; unavailable: boolean; partialImport?: boolean },
+): string {
+  if (input.unavailable) return '—';
+  if (input.partialImport && amountCents == null) return 'Earlier records still importing';
+  if (input.estimate && amountCents == null) return 'Not available yet';
+  if (amountCents == null) return 'Not available yet';
+  return formatCurrency(amountCents, currency);
+}
+
 function monthKey(date: Date): string {
   return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`;
 }
@@ -246,47 +280,23 @@ export function buildDash001Extensions(input: {
       ? Math.max(monthCashCents, 0)
       : null;
 
-  const heartbeatMetrics: BusinessHeartbeatMetric[] = [
-    {
-      key: 'jobs_today',
-      label: 'Jobs today',
-      value: String(glance.jobs.scheduled + glance.jobs.inProgress),
-      rawValue: glance.jobs.scheduled + glance.jobs.inProgress,
-      href: '/jobs?filter=today',
-      comparisonLabel: null,
-      trend: 'unknown',
-      freshness: 'Live',
-      estimate: false,
-      unavailable: summary.sections.todayAtAGlance.state === 'unavailable',
-    },
-    {
-      key: 'active_jobs',
-      label: 'Active jobs',
-      value: String(glance.jobs.inProgress),
-      rawValue: glance.jobs.inProgress,
-      href: '/jobs?status=in_progress',
-      comparisonLabel: null,
-      trend: 'unknown',
-      freshness: 'Live',
-      estimate: false,
-      unavailable: summary.sections.activeJobs.state === 'unavailable',
-    },
-    {
-      key: 'completed_today',
-      label: 'Completed today',
-      value: String(glance.jobs.completed),
-      rawValue: glance.jobs.completed,
-      href: '/jobs?filter=completed-today',
-      comparisonLabel: null,
-      trend: 'unknown',
-      freshness: 'Live',
-      estimate: false,
-      unavailable: summary.sections.completedToday.state === 'unavailable',
-    },
+  const moneyUnavailable = summary.sections.money.state === 'unavailable';
+  const financePartialImport =
+    xero.importStatus === 'running' ||
+    xero.importStatus === 'queued' ||
+    xero.importStatus === 'pending';
+
+  const quotesAwaiting = input.quotesAwaitingApproval ?? 0;
+  const quotesFollowUp = input.quotesFollowUp ?? 0;
+
+  const primaryMetrics: BusinessHeartbeatMetric[] = [
     {
       key: 'revenue_month',
       label: 'Revenue this month',
-      value: monthRevenueCents != null ? formatCurrency(monthRevenueCents, currency) : '—',
+      value: formatMetricValue(
+        monthRevenueCents != null ? formatCurrency(monthRevenueCents, currency) : '',
+        { unavailable: moneyUnavailable, estimate: monthRevenueCents == null, rawValue: monthRevenueCents },
+      ),
       rawValue: monthRevenueCents,
       href: '/finance/invoices',
       comparisonLabel: revenueComparison,
@@ -300,55 +310,46 @@ export function buildDash001Extensions(input: {
           : 'unknown',
       freshness: financeFreshness,
       estimate: monthRevenueCents == null,
-      unavailable: summary.sections.money.state === 'unavailable',
+      unavailable: moneyUnavailable,
     },
     {
       key: 'cash_collected',
-      label: 'Cash collected this month',
-      value: monthCashCents != null ? formatCurrency(monthCashCents, currency) : '—',
+      label: 'Cash collected',
+      value: formatMetricValue(
+        monthCashCents != null ? formatCurrency(monthCashCents, currency) : '',
+        { unavailable: moneyUnavailable, estimate: monthCashCents == null, rawValue: monthCashCents },
+      ),
       rawValue: monthCashCents,
       href: '/finance/payments',
       comparisonLabel: null,
       trend: 'unknown',
       freshness: financeFreshness,
       estimate: monthCashCents == null,
-      unavailable: summary.sections.money.state === 'unavailable',
+      unavailable: moneyUnavailable,
     },
     {
       key: 'gross_profit',
       label: 'Estimated gross profit',
-      value:
-        grossProfitEstimate != null ? formatCurrency(grossProfitEstimate, currency) : '—',
+      value: formatMetricValue(
+        grossProfitEstimate != null ? formatCurrency(grossProfitEstimate, currency) : '',
+        { unavailable: moneyUnavailable, estimate: true, rawValue: grossProfitEstimate },
+      ),
       rawValue: grossProfitEstimate,
       href: '/finance-cashflow-profit',
       comparisonLabel: null,
       trend: 'unknown',
       freshness: financeFreshness,
       estimate: true,
-      unavailable: summary.sections.money.state === 'unavailable',
-    },
-    {
-      key: 'gross_margin',
-      label: 'Gross margin',
-      value:
-        monthRevenueCents != null && grossProfitEstimate != null && monthRevenueCents > 0
-          ? `${Math.round((grossProfitEstimate / monthRevenueCents) * 100)}%`
-          : '—',
-      rawValue:
-        monthRevenueCents != null && grossProfitEstimate != null && monthRevenueCents > 0
-          ? Math.round((grossProfitEstimate / monthRevenueCents) * 100)
-          : null,
-      href: '/finance-cashflow-profit',
-      comparisonLabel: null,
-      trend: 'unknown',
-      freshness: financeFreshness,
-      estimate: true,
-      unavailable: summary.sections.money.state === 'unavailable',
+      unavailable: moneyUnavailable,
     },
     {
       key: 'outstanding',
       label: 'Outstanding invoices',
-      value: formatCurrency(outstanding.outstandingCents, currency),
+      value: formatMetricValue(formatCurrency(outstanding.outstandingCents, currency), {
+        unavailable: summary.sections.outstandingInvoices.state === 'unavailable',
+        estimate: false,
+        rawValue: outstanding.outstandingCents,
+      }),
       rawValue: outstanding.outstandingCents,
       href: '/finance/invoices?filter=outstanding',
       comparisonLabel: null,
@@ -358,12 +359,68 @@ export function buildDash001Extensions(input: {
       unavailable: summary.sections.outstandingInvoices.state === 'unavailable',
     },
     {
+      key: 'jobs_today',
+      label: 'Jobs today',
+      value: formatMetricValue(String(glance.jobs.scheduled + glance.jobs.inProgress), {
+        unavailable: summary.sections.todayAtAGlance.state === 'unavailable',
+        estimate: false,
+        rawValue: glance.jobs.scheduled + glance.jobs.inProgress,
+      }),
+      rawValue: glance.jobs.scheduled + glance.jobs.inProgress,
+      href: '/jobs?filter=today',
+      comparisonLabel: null,
+      trend: 'unknown',
+      freshness: 'Live',
+      estimate: false,
+      unavailable: summary.sections.todayAtAGlance.state === 'unavailable',
+    },
+    {
+      key: 'active_jobs',
+      label: 'Active jobs',
+      value: formatMetricValue(String(glance.jobs.inProgress), {
+        unavailable: summary.sections.activeJobs.state === 'unavailable',
+        estimate: false,
+        rawValue: glance.jobs.inProgress,
+      }),
+      rawValue: glance.jobs.inProgress,
+      href: '/jobs?status=in_progress',
+      comparisonLabel: null,
+      trend: 'unknown',
+      freshness: 'Live',
+      estimate: false,
+      unavailable: summary.sections.activeJobs.state === 'unavailable',
+    },
+  ];
+
+  const secondaryMetrics: BusinessHeartbeatMetric[] = [
+    {
+      key: 'completed_today',
+      label: 'Completed today',
+      value: formatMetricValue(String(glance.jobs.completed), {
+        unavailable: summary.sections.completedToday.state === 'unavailable',
+        estimate: false,
+        rawValue: glance.jobs.completed,
+      }),
+      rawValue: glance.jobs.completed,
+      href: '/jobs?filter=completed-today',
+      comparisonLabel: null,
+      trend: 'unknown',
+      freshness: 'Live',
+      estimate: false,
+      unavailable: summary.sections.completedToday.state === 'unavailable',
+    },
+    {
       key: 'overdue',
       label: 'Overdue invoices',
-      value: String(outstanding.overdueCount),
+      value: formatMetricValue(String(outstanding.overdueCount), {
+        unavailable: summary.sections.outstandingInvoices.state === 'unavailable',
+        estimate: false,
+        rawValue: outstanding.overdueCount,
+      }),
       rawValue: outstanding.overdueCount,
       href: '/finance/invoices?filter=overdue',
-      comparisonLabel: outstanding.overdueCents > 0 ? formatCurrency(outstanding.overdueCents, currency) : null,
+      comparisonLabel:
+        outstanding.overdueCents > 0 ? formatCurrency(outstanding.overdueCents, currency) : null,
       trend: 'unknown',
       freshness: financeFreshness,
       estimate: false,
@@ -372,9 +429,9 @@ export function buildDash001Extensions(input: {
     {
       key: 'quotes_pipeline',
       label: 'Quotes awaiting approval',
-      value: String(input.quotesAwaitingApproval ?? xero.quotePipelineCount ?? 0),
-      rawValue: input.quotesAwaitingApproval ?? xero.quotePipelineCount ?? 0,
-      href: '/finance/quotes',
+      value: String(quotesAwaiting),
+      rawValue: quotesAwaiting,
+      href: '/finance/quotes?filter=sent',
       comparisonLabel: null,
       trend: 'unknown',
       freshness: financeFreshness,
@@ -383,9 +440,9 @@ export function buildDash001Extensions(input: {
     },
     {
       key: 'quotes_follow_up',
-      label: 'Quotes requiring follow-up',
-      value: String(input.quotesFollowUp ?? 0),
-      rawValue: input.quotesFollowUp ?? 0,
+      label: 'Quote follow-ups due',
+      value: String(quotesFollowUp),
+      rawValue: quotesFollowUp,
       href: '/finance/quotes?filter=follow-up',
       comparisonLabel: null,
       trend: 'unknown',
@@ -396,7 +453,11 @@ export function buildDash001Extensions(input: {
     {
       key: 'leads_action',
       label: 'Leads requiring action',
-      value: String(glance.customerActivity.leads),
+      value: formatMetricValue(String(glance.customerActivity.leads), {
+        unavailable: summary.sections.customerActivity.state === 'unavailable',
+        estimate: false,
+        rawValue: glance.customerActivity.leads,
+      }),
       rawValue: glance.customerActivity.leads,
       href: '/crm/leads',
       comparisonLabel: null,
@@ -419,6 +480,11 @@ export function buildDash001Extensions(input: {
         caption: 'Invoice issued ≠ cash collected',
         estimate: monthRevenueCents == null,
         href: '/finance/invoices',
+        displayValue: formatFinancialDisplayValue(monthRevenueCents, currency, {
+          estimate: monthRevenueCents == null,
+          unavailable: moneyUnavailable,
+          partialImport: financePartialImport,
+        }),
       },
       {
         key: 'collected',
@@ -428,6 +494,11 @@ export function buildDash001Extensions(input: {
         caption: 'Payments recorded in TITAN',
         estimate: monthCashCents == null,
         href: '/finance/payments',
+        displayValue: formatFinancialDisplayValue(monthCashCents, currency, {
+          estimate: monthCashCents == null,
+          unavailable: moneyUnavailable,
+          partialImport: financePartialImport,
+        }),
       },
       {
         key: 'outstanding',
@@ -437,6 +508,10 @@ export function buildDash001Extensions(input: {
         caption: 'Open invoice balances',
         estimate: false,
         href: '/finance/invoices?filter=outstanding',
+        displayValue: formatFinancialDisplayValue(outstanding.outstandingCents, currency, {
+          estimate: false,
+          unavailable: summary.sections.outstandingInvoices.state === 'unavailable',
+        }),
       },
       {
         key: 'overdue',
@@ -446,15 +521,24 @@ export function buildDash001Extensions(input: {
         caption: 'Past due date',
         estimate: false,
         href: '/finance/invoices?filter=overdue',
+        displayValue: formatFinancialDisplayValue(outstanding.overdueCents, currency, {
+          estimate: false,
+          unavailable: summary.sections.outstandingInvoices.state === 'unavailable',
+        }),
       },
       {
         key: 'gross_profit',
-        label: 'Estimated gross position',
+        label: 'Estimated gross profit',
         amountCents: grossProfitEstimate ?? 0,
         currency,
-        caption: 'Estimate — based on collected cash this month',
+        caption: 'Estimate — cost information may be incomplete',
         estimate: true,
         href: '/finance-cashflow-profit',
+        displayValue: formatFinancialDisplayValue(grossProfitEstimate, currency, {
+          estimate: true,
+          unavailable: moneyUnavailable,
+          partialImport: financePartialImport,
+        }),
       },
     ],
     previousMonthComparison: [
@@ -466,6 +550,11 @@ export function buildDash001Extensions(input: {
         caption: prevMonthRevenueCents != null ? 'Comparable period' : 'Insufficient history',
         estimate: prevMonthRevenueCents == null,
         href: '/finance/invoices',
+        displayValue: formatFinancialDisplayValue(prevMonthRevenueCents, currency, {
+          estimate: prevMonthRevenueCents == null,
+          unavailable: moneyUnavailable,
+          partialImport: financePartialImport,
+        }),
       },
     ],
     yearToDate: [],
@@ -499,8 +588,8 @@ export function buildDash001Extensions(input: {
     glance,
     xero,
     currency,
-    quotesAwaitingApproval: input.quotesAwaitingApproval ?? xero.quotePipelineCount,
-    quotesFollowUp: input.quotesFollowUp ?? glance.customerActivity.followUps,
+    quotesAwaitingApproval: quotesAwaiting,
+    quotesFollowUp: quotesFollowUp,
   });
 
   const auraExecutive = buildAuraRecommendations({
@@ -511,9 +600,11 @@ export function buildDash001Extensions(input: {
     unassignedJobs: input.unassignedJobsCount ?? 0,
   });
 
-  const alerts = attentionItems
-    .filter((item) => item.priority === 'critical' || item.priority === 'attention')
-    .slice(0, 6)
+  const limitedAttention = attentionItems.slice(0, DASHBOARD_LIST_LIMITS.attentionItems);
+
+  const alerts = limitedAttention
+    .filter((item) => item.priority === 'critical')
+    .slice(0, DASHBOARD_LIST_LIMITS.alertStrip)
     .map((item) => ({
       id: item.id,
       priority: item.priority,
@@ -523,14 +614,18 @@ export function buildDash001Extensions(input: {
       actionLabel: item.recommendedAction,
     }));
 
-  const priorityCount = summary.priorities.needsAttention + attentionItems.filter((i) => i.priority !== 'informational').length;
+  const priorityCount =
+    summary.priorities.needsAttention +
+    limitedAttention.filter((i) => i.priority !== 'informational').length;
   const urgentAlertCount = alerts.filter((a) => a.priority === 'critical').length;
 
   const summaryParts: string[] = [];
   const jobsToday = glance.jobs.scheduled + glance.jobs.inProgress;
   if (jobsToday > 0) summaryParts.push(`${jobsToday} job${jobsToday === 1 ? '' : 's'} scheduled today`);
   if ((input.quotesAwaitingApproval ?? 0) > 0) {
-    summaryParts.push(`${input.quotesAwaitingApproval} quote${input.quotesAwaitingApproval === 1 ? '' : 's'} awaiting approval`);
+    summaryParts.push(
+      `${input.quotesAwaitingApproval} quote${input.quotesAwaitingApproval === 1 ? '' : 's'} awaiting approval`,
+    );
   }
   if (outstanding.outstandingCents > 0) {
     summaryParts.push(`${formatCurrency(outstanding.outstandingCents, currency)} outstanding`);
@@ -553,16 +648,17 @@ export function buildDash001Extensions(input: {
       urgentAlertCount,
     },
     businessHeartbeat: {
-      metrics: heartbeatMetrics,
+      primaryMetrics,
+      secondaryMetrics,
       freshness: financeFreshness,
-      sectionStatus: summary.sections.todayAtAGlance,
+      sectionStatus: summary.sections.businessHeartbeat,
     },
     financialTruth,
     attentionRequired: {
-      items: attentionItems,
-      criticalCount: attentionItems.filter((i) => i.priority === 'critical').length,
-      attentionCount: attentionItems.filter((i) => i.priority === 'attention').length,
-      opportunityCount: attentionItems.filter((i) => i.priority === 'opportunity').length,
+      items: limitedAttention,
+      criticalCount: limitedAttention.filter((i) => i.priority === 'critical').length,
+      attentionCount: limitedAttention.filter((i) => i.priority === 'attention').length,
+      opportunityCount: limitedAttention.filter((i) => i.priority === 'opportunity').length,
     },
     teamPerformance,
     salesOpportunities,
@@ -672,14 +768,14 @@ function buildAttentionItems(input: {
       id: 'quotes-follow-up',
       priority: 'opportunity',
       category: 'Quotes',
-      title: `${input.quotesFollowUp} quote${input.quotesFollowUp === 1 ? '' : 's'} need follow-up`,
+      title: `${input.quotesFollowUp} quote follow-up${input.quotesFollowUp === 1 ? '' : 's'} due`,
       customerName: null,
       amountCents: null,
       currency: input.currency,
       ageLabel: null,
-      reason: 'Customer approval or response pending',
+      reason: 'Follow-up date due or stale quote rule elapsed',
       recommendedAction: 'Review quotes',
-      href: '/finance/quotes',
+      href: '/finance/quotes?filter=follow-up',
       draftActionAvailable: true,
     });
   }
@@ -704,7 +800,16 @@ function buildTeamPerformance(input: {
   liveOperations: ExecutiveLiveJob[];
   unassignedJobs: number;
 }): TeamPerformanceSummary {
-  const members: TeamPerformanceMember[] = input.teamToday.slice(0, 8).map((member) => ({
+  const members: TeamPerformanceMember[] = input.teamToday
+    .filter(
+      (member) =>
+        member.status === 'on_site' ||
+        member.status === 'travelling' ||
+        member.status === 'working' ||
+        member.status === 'available',
+    )
+    .slice(0, 8)
+    .map((member) => ({
     userId: member.userId,
     name: member.name,
     statusLabel:
@@ -790,7 +895,7 @@ function buildSalesOpportunities(input: {
     uncontactedLeads: 0,
     quotesAwaitingApproval: input.quotesAwaitingApproval,
     followUpsDue: input.quotesFollowUp,
-    items,
+    items: items.slice(0, DASHBOARD_LIST_LIMITS.salesOpportunities),
   };
 }
 
@@ -835,7 +940,7 @@ function buildAuraRecommendations(input: {
   }
 
   return {
-    recommendations: recommendations.slice(0, 6),
+    recommendations: recommendations.slice(0, DASHBOARD_LIST_LIMITS.auraRecommendations),
     freshness: 'Updated recently',
   };
 }

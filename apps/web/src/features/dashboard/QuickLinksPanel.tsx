@@ -116,17 +116,22 @@ const QUICK_LINKS: QuickLink[] = [
   },
 ];
 
-export function QuickLinksPanel() {
+export function QuickLinksPanel({ compact = false }: { compact?: boolean }) {
   const { user } = useAuth();
   if (!user) return null;
 
   const links = QUICK_LINKS.filter((link) => hasAnyPermission(user.permissions, link.permissions));
   if (links.length === 0) return null;
+  const visibleLinks = compact ? links.slice(0, 4) : links;
 
   return (
-    <Panel title="Quick Links" description="Shortcuts to daily actions">
-      <div className="exec-quick-links">
-        {links.map((link) => (
+    <Panel
+      title="Quick Links"
+      description="Shortcuts to daily actions"
+      className={compact ? 'exec-quick-links-panel--compact' : undefined}
+    >
+      <div className={`exec-quick-links${compact ? ' exec-quick-links--compact' : ''}`}>
+        {visibleLinks.map((link) => (
           <Link
             key={link.href}
             href={link.href}

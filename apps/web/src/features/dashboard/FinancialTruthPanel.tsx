@@ -5,7 +5,7 @@ import type {
   FinancialTruthSummary,
 } from '@titan/shared';
 import { Panel } from '@titan/ui';
-import { useCompanyLocale } from '../../lib/company-locale-context';
+import { DashboardDetailsDisclosure } from './DashboardDetailsDisclosure';
 import { DashboardSectionSkeleton } from './DashboardSectionSkeleton';
 import { DashboardSourceMeta } from './DashboardSourceMeta';
 import { resolveFinanceCardHonesty, resolveSectionHonesty } from './dashboard-honesty';
@@ -19,6 +19,8 @@ type FinancialTruthPanelProps = {
   error?: string | null;
 };
 
+const PRIMARY_KEYS = ['invoiced', 'collected', 'outstanding', 'overdue', 'gross_profit'] as const;
+
 export function FinancialTruthPanel({
   data,
   xeroFinance = null,
@@ -27,87 +29,69 @@ export function FinancialTruthPanel({
   isLoading = false,
   error = null,
 }: FinancialTruthPanelProps) {
-  const { formatMoney } = useCompanyLocale();
   const sectionHonesty = resolveSectionHonesty(section, error);
   const financeHonesty = resolveFinanceCardHonesty(xeroFinance, error);
   const lines = data?.currentMonth ?? [];
-  const currency = data?.currency ?? 'ZAR';
+  const primaryLines = PRIMARY_KEYS.map((key) => lines.find((line) => line.key === key)).filter(
+    (line): line is NonNullable<typeof line> => line != null,
+  );
+  const previous = data?.previousMonthComparison[0] ?? null;
+  const partialImport =
+    data?.freshness === 'Some earlier records are still being imported' ||
+    financeHonesty.state === 'partial';
 
   return (
-    <Panel
-      title="Financial Truth"
-      description="Invoiced revenue, collected cash and debtors"
-      className="exec-financial-truth-panel"
-    >
+    <Panel title="Financial Truth" description="Invoiced revenue, collected cash and debtors">
       <div className="exec-financial-truth">
         {isLoading ? (
-          <DashboardSectionSkeleton rows={4} />
+          <DashboardSectionSkeleton rows={3} />
         ) : (
           <>
-            <ul className="exec-financial-truth__lines">
-              {lines.map((line) => (
-                <li key={line.key} className="exec-financial-truth__line">
+            <div className="exec-financial-truth__summary-grid">
+              {primaryLines.map((line) => (
+                <div key={line.key} className="exec-financial-truth__summary-card">
                   {line.href ? (
-                    <Link href={line.href} className="exec-financial-truth__link">
-                      <span className="exec-financial-truth__label">
+                    <Link href={line.href} className="exec-financial-truth__summary-link">
+                      <span className="exec-financial-truth__summary-label">
                         {line.label}
                         {line.estimate ? (
                           <em className="exec-financial-truth__estimate"> (estimate)</em>
                         ) : null}
                       </span>
-                      <span className="exec-financial-truth__amount">
-                        {line.estimate && line.amountCents === 0
-                          ? '—'
-                          : formatMoney(line.amountCents, currency)}
-                      </span>
+                      <span className="exec-financial-truth__summary-value">{line.displayValue}</span>
                     </Link>
                   ) : (
                     <>
-                      <span className="exec-financial-truth__label">{line.label}</span>
-                      <span className="exec-financial-truth__amount">
-                        {formatMoney(line.amountCents, currency)}
-                      </span>
+                      <span className="exec-financial-truth__summary-label">{line.label}</span>
+                      <span className="exec-financial-truth__summary-value">{line.displayValue}</span>
                     </>
                   )}
-                  <span className="exec-financial-truth__caption">{line.caption}</span>
-                </li>
+                </div>
               ))}
-            </ul>
-            {data?.previousMonthComparison.length ? (
+            </div>
+            {previous ? (
               <div className="exec-financial-truth__comparison">
-                <p className="exec-financial-truth__comparison-title">Previous month</p>
-                {data.previousMonthComparison.map((line) => (
-                  <p key={line.key} className="exec-financial-truth__comparison-row">
-                    <span>{line.label}</span>
-                    <span>
-                      {line.estimate ? '—' : formatMoney(line.amountCents, currency)}
-                    </span>
-                  </p>
-                ))}
+                <span className="exec-financial-truth__comparison-label">{previous.label}</span>
+                <span className="exec-financial-truth__comparison-value">{previous.displayValue}</span>
               </div>
             ) : null}
-            {data?.accountingNotes.length ? (
-              <ul className="exec-financial-truth__notes">
-                {data.accountingNotes.map((note) => (
-                  <li key={note}>{note}</li>
-                ))}
-              </ul>
-            ) : null}
-            {data?.yocoPaidSeparateFromReconciled ? (
-              <p className="exec-financial-truth__yoco-note">
-                Yoco payment confirmation is separate from Xero reconciliation.
+            {partialImport ? (
+              <p className="exec-financial-truth__import-note">
+                Some earlier financial records are still being imported.
               </p>
             ) : null}
           </>
         )}
-        <DashboardSourceMeta
-          source={section?.source ?? 'Finance · Xero'}
-          updatedAt={section?.updatedAt ?? generatedAt}
-          state={financeHonesty.state !== 'live' ? financeHonesty.state : sectionHonesty.state}
-          note={data?.freshness ?? financeHonesty.note ?? sectionHonesty.note}
-          href="/integrations/xero"
-          linkLabel="Manage Xero"
-        />
+        <DashboardDetailsDisclosure>
+          <DashboardSourceMeta
+            source={section?.source ?? 'Finance · Xero'}
+            updatedAt={section?.updatedAt ?? generatedAt}
+            state={financeHonesty.state === 'partial' ? 'live' : financeHonesty.state}
+            note={financeHonesty.note ?? sectionHonesty.note}
+            href="/integrations/xero"
+            linkLabel="Manage Xero"
+          />
+        </DashboardDetailsDisclosure>
       </div>
     </Panel>
   );

@@ -9,11 +9,11 @@ const dashboardDir = join(here, '../features/dashboard');
 const integrationsDir = join(here, '../features/integrations');
 
 describe('PERF-001 performance foundation', () => {
-  it('executive dashboard defers secondary panels and lazy-loads AURA', () => {
+  it('executive dashboard defers secondary panels and uses compact AURA launcher', () => {
     const source = readFileSync(join(dashboardDir, 'ExecutiveDashboard.tsx'), 'utf8');
     assert.match(source, /useDeferredMount/);
-    assert.match(source, /React\.lazy|lazy\(/);
-    assert.match(source, /AuraExecutiveChatPanel/);
+    assert.match(source, /AuraExecutiveChatLauncher/);
+    assert.doesNotMatch(source, /AuraExecutiveChatPanel/);
     assert.match(source, /DashboardSectionSkeleton/);
     assert.match(source, /fetchExecutiveDashboardSummary\(accessToken!, \{ signal \}\)/);
     assert.doesNotMatch(source, /LoadingState/);

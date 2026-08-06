@@ -1,5 +1,6 @@
 import { Link } from 'wouter';
 import type { ExecutiveSectionStatus, SalesOpportunitiesSummary } from '@titan/shared';
+import { DASHBOARD_LIST_LIMITS } from '@titan/shared';
 import { EmptyState, Panel } from '@titan/ui';
 import { useCompanyLocale } from '../../lib/company-locale-context';
 import { DashboardSectionSkeleton } from './DashboardSectionSkeleton';
@@ -53,7 +54,7 @@ export function SalesOpportunitiesPanel({
               />
             ) : (
               <ul className="exec-sales-opportunities__list">
-                {items.slice(0, 6).map((item) => (
+                {items.slice(0, DASHBOARD_LIST_LIMITS.salesOpportunities).map((item) => (
                   <li key={item.id} className="exec-sales-opportunities__row">
                     <Link href={item.href} className="exec-sales-opportunities__link">
                       <span className="exec-sales-opportunities__title">{item.title}</span>

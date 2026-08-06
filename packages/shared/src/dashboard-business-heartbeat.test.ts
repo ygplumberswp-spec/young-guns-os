@@ -144,11 +144,11 @@ describe('DASH-001 dashboard business heartbeat', () => {
 
     assert.equal(dash001.headerExtended.companyName, 'Young Guns Plumbing');
     assert.match(dash001.headerExtended.businessSummary, /job/);
-    assert.ok(dash001.businessHeartbeat.metrics.some((m) => m.key === 'revenue_month'));
-    assert.ok(dash001.businessHeartbeat.metrics.some((m) => m.key === 'cash_collected'));
-    assert.ok(dash001.businessHeartbeat.metrics.some((m) => m.key === 'gross_margin'));
+    assert.ok(dash001.businessHeartbeat.primaryMetrics.some((m) => m.key === 'revenue_month'));
+    assert.ok(dash001.businessHeartbeat.primaryMetrics.some((m) => m.key === 'cash_collected'));
+    assert.ok(dash001.businessHeartbeat.secondaryMetrics.some((m) => m.key === 'quotes_follow_up'));
     assert.equal(
-      dash001.businessHeartbeat.metrics.find((m) => m.key === 'revenue_month')?.estimate,
+      dash001.businessHeartbeat.primaryMetrics.find((m) => m.key === 'revenue_month')?.estimate,
       false,
     );
   });
@@ -159,9 +159,24 @@ describe('DASH-001 dashboard business heartbeat', () => {
     const collected = dash001.financialTruth.currentMonth.find((l) => l.key === 'collected');
     assert.ok(invoiced);
     assert.ok(collected);
+    assert.ok(invoiced!.displayValue);
+    assert.ok(collected!.displayValue);
     assert.notEqual(invoiced!.amountCents, collected!.amountCents);
     assert.match(invoiced!.caption, /Invoice issued/);
     assert.ok(dash001.financialTruth.yocoPaidSeparateFromReconciled);
+  });
+
+  it('uses independent quote counts when provided', () => {
+    const dash001 = buildDash001Extensions({
+      summary: minimalSummary(),
+      quotesAwaitingApproval: 12,
+      quotesFollowUp: 3,
+    });
+    const awaiting = dash001.businessHeartbeat.secondaryMetrics.find((m) => m.key === 'quotes_pipeline');
+    const followUp = dash001.businessHeartbeat.secondaryMetrics.find((m) => m.key === 'quotes_follow_up');
+    assert.equal(awaiting?.rawValue, 12);
+    assert.equal(followUp?.rawValue, 3);
+    assert.notEqual(awaiting?.rawValue, followUp?.rawValue);
   });
 
   it('labels estimates and does not fabricate AURA recommendations without evidence', () => {

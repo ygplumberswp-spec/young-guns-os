@@ -13,7 +13,8 @@ import type {
   ExecutiveXeroFinance,
   XeroSyncStatusResponse,
 } from '@titan/shared';
-import { buildFinanceDashboardSnapshot, buildDash001Extensions } from '@titan/shared';
+import { buildFinanceDashboardSnapshot, buildDash001Extensions, countQuotesAwaitingCustomerApproval, countQuotesFollowUpDue } from '@titan/shared';
+import type { DashboardQuoteMetricRow } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
 import {
   companies,
@@ -27,6 +28,8 @@ import {
   payments,
   quotes,
   users,
+  sfiFollowupSettings,
+  sfiQuoteResponseTracking,
   xeroInvoiceMappings,
   xeroPaymentMappings,
   xeroQuoteMappings,
@@ -260,6 +263,51 @@ export class DashboardExecutiveService {
     );
   }
 
+  /** Independently counts quotes awaiting customer approval vs follow-ups due (DASH-001A). */
+  private async loadDashboardQuoteMetrics(
+    companyId: string,
+    now: Date,
+  ): Promise<{ awaiting: number; followUp: number }> {
+    const settingsRow = await this.deps.db.query.sfiFollowupSettings.findFirst({
+      where: eq(sfiFollowupSettings.companyId, companyId),
+      columns: { staleQuoteDays: true },
+    });
+    const staleQuoteDays = settingsRow?.staleQuoteDays ?? 7;
+
+    const rows = await this.deps.db
+      .select({
+        status: quotes.status,
+        issuedAt: quotes.issuedAt,
+        validUntil: quotes.validUntil,
+        scheduledFollowUpAt: sfiQuoteResponseTracking.scheduledFollowUpAt,
+        responseStatus: sfiQuoteResponseTracking.responseStatus,
+      })
+      .from(quotes)
+      .leftJoin(
+        sfiQuoteResponseTracking,
+        and(
+          eq(sfiQuoteResponseTracking.quoteId, quotes.id),
+          eq(sfiQuoteResponseTracking.companyId, companyId),
+        ),
+      )
+      .where(
+        and(eq(quotes.companyId, companyId), inArray(quotes.status, ['sent', 'viewed'])),
+      );
+
+    const metricRows: DashboardQuoteMetricRow[] = rows.map((row) => ({
+      status: row.status,
+      issuedAt: row.issuedAt?.toISOString() ?? null,
+      validUntil: row.validUntil?.toISOString() ?? null,
+      scheduledFollowUpAt: row.scheduledFollowUpAt?.toISOString() ?? null,
+      responseStatus: row.responseStatus ?? null,
+    }));
+
+    return {
+      awaiting: countQuotesAwaitingCustomerApproval(metricRows, { now, staleQuoteDays }),
+      followUp: countQuotesFollowUpDue(metricRows, { now, staleQuoteDays }),
+    };
+  }
+
   private async loadExecutiveSummary(companyId: string): Promise<ExecutiveDashboardSummary> {
     const start = startOfLocalDay();
     const end = endOfLocalDay();
@@ -390,26 +438,9 @@ export class DashboardExecutiveService {
           );
         return { count: rows[0]?.count ?? 0 };
       }),
-      settle('customerActivity', { awaiting: 0, followUp: 0 }, async () => {
-        const [awaiting, followUp] = await Promise.all([
-          this.deps.db
-            .select({ count: sql<number>`count(*)::int` })
-            .from(quotes)
-            .where(
-              and(
-                eq(quotes.companyId, companyId),
-                inArray(quotes.status, ['sent', 'viewed', 'internal_review', 'approved_for_sending']),
-              ),
-            ),
-          this.deps.db
-            .select({ count: sql<number>`count(*)::int` })
-            .from(quotes)
-            .where(
-              and(eq(quotes.companyId, companyId), inArray(quotes.status, ['sent', 'viewed'])),
-            ),
-        ]);
-        return { awaiting: awaiting[0]?.count ?? 0, followUp: followUp[0]?.count ?? 0 };
-      }),
+      settle('customerActivity', { awaiting: 0, followUp: 0 }, () =>
+        this.loadDashboardQuoteMetrics(companyId, now),
+      ),
       settle('jobsStats', null, async () => {
         const row = await this.deps.db.query.companies.findFirst({
           where: eq(companies.id, companyId),

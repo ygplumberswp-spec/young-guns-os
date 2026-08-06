@@ -1,5 +1,6 @@
 import { Link } from 'wouter';
 import type { AttentionRequiredSummary } from '@titan/shared';
+import { DASHBOARD_LIST_LIMITS } from '@titan/shared';
 import { Button, EmptyState, Panel } from '@titan/ui';
 import { useCompanyLocale } from '../../lib/company-locale-context';
 import { DashboardSectionSkeleton } from './DashboardSectionSkeleton';
@@ -54,7 +55,7 @@ export function AttentionRequiredPanel({
           />
         ) : (
           <ul className="exec-attention__list">
-            {items.slice(0, 8).map((item) => (
+            {items.slice(0, DASHBOARD_LIST_LIMITS.attentionItems).map((item) => (
               <li key={item.id} className={`exec-attention__row is-${item.priority}`}>
                 <Link href={item.href} className="exec-attention__link">
                   <span className="exec-attention__main">

@@ -12,6 +12,7 @@ import {
   buildDashboardConnectionOverviewRows,
   dashboardConnectionsFooterState,
 } from './dashboard-connection-overview';
+import { DashboardDetailsDisclosure } from './DashboardDetailsDisclosure';
 import { DashboardSectionSkeleton } from './DashboardSectionSkeleton';
 import { DashboardSourceMeta, useReceivedAt } from './DashboardSourceMeta';
 
@@ -21,7 +22,7 @@ const DASHBOARD_CONNECTION_SKELETON_ROWS = 9;
  * Core provider status from the same enterprise truth mapping as /integrations.
  * Connected requires persisted hub capability evidence — never config or routes alone.
  */
-export function ConnectionsPanel() {
+export function ConnectionsPanel({ compact = false }: { compact?: boolean }) {
   const { accessToken } = useAuth();
 
   const hubQuery = useStaffCachedQuery({
@@ -77,10 +78,13 @@ export function ConnectionsPanel() {
   const isInitialLoad = !hasAnyData && (hubQuery.isLoading || autoSyncQuery.isLoading || socialQuery.isLoading);
   const loadError = hubQuery.error ?? autoSyncQuery.error ?? socialQuery.error;
 
+  const visibleRows = compact ? rows.slice(0, 4) : rows;
+
   return (
     <Panel
       title="Connections"
-      description="Integration connection status"
+      description={compact ? 'Integration status' : 'Integration connection status'}
+      className={compact ? 'exec-connections-panel--compact' : undefined}
       headerAction={<Link href="/integrations">Manage</Link>}
     >
       {isInitialLoad ? (
@@ -104,7 +108,7 @@ export function ConnectionsPanel() {
         <p className="exec-utility-empty">Connection status unavailable.</p>
       ) : (
         <ul className="exec-utility-connections">
-          {rows.map((row) => (
+          {visibleRows.map((row) => (
             <li key={row.providerKey} data-connection-status={row.status}>
               <div className="exec-utility-connections__meta">
                 <span className="exec-utility-connections__name">{row.name}</span>
@@ -117,18 +121,20 @@ export function ConnectionsPanel() {
           ))}
         </ul>
       )}
-      <DashboardSourceMeta
-        source="Integration hub and social connection records"
-        updatedAt={receivedAt}
-        state={footerState}
-        href="/integrations"
-        linkLabel="Open integrations"
-        note={
-          attentionCount > 0
-            ? `${attentionCount} of ${rows.length} providers need attention or setup.`
-            : null
-        }
-      />
+      <DashboardDetailsDisclosure label={compact ? 'Details' : 'View source'}>
+        <DashboardSourceMeta
+          source="Integration hub and social connection records"
+          updatedAt={receivedAt}
+          state={footerState}
+          href="/integrations"
+          linkLabel="Open integrations"
+          note={
+            attentionCount > 0
+              ? `${attentionCount} of ${rows.length} providers need attention or setup.`
+              : null
+          }
+        />
+      </DashboardDetailsDisclosure>
     </Panel>
   );
 }

@@ -1,5 +1,6 @@
 import { Link } from 'wouter';
 import type { AuraExecutiveSummary } from '@titan/shared';
+import { DASHBOARD_LIST_LIMITS } from '@titan/shared';
 import { Button, EmptyState, Panel } from '@titan/ui';
 import { DashboardSectionSkeleton } from './DashboardSectionSkeleton';
 
@@ -40,7 +41,7 @@ export function AuraExecutiveRecommendationsPanel({
           />
         ) : (
           <ul className="exec-aura-recommendations__list">
-            {recommendations.slice(0, 5).map((rec) => (
+            {recommendations.slice(0, DASHBOARD_LIST_LIMITS.auraRecommendations).map((rec) => (
               <li key={rec.id} className="exec-aura-recommendations__row">
                 <div className="exec-aura-recommendations__content">
                   <strong>{rec.title}</strong>

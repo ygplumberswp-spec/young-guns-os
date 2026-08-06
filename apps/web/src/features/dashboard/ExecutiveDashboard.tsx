@@ -1,5 +1,5 @@
-import { Suspense, lazy, useEffect } from 'react';
-import { OPS_SNAPSHOT_FOLLOW_UP_MS } from '@titan/shared';
+import { useEffect } from 'react';
+import { DASHBOARD_LIST_LIMITS, OPS_SNAPSHOT_FOLLOW_UP_MS } from '@titan/shared';
 import { useAuth } from '../../lib/auth-context';
 import { fetchExecutiveDashboardSummary } from '../../lib/dashboard-api-client';
 import {
@@ -12,6 +12,7 @@ import { SectionErrorBoundary } from '../../components/ux';
 import { useCartrackLivePositions } from '../dispatch/useCartrackLivePositions';
 import { ActiveJobsPanel } from './ActiveJobsPanel';
 import { AttentionRequiredPanel } from './AttentionRequiredPanel';
+import { AuraExecutiveChatLauncher } from './AuraExecutiveChatLauncher';
 import { AuraExecutiveRecommendationsPanel } from './AuraExecutiveRecommendationsPanel';
 import { BusinessHeartbeatPanel } from './BusinessHeartbeatPanel';
 import { CompletedTodayPanel } from './CompletedTodayPanel';
@@ -24,25 +25,14 @@ import { FleetOverviewPanel } from './FleetOverviewPanel';
 import { LiveOperationsPanel } from './LiveOperationsPanel';
 import { OpsIntelligenceAlerts } from './OpsIntelligenceAlerts';
 import { OutstandingInvoicesPanel } from './OutstandingInvoicesPanel';
-import { PrioritiesSummaryPanel } from './PrioritiesSummaryPanel';
 import { QuickLinksPanel } from './QuickLinksPanel';
 import { SalesOpportunitiesPanel } from './SalesOpportunitiesPanel';
-import { ScheduleOverviewPanel } from './ScheduleOverviewPanel';
 import { TeamPerformancePanel } from './TeamPerformancePanel';
 import { TodayAtAGlancePanel } from './TodayAtAGlancePanel';
 
-const AuraExecutiveChatPanel = lazy(async () => {
-  const mod = await import('./AuraExecutiveChatPanel');
-  return { default: mod.AuraExecutiveChatPanel };
-});
-
-/** Defer secondary panels so executive summary paints first (PERF-001). */
 const DEFER_OPS_MS = 120;
 const DEFER_FLEET_MS = 180;
-const DEFER_SCHEDULE_MS = 280;
-const DEFER_CONNECTIONS_MS = 360;
-const DEFER_AURA_MS = 520;
-const DEFER_SALES_MS = 400;
+const DEFER_SUPPORT_MS = 320;
 
 export function ExecutiveDashboard() {
   const { accessToken, user } = useAuth();
@@ -50,10 +40,7 @@ export function ExecutiveDashboard() {
 
   const deferOps = useDeferredMount(authReady, DEFER_OPS_MS);
   const deferFleet = useDeferredMount(authReady, DEFER_FLEET_MS);
-  const deferSchedule = useDeferredMount(authReady, DEFER_SCHEDULE_MS);
-  const deferConnections = useDeferredMount(authReady, DEFER_CONNECTIONS_MS);
-  const deferAura = useDeferredMount(authReady, DEFER_AURA_MS);
-  const deferSales = useDeferredMount(authReady, DEFER_SALES_MS);
+  const deferSupport = useDeferredMount(authReady, DEFER_SUPPORT_MS);
 
   const summaryQuery = useStaffCachedQuery({
     queryKey: 'dashboard/executive-summary',
@@ -106,8 +93,10 @@ export function ExecutiveDashboard() {
     })();
   };
 
+  const previewJobs = liveJobs.slice(0, DASHBOARD_LIST_LIMITS.activeJobs);
+
   return (
-    <div className="exec-dashboard">
+    <div className="exec-dashboard exec-dashboard--dash001a">
       <ExecutiveDashboardHeader
         firstName={user?.firstName}
         counts={summary?.header ?? null}
@@ -171,10 +160,10 @@ export function ExecutiveDashboard() {
             error={loadError}
           />
         </SectionErrorBoundary>
-        <SectionErrorBoundary sectionName="Priorities">
-          <PrioritiesSummaryPanel
-            priorities={summary?.priorities ?? null}
-            section={summary?.sections.priorities ?? null}
+        <SectionErrorBoundary sectionName="Sales & Opportunities" onRetry={refetchSummary}>
+          <SalesOpportunitiesPanel
+            data={dash001?.salesOpportunities ?? null}
+            section={summary?.sections.salesOpportunities ?? null}
             generatedAt={summary?.generatedAt ?? null}
             isLoading={isLoading}
             error={loadError}
@@ -182,7 +171,7 @@ export function ExecutiveDashboard() {
         </SectionErrorBoundary>
       </div>
 
-      <div className="exec-dashboard-row exec-dashboard-row--team">
+      <div className="exec-dashboard-row exec-dashboard-row--team-fleet">
         <SectionErrorBoundary sectionName="Team Performance" onRetry={refetchSummary}>
           <TeamPerformancePanel
             data={dash001?.teamPerformance ?? null}
@@ -190,39 +179,6 @@ export function ExecutiveDashboard() {
             generatedAt={summary?.generatedAt ?? null}
             isLoading={isLoading}
             error={loadError}
-          />
-        </SectionErrorBoundary>
-        <SectionErrorBoundary sectionName="Sales & Opportunities">
-          {deferSales ? (
-            <SalesOpportunitiesPanel
-              data={dash001?.salesOpportunities ?? null}
-              section={summary?.sections.salesOpportunities ?? null}
-              generatedAt={summary?.generatedAt ?? null}
-              isLoading={isLoading}
-              error={loadError}
-            />
-          ) : (
-            <DashboardSectionSkeleton rows={4} />
-          )}
-        </SectionErrorBoundary>
-      </div>
-
-      <div className="exec-dashboard-row exec-dashboard-row--operations">
-        <SectionErrorBoundary sectionName="Live fleet map" onRetry={refetchSummary}>
-          <LiveOperationsPanel
-            jobs={liveJobs}
-            tracking={deferFleet ? tracking : null}
-            lastFetchedAt={fleetFetchedAt}
-            isPolling={isPolling}
-            fleetError={deferFleet ? fleetError : null}
-            opsStrip={deferOps ? (opsSnapshot?.liveStrip ?? null) : null}
-            opsStripLoading={opsLoading}
-            opsStripError={opsQuery.error}
-            opsFreshness={opsSnapshot?.freshness ?? null}
-            opsAgeSeconds={opsSnapshot?.ageSeconds ?? 0}
-            opsRefreshing={opsRefreshing}
-            opsDataAvailable={opsDataAvailable}
-            opsSources={opsSnapshot?.sources ?? []}
           />
         </SectionErrorBoundary>
         <SectionErrorBoundary sectionName="Fleet overview">
@@ -234,7 +190,28 @@ export function ExecutiveDashboard() {
               isLoading={!tracking && !fleetError}
             />
           ) : (
-            <DashboardSectionSkeleton rows={3} />
+            <DashboardSectionSkeleton rows={2} />
+          )}
+        </SectionErrorBoundary>
+        <SectionErrorBoundary sectionName="Live fleet map" onRetry={refetchSummary}>
+          {deferFleet ? (
+            <LiveOperationsPanel
+              jobs={liveJobs}
+              tracking={tracking}
+              lastFetchedAt={fleetFetchedAt}
+              isPolling={isPolling}
+              fleetError={fleetError}
+              opsStrip={deferOps ? (opsSnapshot?.liveStrip ?? null) : null}
+              opsStripLoading={opsLoading}
+              opsStripError={opsQuery.error}
+              opsFreshness={opsSnapshot?.freshness ?? null}
+              opsAgeSeconds={opsSnapshot?.ageSeconds ?? 0}
+              opsRefreshing={opsRefreshing}
+              opsDataAvailable={opsDataAvailable}
+              opsSources={opsSnapshot?.sources ?? []}
+            />
+          ) : (
+            <DashboardSectionSkeleton rows={2} />
           )}
         </SectionErrorBoundary>
       </div>
@@ -247,21 +224,15 @@ export function ExecutiveDashboard() {
             error={loadError}
           />
         </SectionErrorBoundary>
-        <SectionErrorBoundary sectionName="AURA executive chat">
-          {deferAura ? (
-            <Suspense fallback={<DashboardSectionSkeleton rows={4} />}>
-              <AuraExecutiveChatPanel />
-            </Suspense>
-          ) : (
-            <DashboardSectionSkeleton rows={4} />
-          )}
+        <SectionErrorBoundary sectionName="AURA">
+          <AuraExecutiveChatLauncher />
         </SectionErrorBoundary>
       </div>
 
-      <div className="exec-dashboard-row exec-dashboard-row--lower">
+      <div className="exec-dashboard-row exec-dashboard-row--support">
         <SectionErrorBoundary sectionName="Active jobs" onRetry={refetchSummary}>
           <ActiveJobsPanel
-            jobs={liveJobs}
+            jobs={previewJobs}
             section={summary?.sections.activeJobs ?? null}
             generatedAt={summary?.generatedAt ?? null}
             isLoading={isLoading}
@@ -278,38 +249,31 @@ export function ExecutiveDashboard() {
             isLoading={isLoading}
             error={loadError}
             onRetry={refetchSummary}
+            previewLimit={DASHBOARD_LIST_LIMITS.outstandingInvoices}
           />
         </SectionErrorBoundary>
-        <SectionErrorBoundary sectionName="Schedule overview">
-          {deferSchedule ? (
-            <ScheduleOverviewPanel />
-          ) : (
-            <DashboardSectionSkeleton rows={4} />
-          )}
+        <SectionErrorBoundary sectionName="Completed today" onRetry={refetchSummary}>
+          <CompletedTodayPanel
+            jobs={summary?.completedToday ?? []}
+            section={summary?.sections.completedToday ?? null}
+            generatedAt={summary?.generatedAt ?? null}
+            isLoading={isLoading}
+            error={loadError}
+            onRetry={refetchSummary}
+          />
         </SectionErrorBoundary>
-        <div className="exec-dashboard-row__stack">
-          <SectionErrorBoundary sectionName="Completed today" onRetry={refetchSummary}>
-            <CompletedTodayPanel
-              jobs={summary?.completedToday ?? []}
-              section={summary?.sections.completedToday ?? null}
-              generatedAt={summary?.generatedAt ?? null}
-              isLoading={isLoading}
-              error={loadError}
-              onRetry={refetchSummary}
-            />
-          </SectionErrorBoundary>
+      </div>
+
+      {deferSupport ? (
+        <div className="exec-dashboard-row exec-dashboard-row--tools">
           <SectionErrorBoundary sectionName="Connections">
-            {deferConnections ? (
-              <ConnectionsPanel />
-            ) : (
-              <DashboardSectionSkeleton rows={6} />
-            )}
+            <ConnectionsPanel compact />
           </SectionErrorBoundary>
           <SectionErrorBoundary sectionName="Quick links">
-            <QuickLinksPanel />
+            <QuickLinksPanel compact />
           </SectionErrorBoundary>
         </div>
-      </div>
+      ) : null}
     </div>
   );
 }

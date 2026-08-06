@@ -58,6 +58,9 @@ describe('executive dashboard live wiring', () => {
     assert.ok(settled >= 21, `expected every source to be settled, saw ${settled}`);
     assert.match(dashboardSource, /buildSectionStatuses\(/);
     assert.match(dashboardSource, /buildDash001Extensions\(/);
+    assert.match(dashboardSource, /loadDashboardQuoteMetrics/);
+    assert.match(dashboardSource, /countQuotesAwaitingCustomerApproval/);
+    assert.match(dashboardSource, /countQuotesFollowUpDue/);
   });
 
   it('binds timestamps as ISO text inside raw sql templates', () => {

@@ -26,6 +26,7 @@ type OutstandingInvoicesPanelProps = {
   isLoading?: boolean;
   error?: string | null;
   onRetry?: () => void;
+  previewLimit?: number;
 };
 
 /** Beyond this many rows the list scrolls inside the card instead of stretching the page. */
@@ -134,6 +135,7 @@ export function OutstandingInvoicesPanel({
   isLoading = false,
   error = null,
   onRetry,
+  previewLimit,
 }: OutstandingInvoicesPanelProps) {
   const { formatMoney } = useCompanyLocale();
   const hasOutstanding = Boolean(data && data.invoiceCount > 0 && data.outstandingCents > 0);
@@ -153,7 +155,8 @@ export function OutstandingInvoicesPanel({
         .join(' · ') || null;
 
   const history = resolveOpenArHistoryCoverage(xeroFinance, sourceDown ? 'unavailable' : null);
-  const rows = data?.invoices ?? [];
+  const rowLimit = previewLimit ?? SCROLL_AFTER_ROWS;
+  const rows = (data?.invoices ?? []).slice(0, rowLimit);
   const currency = data?.currency ?? 'ZAR';
   const listed = rows.length;
   const total = data?.invoiceCount ?? 0;
