@@ -1,4 +1,4 @@
-import { and, desc, eq, sql } from 'drizzle-orm';
+import { and, desc, eq, ilike, inArray, isNull, or, sql } from 'drizzle-orm';
 import type {
   CreateCustomerActivityRequest,
   CreateCustomerPropertyRequest,
@@ -7,6 +7,7 @@ import type {
   CustomerDetail,
   CustomerPropertySummary,
   CustomerSummary,
+  CustomerStatusChangeGuardInput,
   UpdateCustomerPropertyRequest,
   UpdateCustomerRequest,
 } from '@titan/shared';
@@ -14,12 +15,19 @@ import {
   buildJobAddressDisplay,
   isValidEmailAddress,
   isValidSaPhone,
+  normalizeSaMobile,
   normalizeSaPhone,
+  validateCustomerStatusChange,
 } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
-import { customerActivities, customers, cxCustomerProperties } from '@titan/db';
+import { customerActivities, customers, cxCustomerProperties, jobs, xeroCustomerMappings } from '@titan/db';
 import { emitBusinessEvent } from '../lib/automation-events.js';
-import { buildTenantCacheKey, cachedTenantRead, CACHE_TTLS } from './api-read-cache.js';
+import {
+  buildTenantCacheKey,
+  cachedTenantRead,
+  CACHE_TTLS,
+  invalidateCrmListCaches,
+} from './api-read-cache.js';
 
 export class CrmError extends Error {
   constructor(
@@ -63,13 +71,109 @@ export type AuraCrmContext = {
 export class CrmService {
   constructor(private readonly db: DatabaseClient) {}
 
-  async listCustomers(companyId: string): Promise<CustomerSummary[]> {
-    const rows = await this.db.query.customers.findMany({
-      where: eq(customers.companyId, companyId),
-      orderBy: [desc(customers.updatedAt)],
-    });
+  async listCustomers(companyId: string, search?: string | null): Promise<CustomerSummary[]> {
+    const q = search?.trim();
+    if (!q) {
+      return cachedTenantRead(
+        buildTenantCacheKey(companyId, 'crm/list', 'all'),
+        () => this.loadCustomerList(companyId, null),
+        CACHE_TTLS.list,
+      );
+    }
+    return this.loadCustomerList(companyId, q);
+  }
 
-    return rows.map(toCustomerSummary);
+  private async loadCustomerList(
+    companyId: string,
+    search: string | null,
+  ): Promise<CustomerSummary[]> {
+    const q = search?.trim();
+    let customerRows: Array<typeof customers.$inferSelect>;
+
+    if (!q) {
+      customerRows = await this.db.query.customers.findMany({
+        where: and(eq(customers.companyId, companyId), isNull(customers.mergedIntoCustomerId)),
+        orderBy: [desc(customers.updatedAt)],
+      });
+    } else {
+      const pattern = `%${escapeLike(q)}%`;
+      const normalizedMobile = normalizeSaMobile(q);
+      const mobileDigits = (normalizedMobile ?? q).replace(/\D/g, '');
+      const mobileDigitPattern =
+        mobileDigits.length >= 9 ? `%${escapeLike(mobileDigits.slice(-9))}%` : null;
+      const mobileMatchers = [
+        ...(normalizedMobile
+          ? [
+              ilike(customers.phone, `%${escapeLike(normalizedMobile)}%`),
+            ]
+          : []),
+        ...(mobileDigitPattern ? [ilike(customers.phone, mobileDigitPattern)] : []),
+      ];
+
+      const matches = await this.db
+        .select({ customer: customers })
+        .from(customers)
+        .leftJoin(
+          cxCustomerProperties,
+          and(
+            eq(cxCustomerProperties.customerId, customers.id),
+            eq(cxCustomerProperties.companyId, companyId),
+          ),
+        )
+        .leftJoin(
+          xeroCustomerMappings,
+          and(
+            eq(xeroCustomerMappings.customerId, customers.id),
+            eq(xeroCustomerMappings.companyId, companyId),
+          ),
+        )
+        .where(
+          and(
+            eq(customers.companyId, companyId),
+            isNull(customers.mergedIntoCustomerId),
+            or(
+              ilike(customers.name, pattern),
+              ilike(customers.companyName, pattern),
+              ilike(customers.email, pattern),
+              ilike(customers.phone, pattern),
+              ilike(customers.contactPerson, pattern),
+              ilike(customers.billingAddress, pattern),
+              ilike(customers.siteAddress, pattern),
+              ilike(customers.vatNumber, pattern),
+              ilike(cxCustomerProperties.addressLine1, pattern),
+              ilike(cxCustomerProperties.suburb, pattern),
+              ilike(cxCustomerProperties.city, pattern),
+              ilike(cxCustomerProperties.postalCode, pattern),
+              ilike(xeroCustomerMappings.xeroContactId, pattern),
+              ...mobileMatchers,
+            ),
+          ),
+        )
+        .orderBy(desc(customers.updatedAt));
+
+      const seen = new Set<string>();
+      customerRows = [];
+      for (const row of matches) {
+        if (seen.has(row.customer.id)) continue;
+        seen.add(row.customer.id);
+        customerRows.push(row.customer);
+      }
+    }
+
+    const addressByCustomerId = await loadPrimaryAddressDisplays(
+      this.db,
+      companyId,
+      customerRows.map((row) => row.id),
+    );
+    const xeroByCustomerId = await loadXeroContactIds(
+      this.db,
+      companyId,
+      customerRows.map((row) => row.id),
+    );
+
+    return customerRows.map((row) =>
+      toCustomerSummary(row, addressByCustomerId.get(row.id) ?? null, xeroByCustomerId.get(row.id) ?? null),
+    );
   }
 
   async getCustomer(companyId: string, customerId: string): Promise<CustomerDetail | null> {
@@ -89,8 +193,11 @@ export class CrmService {
       return null;
     }
 
+    const addressByCustomerId = await loadPrimaryAddressDisplays(this.db, companyId, [customer.id]);
+    const xeroContactId = (await loadXeroContactIds(this.db, companyId, [customer.id])).get(customer.id) ?? null;
+
     return {
-      ...toCustomerSummary(customer),
+      ...toCustomerSummary(customer, addressByCustomerId.get(customer.id) ?? null, xeroContactId),
       notes: customer.notes,
       activities: customer.activities.map((activity) => ({
         id: activity.id,
@@ -147,6 +254,12 @@ export class CrmService {
         postalCode: normalizeOptionalText(input.postalCode),
         unitNumber: normalizeOptionalText(input.unit),
         isPrimary: input.isPrimary ?? false,
+        latitude: input.latitude ?? null,
+        longitude: input.longitude ?? null,
+        placeId: normalizeOptionalText(input.placeId),
+        formattedAddress: normalizeOptionalText(input.formattedAddress),
+        geocodeStatus: input.geocodeStatus ?? (input.latitude != null ? 'verified' : null),
+        geocodedAt: input.latitude != null && input.longitude != null ? new Date() : null,
       })
       .returning();
 
@@ -201,6 +314,22 @@ export class CrmService {
       updates.postalCode = normalizeOptionalText(input.postalCode);
     }
     if (input.isPrimary !== undefined) updates.isPrimary = input.isPrimary;
+    if (input.latitude !== undefined) updates.latitude = input.latitude;
+    if (input.longitude !== undefined) updates.longitude = input.longitude;
+    if (input.placeId !== undefined) updates.placeId = normalizeOptionalText(input.placeId);
+    if (input.formattedAddress !== undefined) {
+      updates.formattedAddress = normalizeOptionalText(input.formattedAddress);
+    }
+    if (input.geocodeStatus !== undefined) updates.geocodeStatus = input.geocodeStatus;
+    if (
+      input.latitude !== undefined ||
+      input.longitude !== undefined ||
+      input.placeId !== undefined ||
+      input.geocodeStatus !== undefined
+    ) {
+      updates.geocodedAt =
+        input.latitude != null && input.longitude != null ? new Date() : existing.geocodedAt;
+    }
 
     const [updated] = await this.db
       .update(cxCustomerProperties)
@@ -237,9 +366,13 @@ export class CrmService {
       .values({
         companyId,
         name,
+        companyName: normalizeOptionalText(input.companyName),
         contactPerson,
         email,
         phone,
+        billingAddress: normalizeOptionalText(input.billingAddress),
+        siteAddress: normalizeOptionalText(input.siteAddress),
+        vatNumber: normalizeOptionalText(input.vatNumber),
         status: input.status ?? 'active',
         isSupplierOnly: input.isSupplierOnly ?? false,
         doNotContact: input.doNotContact ?? false,
@@ -267,6 +400,8 @@ export class CrmService {
       },
     });
 
+    invalidateCrmListCaches(companyId);
+
     return {
       ...toCustomerSummary(created),
       notes: created.notes,
@@ -278,11 +413,28 @@ export class CrmService {
     companyId: string,
     customerId: string,
     input: UpdateCustomerRequest,
+    opts: {
+      classification?: CustomerStatusChangeGuardInput | null;
+      actorUserId?: string | null;
+    } = {},
   ): Promise<CustomerDetail> {
     const existing = await this.getCustomer(companyId, customerId);
 
     if (!existing) {
       throw new CrmError('NOT_FOUND', 'Customer not found');
+    }
+
+    if (input.status !== undefined && input.status !== existing.status) {
+      const targetUiStatus =
+        input.status === 'inactive'
+          ? 'archived'
+          : input.status === 'lead'
+            ? 'duplicate_review'
+            : 'active';
+      const guard = validateCustomerStatusChange(targetUiStatus, opts.classification ?? null);
+      if (!guard.allowed) {
+        throw new CrmError('VALIDATION_ERROR', guard.reason);
+      }
     }
 
     const updates: Partial<typeof customers.$inferInsert> = {
@@ -301,6 +453,22 @@ export class CrmService {
 
     if (input.contactPerson !== undefined) {
       updates.contactPerson = normalizeOptionalText(input.contactPerson);
+    }
+
+    if (input.companyName !== undefined) {
+      updates.companyName = normalizeOptionalText(input.companyName);
+    }
+
+    if (input.billingAddress !== undefined) {
+      updates.billingAddress = normalizeOptionalText(input.billingAddress);
+    }
+
+    if (input.siteAddress !== undefined) {
+      updates.siteAddress = normalizeOptionalText(input.siteAddress);
+    }
+
+    if (input.vatNumber !== undefined) {
+      updates.vatNumber = normalizeOptionalText(input.vatNumber);
     }
 
     if (input.email !== undefined) {
@@ -345,19 +513,97 @@ export class CrmService {
 
     emitBusinessEvent({
       companyId,
-      eventType: 'customer.updated',
+      eventType:
+        input.status !== undefined && input.status !== existing.status
+          ? 'customer.status_changed'
+          : 'customer.updated',
       entityType: 'customer',
       entityId: customerId,
       payload: {
         customer: {
           id: customerId,
           status: updated.status,
+          fromStatus: existing.status,
           name: updated.name,
         },
       },
+      actorUserId: opts.actorUserId ?? undefined,
     });
 
+    invalidateCrmListCaches(companyId);
+
     return (await this.getCustomer(companyId, customerId))!;
+  }
+
+  async deleteCustomer(
+    companyId: string,
+    customerId: string,
+    opts: {
+      classification?: CustomerStatusChangeGuardInput | null;
+      actorUserId?: string;
+      isOwner?: boolean;
+    } = {},
+  ): Promise<void> {
+    if (!opts.isOwner) {
+      throw new CrmError('FORBIDDEN', 'Only the company owner may permanently delete customers');
+    }
+
+    const existing = await this.getCustomer(companyId, customerId);
+    if (!existing) {
+      throw new CrmError('NOT_FOUND', 'Customer not found');
+    }
+
+    const guard = validateCustomerStatusChange('archived', opts.classification ?? null);
+    if (!guard.allowed) {
+      throw new CrmError('VALIDATION_ERROR', guard.reason);
+    }
+
+    const [jobCount] = await this.db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(jobs)
+      .where(and(eq(jobs.customerId, customerId), eq(jobs.companyId, companyId)));
+
+    if ((jobCount?.count ?? 0) > 0) {
+      throw new CrmError(
+        'VALIDATION_ERROR',
+        'Customer has linked jobs. Archive instead of deleting.',
+      );
+    }
+
+    await this.db
+      .delete(customerActivities)
+      .where(
+        and(eq(customerActivities.companyId, companyId), eq(customerActivities.customerId, customerId)),
+      );
+
+    await this.db
+      .delete(cxCustomerProperties)
+      .where(
+        and(
+          eq(cxCustomerProperties.companyId, companyId),
+          eq(cxCustomerProperties.customerId, customerId),
+        ),
+      );
+
+    const deleted = await this.db
+      .delete(customers)
+      .where(and(eq(customers.id, customerId), eq(customers.companyId, companyId)))
+      .returning({ id: customers.id });
+
+    if (deleted.length === 0) {
+      throw new CrmError('DELETE_FAILED', 'Unable to delete customer');
+    }
+
+    emitBusinessEvent({
+      companyId,
+      eventType: 'customer.deleted',
+      entityType: 'customer',
+      entityId: customerId,
+      payload: { customer: { id: customerId, name: existing.name } },
+      actorUserId: opts.actorUserId,
+    });
+
+    invalidateCrmListCaches(companyId);
   }
 
   async addActivity(
@@ -472,13 +718,23 @@ export class CrmService {
   }
 }
 
-function toCustomerSummary(row: typeof customers.$inferSelect): CustomerSummary {
+function toCustomerSummary(
+  row: typeof customers.$inferSelect,
+  primaryAddressDisplay: string | null = null,
+  xeroContactId: string | null = null,
+): CustomerSummary {
   return {
     id: row.id,
     name: row.name,
+    companyName: row.companyName ?? null,
     contactPerson: row.contactPerson,
     email: row.email,
     phone: row.phone,
+    billingAddress: row.billingAddress ?? null,
+    siteAddress: row.siteAddress ?? null,
+    vatNumber: row.vatNumber ?? null,
+    primaryAddressDisplay,
+    xeroContactId,
     status: row.status,
     isSupplierOnly: row.isSupplierOnly,
     doNotContact: row.doNotContact,
@@ -487,7 +743,31 @@ function toCustomerSummary(row: typeof customers.$inferSelect): CustomerSummary 
   };
 }
 
+async function loadXeroContactIds(
+  db: DatabaseClient,
+  companyId: string,
+  customerIds: string[],
+): Promise<Map<string, string>> {
+  if (customerIds.length === 0) return new Map();
+  const rows = await db
+    .select({ customerId: xeroCustomerMappings.customerId, xeroContactId: xeroCustomerMappings.xeroContactId })
+    .from(xeroCustomerMappings)
+    .where(and(eq(xeroCustomerMappings.companyId, companyId), inArray(xeroCustomerMappings.customerId, customerIds)));
+  const map = new Map<string, string>();
+  for (const row of rows) {
+    if (row.xeroContactId?.trim()) map.set(row.customerId, row.xeroContactId.trim());
+  }
+  return map;
+}
+
 function toPropertySummary(row: typeof cxCustomerProperties.$inferSelect): CustomerPropertySummary {
+  const geocodeStatus =
+    row.geocodeStatus === 'verified' ||
+    row.geocodeStatus === 'unverified' ||
+    row.geocodeStatus === 'failed'
+      ? row.geocodeStatus
+      : null;
+
   return {
     id: row.id,
     customerId: row.customerId,
@@ -507,6 +787,12 @@ function toPropertySummary(row: typeof cxCustomerProperties.$inferSelect): Custo
       unit: row.unitNumber ?? row.addressLine2,
     }),
     isPrimary: row.isPrimary,
+    latitude: row.latitude ?? null,
+    longitude: row.longitude ?? null,
+    placeId: row.placeId ?? null,
+    formattedAddress: row.formattedAddress ?? null,
+    geocodedAt: row.geocodedAt?.toISOString() ?? null,
+    geocodeStatus,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
@@ -527,4 +813,44 @@ function normalizeCustomerPhone(value: string | null | undefined): string | null
     );
   }
   return normalizeSaPhone(trimmed);
+}
+
+async function loadPrimaryAddressDisplays(
+  db: DatabaseClient,
+  companyId: string,
+  customerIds: string[],
+): Promise<Map<string, string | null>> {
+  const map = new Map<string, string | null>();
+  if (customerIds.length === 0) {
+    return map;
+  }
+
+  const rows = await db.query.cxCustomerProperties.findMany({
+    where: and(
+      eq(cxCustomerProperties.companyId, companyId),
+      inArray(cxCustomerProperties.customerId, customerIds),
+    ),
+    orderBy: [desc(cxCustomerProperties.isPrimary), desc(cxCustomerProperties.updatedAt)],
+  });
+
+  for (const row of rows) {
+    if (map.has(row.customerId)) continue;
+    map.set(
+      row.customerId,
+      buildJobAddressDisplay({
+        street: row.addressLine1,
+        suburb: row.suburb,
+        city: row.city,
+        province: row.province,
+        postalCode: row.postalCode,
+        unit: row.unitNumber ?? row.addressLine2,
+      }),
+    );
+  }
+
+  return map;
+}
+
+function escapeLike(value: string): string {
+  return value.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_');
 }

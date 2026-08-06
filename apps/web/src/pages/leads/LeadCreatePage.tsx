@@ -1,6 +1,7 @@
-import { FormEvent, useMemo, useState } from 'react';
-import { Link, useLocation } from 'wouter';
-import { Button, Input, PageHeader, Panel } from '@titan/ui';
+import { PageHeader } from '../../components/ux';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { useLocation } from 'wouter';
+import { Button, Input, Panel } from '@titan/ui';
 import {
   isPlaceholderEmail,
   isValidEmailAddress,
@@ -85,6 +86,25 @@ export function LeadCreatePage() {
   }, [contactEmail]);
 
   const phonePreview = contactPhone.trim() ? normalizeSaMobile(contactPhone) : null;
+
+  /** Prefill from Communications Hub WhatsApp readiness links — never auto-saves. */
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const phone = params.get('phone');
+    const name = params.get('name');
+    const descriptionParam = params.get('description');
+    const source = params.get('source');
+    if (phone?.trim()) setContactPhone(phone.trim());
+    if (name?.trim()) setContactName(name.trim());
+    if (descriptionParam?.trim()) setDescription(descriptionParam.trim());
+    if (source === 'whatsapp') {
+      setNotes((current) =>
+        current.trim()
+          ? current
+          : 'Opened from Business WhatsApp conversation — review before saving.',
+      );
+    }
+  }, []);
 
   async function runDuplicateCheck() {
     if (!accessToken) return;
@@ -178,7 +198,7 @@ export function LeadCreatePage() {
   if (!canWrite) {
     return (
       <div className="page-shell">
-        <PageHeader title="Add lead" description="You do not have permission to create leads." />
+        <PageHeader title="Add Lead" description="You do not have permission to create leads." />
       </div>
     );
   }
@@ -186,15 +206,8 @@ export function LeadCreatePage() {
   return (
     <div className="page-shell leads-create-page">
       <PageHeader
-        title="Add lead"
+        title="Add Lead"
         description="Capture the enquiry once — conversion reuses this data."
-        actions={
-          <Link href="/leads">
-            <Button variant="ghost" size="sm">
-              Back to leads
-            </Button>
-          </Link>
-        }
       />
 
       <form className="form-stack" onSubmit={onSubmit}>
@@ -239,7 +252,7 @@ export function LeadCreatePage() {
         <Panel title="Enquiry">
           <label>
             Enquiry source
-            <select className="input" value={sourceId} onChange={(e) => setSourceId(e.target.value)}>
+            <select className="titan-select" value={sourceId} onChange={(e) => setSourceId(e.target.value)}>
               <option value="">Unknown / not set</option>
               {(sources ?? []).map((source) => (
                 <option key={source.id} value={source.id}>
@@ -287,7 +300,7 @@ export function LeadCreatePage() {
           </label>
         </Panel>
 
-        <Panel title="Property / site (optional)">
+        <Panel title="Property / Site (Optional)">
           <label>
             Street
             <Input value={street} onChange={(e) => setStreet(e.target.value)} />
@@ -341,7 +354,7 @@ export function LeadCreatePage() {
           </label>
         </Panel>
 
-        <Panel title="Follow-up & consent">
+        <Panel title="Follow-Up & Consent">
           <label>
             Assigned user
             <select
@@ -397,7 +410,7 @@ export function LeadCreatePage() {
         </Panel>
 
         {matches.length > 0 ? (
-          <Panel title="Possible matches">
+          <Panel title="Possible Matches">
             <ul className="leads-dupe-list">
               {matches.map((match, index) => (
                 <li key={`${match.kind}-${match.leadId ?? match.customerId ?? index}`}>

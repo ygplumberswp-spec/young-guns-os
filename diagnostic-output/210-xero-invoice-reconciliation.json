@@ -1,0 +1,68 @@
+{
+  "label": "210-xero-invoice-reconciliation",
+  "generatedAt": "2026-08-01T16:15:04.249Z",
+  "headSha": "03a69843620923b51175869bffefc287691a0774",
+  "rootCause": "Xero import populated amount_cents but left total_cents/subtotal_cents at schema default 0; number_authority stayed internal_pending_xero and xero_invoice_number null despite synced mappings — UI showed R0,00 and Sync pending.",
+  "fix": {
+    "transformer": "buildImportedInvoiceFinancialFields + xero number_authority on importInvoiceBatch",
+    "api": "resolveEffectiveInvoiceTotalCents in finance toInvoiceSummary; mapping-aware xeroSyncStatus",
+    "ui": "formatInvoiceMoney shows em-dash when no financial data; isSyncPending respects synced mapping",
+    "backfill": "packages/db/scripts/xero-invoice-financial-backfill.mjs --apply (staging, 5 invoices)"
+  },
+  "before": {
+    "INV-0423": {
+      "amount_cents": 247250,
+      "total_cents": 0,
+      "number_authority": "internal_pending_xero",
+      "xero_invoice_number": null,
+      "mapping_sync_status": "synced",
+      "uiTotal": "R0,00",
+      "uiSyncBadge": true
+    },
+    "INV-0424": {
+      "amount_cents": 226639,
+      "total_cents": 0,
+      "number_authority": "internal_pending_xero",
+      "xero_invoice_number": null,
+      "mapping_sync_status": "synced",
+      "uiTotal": "R0,00",
+      "uiSyncBadge": true
+    }
+  },
+  "after": {
+    "INV-0423": {
+      "amount_cents": 247250,
+      "total_cents": 247250,
+      "subtotal_cents": 247250,
+      "number_authority": "xero",
+      "xero_invoice_number": "INV-0423",
+      "mapping_xero_invoice_number": "INV-0423",
+      "due_date": null,
+      "status": "draft",
+      "uiTotal": "R2 472,50",
+      "uiSyncBadge": false
+    },
+    "INV-0424": {
+      "amount_cents": 226639,
+      "total_cents": 226639,
+      "subtotal_cents": 226639,
+      "number_authority": "xero",
+      "xero_invoice_number": "INV-0424",
+      "mapping_xero_invoice_number": "INV-0424",
+      "due_date": null,
+      "status": "draft",
+      "uiTotal": "R2 266,39",
+      "uiSyncBadge": false
+    }
+  },
+  "notes": [
+    "Draft Xero invoices may legitimately have null due_date until authorised — UI shows em-dash, not fake date.",
+    "Line items not yet imported from Xero LineItems array — deferred; amounts now truthful at header level.",
+    "No Xero writes performed."
+  ],
+  "summary": {
+    "invoiceCount": 2,
+    "zeroAmountInvoicesAfter": 0,
+    "syncPendingLikelyAfter": 0
+  }
+}

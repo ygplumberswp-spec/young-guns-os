@@ -1,0 +1,6 @@
+{"phase":"pre-migrate","expectedJournalCount":106,"firstTag":"0000_auth_milestone_1","lastTag":"0106_job_document_packs","has0094":true,"has0095":true}
+{"phase":"drizzle-kit-migrate","exitCode":1}
+No config path provided, using default 'drizzle.config.ts'
+Reading config file '/Users/keanuventer/Downloads/Titan Aura V1/packages/db/drizzle.config.ts'
+Using 'postgres' driver for database querying
+[⣷] applying migrations...[2K[1G[⣯] applying migrations...[2K[1G[⣟] applying migrations...[2K[1G[⡿] applying migrations...[2K[1G[⢿] applying migrations...[2K[1G[⣻] applying migrations...[2K[1G[⣽] applying migrations...[2K[1G[⣷] applying migrations...[2K[1G[⣯] applying migrations...[2K[1G[⣟] applying migrations...[2K[1G[⡿] applying migrations...[2K[1G[⡿] applying migrations...

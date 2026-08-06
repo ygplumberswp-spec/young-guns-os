@@ -9,10 +9,14 @@ import type {
   WorkflowTriggerType,
 } from '@titan/shared';
 import { BUSINESS_EVENT_TO_TRIGGER } from '@titan/shared';
+import { filterSafeRecordUpdates } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
 import {
   automationQueueJobs,
   invoices,
+  opsWorkflowAuraSuggestions,
+  opsWorkflowFollowUps,
+  opsWorkflowTasks,
   workflowActions,
   workflowConditions,
   workflowExecutions,
@@ -27,6 +31,7 @@ import { resolveTriggerType } from '../lib/automation-events.js';
 import type { CommunicationsService } from './communications.service.js';
 import type { CrmService } from './crm.service.js';
 import type { JobsService } from './jobs.service.js';
+import type { NotificationService } from './notification.service.js';
 import type { WhatsappService } from './whatsapp.service.js';
 
 export class WorkflowEngineError extends Error {
@@ -50,6 +55,7 @@ type WorkflowEngineDeps = {
   jobsService: JobsService;
   whatsappService: WhatsappService;
   communicationsService: CommunicationsService;
+  notificationService?: NotificationService;
 };
 
 const APPROVAL_REQUIRED_ACTIONS = new Set<WorkflowActionType>([
@@ -67,9 +73,9 @@ const APPROVAL_REQUIRED_ACTIONS = new Set<WorkflowActionType>([
   'create_draft_customer_response',
   'create_purchase_order_draft',
   'generate_report',
-  'create_follow_up',
   'run_ai_agent',
   'update_record',
+  'create_approval_request',
 ]);
 
 export class WorkflowEngineService {
@@ -595,6 +601,10 @@ export class WorkflowEngineService {
       step.workflowRun.triggerEntityType,
       step.workflowRun.triggerEntityId,
       {},
+      {
+        workflowId: step.workflowRun.workflowId ?? step.workflowRun.workflow?.id ?? '',
+        workflowRunId: step.workflowRunId,
+      },
     );
   }
 
@@ -698,6 +708,10 @@ export class WorkflowEngineService {
           event.entityType,
           event.entityId,
           event.payload,
+          {
+            workflowId: workflow.id,
+            workflowRunId: run!.id,
+          },
         );
 
         if (stepResult.requiresApproval) {
@@ -765,6 +779,7 @@ export class WorkflowEngineService {
     entityType: string | null,
     entityId: string | null,
     payload: Record<string, unknown>,
+    context: { workflowId: string; workflowRunId: string },
   ): Promise<{ requiresApproval: boolean }> {
     const requiresApproval = APPROVAL_REQUIRED_ACTIONS.has(step.actionType);
 
@@ -784,7 +799,7 @@ export class WorkflowEngineService {
         status: 'awaiting_approval',
         requiresApproval: true,
         preview,
-        output: { draft: true },
+        output: { draft: true, awaitingOwnerApproval: true },
       });
 
       await this.deps.db
@@ -802,6 +817,7 @@ export class WorkflowEngineService {
       entityType,
       entityId,
       payload,
+      context,
     );
 
     await this.deps.db.insert(workflowStepResults).values({
@@ -924,6 +940,8 @@ export class WorkflowEngineService {
         return `Generate report: ${String(config.reportName ?? 'Business report')}`;
       case 'create_follow_up':
         return `Create follow-up for ${String(config.customerId ?? entityId ?? 'customer')}`;
+      case 'trigger_aura_suggestion':
+        return `AURA draft suggestion: ${String(config.subject ?? 'Workflow recommendation')}`;
       case 'run_ai_agent':
         return `Run AI agent: ${String(config.agentKey ?? 'operations')} — ${String(config.request ?? 'Assist with workflow step')}`;
       case 'update_record':
@@ -942,6 +960,7 @@ export class WorkflowEngineService {
     entityType: string | null,
     entityId: string | null,
     payload: Record<string, unknown>,
+    context: { workflowId: string; workflowRunId: string },
   ): Promise<Record<string, unknown>> {
     switch (actionType) {
       case 'log_customer_activity': {
@@ -966,16 +985,146 @@ export class WorkflowEngineService {
               `Workflow summary for ${entityType ?? 'event'} ${entityId ?? ''}`.trim(),
           ),
         };
+      case 'create_task': {
+        const title = String(config.title ?? 'Workflow task').trim() || 'Workflow task';
+        const assigneeUserId =
+          typeof config.userId === 'string'
+            ? config.userId
+            : typeof config.assigneeUserId === 'string'
+              ? config.assigneeUserId
+              : null;
+        const [task] = await this.deps.db
+          .insert(opsWorkflowTasks)
+          .values({
+            companyId: scope.companyId,
+            workflowId: context.workflowId,
+            workflowRunId: context.workflowRunId,
+            title,
+            description:
+              typeof config.description === 'string'
+                ? config.description
+                : typeof config.body === 'string'
+                  ? config.body
+                  : null,
+            status: 'open',
+            assigneeUserId,
+            entityType: entityType ?? (typeof config.entityType === 'string' ? config.entityType : null),
+            entityId: entityId ?? (typeof config.entityId === 'string' ? config.entityId : null),
+            createdByUserId: scope.userId,
+            metadata: { source: 'workflow_engine', actionType },
+          })
+          .returning();
+        return { taskId: task!.id, title, simulated: false };
+      }
       case 'notify_user':
-      case 'send_internal_notification':
-      case 'create_task':
-      case 'generate_recommendation':
-      case 'create_approval_request':
+      case 'send_internal_notification': {
+        const recipientUserId = String(
+          config.userId ?? config.recipientUserId ?? scope.userId ?? '',
+        );
+        if (!recipientUserId || !this.deps.notificationService) {
+          return {
+            simulated: false,
+            actionType,
+            skipped: true,
+            reason: !this.deps.notificationService
+              ? 'Notification service unavailable'
+              : 'Missing recipient user',
+          };
+        }
+        const title = String(config.title ?? 'Workflow notification');
+        const body = String(config.message ?? config.body ?? 'An automated workflow notification');
+        const notification = await this.deps.notificationService.createNotification({
+          companyId: scope.companyId,
+          recipientType: 'staff',
+          recipientUserId,
+          notificationType:
+            (config.notificationType as import('@titan/shared').NotificationType | undefined) ??
+            'system_alert',
+          title,
+          body,
+          entityType: entityType ?? undefined,
+          entityId: entityId ?? undefined,
+        });
         return {
+          notificationId: notification?.id ?? null,
+          recipientUserId,
+          externalSend: false,
           simulated: false,
-          actionType,
-          message: `Completed ${actionType} without external side effects`,
         };
+      }
+      case 'create_follow_up': {
+        const title = String(config.title ?? 'Workflow follow-up').trim() || 'Workflow follow-up';
+        const customerIdRaw =
+          config.customerId ?? payload.customerId ?? getNestedValue(payload, 'customer.id');
+        const customerId = typeof customerIdRaw === 'string' ? customerIdRaw : null;
+        const [followUp] = await this.deps.db
+          .insert(opsWorkflowFollowUps)
+          .values({
+            companyId: scope.companyId,
+            workflowId: context.workflowId,
+            workflowRunId: context.workflowRunId,
+            title,
+            notes:
+              typeof config.notes === 'string'
+                ? config.notes
+                : typeof config.body === 'string'
+                  ? config.body
+                  : null,
+            status: 'draft',
+            customerId,
+            entityType: entityType ?? (typeof config.entityType === 'string' ? config.entityType : null),
+            entityId: entityId ?? (typeof config.entityId === 'string' ? config.entityId : null),
+            dueAt:
+              typeof config.dueAt === 'string' && config.dueAt
+                ? new Date(config.dueAt)
+                : null,
+            createdByUserId: scope.userId,
+            metadata: { source: 'workflow_engine', actionType },
+          })
+          .returning();
+        return { followUpId: followUp!.id, status: 'draft', simulated: false };
+      }
+      case 'generate_recommendation':
+      case 'trigger_aura_suggestion': {
+        const subject = String(
+          config.subject ?? config.title ?? 'Workflow AURA suggestion',
+        ).trim();
+        const body = String(
+          config.body ??
+            config.message ??
+            config.recommendation ??
+            `Draft suggestion from workflow for ${entityType ?? 'event'} ${entityId ?? ''}`.trim(),
+        );
+        const signals = Array.isArray(config.supportingSignals)
+          ? config.supportingSignals.map(String)
+          : [
+              `trigger:${entityType ?? 'unknown'}`,
+              entityId ? `entity:${entityId}` : 'entity:none',
+            ];
+        const [suggestion] = await this.deps.db
+          .insert(opsWorkflowAuraSuggestions)
+          .values({
+            companyId: scope.companyId,
+            workflowId: context.workflowId,
+            workflowRunId: context.workflowRunId,
+            subject: subject || 'Workflow AURA suggestion',
+            body,
+            status: 'pending_approval',
+            supportingSignals: signals,
+            autoExecuted: false,
+            entityType: entityType ?? (typeof config.entityType === 'string' ? config.entityType : null),
+            entityId: entityId ?? (typeof config.entityId === 'string' ? config.entityId : null),
+            createdByUserId: scope.userId,
+            metadata: { source: 'workflow_engine', actionType, autoExecute: false },
+          })
+          .returning();
+        return {
+          suggestionId: suggestion!.id,
+          autoExecuted: false,
+          status: 'pending_approval',
+          simulated: false,
+        };
+      }
       default:
         return {};
     }
@@ -1049,6 +1198,66 @@ export class WorkflowEngineService {
         return {
           decision: preview ?? 'Awaiting AURA agent review',
           approved: true,
+          autoExecuted: false,
+        };
+      case 'update_record': {
+        const recordType = String(config.recordType ?? 'job');
+        const recordId = String(config.recordId ?? entityId ?? '');
+        const updates =
+          config.updates && typeof config.updates === 'object' && !Array.isArray(config.updates)
+            ? (config.updates as Record<string, unknown>)
+            : Object.fromEntries(
+                Object.entries(config).filter(
+                  ([key]) => !['recordType', 'recordId', 'jobId', 'customerId'].includes(key),
+                ),
+              );
+        const filtered = filterSafeRecordUpdates(recordType, updates);
+        if (!filtered || !recordId) {
+          throw new WorkflowEngineError(
+            'UNSAFE_RECORD_UPDATE',
+            'Only scoped customer/job field updates are allowed',
+          );
+        }
+        if (filtered.recordType === 'job') {
+          await this.deps.jobsService.updateJob(scope.companyId, recordId, {
+            notes:
+              filtered.safeUpdates.notes !== undefined
+                ? String(filtered.safeUpdates.notes)
+                : undefined,
+            priority:
+              filtered.safeUpdates.priority !== undefined
+                ? (filtered.safeUpdates.priority as import('@titan/shared').JobPriority)
+                : undefined,
+            customerVisibleNotes:
+              filtered.safeUpdates.customerVisibleNotes !== undefined
+                ? String(filtered.safeUpdates.customerVisibleNotes)
+                : undefined,
+          });
+        } else {
+          await this.deps.crmService.updateCustomer(scope.companyId, recordId, {
+            notes:
+              filtered.safeUpdates.notes !== undefined
+                ? String(filtered.safeUpdates.notes)
+                : undefined,
+            status:
+              filtered.safeUpdates.status !== undefined
+                ? (filtered.safeUpdates.status as import('@titan/shared').CustomerStatus)
+                : undefined,
+          });
+        }
+        return {
+          recordType: filtered.recordType,
+          recordId,
+          updates: filtered.safeUpdates,
+          ownerApproved: true,
+        };
+      }
+      case 'create_approval_request':
+        return {
+          approved: true,
+          title: String(config.title ?? 'Workflow approval required'),
+          preview: preview ?? null,
+          externalSend: false,
         };
       default:
         return storedOutput;

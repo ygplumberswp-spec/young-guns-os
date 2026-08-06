@@ -1,0 +1,25 @@
+{
+  "sprint": "019",
+  "at": "2026-08-01T08:30:00.000Z",
+  "stagingProjectRef": "cpkuwtaipjxeipvbssvn",
+  "backupFile": "staging-backup-2026-08-01T08-25-06-002Z.dump",
+  "journalBefore": 106,
+  "journalAfter": 106,
+  "expectedJournal": 106,
+  "migrateStagingSafeExit": 0,
+  "railwayRedeploy": "BLOCKED_INVALID_RAILWAY_TOKEN",
+  "healthReadyHttp": 503,
+  "healthReadyCode": "DB_UNAVAILABLE",
+  "healthDbReason": "28P01",
+  "smokePhase5": "NO-GO",
+  "smokePhase6": "NO-GO",
+  "smokePhase8_12": "NO-GO",
+  "localTypecheck": "PASS",
+  "localTest": "PASS",
+  "localBuild": "PASS",
+  "verdict": "NO-GO_PUBLIC_STAGING",
+  "blockers": [
+    "Railway staging API DATABASE_URL auth mismatch (28P01) — sync env + redeploy",
+    "RAILWAY_TOKEN present but CLI unauthorized — valid token or dashboard redeploy required"
+  ]
+}

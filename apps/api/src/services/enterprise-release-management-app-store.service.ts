@@ -94,16 +94,16 @@ function buildStoreListingTemplate(
   checklist: ReadonlyArray<{ key: string; label: string }>,
 ): Record<string, unknown> {
   const baseMetadata = {
-    appName: 'TITAN Business OS',
+    appName: 'TITAN',
     version: '1.0.0',
-    bundleId: storePlatform === 'apple_app_store' ? 'com.titan.businessos' : 'com.titan.businessos',
+    bundleId: storePlatform === 'apple_app_store' ? 'com.titan.app' : 'com.titan.app',
   };
 
   if (storePlatform === 'apple_app_store') {
     return {
       ...baseMetadata,
       description:
-        'TITAN Business OS is an enterprise business operating system for field service, operations, finance, and customer management.',
+        'TITAN is an enterprise business operating system for field service, operations, finance, and customer management.',
       keywords: ['business', 'field service', 'operations', 'enterprise', 'CRM', 'dispatch'],
       primaryCategory: 'Business',
       secondaryCategory: 'Productivity',
@@ -118,7 +118,7 @@ function buildStoreListingTemplate(
         '6.5" iPhone (1284×2778)',
         '12.9" iPad Pro (2048×2732) if tablet supported',
       ],
-      releaseNotes: 'Initial release of TITAN Business OS v1.0.0.',
+      releaseNotes: 'Initial release of TITAN v1.0.0.',
       checklist: checklist.map((item) => ({ ...item, status: 'pending' })),
     };
   }
@@ -127,7 +127,7 @@ function buildStoreListingTemplate(
     ...baseMetadata,
     shortDescription: 'Enterprise business operating system for field service and operations.',
     fullDescription:
-      'TITAN Business OS delivers integrated field service, dispatch, finance, CRM, and operations management for enterprise teams.',
+      'TITAN delivers integrated field service, dispatch, finance, CRM, and operations management for enterprise teams.',
     category: 'Business',
     privacyPolicyUrl: '',
     dataSafety: {
@@ -141,7 +141,7 @@ function buildStoreListingTemplate(
       '7-inch tablet (1200×1920)',
       '10-inch tablet (1600×2560)',
     ],
-    releaseNotes: 'Initial release of TITAN Business OS v1.0.0.',
+    releaseNotes: 'Initial release of TITAN v1.0.0.',
     checklist: checklist.map((item) => ({ ...item, status: 'pending' })),
   };
 }

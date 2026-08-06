@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { Link, useRoute } from 'wouter';
-import { Button, Input, PageHeader, Panel } from '@titan/ui';
+import { useRoute } from 'wouter';
+import { Button, Input, Panel } from '@titan/ui';
 import type { AgentProfileDetail, AgentProfileStatus } from '@titan/shared';
 import { AGENT_PROFILE_STATUS_OPTIONS } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
@@ -175,18 +176,22 @@ export function AgentProfileDetailPage() {
     );
   }
 
-  if (isLoading) return <p className="page-muted">Loading agent profile…</p>;
+  if (isLoading) {
+    return (
+      <div className="page-shell">
+        <PageHeader title="Agent" description="Agent profile" />
+        <p className="page-muted">Loading agent profile…</p>
+      </div>
+    );
+  }
 
   if (!profile) {
     return (
       <div className="agents-page">
         <PageHeader
-          title="Profile not found"
+          title="Profile Not Found"
           description="This agent profile could not be found."
         />
-        <Link href="/aura/agents" className="agents-link">
-          Back to dashboard
-        </Link>
       </div>
     );
   }
@@ -198,9 +203,6 @@ export function AgentProfileDetailPage() {
         description={`${formatAgentKey(profile.agentKey)} profile with permissions and tool grants.`}
         actions={
           <div className="agents-detail-actions">
-            <Link href="/aura/agents">
-              <Button variant="secondary">Back to dashboard</Button>
-            </Link>
             {canWrite ? (
               <Button variant="secondary" onClick={() => setIsEditing((value) => !value)}>
                 {isEditing ? 'Cancel editing' : 'Edit profile'}
@@ -223,7 +225,7 @@ export function AgentProfileDetailPage() {
       {isEditing && canWrite ? (
         <form className="agents-form" onSubmit={(event) => void handleSubmit(event)}>
           <Input
-            label="Profile name"
+            label="Profile Name"
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
@@ -256,7 +258,7 @@ export function AgentProfileDetailPage() {
           </Button>
         </form>
       ) : (
-        <Panel title="Profile details">
+        <Panel title="Profile Details">
           <dl className="agents-detail-grid">
             <div>
               <dt>Agent type</dt>
@@ -290,7 +292,7 @@ export function AgentProfileDetailPage() {
         </Panel>
       )}
 
-      <Panel title="Agent permissions">
+      <Panel title="Agent Permissions">
         <div className="agents-permission-grid">
           {PERMISSION_OPTIONS.map((permission) => (
             <label key={permission} className="agents-permission-option">
@@ -311,7 +313,7 @@ export function AgentProfileDetailPage() {
         ) : null}
       </Panel>
 
-      <Panel title="Tool framework grants">
+      <Panel title="Tool Framework Grants">
         <p className="page-muted">
           Tools are registered for future execution. No tool runs automatically in this foundation
           milestone.
@@ -345,7 +347,7 @@ export function AgentProfileDetailPage() {
         ) : null}
       </Panel>
 
-      <Panel title="Execution history">
+      <Panel title="Execution History">
         {executions.length === 0 ? (
           <p className="page-muted">
             No executions recorded yet. Agents do not run autonomously in this foundation milestone.

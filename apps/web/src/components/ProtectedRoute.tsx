@@ -1,10 +1,17 @@
 import { type ReactNode, useEffect } from 'react';
-import { useLocation } from 'wouter';
+import { useLocation, useSearch } from 'wouter';
 import { LoadingState } from '@titan/ui';
-import { getStaffHomePath } from '@titan/auth/browser';
 import { useAuth } from '../lib/auth-context';
-import { toAppAbsoluteHref } from '../lib/nested-routing';
-import { toStaffIdentity } from '../lib/role-experience';
+import { toAppAbsoluteHref, useAppPathname } from '../lib/nested-routing';
+import {
+  clearStaffAuthReturnPath,
+  resolveStaffPostLoginPath,
+  staffAuthReturnFromSearch,
+} from '../lib/staff-auth-return-routing';
+import {
+  isSessionExpiredLoginReason,
+  staffLoginRedirectHref,
+} from '../lib/session-expiry-routing';
 
 type ProtectedRouteProps = {
   children: ReactNode;
@@ -13,22 +20,25 @@ type ProtectedRouteProps = {
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { isAuthenticated, isLoading, sessionBootstrap } = useAuth();
   const [, setLocation] = useLocation();
+  const pathname = useAppPathname();
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      // Only label true refresh rejections as expired — missing/unreachable are plain sign-in.
-      const href =
-        sessionBootstrap === 'expired'
-          ? '/auth/login?reason=session_expired'
-          : '/auth/login';
-      setLocation(toAppAbsoluteHref(href));
+      // Session expiry → role home after re-auth (no deep-page restore).
+      // Missing/unreachable may keep returnTo for intentional deep links.
+      if (sessionBootstrap === 'expired') {
+        clearStaffAuthReturnPath();
+        setLocation(staffLoginRedirectHref('expired'));
+        return;
+      }
+      setLocation(staffLoginRedirectHref(sessionBootstrap, pathname));
     }
-  }, [isAuthenticated, isLoading, sessionBootstrap, setLocation]);
+  }, [isAuthenticated, isLoading, pathname, sessionBootstrap, setLocation]);
 
   if (isLoading) {
     return (
       <div style={{ padding: '2rem' }}>
-        <LoadingState label="Opening TITAN…" />
+        <LoadingState label="Restoring Your Session…" />
       </div>
     );
   }
@@ -47,12 +57,20 @@ type GuestRouteProps = {
 export function GuestRoute({ children }: GuestRouteProps) {
   const { isAuthenticated, isLoading, user } = useAuth();
   const [, setLocation] = useLocation();
+  const search = useSearch();
 
   useEffect(() => {
     if (!isLoading && isAuthenticated && user) {
-      setLocation(toAppAbsoluteHref(getStaffHomePath(toStaffIdentity(user))));
+      const reason = new URLSearchParams(search).get('reason');
+      if (isSessionExpiredLoginReason(reason)) {
+        clearStaffAuthReturnPath();
+        setLocation(toAppAbsoluteHref(resolveStaffPostLoginPath(user, null)));
+        return;
+      }
+      staffAuthReturnFromSearch(search);
+      setLocation(toAppAbsoluteHref(resolveStaffPostLoginPath(user)));
     }
-  }, [isAuthenticated, isLoading, setLocation, user]);
+  }, [isAuthenticated, isLoading, search, setLocation, user]);
 
   if (isLoading) {
     return (
