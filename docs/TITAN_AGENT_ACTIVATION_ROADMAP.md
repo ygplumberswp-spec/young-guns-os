@@ -16,7 +16,7 @@
 - Phases are sequential gates; parallel preparation within a phase is allowed when dependencies are met.
 - **Do not invent milestone numbers** beyond Phase A–F defined here.
 - Facebook J-6.7F14 **deployed to staging** — connected, verified, webhooks feed+mention confirmed; genuine live Page event pending (Meta app unpublished); **not production-complete**
-- **XERO-002 remains parked** — Xero execution agents stay **Planned** until Owner reopens
+- **XERO-002 implementation complete (2026-08-06)** — live proof Owner-gated; Xero execution agents stay **Planned** until live proof succeeds
 
 ---
 
