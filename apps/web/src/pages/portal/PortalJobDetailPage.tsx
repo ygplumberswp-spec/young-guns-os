@@ -1,17 +1,14 @@
+import { PageHeader } from '../../components/ux';
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'wouter';
-import { EmptyState, LoadingState, PageHeader, Panel } from '@titan/ui';
+import { EmptyState, LoadingState, Panel } from '@titan/ui';
 import type { PortalJobTrackingDetail } from '@titan/shared';
 import { PortalApiClientError, fetchPortalJob } from '../../lib/portal-api-client';
 import { usePortalAuth } from '../../lib/portal-auth-context';
 import { toPortalNestedHref } from '../../lib/portal-routing';
-
-function formatWhen(value: string | null | undefined): string | null {
-  if (!value) return null;
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return null;
-  return date.toLocaleString();
-}
+import { formatPortalWhen } from '../../lib/portal-datetime';
+import { ReportExportActions } from '../../features/reports/ReportExportActions';
+import { ExtendedReportExportActions } from '../../features/reports/ExtendedReportExportActions';
 
 export function PortalJobDetailPage() {
   const params = useParams<{ jobId: string }>();
@@ -44,8 +41,8 @@ export function PortalJobDetailPage() {
     };
   }, [accessToken, jobId]);
 
-  const etaLabel = formatWhen(detail?.liveTracking?.etaAt ?? detail?.job.etaAt ?? null);
-  const scheduledLabel = formatWhen(detail?.job.scheduledAt ?? null);
+  const etaLabel = formatPortalWhen(detail?.liveTracking?.etaAt ?? detail?.job.etaAt ?? null);
+  const scheduledLabel = formatPortalWhen(detail?.job.scheduledAt ?? null);
 
   return (
     <div className="portal-page">
@@ -59,9 +56,9 @@ export function PortalJobDetailPage() {
         }
       />
       {error ? <p className="form-error">{error}</p> : null}
-      {loading ? <LoadingState label="Loading job…" /> : null}
+      {loading ? <LoadingState label="Loading Job…" /> : null}
       {!loading && !error && !detail ? (
-        <EmptyState title="Job not found" description="This job is not available on your account." />
+        <EmptyState title="Job Not Found" description="This job is not available on your account." />
       ) : null}
 
       {detail ? (
@@ -117,14 +114,14 @@ export function PortalJobDetailPage() {
             ) : (
               <EmptyState
                 className="titan-empty-state--compact"
-                title="ETA not available yet"
+                title="ETA Not Available Yet"
                 description="An ETA appears when your job is scheduled or your technician is en route."
               />
             )}
           </Panel>
 
           {detail.job.description ? (
-            <Panel title="Job notes">
+            <Panel title="Job Notes">
               <p className="page-muted">{detail.job.description}</p>
             </Panel>
           ) : null}
@@ -133,7 +130,7 @@ export function PortalJobDetailPage() {
             {detail.timeline.length === 0 ? (
               <EmptyState
                 className="titan-empty-state--compact"
-                title="No timeline events"
+                title="No Timeline Events"
                 description="Status updates for this job will appear here."
               />
             ) : (
@@ -141,12 +138,39 @@ export function PortalJobDetailPage() {
                 {detail.timeline.map((entry) => (
                   <li key={entry.id}>
                     <strong>{entry.title}</strong>
-                    <span className="tabular-nums">{formatWhen(entry.occurredAt)}</span>
+                    <span className="tabular-nums">{formatPortalWhen(entry.occurredAt)}</span>
                     {entry.description ? <span>{entry.description}</span> : null}
                   </li>
                 ))}
               </ul>
             )}
+          </Panel>
+
+          <Panel title="Reports">
+            {accessToken && jobId ? (
+              <>
+                <ReportExportActions
+                  accessToken={accessToken}
+                  kind="job"
+                  resourceId={jobId}
+                  channel="portal"
+                  label="Job report"
+                  reportNumber={detail.job.jobNumber}
+                />
+                <ExtendedReportExportActions
+                  accessToken={accessToken}
+                  kind="inspection"
+                  target={{ scope: 'job', jobId }}
+                  channel="portal"
+                />
+                <ExtendedReportExportActions
+                  accessToken={accessToken}
+                  kind="compliance_coc_support"
+                  target={{ scope: 'job', jobId }}
+                  channel="portal"
+                />
+              </>
+            ) : null}
           </Panel>
         </>
       ) : null}

@@ -1,5 +1,6 @@
+import { PageHeader } from '../../components/ux';
 import { useEffect, useState } from 'react';
-import { PageHeader, Panel } from '@titan/ui';
+import { Panel } from '@titan/ui';
 import type { NotificationSummary } from '@titan/shared';
 import { PortalApiClientError, fetchPortalNotifications } from '../../lib/portal-api-client';
 import { usePortalAuth } from '../../lib/portal-auth-context';
@@ -27,7 +28,7 @@ export function PortalNotificationsPage() {
         description="Job, quote, invoice, appointment, and support updates."
       />
       {error ? <p className="form-error">{error}</p> : null}
-      <Panel title="Notification centre">
+      <Panel title="Notification Centre">
         <ul className="portal-list">
           {notifications.map((item) => (
             <li key={item.id}>

@@ -11,12 +11,21 @@ import {
   probeDbConnection,
   summarizeDatabaseUrl,
 } from '@titan/db';
-import { loadAuraEnvConfig, loadEnv, resolveXeroOAuthConfig } from './config.js';
+import {
+  loadAuraEnvConfig,
+  loadEnv,
+  resolveGmailOAuthConfig,
+  resolveGoogleCalendarOAuthConfig,
+  resolveFacebookAppConfig,
+  resolveXeroOAuthConfig,
+} from './config.js';
 
 import { attachDbQueryDiagnostics, createDbDiagnosticsMiddleware } from './lib/db-diagnostics.js';
 import { resolveCompanyMediaStoragePath } from './lib/company-media-storage.js';
 import { resolveJobEvidenceStoragePath } from './lib/job-evidence-storage.js';
+import { validateDeploymentStorageConfiguration } from './lib/deployment-storage-validation.js';
 import { JobEvidenceStorageService } from './services/job-evidence-storage.service.js';
+import { FinanceDocumentEvidenceStorageService } from './services/finance-document-evidence-storage.service.js';
 import { createErrorHandler, notFoundHandler } from './middleware/error-handler.js';
 import { requestContextMiddleware } from './middleware/request-context.js';
 import { configureRbacAudit } from './middleware/rbac.js';
@@ -33,15 +42,35 @@ import { CompanyService } from './services/company.service.js';
 import { CompanyMediaService } from './services/company-media.service.js';
 import { TeamService } from './services/team.service.js';
 import { createCrmRouter } from './routes/crm.js';
+import { createDashboardRouter } from './routes/dashboard.js';
+import { createCustomersRouter } from './routes/customers.js';
+import { createSupplierPriceIntelligenceRouter } from './routes/supplier-price-intelligence.js';
 import { createMarketingEligibilityRouter } from './routes/marketing-eligibility.js';
 import { createJobsRouter } from './routes/jobs.js';
 import { createSchedulingRouter } from './routes/scheduling.js';
 import { CrmService } from './services/crm.service.js';
+import { CustomerDuplicateMergeService } from './services/customer-duplicate-merge.service.js';
+import { CustomerValueClassificationService } from './services/customer-value-classification.service.js';
+import { DashboardExecutiveService } from './services/dashboard-executive.service.js';
+import { SupplierPriceIntelligenceService } from './services/supplier-price-intelligence.service.js';
 import { MarketingEligibilityService } from './services/marketing-eligibility.service.js';
 import { JobsService } from './services/jobs.service.js';
+import { JobCostingService } from './services/job-costing.service.js';
+import { JobDocumentPackService } from './services/job-document-pack.service.js';
+import { CompletionReportService } from './services/completion-report.service.js';
+import { ReportExportService } from './services/report-export.service.js';
 import { SchedulingService } from './services/scheduling.service.js';
 import { FinanceService } from './services/finance.service.js';
 import { createFinanceRouter } from './routes/finance.js';
+import { createLiveUpdatesRouter } from './routes/live-updates.js';
+import './lib/live-updates.js';
+import { createBoqRouter } from './routes/boq.js';
+import { createDraftsRouter } from './routes/drafts.js';
+import { createJobDocumentPackRouter } from './routes/job-document-packs.js';
+import { createCompletionReportRouter } from './routes/completion-reports.js';
+import { createReportExportRouter, createPortalReportExportRouter } from './routes/report-exports.js';
+import { BoqService } from './services/boq.service.js';
+import { DraftAutosaveService } from './services/draft-autosave.service.js';
 import { InventoryService } from './services/inventory.service.js';
 import { StockMovementsService } from './services/stock-movements.service.js';
 import { createInventoryRouter } from './routes/inventory.js';
@@ -53,10 +82,32 @@ import { IntegrationApiManagementService } from './services/integration-api-mana
 import { BusinessIntegrationsService } from './services/business-integrations.service.js';
 import { XeroOAuthService } from './services/xero-oauth.service.js';
 import { XeroSyncService } from './services/xero-sync.service.js';
+import { XeroCustomerMappingService } from './services/xero-customer-mapping.service.js';
+import { XeroReconciliationService } from './services/xero-reconciliation.service.js';
+import { XeroFinancialMemoryService } from './services/xero-financial-memory.service.js';
+import { XeroWriteApprovalGate } from './services/xero-write-approval-gate.service.js';
+import { XeroMappingConflictService } from './services/xero-mapping-conflict.service.js';
+import { XeroWriteApprovalWorkflowService } from './services/xero-write-approval-workflow.service.js';
+import { XeroTwoWayVerifyService } from './services/xero-two-way-verify.service.js';
 import { WhatsappService } from './services/whatsapp.service.js';
+import { WhatsappContactEnrichmentService } from './services/whatsapp-contact-enrichment.service.js';
 import { createIntegrationsRouter } from './routes/integrations.js';
+import { createGoogleMapsRouter } from './routes/google-maps.js';
+import { GoogleMapsService } from './services/google-maps.service.js';
+import { createGoogleCalendarRouter } from './routes/google-calendar.js';
+import { GoogleCalendarOAuthService } from './services/google-calendar-oauth.service.js';
+import { GoogleCalendarService } from './services/google-calendar.service.js';
+import { VehiclePositionAddressService } from './services/vehicle-position-address.service.js';
 import { createWhatsappRouter } from './routes/whatsapp.js';
+import { createWhatsappEnrichmentRouter } from './routes/whatsapp-enrichment.js';
 import { createWhatsappWebhookRouter } from './routes/whatsapp-webhook.js';
+import { createResendWebhookRouter } from './routes/resend-webhook.js';
+import {
+  createDocumentEngineRouter,
+  createYocoWebhookRouter,
+} from './routes/document-engine.js';
+import { DocumentEngineService } from './services/document-engine.service.js';
+import { ResendEmailService } from './services/resend-email.service.js';
 import { CommunicationsService } from './services/communications.service.js';
 import { createCommunicationsRouter } from './routes/communications.js';
 import { DocumentsService } from './services/documents.service.js';
@@ -65,6 +116,9 @@ import { AutomationService } from './services/automation.service.js';
 import { N8nOrchestrationService } from './services/n8n-orchestration.service.js';
 import { WorkflowEngineService } from './services/workflow-engine.service.js';
 import { MemoryService } from './services/memory.service.js';
+import { CompanyDayPlanService } from './services/company-day-plan.service.js';
+import { CompanyDayPlanFollowUpsService } from './services/company-day-plan-follow-ups.service.js';
+import { CompanyBusinessRulesService } from './services/company-business-rules.service.js';
 import { IntelligenceService } from './services/intelligence.service.js';
 import { RecommendationsService } from './services/recommendations.service.js';
 import { createIntelligenceRouter } from './routes/intelligence.js';
@@ -89,7 +143,13 @@ import { createEnterpriseProductionReadinessRouter } from './routes/enterprise-p
 import { EnterpriseMobilePlatformService } from './services/enterprise-mobile-platform.service.js';
 import { createEnterpriseMobilePlatformRouter } from './routes/enterprise-mobile-platform.js';
 import { EnterpriseUnifiedCommunicationsService } from './services/enterprise-unified-communications.service.js';
+import { DispatchCommunicationService } from './services/dispatch-communication.service.js';
 import { createEnterpriseUnifiedCommunicationsRouter } from './routes/enterprise-unified-communications.js';
+import { CommunicationsPlatformService } from './services/communications-platform.service.js';
+import { createCommunicationsPlatformRouter } from './routes/communications-platform.js';
+import { EmailCentreService } from './services/email-centre.service.js';
+import { createEmailCentreRouter } from './routes/email-centre.js';
+import { GmailOAuthService } from './services/gmail-oauth.service.js';
 import { EnterpriseCustomerExperienceService } from './services/enterprise-customer-experience.service.js';
 import { createEnterpriseCustomerExperienceRouter } from './routes/enterprise-customer-experience.js';
 import { EnterpriseAssetLifecycleService } from './services/enterprise-asset-lifecycle.service.js';
@@ -120,6 +180,10 @@ import { EnterpriseSaasManagementService } from './services/enterprise-saas-mana
 import { createEnterpriseSaasManagementRouter } from './routes/enterprise-saas-management.js';
 import { EnterpriseVoiceReceptionService } from './services/enterprise-voice-reception.service.js';
 import { createEnterpriseVoiceReceptionRouter } from './routes/enterprise-voice-reception.js';
+import { VoiceAiReceptionistService } from './services/voice-ai-receptionist.service.js';
+import { CallIntelligenceService } from './services/call-intelligence.service.js';
+import { createVoiceAiReceptionistRouter } from './routes/voice-ai-receptionist.js';
+import { createCallIntelligenceRouter } from './routes/call-intelligence.js';
 import { EnterpriseDocumentAiService } from './services/enterprise-document-ai.service.js';
 import { createEnterpriseDocumentAiRouter } from './routes/enterprise-document-ai.js';
 import { EnterpriseBusinessContinuityService } from './services/enterprise-business-continuity.service.js';
@@ -165,6 +229,7 @@ import { createVoiceRouter } from './routes/voice.js';
 import { createCustomerSupportRouter } from './routes/customer-support.js';
 import { bindAutomationEventEmitter } from './lib/automation-events.js';
 import { startAutomationWorkers } from './workers/automation.worker.js';
+import { startIntegrationSyncScheduler } from './workers/integration-sync.scheduler.js';
 import { AgentsService } from './services/agents.service.js';
 import { AgentRuntimeService } from './services/agent-runtime.service.js';
 import { AgentOrchestrationService } from './services/agent-orchestration.service.js';
@@ -195,30 +260,120 @@ import { createBusinessIntelligenceRouter } from './routes/business-intelligence
 import { PortalAuthService } from './services/portal-auth.service.js';
 import { PortalService } from './services/portal.service.js';
 import { PortalExperienceService } from './services/portal-experience.service.js';
+import { PortalExpansionService } from './services/portal-expansion.service.js';
 import { MobileWorkforceService } from './services/mobile-workforce.service.js';
 import { QualityAssuranceService } from './services/quality-assurance.service.js';
 import { CommunicationsIntelligenceService } from './services/communications-intelligence.service.js';
 import { AssetEquipmentIntelligenceService } from './services/asset-equipment-intelligence.service.js';
 import { AiOrchestrationService } from './services/ai-orchestration.service.js';
 import { DispatchIntelligenceService } from './services/dispatch-intelligence.service.js';
+import { OpsIntelligenceService } from './services/ops-intelligence.service.js';
 import { FleetIntelligenceService } from './services/fleet-intelligence.service.js';
 import { PersonalCommunicationsIntelligenceService } from './services/personal-communications-intelligence.service.js';
+import { PersonalWhatsappIntelligenceService } from './services/personal-whatsapp-intelligence.service.js';
+import { PersonalWhatsappConnectionService } from './services/personal-whatsapp-connection.service.js';
+import { CommunicationAuraIntelligenceService } from './services/communication-aura-intelligence.service.js';
+import { AuraCommandCentreService } from './services/aura-command-centre.service.js';
+import { AuraAgentNetworkService } from './services/aura-agent-network.service.js';
+import { AuraEvolutionService } from './services/aura-evolution.service.js';
+import { MarketingAgentService } from './services/marketing-agent.service.js';
+import { SocialMediaIntegrationsService } from './services/social-media-integrations.service.js';
+import { SocialConnectionService } from './services/social-connection.service.js';
+import { ContentReputationIntelligenceService } from './services/content-reputation-intelligence.service.js';
+import { FinanceAuraAgentService } from './services/finance-aura-agent.service.js';
+import { SalesIntelligenceAgentService } from './services/sales-intelligence-agent.service.js';
+import { SalesFollowupIntelligenceService } from './services/sales-followup-intelligence.service.js';
+import { SalesAnalyticsIntelligenceService } from './services/sales-analytics-intelligence.service.js';
+import { Customer360IntelligenceService } from './services/customer-360-intelligence.service.js';
+import { PropertyIntelligenceService } from './services/property-intelligence.service.js';
+import { DocumentIntelligenceService } from './services/document-intelligence.service.js';
+import { ComplianceIntelligenceService } from './services/compliance-intelligence.service.js';
+import { ExecutiveCommandCentreService } from './services/executive-command-centre.service.js';
+import { SmartNotificationIntelligenceService } from './services/smart-notification-intelligence.service.js';
+import { MarketIntelligenceService } from './services/market-intelligence.service.js';
+import { SecurityMonitoringService } from './services/security-monitoring.service.js';
+import { IndustryTemplatesService } from './services/industry-templates.service.js';
+import { FinanceReportingForecastService } from './services/finance-reporting-forecast.service.js';
+import { FinanceCashflowProfitService } from './services/finance-cashflow-profit.service.js';
+import { InventoryIntelligenceService } from './services/inventory-intelligence.service.js';
+import { VehicleIntelligenceService } from './services/vehicle-intelligence.service.js';
+import { FleetAiRecommendationsService } from './services/fleet-ai-recommendations.service.js';
+import { DriverIntelligenceService } from './services/driver-intelligence.service.js';
+import { HrEmployeeIntelligenceService } from './services/hr-employee-intelligence.service.js';
+import { RecruitmentPerformanceIntelligenceService } from './services/recruitment-performance-intelligence.service.js';
+import { ProcurementIntelligenceService } from './services/procurement-intelligence.service.js';
+import { StockForecastingService } from './services/stock-forecasting.service.js';
+import { PayrollTimesheetIntelligenceService } from './services/payroll-timesheet-intelligence.service.js';
+import { TechnicianIntelligenceService } from './services/technician-intelligence.service.js';
+import { WorkflowAutomationService } from './services/workflow-automation.service.js';
+import { RecurringMaintenanceService } from './services/recurring-maintenance.service.js';
+import { HomeshieldExperienceService } from './services/homeshield-experience.service.js';
+import { CustomerEngagementIntelligenceService } from './services/customer-engagement-intelligence.service.js';
 import { EnterpriseSecurityService } from './services/enterprise-security.service.js';
 import { ConnectorEngineService } from './services/connector-engine.service.js';
 import { IntegrationPlatformService } from './services/integration-platform.service.js';
+import { IntegrationSyncOrchestratorService } from './services/integration-sync-orchestrator.service.js';
+import { TenantDomainEventBus } from './services/tenant-domain-event-bus.service.js';
+import { BackgroundWorkQueueService } from './services/background-work-queue.service.js';
+import { BackgroundWorkOrchestratorService } from './services/background-work-orchestrator.service.js';
+import { bindTenantDomainEventBus } from './lib/tenant-domain-event-publisher.js';
+import { createBackgroundWorkRouter } from './routes/background-work.js';
 import { EnterpriseAnalyticsService } from './services/enterprise-analytics.service.js';
 import { createQualityRouter } from './routes/quality.js';
 import { createCommunicationsIntelligenceRouter } from './routes/communications-intelligence.js';
 import { createAssetEquipmentRouter } from './routes/asset-equipment.js';
 import { createAiOrchestrationRouter } from './routes/ai-orchestration.js';
 import { createDispatchIntelligenceRouter } from './routes/dispatch-intelligence.js';
+import { createOpsIntelligenceRouter } from './routes/ops-intelligence.js';
 import { createFleetIntelligenceRouter } from './routes/fleet-intelligence.js';
 import { createPersonalCommunicationsIntelligenceRouter } from './routes/personal-communications-intelligence.js';
+import { createPersonalWhatsappIntelligenceRouter } from './routes/personal-whatsapp-intelligence.js';
+import { createPersonalWhatsappConnectionRouter } from './routes/personal-whatsapp-connection.js';
+import { createCommunicationAuraIntelligenceRouter } from './routes/communication-aura-intelligence.js';
+import { createAuraCommandCentreRouter } from './routes/aura-command-centre.js';
+import { createAuraAgentNetworkRouter } from './routes/aura-agent-network.js';
+import { createAuraEvolutionRouter } from './routes/aura-evolution.js';
+import { createMarketingAgentRouter } from './routes/marketing-agent.js';
+import { createSocialMediaIntegrationsRouter } from './routes/social-media-integrations.js';
+import { createSocialConnectionsRouter } from './routes/social-connections.js';
+import { createFacebookBusinessRouter } from './routes/facebook-business.js';
+import { FacebookBusinessService } from './services/facebook-business.service.js';
+import { createContentReputationIntelligenceRouter } from './routes/content-reputation-intelligence.js';
+import { createFinanceAuraAgentRouter } from './routes/finance-aura-agent.js';
+import { createSalesIntelligenceAgentRouter } from './routes/sales-intelligence-agent.js';
+import { createSalesFollowupIntelligenceRouter } from './routes/sales-followup-intelligence.js';
+import { createSalesAnalyticsIntelligenceRouter } from './routes/sales-analytics-intelligence.js';
+import { createCustomer360IntelligenceRouter } from './routes/customer-360-intelligence.js';
+import { createPropertyIntelligenceRouter } from './routes/property-intelligence.js';
+import { createDocumentIntelligenceRouter } from './routes/document-intelligence.js';
+import { createComplianceIntelligenceRouter } from './routes/compliance-intelligence.js';
+import { createExecutiveCommandCentreRouter } from './routes/executive-command-centre.js';
+import { createSmartNotificationIntelligenceRouter } from './routes/smart-notification-intelligence.js';
+import { createMarketIntelligenceRouter } from './routes/market-intelligence.js';
+import { createSecurityMonitoringRouter } from './routes/security-monitoring.js';
+import { createIndustryTemplatesRouter } from './routes/industry-templates.js';
+import { createFinanceReportingForecastRouter } from './routes/finance-reporting-forecast.js';
+import { createFinanceCashflowProfitRouter } from './routes/finance-cashflow-profit.js';
+import { createInventoryIntelligenceRouter } from './routes/inventory-intelligence.js';
+import { createVehicleIntelligenceRouter } from './routes/vehicle-intelligence.js';
+import { createFleetAiRecommendationsRouter } from './routes/fleet-ai-recommendations.js';
+import { createDriverIntelligenceRouter } from './routes/driver-intelligence.js';
+import { createHrEmployeeIntelligenceRouter } from './routes/hr-employee-intelligence.js';
+import { createRecruitmentPerformanceIntelligenceRouter } from './routes/recruitment-performance-intelligence.js';
+import { createProcurementIntelligenceRouter } from './routes/procurement-intelligence.js';
+import { createStockForecastingRouter } from './routes/stock-forecasting.js';
+import { createPayrollTimesheetIntelligenceRouter } from './routes/payroll-timesheet-intelligence.js';
+import { createTechnicianIntelligenceRouter } from './routes/technician-intelligence.js';
+import { createWorkflowAutomationRouter } from './routes/workflow-automation.js';
+import { createRecurringMaintenanceRouter } from './routes/recurring-maintenance.js';
+import { createHomeshieldExperienceRouter } from './routes/homeshield-experience.js';
+import { createCustomerEngagementIntelligenceRouter } from './routes/customer-engagement-intelligence.js';
 import { createEnterpriseSecurityRouter } from './routes/enterprise-security.js';
 import { createIntegrationPlatformRouter } from './routes/integration-platform.js';
 import { createEnterpriseAnalyticsRouter } from './routes/enterprise-analytics.js';
 import { createPortalAuthRouter } from './routes/portal-auth.js';
 import { createPortalRouter } from './routes/portal.js';
+import { createPortalExpansionRouter } from './routes/portal-expansion.js';
 import type { Env } from './config.js';
 
 function bootLog(message: string, extra?: Record<string, unknown>): void {
@@ -241,6 +396,9 @@ bootLog('process starting', {
   hasAppUrl: Boolean(process.env.APP_URL),
   hasApiPublicUrl: Boolean(process.env.API_PUBLIC_URL),
   hasRedisUrl: Boolean(process.env.REDIS_URL),
+  hasGoogleClientId: Boolean(process.env.GOOGLE_CLIENT_ID?.trim()),
+  hasGoogleClientSecret: Boolean(process.env.GOOGLE_CLIENT_SECRET?.trim()),
+  hasGoogleRedirectUri: Boolean(process.env.GOOGLE_REDIRECT_URI?.trim()),
 });
 
 let env: Env;
@@ -318,6 +476,7 @@ if (auraProvider) {
 }
 
 const companyService = new CompanyService(db);
+const payrollTimesheetIntelligenceService = new PayrollTimesheetIntelligenceService(db);
 let companyMediaStoragePath: string;
 let jobEvidenceStoragePath: string;
 try {
@@ -329,6 +488,22 @@ try {
   const message = error instanceof Error ? error.message : String(error);
   console.error(`[titan-api] FATAL: storage path initialization failed\n${message}`);
   process.exit(1);
+}
+
+const storageValidation = validateDeploymentStorageConfiguration({
+  appEnv: env.APP_ENV,
+  titanEnv: env.TITAN_ENV,
+  jobEvidenceStoragePath,
+  companyMediaStoragePath,
+});
+if (!storageValidation.ok) {
+  console.error(
+    `[titan-api] FATAL: deployment storage validation failed\n${storageValidation.errors.join('\n')}`,
+  );
+  process.exit(1);
+}
+for (const warning of storageValidation.warnings) {
+  logger.warn({ warning }, 'Deployment storage configuration warning');
 }
 bootLog('storage paths ready', {
   companyMediaStoragePath,
@@ -345,16 +520,33 @@ logger.info(
 );
 const companyMediaService = new CompanyMediaService(companyMediaStoragePath);
 const jobEvidenceStorageService = new JobEvidenceStorageService(jobEvidenceStoragePath);
+const financeDocumentEvidenceStorageService = new FinanceDocumentEvidenceStorageService(
+  jobEvidenceStoragePath,
+);
 const teamService = new TeamService(db, env.APP_URL);
 const enterpriseSaasPlatformService = new EnterpriseSaasPlatformService({
   db,
   teamService,
 });
 const crmService = new CrmService(db);
+const customerDuplicateMergeService = new CustomerDuplicateMergeService(db);
+const customerValueClassificationService = new CustomerValueClassificationService(db);
+const supplierPriceIntelligenceService = new SupplierPriceIntelligenceService(db);
 const marketingEligibilityService = new MarketingEligibilityService(db);
 const jobsService = new JobsService(db);
-const schedulingService = new SchedulingService(db);
+const googleMapsService = GoogleMapsService.create({
+  db,
+  encryptionKey: env.INTEGRATIONS_ENCRYPTION_KEY,
+});
+const vehiclePositionAddressService = VehiclePositionAddressService.create({ googleMapsService });
+const schedulingService = new SchedulingService(db, googleMapsService);
 const financeService = new FinanceService(db);
+const documentEngineService = new DocumentEngineService({
+  db,
+  encryptionKey: env.INTEGRATIONS_ENCRYPTION_KEY,
+});
+const boqService = new BoqService(db, financeService);
+const draftAutosaveService = new DraftAutosaveService(db);
 const inventoryService = new InventoryService(db);
 const stockMovementsService = new StockMovementsService(db);
 const fleetService = new FleetService(db);
@@ -369,28 +561,91 @@ const xeroOAuthService = XeroOAuthService.create({
   appUrl: env.APP_URL,
   oauthConfig: xeroOAuthConfig,
 });
+const gmailOAuthConfig = resolveGmailOAuthConfig(env, apiPublicUrl);
+bootLog('gmail oauth resolved', {
+  oauthConfigured: gmailOAuthConfig.configured,
+  hasClientId: Boolean(env.GOOGLE_CLIENT_ID?.trim()),
+  hasClientSecret: Boolean(env.GOOGLE_CLIENT_SECRET),
+  hasRedirectUri: Boolean(env.GOOGLE_REDIRECT_URI?.trim()),
+});
+const gmailOAuthService = GmailOAuthService.create({
+  db,
+  encryptionKey: env.INTEGRATIONS_ENCRYPTION_KEY,
+  appUrl: env.APP_URL,
+  oauthConfig: gmailOAuthConfig,
+});
+integrationHubService.setGmailOAuthConfiguredProvider(() => gmailOAuthService.isAppConfigured());
+const googleCalendarOAuthConfig = resolveGoogleCalendarOAuthConfig(env, apiPublicUrl);
+bootLog('google calendar oauth resolved', {
+  oauthConfigured: googleCalendarOAuthConfig.configured,
+  hasClientId: Boolean(env.GOOGLE_CLIENT_ID?.trim()),
+  hasClientSecret: Boolean(env.GOOGLE_CLIENT_SECRET),
+  hasRedirectUri: Boolean(env.GOOGLE_CALENDAR_REDIRECT_URI?.trim()),
+});
+const googleCalendarOAuthService = GoogleCalendarOAuthService.create({
+  db,
+  encryptionKey: env.INTEGRATIONS_ENCRYPTION_KEY,
+  appUrl: env.APP_URL,
+  oauthConfig: googleCalendarOAuthConfig,
+});
+const googleCalendarService = new GoogleCalendarService(
+  db,
+  googleCalendarOAuthService,
+  schedulingService,
+);
 const businessIntegrationsService = BusinessIntegrationsService.create({
   db,
   encryptionKey: env.INTEGRATIONS_ENCRYPTION_KEY,
   hubService: integrationHubService,
   xeroOAuthService,
+  apiPublicUrl,
+  emailSendingEnabled: env.runtime.emailSendingEnabled,
 });
+const resendEmailService = ResendEmailService.create({
+  db,
+  encryptionKey: env.INTEGRATIONS_ENCRYPTION_KEY,
+  hubService: integrationHubService,
+  emailSendingEnabled: env.runtime.emailSendingEnabled,
+  webhooksEnabled: env.runtime.webhooksEnabled,
+});
+const xeroWriteApprovalGate = new XeroWriteApprovalGate(db);
+const xeroMappingConflictService = new XeroMappingConflictService(db);
 const xeroSyncService = XeroSyncService.create({
   db,
   encryptionKey: env.INTEGRATIONS_ENCRYPTION_KEY,
   hubService: integrationHubService,
   xeroOAuthService,
+  writeApprovalGate: xeroWriteApprovalGate,
+  mappingConflictService: xeroMappingConflictService,
 });
+const xeroFinancialMemoryService = new XeroFinancialMemoryService(db, xeroSyncService);
+const xeroCustomerMappingService = XeroCustomerMappingService.create(db);
+const xeroReconciliationService = XeroReconciliationService.create(db);
+const xeroWriteApprovalWorkflowService = new XeroWriteApprovalWorkflowService(
+  db,
+  xeroWriteApprovalGate,
+  xeroSyncService,
+);
 const integrationsService = IntegrationsService.create({
   db,
   encryptionKey: env.INTEGRATIONS_ENCRYPTION_KEY,
   hubService: integrationHubService,
+  vehicleAddressService: vehiclePositionAddressService,
 });
 const whatsappService = WhatsappService.create({
   db,
   encryptionKey: env.INTEGRATIONS_ENCRYPTION_KEY,
   apiPublicUrl,
   hubService: integrationHubService,
+  runtime: {
+    whatsappEnabled: env.runtime.whatsappEnabled,
+    webhooksEnabled: env.runtime.webhooksEnabled,
+    outboundMessagesEnabled: env.runtime.outboundMessagesEnabled,
+  },
+});
+const whatsappContactEnrichmentService = WhatsappContactEnrichmentService.create({
+  db,
+  whatsappService,
 });
 const integrationApiManagementService = new IntegrationApiManagementService({
   db,
@@ -406,7 +661,54 @@ const integrationPlatformService = new IntegrationPlatformService({
   hubService: integrationHubService,
   apiManagementService: integrationApiManagementService,
 });
-const communicationsService = new CommunicationsService(db);
+const integrationSyncOrchestratorService = new IntegrationSyncOrchestratorService({
+  db,
+  runtime: env.runtime,
+  connectorEngine: connectorEngineService,
+  xeroSyncService,
+  xeroOAuthService,
+  integrationsService,
+  businessIntegrationsService,
+});
+integrationPlatformService.setSyncOrchestrator(integrationSyncOrchestratorService);
+xeroOAuthService.setOnConnectedHook(({ companyId, userId }) => {
+  void integrationSyncOrchestratorService
+    .onProviderConnected({
+      companyId,
+      provider: 'xero',
+      userId,
+    })
+    .catch((error) => {
+      console.error('[index] Xero auto-sync initial hook failed', error);
+    });
+});
+const tenantDomainEventBus = new TenantDomainEventBus(db);
+bindTenantDomainEventBus(tenantDomainEventBus);
+const backgroundWorkQueueService = new BackgroundWorkQueueService(db);
+const xeroTwoWayVerifyService = new XeroTwoWayVerifyService(db, backgroundWorkQueueService);
+const backgroundWorkOrchestratorService = new BackgroundWorkOrchestratorService({
+  integrationSyncOrchestrator: integrationSyncOrchestratorService,
+  backgroundWorkQueue: backgroundWorkQueueService,
+  domainEventBus: tenantDomainEventBus,
+  xeroSyncService,
+  customerValueClassificationService,
+  xeroTwoWayVerifyService,
+});
+backgroundWorkOrchestratorService.registerDomainEventHandlers();
+xeroSyncService.setImportJobSettledHandler((input) =>
+  backgroundWorkOrchestratorService.handleXeroImportJobSettled(input),
+);
+integrationsService.setOnCartrackConnectedHook(({ companyId }) => {
+  void integrationSyncOrchestratorService
+    .onProviderConnected({
+      companyId,
+      provider: 'cartrack',
+    })
+    .catch((error) => {
+      console.error('[index] Cartrack auto-sync initial hook failed', error);
+    });
+});
+const communicationsService = new CommunicationsService(db, resendEmailService);
 const documentsService = new DocumentsService(db);
 const automationService = new AutomationService(db);
 const agentOrchestrationService = new AgentOrchestrationService(db);
@@ -415,12 +717,19 @@ const marketingService = new MarketingService(db);
 const leadsService = new LeadsService(db);
 const voiceService = new VoiceService(db);
 const customerSupportService = new CustomerSupportService(db);
+const notificationService = new NotificationService(db);
 const workflowEngineService = new WorkflowEngineService({
   db,
   crmService,
   jobsService,
   whatsappService,
   communicationsService,
+  notificationService,
+});
+const workflowAutomationService = new WorkflowAutomationService({
+  db,
+  automationService,
+  workflowEngineService,
 });
 const workflowStudioService = new WorkflowStudioService({
   db,
@@ -437,6 +746,8 @@ const agentsService = new AgentsService(db);
 const tenantCapabilityBuilderService = new TenantCapabilityBuilderService(db);
 const recruitingService = new RecruitingService(db);
 const memoryService = new MemoryService(db);
+const businessRulesService = new CompanyBusinessRulesService(db);
+const dayPlanService = new CompanyDayPlanService(db, businessRulesService);
 const intelligenceService = new IntelligenceService({
   db,
   financeService,
@@ -445,6 +756,22 @@ const intelligenceService = new IntelligenceService({
   automationService,
 });
 const recommendationsService = new RecommendationsService(intelligenceService);
+const dayPlanFollowUpsService = new CompanyDayPlanFollowUpsService(
+  db,
+  intelligenceService,
+  recommendationsService,
+  dayPlanService,
+);
+const dashboardExecutiveService = new DashboardExecutiveService({
+  db,
+  jobsService,
+  schedulingService,
+  financeService,
+  intelligenceService,
+  dayPlanService,
+  xeroSyncService,
+  logger: logger.child({ module: 'dashboard-executive' }),
+});
 const analyticsService = new AnalyticsService(db, financeService, fleetService, inventoryService);
 const workforceService = new WorkforceService({
   db,
@@ -507,12 +834,13 @@ const enterpriseAnalyticsService = new EnterpriseAnalyticsService({
   db,
   businessIntelligenceService,
 });
-const notificationService = new NotificationService(db);
 const leadConversionService = new LeadConversionService(db, notificationService, (companyId, leadId) =>
   leadsService.getLead(companyId, leadId),
 );
 const mobileSyncService = new MobileSyncService(db);
 const jobExecutionService = new JobExecutionService(db, stockMovementsService);
+const jobCostingService = new JobCostingService(db);
+const jobDocumentPackService = new JobDocumentPackService(db);
 const technicianWorkflowService = new TechnicianWorkflowService(
   db,
   jobsService,
@@ -531,6 +859,7 @@ const mobileService = new MobileService(
   notificationService,
 );
 const portalExperienceService = new PortalExperienceService(db, mobileService, notificationService);
+const portalExpansionService = new PortalExpansionService(db);
 const mobileWorkforceService = new MobileWorkforceService(
   db,
   mobileService,
@@ -603,6 +932,12 @@ const dispatchIntelligenceService = new DispatchIntelligenceService(
   schedulingService,
   qualityAssuranceService,
 );
+const opsIntelligenceService = new OpsIntelligenceService(
+  db,
+  googleMapsService,
+  integrationsService,
+  notificationService,
+);
 const fleetIntelligenceService = new FleetIntelligenceService(
   db,
   fleetService,
@@ -618,6 +953,67 @@ const personalCommunicationsIntelligenceService = new PersonalCommunicationsInte
   aiOrchestrationService,
   notificationService,
 );
+const personalWhatsappIntelligenceService = new PersonalWhatsappIntelligenceService(db);
+const personalWhatsappConnectionService = new PersonalWhatsappConnectionService(
+  db,
+  env.INTEGRATIONS_ENCRYPTION_KEY,
+);
+const communicationAuraIntelligenceService = new CommunicationAuraIntelligenceService(db);
+const auraCommandCentreService = new AuraCommandCentreService({ db });
+const auraAgentNetworkService = new AuraAgentNetworkService({ db });
+const auraEvolutionService = new AuraEvolutionService({ db });
+const marketingAgentService = new MarketingAgentService(db);
+const financeAuraAgentService = new FinanceAuraAgentService(db);
+const salesIntelligenceAgentService = new SalesIntelligenceAgentService(db);
+const salesFollowupIntelligenceService = new SalesFollowupIntelligenceService(db);
+const salesAnalyticsIntelligenceService = new SalesAnalyticsIntelligenceService(db);
+const customer360IntelligenceService = new Customer360IntelligenceService(db);
+const propertyIntelligenceService = new PropertyIntelligenceService(db);
+const documentIntelligenceService = new DocumentIntelligenceService(db);
+const complianceIntelligenceService = new ComplianceIntelligenceService(db);
+const executiveCommandCentreService = new ExecutiveCommandCentreService(db);
+const smartNotificationIntelligenceService = new SmartNotificationIntelligenceService(db);
+const marketIntelligenceService = new MarketIntelligenceService(db);
+const securityMonitoringService = new SecurityMonitoringService(db);
+const industryTemplatesService = new IndustryTemplatesService(db);
+const financeReportingForecastService = new FinanceReportingForecastService(db);
+const financeCashflowProfitService = new FinanceCashflowProfitService(db);
+const procurementIntelligenceService = new ProcurementIntelligenceService({
+  db,
+  procurementService,
+});
+const socialMediaIntegrationsService = new SocialMediaIntegrationsService(
+  db,
+  env.INTEGRATIONS_ENCRYPTION_KEY,
+);
+const facebookAppConfig = resolveFacebookAppConfig(env, apiPublicUrl);
+const facebookRedirectUri =
+  env.META_REDIRECT_URI?.trim() ??
+  `${apiPublicUrl.replace(/\/$/, '')}/api/v1/facebook-business/oauth/callback`;
+const socialConnectionService = new SocialConnectionService({
+  db,
+  encryptionKey: env.INTEGRATIONS_ENCRYPTION_KEY,
+  appUrl: env.APP_URL,
+  facebookRedirectUri,
+});
+const facebookBusinessService = new FacebookBusinessService({
+  db,
+  encryptionKey: env.INTEGRATIONS_ENCRYPTION_KEY,
+  appUrl: env.APP_URL,
+  appConfig: facebookAppConfig,
+});
+const contentReputationIntelligenceService = new ContentReputationIntelligenceService(db);
+const inventoryIntelligenceService = new InventoryIntelligenceService(db);
+const stockForecastingService = new StockForecastingService({
+  db,
+  procurementService,
+});
+const vehicleIntelligenceService = new VehicleIntelligenceService(db);
+const fleetAiRecommendationsService = new FleetAiRecommendationsService(db);
+const driverIntelligenceService = new DriverIntelligenceService(db, fleetIntelligenceService);
+const hrEmployeeIntelligenceService = new HrEmployeeIntelligenceService(db);
+const recruitmentPerformanceIntelligenceService = new RecruitmentPerformanceIntelligenceService(db);
+const technicianIntelligenceService = new TechnicianIntelligenceService(db);
 const enterpriseSecurityService = new EnterpriseSecurityService(
   db,
   env.INTEGRATIONS_ENCRYPTION_KEY ?? env.JWT_SECRET,
@@ -661,6 +1057,18 @@ const enterpriseMobilePlatformService = new EnterpriseMobilePlatformService({
   integrationsService,
   dispatchIntelligenceService,
 });
+const communicationsPlatformService = CommunicationsPlatformService.create({
+  db,
+  encryptionKey: env.INTEGRATIONS_ENCRYPTION_KEY,
+  gmailOAuthService,
+  whatsappService,
+});
+whatsappService.setInboundHooks({
+  indexInboundMessage: (input) =>
+    communicationsPlatformService.indexBusinessWhatsappInbound(input),
+  recordInboundEnrichment: (input) =>
+    whatsappContactEnrichmentService.recordInboundOpportunity(input).then(() => undefined),
+});
 const enterpriseUnifiedCommunicationsService = new EnterpriseUnifiedCommunicationsService({
   db,
   enterpriseSaasPlatformService,
@@ -669,7 +1077,23 @@ const enterpriseUnifiedCommunicationsService = new EnterpriseUnifiedCommunicatio
   whatsappService,
   integrationsService,
   integrationHubService,
+  gmailOAuthService,
 });
+const emailCentreService = EmailCentreService.create({
+  db,
+  communicationsPlatformService,
+  enterpriseUnifiedCommunicationsService,
+});
+const completionReportService = new CompletionReportService(db, emailCentreService);
+const reportExportService = new ReportExportService(
+  db,
+  completionReportService,
+  jobEvidenceStorageService,
+);
+const dispatchCommunicationService = new DispatchCommunicationService(
+  db,
+  enterpriseUnifiedCommunicationsService,
+);
 const enterpriseCustomerExperienceService = new EnterpriseCustomerExperienceService({
   db,
   enterpriseSaasPlatformService,
@@ -683,6 +1107,13 @@ const enterpriseAssetLifecycleService = new EnterpriseAssetLifecycleService({
   assetEquipmentIntelligenceService,
   enterpriseDigitalTwinService,
 });
+const recurringMaintenanceService = new RecurringMaintenanceService({
+  db,
+  enterpriseAssetLifecycleService,
+  emailCentreService,
+});
+const homeshieldExperienceService = new HomeshieldExperienceService(db);
+const customerEngagementIntelligenceService = new CustomerEngagementIntelligenceService(db);
 const enterpriseWorkforceIntelligenceService = new EnterpriseWorkforceIntelligenceService({
   db,
   enterpriseSaasPlatformService,
@@ -831,6 +1262,8 @@ const enterpriseSaasManagementService = new EnterpriseSaasManagementService({
   financeService,
   aiOperationsService,
 });
+const voiceAiReceptionistService = new VoiceAiReceptionistService(db);
+const callIntelligenceService = new CallIntelligenceService(db);
 const enterpriseVoiceReceptionService = new EnterpriseVoiceReceptionService({
   db,
   voiceService,
@@ -1060,7 +1493,9 @@ bindAutomationEventEmitter(async (event) => {
 const runtimeMode = (process.env.TITAN_RUNTIME_MODE || 'api').toLowerCase();
 const isWorkerProcess = runtimeMode === 'worker' || runtimeMode === 'scheduler';
 
-if (isWorkerProcess && !env.runtime.startInProcessAutomationWorkers) {
+const backgroundRuntimeAllowed =
+  env.runtime.startInProcessAutomationWorkers || env.runtime.schedulersEnabled;
+if (isWorkerProcess && !backgroundRuntimeAllowed) {
   logger.error(
     { runtimeMode },
     'Worker/scheduler process refused: enable WORKERS_ENABLED, SCHEDULERS_ENABLED, or AUTOMATIONS_ENABLED',
@@ -1076,6 +1511,13 @@ const stopAutomationWorkers =
       })
     : () => {
         /* workers/schedulers/automations disabled by runtime flags */
+      };
+
+const stopIntegrationSyncScheduler =
+  env.runtime.schedulersEnabled && (isWorkerProcess || runtimeMode === 'scheduler' || runtimeMode === 'api')
+    ? startIntegrationSyncScheduler(backgroundWorkOrchestratorService)
+    : () => {
+        /* integration sync scheduler disabled by runtime flags */
       };
 
 if (!env.runtime.startInProcessAutomationWorkers && runtimeMode === 'api') {
@@ -1098,6 +1540,7 @@ const auraService = new AuraService({
   crmService,
   jobsService,
   schedulingService,
+  googleCalendarService,
   financeService,
   inventoryService,
   fleetService,
@@ -1135,6 +1578,8 @@ const auraService = new AuraService({
   intelligenceService,
   recommendationsService,
   memoryService,
+  businessRulesService,
+  dayPlanService,
   analyticsService,
   mobileService,
   orchestrationService: agentOrchestrationService,
@@ -1226,6 +1671,13 @@ app.use(
     redisUrl: env.REDIS_URL,
     runtime: env.runtime,
     log: logger,
+    storage: {
+      appEnv: env.APP_ENV,
+      titanEnv: env.TITAN_ENV,
+      jobEvidenceStoragePath,
+      companyMediaStoragePath,
+      financeDirectUsesJobEvidenceRoot: true,
+    },
   }),
 );
 bootLog('health endpoints registered', {
@@ -1296,8 +1748,34 @@ app.use(
   '/api/v1/crm',
   createCrmRouter({
     crmService,
+    customerDuplicateMergeService,
+    customerValueClassificationService,
     teamService,
     db,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/customers',
+  createCustomersRouter({
+    customerValueClassificationService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/dashboard',
+  createDashboardRouter({
+    dashboardExecutiveService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/supplier-price-intelligence',
+  createSupplierPriceIntelligenceRouter({
+    supplierPriceIntelligenceService,
     jwtSecret: env.JWT_SECRET,
     authService,
   }),
@@ -1315,6 +1793,7 @@ app.use(
   createJobsRouter({
     jobsService,
     jobExecutionService,
+    jobCostingService,
     mobileWorkforceService,
     teamService,
     db,
@@ -1336,6 +1815,66 @@ app.use(
   '/api/v1/finance',
   createFinanceRouter({
     financeService,
+    crmService,
+    teamService,
+    db,
+    jobEvidenceStorage: jobEvidenceStorageService,
+    financeDocumentEvidenceStorage: financeDocumentEvidenceStorageService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/live-updates',
+  createLiveUpdatesRouter({
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/boq',
+  createBoqRouter({
+    boqService,
+    teamService,
+    db,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/drafts',
+  createDraftsRouter({
+    draftAutosaveService,
+    teamService,
+    db,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/job-document-packs',
+  createJobDocumentPackRouter({
+    jobDocumentPackService,
+    teamService,
+    db,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/completion-reports',
+  createCompletionReportRouter({
+    completionReportService,
+    teamService,
+    db,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/report-exports',
+  createReportExportRouter({
+    reportExportService,
     teamService,
     db,
     jwtSecret: env.JWT_SECRET,
@@ -1346,6 +1885,7 @@ app.use(
   '/api/v1/inventory',
   createInventoryRouter({
     inventoryService,
+    stockMovementsService,
     teamService,
     jwtSecret: env.JWT_SECRET,
     authService,
@@ -1365,13 +1905,39 @@ app.use(
   createIntegrationsRouter({
     integrationsService,
     businessIntegrationsService,
+    resendEmailService,
     xeroSyncService,
+    xeroFinancialMemoryService,
+    xeroWriteApprovalWorkflowService,
     integrationHubService,
     integrationApiManagementService,
     whatsappService,
     xeroOAuthService,
+    xeroCustomerMappingService,
+    xeroReconciliationService,
     teamService,
     appUrl: env.APP_URL,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/google-calendar',
+  createGoogleCalendarRouter({
+    googleCalendarService,
+    googleCalendarOAuthService,
+    teamService,
+    db,
+    appUrl: env.APP_URL,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/integrations',
+  createGoogleMapsRouter({
+    googleMapsService,
+    teamService,
     jwtSecret: env.JWT_SECRET,
     authService,
   }),
@@ -1386,16 +1952,67 @@ app.use(
   }),
 );
 app.use(
+  '/api/v1/whatsapp/enrichment',
+  createWhatsappEnrichmentRouter({
+    enrichmentService: whatsappContactEnrichmentService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
   '/api/v1/webhooks/whatsapp',
   createWhatsappWebhookRouter({
     whatsappService,
     db,
+    appSecret: env.WHATSAPP_APP_SECRET,
+  }),
+);
+app.use(
+  '/api/v1/webhooks/resend',
+  createResendWebhookRouter({
+    resendEmailService,
+  }),
+);
+app.use(
+  '/api/v1/webhooks/yoco',
+  createYocoWebhookRouter({
+    documentEngineService,
+  }),
+);
+app.use(
+  '/api/v1/documents/engine',
+  createDocumentEngineRouter({
+    documentEngineService,
+    financeDocumentEvidenceStorage: financeDocumentEvidenceStorageService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
   }),
 );
 app.use(
   '/api/v1/communications',
   createCommunicationsRouter({
     communicationsService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/communications-platform',
+  createCommunicationsPlatformRouter({
+    communicationsPlatformService,
+    gmailOAuthService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+    appUrl: env.APP_URL,
+  }),
+);
+app.use(
+  '/api/v1/email-centre',
+  createEmailCentreRouter({
+    emailCentreService,
     teamService,
     jwtSecret: env.JWT_SECRET,
     authService,
@@ -1618,6 +2235,9 @@ app.use(
     intelligenceService,
     recommendationsService,
     memoryService,
+    businessRulesService,
+    dayPlanService,
+    dayPlanFollowUpsService,
     teamService,
     jwtSecret: env.JWT_SECRET,
     authService,
@@ -1791,6 +2411,7 @@ app.use(
   '/api/v1/enterprise-communications',
   createEnterpriseUnifiedCommunicationsRouter({
     enterpriseUnifiedCommunicationsService,
+    dispatchCommunicationService,
     teamService,
     jwtSecret: env.JWT_SECRET,
     authService,
@@ -1921,6 +2542,25 @@ app.use(
   }),
 );
 app.use(
+  '/api/v1/voice-ai-receptionist',
+  createVoiceAiReceptionistRouter({
+    voiceAiReceptionistService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+
+app.use(
+  '/api/v1/call-intelligence',
+  createCallIntelligenceRouter({
+    callIntelligenceService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
   '/api/v1/enterprise-voice-reception',
   createEnterpriseVoiceReceptionRouter({
     enterpriseVoiceReceptionService,
@@ -2018,6 +2658,15 @@ app.use(
   }),
 );
 app.use(
+  '/api/v1/ops-intelligence',
+  createOpsIntelligenceRouter({
+    opsIntelligenceService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
   '/api/v1/fleet-intelligence',
   createFleetIntelligenceRouter({
     fleetIntelligenceService,
@@ -2036,6 +2685,378 @@ app.use(
   }),
 );
 app.use(
+  '/api/v1/personal-whatsapp-intelligence',
+  createPersonalWhatsappIntelligenceRouter({
+    personalWhatsappIntelligenceService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/personal-whatsapp-connection',
+  createPersonalWhatsappConnectionRouter({
+    personalWhatsappConnectionService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/communication-aura-intelligence',
+  createCommunicationAuraIntelligenceRouter({
+    communicationAuraIntelligenceService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/aura-command-centre',
+  createAuraCommandCentreRouter({
+    auraCommandCentreService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+    db,
+  }),
+);
+app.use(
+  '/api/v1/aura-agent-network',
+  createAuraAgentNetworkRouter({
+    auraAgentNetworkService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+    db,
+  }),
+);
+app.use(
+  '/api/v1/aura-evolution',
+  createAuraEvolutionRouter({
+    auraEvolutionService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+    db,
+  }),
+);
+app.use(
+  '/api/v1/marketing-agent',
+  createMarketingAgentRouter({
+    marketingAgentService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/finance-aura-agent',
+  createFinanceAuraAgentRouter({
+    financeAuraAgentService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+
+app.use(
+  '/api/v1/sales-intelligence-agent',
+  createSalesIntelligenceAgentRouter({
+    salesIntelligenceAgentService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/sales-followup-intelligence',
+  createSalesFollowupIntelligenceRouter({
+    salesFollowupIntelligenceService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/sales-analytics-intelligence',
+  createSalesAnalyticsIntelligenceRouter({
+    salesAnalyticsIntelligenceService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/customer-360-intelligence',
+  createCustomer360IntelligenceRouter({
+    customer360IntelligenceService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/property-intelligence',
+  createPropertyIntelligenceRouter({
+    propertyIntelligenceService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/document-intelligence',
+  createDocumentIntelligenceRouter({
+    documentIntelligenceService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/compliance-intelligence',
+  createComplianceIntelligenceRouter({
+    complianceIntelligenceService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/executive-command-centre',
+  createExecutiveCommandCentreRouter({
+    executiveCommandCentreService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/smart-notifications',
+  createSmartNotificationIntelligenceRouter({
+    smartNotificationIntelligenceService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/market-intelligence',
+  createMarketIntelligenceRouter({
+    marketIntelligenceService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/security-monitoring',
+  createSecurityMonitoringRouter({
+    securityMonitoringService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/industry-templates',
+  createIndustryTemplatesRouter({
+    industryTemplatesService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/finance-reporting-forecast',
+  createFinanceReportingForecastRouter({
+    financeReportingForecastService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+
+app.use(
+  '/api/v1/finance-cashflow-profit',
+  createFinanceCashflowProfitRouter({
+    financeCashflowProfitService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/inventory-intelligence',
+  createInventoryIntelligenceRouter({
+    inventoryIntelligenceService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/hr-employee-intelligence',
+  createHrEmployeeIntelligenceRouter({
+    hrEmployeeIntelligenceService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+
+app.use(
+  '/api/v1/recruitment-performance-intelligence',
+  createRecruitmentPerformanceIntelligenceRouter({
+    recruitmentPerformanceIntelligenceService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+
+app.use(
+  '/api/v1/payroll-timesheet-intelligence',
+  createPayrollTimesheetIntelligenceRouter({
+    payrollTimesheetIntelligenceService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/procurement-intelligence',
+  createProcurementIntelligenceRouter({
+    procurementIntelligenceService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/stock-forecasting',
+  createStockForecastingRouter({
+    stockForecastingService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/vehicle-intelligence',
+  createVehicleIntelligenceRouter({
+    vehicleIntelligenceService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/fleet-ai-recommendations',
+  createFleetAiRecommendationsRouter({
+    fleetAiRecommendationsService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+
+app.use(
+  '/api/v1/driver-intelligence',
+  createDriverIntelligenceRouter({
+    driverIntelligenceService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/social-media-integrations',
+  createSocialMediaIntegrationsRouter({
+    socialMediaIntegrationsService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/social-connections',
+  createSocialConnectionsRouter({
+    socialConnectionService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/facebook-business',
+  createFacebookBusinessRouter({
+    facebookBusinessService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+    appUrl: env.APP_URL,
+  }),
+);
+app.use(
+  '/api/v1/content-reputation-intelligence',
+  createContentReputationIntelligenceRouter({
+    contentReputationIntelligenceService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/technician-intelligence',
+  createTechnicianIntelligenceRouter({
+    technicianIntelligenceService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+    db,
+  }),
+);
+
+app.use(
+  '/api/v1/workflow-automation',
+  createWorkflowAutomationRouter({
+    workflowAutomationService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+    db,
+  }),
+);
+app.use(
+  '/api/v1/recurring-maintenance',
+  createRecurringMaintenanceRouter({
+    recurringMaintenanceService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+    db,
+  }),
+);
+app.use(
+  '/api/v1/homeshield-experience',
+  createHomeshieldExperienceRouter({
+    homeshieldExperienceService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+    portalAuthService,
+  }),
+);
+
+app.use(
+  '/api/v1/customer-engagement-intelligence',
+  createCustomerEngagementIntelligenceRouter({
+    customerEngagementIntelligenceService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+
+app.use(
   '/api/v1/enterprise-security',
   createEnterpriseSecurityRouter({
     enterpriseSecurityService,
@@ -2051,6 +3072,16 @@ app.use(
     connectorEngineService,
     businessIntegrationsService,
     xeroSyncService,
+    integrationSyncOrchestratorService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/background-work',
+  createBackgroundWorkRouter({
+    backgroundWorkOrchestrator: backgroundWorkOrchestratorService,
     teamService,
     jwtSecret: env.JWT_SECRET,
     authService,
@@ -2080,6 +3111,24 @@ app.use(
     portalAuthService,
     jwtSecret: env.JWT_SECRET,
     isProduction: env.NODE_ENV === 'production',
+  }),
+);
+app.use(
+  '/api/v1/portal/expansion',
+  createPortalExpansionRouter({
+    portalExpansionService,
+    portalAuthService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+
+app.use(
+  '/api/v1/portal/report-exports',
+  createPortalReportExportRouter({
+    reportExportService,
+    jwtSecret: env.JWT_SECRET,
+    portalAuthService,
   }),
 );
 app.use(
@@ -2147,6 +3196,7 @@ async function shutdown(signal: string) {
   shuttingDown = true;
   logger.info({ signal, runtimeMode }, 'Shutting down TITAN process');
   stopAutomationWorkers();
+  stopIntegrationSyncScheduler();
   if (server) {
     await new Promise<void>((resolve) => {
       server?.close(() => resolve());

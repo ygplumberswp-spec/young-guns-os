@@ -1,8 +1,9 @@
+import { PageHeader } from '../../components/ux';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useRoute } from 'wouter';
-import { Button, LoadingState, PageHeader, Panel } from '@titan/ui';
+import { Button, LoadingState, Panel } from '@titan/ui';
 import type { InvoiceDetail } from '@titan/shared';
-import { formatMoney, INVOICE_STAGE_OPTIONS, INVOICE_STATUS_OPTIONS } from '@titan/shared';
+import { canEditInvoice, formatMoney, INVOICE_STAGE_OPTIONS, INVOICE_STATUS_OPTIONS, buildPaymentRecordHref } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import { fetchInvoice } from '../../lib/finance-api';
 import { useAuth } from '../../lib/auth-context';
@@ -65,7 +66,12 @@ export function InvoiceDetailPage() {
   }
 
   if (isLoading) {
-    return <LoadingState label="Loading invoice…" />;
+    return (
+      <div className="page-shell">
+        <PageHeader title="Invoice" description="Invoice detail" />
+        <LoadingState label="Loading Invoice…" />
+      </div>
+    );
   }
 
   if (error && !invoice) {
@@ -73,9 +79,6 @@ export function InvoiceDetailPage() {
       <div className="finance-page">
         <PageHeader title="Invoice" description="Invoice detail" />
         <p className="form-error">{error}</p>
-        <Link href="/finance/invoices">
-          <Button variant="secondary">Back to invoices</Button>
-        </Link>
       </div>
     );
   }
@@ -85,20 +88,22 @@ export function InvoiceDetailPage() {
   }
 
   return (
-    <div className="finance-page">
+    <div className="finance-page finance-page--workspace">
       <PageHeader
-        title={invoice.displayInvoiceNumber}
-        description={invoice.title}
+        title={invoice.displayOfficialInvoiceNumber}
+        description={invoice.customerName}
         actions={
           <div className="jobs-detail__actions">
-            {canWrite ? (
-              <Link href="/finance/payments/new">
-                <Button>Record payment</Button>
+            {canWrite && canEditInvoice(invoice) ? (
+              <Link href={`/finance/invoices/${invoice.id}/edit`}>
+                <Button variant="secondary">Edit Invoice</Button>
               </Link>
             ) : null}
-            <Link href="/finance/invoices">
-              <Button variant="ghost">Back to invoices</Button>
-            </Link>
+            {canWrite ? (
+              <Link href={buildPaymentRecordHref({ invoiceId: invoice.id, jobId: invoice.jobId })}>
+                <Button>Record Payment</Button>
+              </Link>
+            ) : null}
           </div>
         }
       />
@@ -106,16 +111,12 @@ export function InvoiceDetailPage() {
 
       {error ? <p className="form-error">{error}</p> : null}
 
-      <div className="finance-detail">
+      <div className="finance-detail finance-detail--workspace">
         <Panel title="Summary">
           <dl className="finance-detail-list">
             <div>
-              <dt>Internal number</dt>
-              <dd className="tabular-nums">{invoice.internalNumber}</dd>
-            </div>
-            <div>
-              <dt>Xero number</dt>
-              <dd className="tabular-nums">{invoice.xeroInvoiceNumber ?? 'Not synced yet'}</dd>
+              <dt>Official number</dt>
+              <dd className="tabular-nums">{invoice.displayOfficialInvoiceNumber}</dd>
             </div>
             <div>
               <dt>Xero reference</dt>
@@ -198,9 +199,9 @@ export function InvoiceDetailPage() {
           </dl>
         </Panel>
 
-        <Panel title="Line items">
-          <div className="finance-table-wrap">
-            <table className="finance-table">
+        <Panel title="Line Items" className="finance-detail-panel--lines">
+          <div className="finance-table-wrap finance-table-wrap--workspace">
+            <table className="finance-table finance-table--workspace">
               <thead>
                 <tr>
                   <th>Description</th>
@@ -258,8 +259,8 @@ export function InvoiceDetailPage() {
           )}
           {canWrite ? (
             <div className="finance-panel-actions">
-              <Link href="/finance/payments/new">
-                <Button variant="secondary">Record payment</Button>
+              <Link href={buildPaymentRecordHref({ invoiceId: invoice.id, jobId: invoice.jobId })}>
+                <Button variant="secondary">Record Payment</Button>
               </Link>
             </div>
           ) : null}

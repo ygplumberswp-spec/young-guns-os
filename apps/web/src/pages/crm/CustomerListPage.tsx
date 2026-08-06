@@ -1,30 +1,111 @@
-import { useMemo } from 'react';
-import { Link } from 'wouter';
-import { Button, PageHeader, PageLoadState } from '@titan/ui';
+import { PageHeader } from '../../components/ux';
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useSearch } from 'wouter';
+import { Button, PageLoadState } from '@titan/ui';
+import { CUSTOMER_VALUE_CLASSIFICATION_LABELS, isCustomerValueClassificationFilterKey } from '@titan/shared';
+import type { CustomerSummary, CustomerValueClassificationSummary } from '@titan/shared';
+import { fetchCustomersByClassification, fetchCustomersWithClassification } from '../../lib/customer-value-api-client';
 import { fetchCustomers } from '../../lib/crm-api';
 import { useAuth } from '../../lib/auth-context';
 import { useStaffCachedQuery } from '../../lib/use-scoped-cached-query';
 import { CacheStaleNotice } from '../../components/CacheStaleNotice';
-import { canAccessCrm, canManageCustomers, CustomerList } from '../../features/crm/CustomerList';
+import {
+  canAccessCrm,
+  canManageCustomers,
+  CustomerList,
+} from '../../features/crm/CustomerList';
+import { CustomerValueMetricsPanel } from '../../features/crm/CustomerValueMetricsPanel';
+
+function defaultValueClassification(customer: CustomerSummary): CustomerValueClassificationSummary {
+  return {
+    customerId: customer.id,
+    customerName: customer.name,
+    primaryClassification: 'prospect_contact',
+    isVerifiedInvoiced: false,
+    isPayingCustomer: false,
+    isFullyPaid: false,
+    isPartiallyPaid: false,
+    isUnpaidDebtor: false,
+    isOverdueDebtor: false,
+    isProspect: true,
+    isSupplierOnly: false,
+    qualifyingInvoiceCount: 0,
+    totalInvoicedCents: 0,
+    cashReceivedCents: 0,
+    outstandingCents: 0,
+    overdueOutstandingCents: 0,
+    xeroContactId: null,
+    evidence: [],
+    reason: 'Classification unavailable — using CRM list fallback.',
+    computedAt: new Date().toISOString(),
+  };
+}
 
 export function CustomerListPage() {
   const { accessToken, user } = useAuth();
+  const searchParams = useSearch();
+  const classificationParam = new URLSearchParams(searchParams).get('classification');
+  const classificationFilter =
+    classificationParam && isCustomerValueClassificationFilterKey(classificationParam)
+      ? classificationParam
+      : null;
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
 
   const canView = useMemo(() => (user ? canAccessCrm(user.permissions) : false), [user]);
 
   const canWrite = useMemo(() => (user ? canManageCustomers(user.permissions) : false), [user]);
 
+  useEffect(() => {
+    const handle = window.setTimeout(() => setDebouncedSearch(search), 250);
+    return () => window.clearTimeout(handle);
+  }, [search]);
+
   const {
-    data: customers,
+    data: customerRows,
     error,
     isLoading,
     isStale,
     refetch,
   } = useStaffCachedQuery({
-    queryKey: 'crm/customers',
+    queryKey: `crm/customers-ui:${classificationFilter ?? 'all'}:${debouncedSearch}`,
     enabled: canView,
-    fetcher: async () => fetchCustomers(accessToken!),
+    fetcher: async () => {
+      const baseCustomers = await fetchCustomers(accessToken!, debouncedSearch);
+      try {
+        const enriched = classificationFilter
+          ? await fetchCustomersByClassification(
+              accessToken!,
+              classificationFilter,
+              debouncedSearch,
+            )
+          : await fetchCustomersWithClassification(accessToken!, debouncedSearch);
+        return enriched;
+      } catch {
+        return baseCustomers.map((customer) => ({
+          ...customer,
+          valueClassification: defaultValueClassification(customer),
+        }));
+      }
+    },
   });
+
+  const classifications = useMemo(() => {
+    const map = new Map<
+      string,
+      NonNullable<typeof customerRows>[number]['valueClassification']
+    >();
+    for (const row of customerRows ?? []) {
+      map.set(row.id, row.valueClassification);
+    }
+    return map;
+  }, [customerRows]);
+
+  const customers = useMemo(
+    () =>
+      (customerRows ?? []).map(({ valueClassification: _valueClassification, ...customer }) => customer),
+    [customerRows],
+  );
 
   if (!canView) {
     return (
@@ -34,31 +115,65 @@ export function CustomerListPage() {
     );
   }
 
+  const filterLabel = classificationFilter
+    ? CUSTOMER_VALUE_CLASSIFICATION_LABELS[classificationFilter]
+    : null;
+
   return (
     <div className="crm-page">
       <PageHeader
         title="Customers"
-        description="Manage customer records for your company."
+        description={
+          filterLabel
+            ? `Filtered: ${filterLabel}. Search within this classification.`
+            : 'Search by name, phone, email or property address.'
+        }
         actions={
-          canWrite ? (
-            <Link href="/crm/new">
-              <Button>Add customer</Button>
+          <>
+            <Link href="/crm/duplicates">
+              <Button variant="secondary">Duplicate Merge</Button>
             </Link>
-          ) : undefined
+            {canWrite ? (
+              <Link href="/crm/new">
+                <Button>Add Customer</Button>
+              </Link>
+            ) : null}
+          </>
         }
       />
+
+      {classificationFilter ? (
+        <p className="page-muted">
+          Showing {filterLabel}.{' '}
+          <Link href="/crm" className="crm-link">
+            Clear filter
+          </Link>
+        </p>
+      ) : null}
+
+      <CustomerValueMetricsPanel compact />
 
       <CacheStaleNotice isStale={isStale} error={error} onRetry={() => void refetch()} />
 
       <PageLoadState
-        isLoading={isLoading && customers === undefined}
-        error={error && customers === undefined ? error : null}
-        isEmpty={(customers?.length ?? 0) === 0}
-        emptyTitle="No customers yet"
+        isLoading={isLoading && customerRows === undefined}
+        error={null}
+        isEmpty={false}
+        emptyTitle="No Customers Yet"
         emptyDescription="Add your first customer to start building your CRM."
         loadingLabel="Loading customers…"
       >
-        <CustomerList customers={customers ?? []} canWrite={canWrite} />
+        <CustomerList
+          customers={customers}
+          classifications={classifications}
+          canWrite={canWrite}
+          accessToken={accessToken}
+          search={search}
+          onSearchChange={setSearch}
+          onRefresh={async () => {
+            await refetch();
+          }}
+        />
       </PageLoadState>
     </div>
   );

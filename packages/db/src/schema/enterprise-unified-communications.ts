@@ -174,6 +174,7 @@ export const ucTimelineIndex = pgTable('uc_timeline_index', {
     .notNull()
     .references(() => companies.id, { onDelete: 'cascade' }),
   customerId: uuid('customer_id').references(() => customers.id, { onDelete: 'set null' }),
+  jobId: uuid('job_id').references(() => jobs.id, { onDelete: 'set null' }),
   entryType: ucTimelineEntryTypeEnum('entry_type').notNull(),
   channel: ucProviderChannelEnum('channel'),
   title: text('title').notNull(),

@@ -1,5 +1,6 @@
+import { PageHeader } from '../../components/ux';
 import { useEffect, useMemo, useState } from 'react';
-import { Button, EmptyState, PageHeader, Panel, StatCard } from '@titan/ui';
+import { Button, EmptyState, Panel, StatCard } from '@titan/ui';
 import type { EnterpriseProductionLaunchDashboard } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import {
@@ -167,7 +168,7 @@ export function GoLivePage() {
     return (
       <div className="p-6">
         <EmptyState
-          title="Access denied"
+          title="Access Denied"
           description="You do not have permission to view the go-live center."
         />
       </div>
@@ -237,7 +238,7 @@ export function GoLivePage() {
           </div>
           <Panel title="Summary">{dashboard.summary}</Panel>
           {readiness.launchStatus === 'blocked' || readiness.launchStatus === 'not_ready' ? (
-            <Panel title="Launch blockers">
+            <Panel title="Launch Blockers">
               <p className="text-sm text-red-700">
                 Production launch is {formatLaunchStatus(readiness.launchStatus)} — resolve
                 configuration and provider issues before go-live.
@@ -284,7 +285,7 @@ export function GoLivePage() {
               </ul>
             ) : (
               <EmptyState
-                title="No environment review"
+                title="No Environment Review"
                 description="Verify DATABASE_URL, JWT secrets, APP_URL, and production environment variables."
               />
             )}
@@ -318,7 +319,7 @@ export function GoLivePage() {
               </p>
             ) : (
               <EmptyState
-                title="No verification runs"
+                title="No Verification Runs"
                 description="Verify live connectivity for Xero, email, WhatsApp, SMS, payments, Cartrack, and AI providers."
               />
             )}
@@ -326,7 +327,7 @@ export function GoLivePage() {
           <Panel title="Provider Results">
             {dashboard.latestLiveIntegrationResults.length === 0 ? (
               <EmptyState
-                title="No provider results"
+                title="No Provider Results"
                 description="Run live integration verification against configured providers."
               />
             ) : (
@@ -372,7 +373,7 @@ export function GoLivePage() {
               </ul>
             ) : (
               <EmptyState
-                title="No security review"
+                title="No Security Review"
                 description="Verify HTTPS, CORS, session security, cookie security, and secret management."
               />
             )}
@@ -405,7 +406,7 @@ export function GoLivePage() {
               </ul>
             ) : (
               <EmptyState
-                title="No mobile review"
+                title="No Mobile Review"
                 description="Verify iOS/Android builds, push notifications, authentication, and offline sync."
               />
             )}
@@ -438,7 +439,7 @@ export function GoLivePage() {
               </ul>
             ) : (
               <EmptyState
-                title="No commercial review"
+                title="No Commercial Review"
                 description="Verify SaaS subscriptions, billing, tenant provisioning, and license activation."
               />
             )}
@@ -455,7 +456,7 @@ export function GoLivePage() {
                 disabled={isWorking}
                 onClick={() =>
                   void runAction(
-                    () => createDeploymentRun(accessToken!, { title: 'Production deployment' }),
+                    () => createDeploymentRun(accessToken!, { title: 'Production Deployment' }),
                     'Deployment run created.',
                   )
                 }
@@ -515,7 +516,7 @@ export function GoLivePage() {
               </ul>
             ) : (
               <EmptyState
-                title="No deployment runs"
+                title="No Deployment Runs"
                 description="Create a deployment run — owner approval required, no automatic deployment."
               />
             )}
@@ -523,7 +524,7 @@ export function GoLivePage() {
           <Panel title="Deployment History">
             {dashboard.deploymentHistory.length === 0 ? (
               <EmptyState
-                title="No history"
+                title="No History"
                 description="Deployment history tracks health verification, smoke tests, approvals, and rollbacks."
               />
             ) : (
@@ -607,7 +608,7 @@ export function GoLivePage() {
               </div>
             ) : (
               <EmptyState
-                title="No go-live wizard"
+                title="No Go-Live Wizard"
                 description="Create an owner go-live wizard with infrastructure, integrations, security, domain, mobile, billing, AI, and final verification steps."
               />
             )}
@@ -621,7 +622,7 @@ export function GoLivePage() {
             <p className="text-sm text-slate-500">Loading audit logs...</p>
           ) : auditLogs.length === 0 ? (
             <EmptyState
-              title="No audit entries"
+              title="No Audit Entries"
               description="Production launch actions are logged for complete auditability."
             />
           ) : (

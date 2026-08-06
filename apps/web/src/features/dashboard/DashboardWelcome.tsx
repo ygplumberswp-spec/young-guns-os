@@ -1,5 +1,3 @@
-import { PageHeader } from '@titan/ui';
-
 type DashboardWelcomeProps = {
   isLoading?: boolean;
   hasAnyData?: boolean;
@@ -21,10 +19,5 @@ export function DashboardWelcome({
     status = 'No operational data yet — metrics will populate as you add customers, jobs and finance';
   }
 
-  return (
-    <div className="dashboard-header">
-      <PageHeader title="Dashboard" description="Overview of your business activity" />
-      <span className="dashboard-header__status">{status}</span>
-    </div>
-  );
+  return <span className="dashboard-header__status">{status}</span>;
 }

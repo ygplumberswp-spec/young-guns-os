@@ -20,7 +20,7 @@ export const INVENTORY_LOCATION_TYPE_OPTIONS: Array<{
   label: string;
 }> = [
   { value: 'warehouse', label: 'Warehouse' },
-  { value: 'van', label: 'Van / vehicle' },
+  { value: 'van', label: 'Van / Vehicle' },
   { value: 'other', label: 'Other' },
 ];
 
@@ -82,7 +82,10 @@ export type InventoryStockLevelSummary = {
 export type InventoryStockMovementSummary = {
   id: string;
   itemId: string;
+  itemSku: string | null;
+  itemName: string | null;
   locationId: string;
+  locationName: string | null;
   movementType: InventoryStockMovementType;
   quantityDelta: number;
   quantityBefore: number;

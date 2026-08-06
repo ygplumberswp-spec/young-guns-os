@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'wouter';
-import { EmptyState, PageHeader, Panel } from '@titan/ui';
+import { EmptyState, Panel } from '@titan/ui';
 import type { AgentExecutionSummary } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import { fetchAgentExecutions } from '../../lib/agents-api';
@@ -66,11 +67,11 @@ export function AgentExecutionListPage() {
       {!isLoading && !error ? (
         executions.length === 0 ? (
           <EmptyState
-            title="No executions yet"
+            title="No Executions Yet"
             description="Execution records will appear here once agent runs are tracked. Autonomous agents and full tool execution are not connected in this foundation milestone."
           />
         ) : (
-          <Panel title="Execution history">
+          <Panel title="Execution History">
             <div className="agents-table-wrap">
               <table className="agents-table">
                 <thead>

@@ -1,0 +1,153 @@
+{
+  "schemaVersion": "frz018d-staging-post-sync-verify-v1",
+  "sprint": "FRZ-018d",
+  "startedAt": "2026-08-01T10:31:22.391Z",
+  "branch": "cursor/titan-frozen-scope-completion",
+  "priorCheckpoint": "fde527c",
+  "priorSprint": "FRZ-018c",
+  "apiOrigin": "https://young-guns-os-staging.up.railway.app",
+  "webOrigin": "https://comfortable-determination-staging.up.railway.app",
+  "stagingSupabaseRef": "cpkuwtaipjxeipvbssvn",
+  "productionRefTouched": false,
+  "liveFinancialWrites": false,
+  "readOnlyIntent": true,
+  "ownerSignal": "xero synced — Sync now clicked on staging /integrations/xero",
+  "ownerAccessTokenProvided": false,
+  "oauthStartPath": "https://comfortable-determination-staging.up.railway.app/integrations/xero",
+  "results": [
+    {
+      "name": "staging_api_ready",
+      "status": "PASS",
+      "detail": "database=connected"
+    },
+    {
+      "name": "unauthenticated_xero_denied",
+      "status": "PASS",
+      "detail": "401"
+    },
+    {
+      "name": "probe_signup_session",
+      "status": "PASS",
+      "detail": "516ee3d1…"
+    },
+    {
+      "name": "tenant_isolation_disconnected_independent",
+      "status": "PASS",
+      "detail": "foreign disconnected"
+    },
+    {
+      "name": "tenant_isolation_sync_logs",
+      "status": "PASS",
+      "detail": "no shared log ids"
+    },
+    {
+      "name": "db_connected_xero_tenant",
+      "status": "PASS",
+      "detail": "org=Young Guns Plumbing"
+    },
+    {
+      "name": "db_last_sync_at_populated",
+      "status": "FAIL",
+      "detail": "last_sync_at still null after Owner sync signal"
+    },
+    {
+      "name": "db_sync_logs_present",
+      "status": "FAIL",
+      "detail": "0 xero_sync_logs for owner tenant; 0 global"
+    },
+    {
+      "name": "db_import_mappings_present",
+      "status": "FAIL",
+      "detail": "all mapping counts zero"
+    },
+    {
+      "name": "db_sync_jobs_present",
+      "status": "FAIL",
+      "detail": "0 integration_sync_jobs for owner tenant"
+    },
+    {
+      "name": "db_audit_xero_connected",
+      "status": "PASS",
+      "detail": "xero_connected present"
+    },
+    {
+      "name": "db_token_connection_valid",
+      "status": "PASS",
+      "detail": "has credentials, last_error null"
+    },
+    {
+      "name": "duplicate_protection_schema",
+      "status": "PASS",
+      "detail": "unique indexes on xero_*_mappings (company_id, xero_*_id); unit tests xero-import-sync.test.ts 301 pass"
+    },
+    {
+      "name": "token_refresh_code_coverage",
+      "status": "PASS",
+      "detail": "getValidAccessToken 60s buffer + inflight dedupe; xero-oauth.test.ts"
+    },
+    {
+      "name": "secret_leak_scan",
+      "status": "PASS",
+      "detail": "clean"
+    },
+    {
+      "name": "live_import_checklist",
+      "status": "PARTIAL",
+      "detail": "OWNER_ACCESS_TOKEN not set — DB-only post-sync verify"
+    },
+    {
+      "name": "tenant_isolation_owner_company_distinct",
+      "status": "PASS",
+      "detail": "owner vs foreign company differ"
+    }
+  ],
+  "checklist": {
+    "connectedOrganisation": "PASS-DB",
+    "tokenRefresh": "PASS-CODE",
+    "tenantIsolation": "PASS",
+    "duplicateProtection": "PASS-CODE-SCHEMA",
+    "truthfulProviderStatus": "PASS",
+    "lastSyncAt": "FAIL",
+    "auditEvidence": "FAIL",
+    "tokenHandling": "PASS-DB",
+    "contactsImport": "FAIL",
+    "invoicesImport": "FAIL",
+    "paymentsImport": "FAIL",
+    "bankTransactionsImport": "FAIL"
+  },
+  "verdict": "NO-GO",
+  "dbPostSyncSnapshot": {
+    "companyIdPrefix": "095aef76…",
+    "organisationName": "Young Guns Plumbing",
+    "connectedAt": "2026-08-01T10:20:52.209Z",
+    "lastSyncAt": null,
+    "updatedAt": "2026-08-01T10:20:52.209Z",
+    "lastVerifiedAt": "2026-08-01T10:20:52.209Z",
+    "lastError": null,
+    "hasCredentials": true,
+    "syncLogCount": 0,
+    "globalSyncLogCount": 0,
+    "syncSummary": [],
+    "customerMappings": 0,
+    "invoiceMappings": 0,
+    "paymentMappings": 0,
+    "syncJobCount": 0,
+    "auditActions": [
+      "xero_connected"
+    ]
+  },
+  "ownerAction": {
+    "step": 1,
+    "action": "Retry Sync from staging /integrations/xero (entity sync buttons) or Integrations dashboard Sync now; note any UI error",
+    "step2": "Optional: re-run with OWNER_ACCESS_TOKEN for live read-only import verify",
+    "note": "FRZ-018d DB found no sync evidence despite Owner signal"
+  },
+  "totals": {
+    "passed": 12,
+    "failed": 4,
+    "paused": 0,
+    "skipped": 0,
+    "partial": 1
+  },
+  "completedAt": "2026-08-01T10:31:38.268Z"
+}

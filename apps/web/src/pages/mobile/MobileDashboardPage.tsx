@@ -1,5 +1,6 @@
+import { PageHeader } from '../../components/ux';
 import { Link } from 'wouter';
-import { EmptyState, PageHeader, Panel } from '@titan/ui';
+import { EmptyState, Panel } from '@titan/ui';
 import { fetchMobileWorkforceDashboard } from '../../lib/mobile-api-client';
 import { useAuth } from '../../lib/auth-context';
 import { useStaffCachedQuery } from '../../lib/use-scoped-cached-query';
@@ -37,7 +38,7 @@ export function MobileDashboardPage() {
         {dashboard ? (
           <>
             <div className="portal-grid">
-              <Panel title="Assigned jobs" description={`${dashboard.assignedJobs.length} total`}>
+              <Panel title="Assigned Jobs" description={`${dashboard.assignedJobs.length} total`}>
                 <Link href="/jobs">View jobs</Link>
               </Panel>
               <Panel
@@ -47,13 +48,13 @@ export function MobileDashboardPage() {
                 <Link href="/route">View route</Link>
               </Panel>
               <Panel
-                title="Inventory alerts"
+                title="Inventory Alerts"
                 description={`${dashboard.inventoryAlerts.length} low-stock item(s)`}
               >
                 <Link href="/inventory">View inventory</Link>
               </Panel>
               <Panel
-                title="Outstanding tasks"
+                title="Outstanding Tasks"
                 description={`${dashboard.outstandingTaskCount} pending action(s)`}
               >
                 <Link href="/sync">Offline sync</Link>
@@ -73,7 +74,7 @@ export function MobileDashboardPage() {
             </div>
 
             {dashboard.safetyNotices.length > 0 ? (
-              <Panel title="Safety notices">
+              <Panel title="Safety Notices">
                 <ul className="portal-list">
                   {dashboard.safetyNotices.map((item) => (
                     <li key={item.id}>
@@ -86,7 +87,7 @@ export function MobileDashboardPage() {
             ) : null}
 
             {dashboard.companyAnnouncements.length > 0 ? (
-              <Panel title="Company announcements">
+              <Panel title="Company Announcements">
                 <ul className="portal-list">
                   {dashboard.companyAnnouncements.map((item) => (
                     <li key={item.id}>
@@ -102,7 +103,7 @@ export function MobileDashboardPage() {
       </AnalyticsTabPanel>
 
       {!dashboardQuery.isLoading && dashboard === undefined && !dashboardQuery.error ? (
-        <EmptyState title="No dashboard data" description="Your mobile dashboard is empty." />
+        <EmptyState title="No Dashboard Data" description="Your mobile dashboard is empty." />
       ) : null}
     </div>
   );

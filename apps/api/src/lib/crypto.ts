@@ -111,6 +111,8 @@ export type EmailStoredCredentials = {
 
 export type YocoStoredCredentials = {
   secretKey: string;
+  /** Standard Webhooks signing secret (`whsec_…`) from Yoco webhook subscription create. */
+  webhookSecret?: string | null;
 };
 
 function encryptJsonCredentials<T extends object>(credentials: T, encryptionKey: string): string {
@@ -245,4 +247,202 @@ export function decryptN8nCredentials(
     throw new Error('Invalid stored n8n credentials');
   }
   return parsed;
+}
+
+export type ResendStoredCredentials = {
+  apiKey: string;
+  /** Svix signing secret from Resend webhook (`whsec_…`). */
+  webhookSecret?: string | null;
+};
+
+export function encryptResendCredentials(
+  credentials: ResendStoredCredentials,
+  encryptionKey: string,
+): string {
+  return encryptJsonCredentials(credentials, encryptionKey);
+}
+
+export function decryptResendCredentials(
+  payload: string,
+  encryptionKey: string,
+): ResendStoredCredentials {
+  const parsed = decryptJsonCredentials<ResendStoredCredentials>(payload, encryptionKey);
+  if (!parsed.apiKey?.trim()) {
+    throw new Error('Invalid stored Resend credentials');
+  }
+  return {
+    apiKey: parsed.apiKey.trim(),
+    webhookSecret: parsed.webhookSecret?.trim() || null,
+  };
+}
+
+export type GoogleMapsStoredCredentials = {
+  /** Server key for Places / Geocoding / Directions / Distance Matrix. Never returned to browser. */
+  apiKey: string;
+  /** Optional HTTP-referrer-restricted key for Maps JavaScript API. */
+  browserApiKey?: string;
+};
+
+export function encryptGoogleMapsCredentials(
+  credentials: GoogleMapsStoredCredentials,
+  encryptionKey: string,
+): string {
+  return encryptJsonCredentials(credentials, encryptionKey);
+}
+
+export function decryptGoogleMapsCredentials(
+  payload: string,
+  encryptionKey: string,
+): GoogleMapsStoredCredentials {
+  const parsed = decryptJsonCredentials<GoogleMapsStoredCredentials>(payload, encryptionKey);
+  if (!parsed.apiKey?.trim()) {
+    throw new Error('Invalid stored Google Maps credentials');
+  }
+  return {
+    apiKey: parsed.apiKey.trim(),
+    browserApiKey: parsed.browserApiKey?.trim() || undefined,
+  };
+}
+
+/** Gmail OAuth tokens — encrypted with INTEGRATIONS_ENCRYPTION_KEY. */
+export type GmailOAuthStoredCredentials = {
+  version: 1;
+  accessToken: string;
+  refreshToken?: string;
+  expiresAt?: string;
+  emailAddress?: string;
+  scope?: string;
+};
+
+export function encryptGmailCredentials(
+  credentials: GmailOAuthStoredCredentials,
+  encryptionKey: string,
+): string {
+  return encryptJsonCredentials(credentials, encryptionKey);
+}
+
+export function decryptGmailCredentials(
+  payload: string,
+  encryptionKey: string,
+): GmailOAuthStoredCredentials {
+  const parsed = decryptJsonCredentials<GmailOAuthStoredCredentials>(payload, encryptionKey);
+  if (!parsed.accessToken?.trim() && !parsed.refreshToken?.trim()) {
+    throw new Error('Invalid stored Gmail credentials');
+  }
+  return {
+    version: 1,
+    accessToken: parsed.accessToken?.trim() ?? '',
+    refreshToken: parsed.refreshToken?.trim() || undefined,
+    expiresAt: parsed.expiresAt,
+    emailAddress: parsed.emailAddress?.trim() || undefined,
+    scope: parsed.scope,
+  };
+}
+
+/** Google Calendar OAuth tokens — encrypted with INTEGRATIONS_ENCRYPTION_KEY. */
+export type GoogleCalendarStoredCredentials = {
+  version: 1;
+  accessToken: string;
+  refreshToken?: string;
+  expiresAt?: string;
+  googleAccountEmail?: string;
+  googleAccountId?: string;
+  scope?: string;
+};
+
+export function encryptGoogleCalendarCredentials(
+  credentials: GoogleCalendarStoredCredentials,
+  encryptionKey: string,
+): string {
+  return encryptJsonCredentials(credentials, encryptionKey);
+}
+
+export function decryptGoogleCalendarCredentials(
+  payload: string,
+  encryptionKey: string,
+): GoogleCalendarStoredCredentials {
+  const parsed = decryptJsonCredentials<GoogleCalendarStoredCredentials>(payload, encryptionKey);
+  if (!parsed.accessToken?.trim() && !parsed.refreshToken?.trim()) {
+    throw new Error('Invalid stored Google Calendar credentials');
+  }
+  return {
+    version: 1,
+    accessToken: parsed.accessToken?.trim() ?? '',
+    refreshToken: parsed.refreshToken?.trim() || undefined,
+    expiresAt: parsed.expiresAt,
+    googleAccountEmail: parsed.googleAccountEmail?.trim() || undefined,
+    googleAccountId: parsed.googleAccountId?.trim() || undefined,
+    scope: parsed.scope,
+  };
+}
+
+/**
+ * Facebook Page credentials — encrypted with INTEGRATIONS_ENCRYPTION_KEY.
+ *
+ * The user token is retained only so a disconnect can revoke the grant on
+ * Meta's side; all Page work uses `pageAccessToken`.
+ */
+export type FacebookStoredCredentials = {
+  version: 1;
+  pageAccessToken: string;
+  userAccessToken?: string;
+  expiresAt?: string;
+  grantedScopes?: string[];
+};
+
+export function encryptFacebookCredentials(
+  credentials: FacebookStoredCredentials,
+  encryptionKey: string,
+): string {
+  return encryptJsonCredentials(credentials, encryptionKey);
+}
+
+export function decryptFacebookCredentials(
+  payload: string,
+  encryptionKey: string,
+): FacebookStoredCredentials {
+  const parsed = decryptJsonCredentials<FacebookStoredCredentials>(payload, encryptionKey);
+  if (!parsed.pageAccessToken?.trim()) {
+    throw new Error('Invalid stored Facebook credentials');
+  }
+  return {
+    version: 1,
+    pageAccessToken: parsed.pageAccessToken.trim(),
+    userAccessToken: parsed.userAccessToken?.trim() || undefined,
+    expiresAt: parsed.expiresAt,
+    grantedScopes: parsed.grantedScopes ?? [],
+  };
+}
+
+/** Social media platform tokens — encrypted with INTEGRATIONS_ENCRYPTION_KEY. */
+export type SocialMediaStoredCredentials = {
+  version: 1;
+  accessToken: string;
+  refreshToken?: string;
+  expiresAt?: string;
+  scope?: string;
+};
+
+export function encryptSocialMediaCredentials(
+  credentials: SocialMediaStoredCredentials,
+  encryptionKey: string,
+): string {
+  return encryptJsonCredentials(credentials, encryptionKey);
+}
+
+export function decryptSocialMediaCredentials(
+  payload: string,
+  encryptionKey: string,
+): SocialMediaStoredCredentials {
+  const parsed = decryptJsonCredentials<SocialMediaStoredCredentials>(payload, encryptionKey);
+  if (!parsed.accessToken?.trim()) {
+    throw new Error('Invalid stored social media credentials');
+  }
+  return {
+    version: 1,
+    accessToken: parsed.accessToken.trim(),
+    refreshToken: parsed.refreshToken?.trim() || undefined,
+    expiresAt: parsed.expiresAt,
+    scope: parsed.scope,
+  };
 }
