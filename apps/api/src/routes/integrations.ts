@@ -24,6 +24,7 @@ import { XeroOAuthError } from '../services/xero-oauth.service.js';
 import type { XeroCustomerMappingService } from '../services/xero-customer-mapping.service.js';
 import { XeroCustomerMappingError } from '../services/xero-customer-mapping.service.js';
 import type { XeroReconciliationService } from '../services/xero-reconciliation.service.js';
+import type { XeroRealtimeIntersyncService } from '../services/xero-realtime-intersync.service.js';
 import type { TeamService } from '../services/team.service.js';
 import { createAuthMiddleware, type AuthenticatedRequest } from '../middleware/auth.js';
 import { requireAnyPermission } from '../middleware/rbac.js';
@@ -197,6 +198,7 @@ type IntegrationsRouterDeps = {
   xeroOAuthService: XeroOAuthService;
   xeroCustomerMappingService?: XeroCustomerMappingService;
   xeroReconciliationService?: XeroReconciliationService;
+  xeroRealtimeIntersyncService?: XeroRealtimeIntersyncService;
   teamService: TeamService;
   appUrl: string;
   jwtSecret: string;
@@ -236,6 +238,7 @@ export function createIntegrationsRouter({
   xeroOAuthService,
   xeroCustomerMappingService,
   xeroReconciliationService,
+  xeroRealtimeIntersyncService,
   teamService,
   appUrl,
   jwtSecret,
@@ -727,6 +730,42 @@ export function createIntegrationsRouter({
       try {
         const result = await xeroSyncService.syncInvoices(companyId);
         res.json({ data: { result } });
+      } catch (error) {
+        handleXeroSyncError(res, error);
+      }
+    },
+  );
+
+  router.get(
+    '/xero/finance-freshness',
+    requireAnyPermission('finance:read', 'integrations:read', '*'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      if (!xeroRealtimeIntersyncService) {
+        res.status(503).json({
+          error: { code: 'XERO_REALTIME_UNAVAILABLE', message: 'Xero realtime intersync is not configured' },
+        });
+        return;
+      }
+      const summary = await xeroRealtimeIntersyncService.getFinanceFreshness(companyId);
+      res.json({ data: summary });
+    },
+  );
+
+  router.post(
+    '/xero/quotes/incremental-refresh',
+    requireAnyPermission('finance:read', 'integrations:read', '*'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      if (!xeroRealtimeIntersyncService) {
+        res.status(503).json({
+          error: { code: 'XERO_REALTIME_UNAVAILABLE', message: 'Xero realtime intersync is not configured' },
+        });
+        return;
+      }
+      try {
+        const result = await xeroRealtimeIntersyncService.refreshQuotesForCompany(companyId);
+        res.json({ data: result });
       } catch (error) {
         handleXeroSyncError(res, error);
       }

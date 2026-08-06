@@ -18,6 +18,8 @@ import {
 } from '../../features/finance/finance-filters';
 import { useFinanceSectionDrafts } from '../../features/finance/useFinanceSectionDrafts';
 import { canAccessFinance, canManageFinance } from '../../features/finance/utils';
+import { FinanceFreshnessLine } from '../../features/finance/FinanceFreshnessLine';
+import { useXeroFinanceRefresh } from '../../features/finance/useXeroFinanceRefresh';
 import { CompactFilterTabs, PageHeader, StatusBadge } from '../../components/ux';
 
 function formatStatus(status: InvoiceSummary['status']): string {
@@ -71,6 +73,12 @@ export function InvoiceListPage() {
       }),
   });
 
+  const { label: freshnessLabel, refreshing } = useXeroFinanceRefresh({
+    accessToken,
+    enabled: canView,
+    surface: 'invoices',
+  });
+
   const visibleInvoices = useMemo(() => {
     let rows = (invoices ?? []).filter((invoice) => invoiceMatchesFilter(invoice, filter));
     rows.sort((a, b) => {
@@ -107,6 +115,7 @@ export function InvoiceListPage() {
       <FinanceNav />
 
       <Panel title="Invoices">
+        <FinanceFreshnessLine label={freshnessLabel} refreshing={refreshing} />
         <CompactFilterTabs<InvoiceListFilter>
           options={INVOICE_LIST_FILTERS}
           value={filter}

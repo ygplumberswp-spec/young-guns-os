@@ -133,7 +133,7 @@ Playwright authenticated performance journeys: **Not run** — no staging creden
 
 | Item | Status |
 |------|--------|
-| Staging deploy | **PENDING** — no Railway CLI/credentials in agent environment (`diagnostic-output/130-staging-controlled-deploy.json`: `BLOCKED_OWNER_ACTIONS`) |
+| Staging deploy | **DONE** — Web deployed to staging (`index-B4NYv9CT.js`); Owner confirmed improved speed. Authenticated detailed timing audit remains a later final-audit item. |
 | Pre-deploy staging bundle | `index-CNrD9J3-.js` (579,389 B) |
 | Post-build local bundle | `index-Cn_0x3Z1.js` (340,466 B) |
 | Production | **Untouched** |

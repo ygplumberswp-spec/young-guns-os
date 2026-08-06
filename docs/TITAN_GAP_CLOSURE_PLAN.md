@@ -47,8 +47,8 @@
 |------:|---------|------|------|
 | 0 | INT-OVERVIEW-001 | Integrations overview + Dashboard Connections alignment | **Pending Owner approval** |
 | 1 | **PERF-001** | **TITAN Performance Foundation** | **Implemented** — [TITAN_PERF_001_COMPLETION_REPORT.md](./TITAN_PERF_001_COMPLETION_REPORT.md); staging deploy pending |
-| 2 | **XERO-003** | **Near-real-time Xero quote, invoice and payment intersync** | Owner sequences after PERF-001 |
-| 3 | **DASH-001** | **Owner Dashboard — Business Heartbeat** | Owner sequences after XERO-003 |
+| 2 | **XERO-003** | **Near-real-time Xero intersync** | **Implemented** — [TITAN_XERO_003_COMPLETION_REPORT.md](./TITAN_XERO_003_COMPLETION_REPORT.md); staging deploy + Xero platform config pending |
+| 3 | **DASH-001** | **Owner Dashboard — Business Heartbeat** | Owner sequences after XERO-003 review |
 | 4 | XERO-002 | Controlled Xero live proof (Owner gate) | **Blocked** until steps 0–3 formally sequenced |
 
 Both tasks must meet the **Enterprise Product Quality Gate** and **Fine Details & Finishing** standard applied to the Integrations overview.

@@ -22,6 +22,8 @@ import type {
   XeroEntitySyncResult,
   XeroSyncLogSummary,
   XeroSyncStatusResponse,
+  XeroFinanceFreshnessSummary,
+  XeroIncrementalQuoteRefreshResult,
   YocoConnectionSummary,
   YocoSyncResult,
 } from '@titan/shared';
@@ -522,4 +524,21 @@ export async function syncYoco(accessToken: string): Promise<YocoSyncResult> {
     accessToken,
   });
   return data.result;
+}
+
+export async function fetchXeroFinanceFreshness(
+  accessToken: string,
+): Promise<XeroFinanceFreshnessSummary> {
+  return request<XeroFinanceFreshnessSummary>('/integrations/xero/finance-freshness', {
+    accessToken,
+  });
+}
+
+export async function refreshXeroQuotesIncremental(
+  accessToken: string,
+): Promise<XeroIncrementalQuoteRefreshResult> {
+  return request<XeroIncrementalQuoteRefreshResult>(
+    '/integrations/xero/quotes/incremental-refresh',
+    { method: 'POST', accessToken },
+  );
 }

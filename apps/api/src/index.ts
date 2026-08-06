@@ -89,6 +89,9 @@ import { XeroWriteApprovalGate } from './services/xero-write-approval-gate.servi
 import { XeroMappingConflictService } from './services/xero-mapping-conflict.service.js';
 import { XeroWriteApprovalWorkflowService } from './services/xero-write-approval-workflow.service.js';
 import { XeroTwoWayVerifyService } from './services/xero-two-way-verify.service.js';
+import { XeroRateBudgetService } from './services/xero-rate-budget.service.js';
+import { XeroRealtimeIntersyncService } from './services/xero-realtime-intersync.service.js';
+import { createXeroWebhookRouter } from './routes/xero-webhook.js';
 import { WhatsappService } from './services/whatsapp.service.js';
 import { WhatsappContactEnrichmentService } from './services/whatsapp-contact-enrichment.service.js';
 import { createIntegrationsRouter } from './routes/integrations.js';
@@ -621,6 +624,14 @@ const xeroSyncService = XeroSyncService.create({
 const xeroFinancialMemoryService = new XeroFinancialMemoryService(db, xeroSyncService);
 const xeroCustomerMappingService = XeroCustomerMappingService.create(db);
 const xeroReconciliationService = XeroReconciliationService.create(db);
+const xeroRateBudgetService = XeroRateBudgetService.create(db);
+const xeroRealtimeIntersyncService = XeroRealtimeIntersyncService.create({
+  db,
+  xeroSyncService,
+  rateBudget: xeroRateBudgetService,
+  webhookKey: env.XERO_WEBHOOK_KEY ?? null,
+  webhooksEnabled: env.runtime.webhooksEnabled,
+});
 const xeroWriteApprovalWorkflowService = new XeroWriteApprovalWorkflowService(
   db,
   xeroWriteApprovalGate,
@@ -1915,6 +1926,7 @@ app.use(
     xeroOAuthService,
     xeroCustomerMappingService,
     xeroReconciliationService,
+    xeroRealtimeIntersyncService,
     teamService,
     appUrl: env.APP_URL,
     jwtSecret: env.JWT_SECRET,
@@ -1978,6 +1990,12 @@ app.use(
   '/api/v1/webhooks/yoco',
   createYocoWebhookRouter({
     documentEngineService,
+  }),
+);
+app.use(
+  '/api/v1/webhooks/xero',
+  createXeroWebhookRouter({
+    xeroRealtimeIntersyncService,
   }),
 );
 app.use(

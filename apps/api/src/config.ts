@@ -47,6 +47,8 @@ const envSchema = z.object({
   OUTBOUND_MESSAGES_ENABLED: z.string().optional(),
   PAYMENT_PROCESSING_ENABLED: z.string().optional(),
   XERO_SYNC_ENABLED: z.string().optional(),
+  /** Platform-level Xero webhook signing key (never exposed to clients). */
+  XERO_WEBHOOK_KEY: z.string().min(1).optional(),
   WHATSAPP_ENABLED: z.string().optional(),
   /** Meta App Secret for X-Hub-Signature-256 verification (optional soft gate). */
   WHATSAPP_APP_SECRET: z.string().min(1).optional(),

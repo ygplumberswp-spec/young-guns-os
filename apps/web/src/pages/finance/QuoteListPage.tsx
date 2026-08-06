@@ -18,6 +18,8 @@ import {
 } from '../../features/finance/finance-filters';
 import { useFinanceSectionDrafts } from '../../features/finance/useFinanceSectionDrafts';
 import { canAccessFinance, canManageFinance } from '../../features/finance/utils';
+import { FinanceFreshnessLine } from '../../features/finance/FinanceFreshnessLine';
+import { useXeroFinanceRefresh } from '../../features/finance/useXeroFinanceRefresh';
 import { CompactFilterTabs, PageHeader, StatusBadge } from '../../components/ux';
 
 function formatStatus(status: QuoteSummary['status']): string {
@@ -55,6 +57,12 @@ export function QuoteListPage() {
       }),
   });
 
+  const { label: freshnessLabel, refreshing } = useXeroFinanceRefresh({
+    accessToken,
+    enabled: canView,
+    surface: 'quotes',
+  });
+
   const visibleQuotes = useMemo(() => {
     const rows = (quotes ?? []).filter((quote) => quoteMatchesFilter(quote, filter));
     return rows;
@@ -86,6 +94,7 @@ export function QuoteListPage() {
       <FinanceNav />
 
       <Panel title="Quotes">
+        <FinanceFreshnessLine label={freshnessLabel} refreshing={refreshing} />
         <CompactFilterTabs<QuoteListFilter>
           options={QUOTE_LIST_FILTERS}
           value={filter}

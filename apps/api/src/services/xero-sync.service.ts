@@ -66,6 +66,7 @@ import {
   invalidateDashboardFinanceCaches,
   invalidateIntegrationReadCaches,
 } from './api-read-cache.js';
+import { emitBusinessEvent } from '../lib/automation-events.js';
 import {
   advanceToNextStage,
   XERO_IMPORT_STAGES,
@@ -4464,6 +4465,164 @@ export class XeroSyncService {
     });
 
     return { syncJobId, status: 'cancelled' as const };
+  }
+
+  /**
+   * XERO-003 — targeted invoice refresh from a webhook or write confirmation.
+   * Does not start a full import job; fetches only the affected invoice.
+   */
+  async refreshTargetedInvoiceFromXero(
+    companyId: string,
+    xeroInvoiceId: string,
+  ): Promise<{ invoiceId: string | null; updated: boolean; failed: boolean }> {
+    const ctx = await this.createSyncContext(companyId);
+    const counts: XeroImportEntityCounts = {
+      createdCount: 0,
+      updatedCount: 0,
+      pulledCount: 0,
+      failedCount: 0,
+      skippedCount: 0,
+    };
+
+    try {
+      const remote = await ctx.client.fetchInvoice(xeroInvoiceId);
+      await this.importInvoiceBatch(ctx, [remote], counts);
+
+      const mapping = await this.db.query.xeroInvoiceMappings.findFirst({
+        where: and(
+          eq(xeroInvoiceMappings.companyId, companyId),
+          eq(xeroInvoiceMappings.xeroInvoiceId, xeroInvoiceId),
+        ),
+      });
+
+      const syncedAt = new Date();
+      await this.touchEntityCoverage(ctx, 'invoices', counts, syncedAt);
+
+      invalidateDashboardFinanceCaches(companyId);
+      invalidateIntegrationReadCaches(companyId);
+
+      if (mapping?.invoiceId) {
+        emitBusinessEvent({
+          companyId,
+          eventType: 'webhook.received',
+          entityType: 'invoice',
+          entityId: mapping.invoiceId,
+          payload: {
+            source: 'xero_targeted_refresh',
+            xeroInvoiceId,
+            refreshedAt: syncedAt.toISOString(),
+          },
+        });
+      }
+
+      return {
+        invoiceId: mapping?.invoiceId ?? null,
+        updated: counts.createdCount + counts.updatedCount > 0,
+        failed: counts.failedCount > 0,
+      };
+    } catch (error) {
+      await this.writeLog(ctx, {
+        entityType: 'invoice',
+        xeroEntityId: xeroInvoiceId,
+        action: 'pull',
+        status: 'failed',
+        message: mapError(error),
+      });
+      return { invoiceId: null, updated: false, failed: true };
+    }
+  }
+
+  /**
+   * XERO-003 — incremental quote refresh for active finance screens.
+   * Uses If-Modified-Since when a watermark exists; capped page budget.
+   */
+  async refreshQuotesIncrementalFromXero(
+    companyId: string,
+    options?: { modifiedSince?: string | null; maxPages?: number },
+  ): Promise<XeroEntitySyncResult & { delayed: boolean }> {
+    const ctx = await this.createSyncContext(companyId);
+    const coverage = await this.db.query.xeroEntityCoverage.findFirst({
+      where: and(eq(xeroEntityCoverage.companyId, companyId), eq(xeroEntityCoverage.entity, 'quotes')),
+    });
+
+    const modifiedSince =
+      options?.modifiedSince ?? coverage?.modifiedSinceWatermark?.toISOString() ?? null;
+    const maxPages = options?.maxPages ?? 2;
+    const counts: XeroImportEntityCounts = {
+      createdCount: 0,
+      updatedCount: 0,
+      pulledCount: 0,
+      failedCount: 0,
+      skippedCount: 0,
+    };
+
+    for (let page = 1; page <= maxPages; page += 1) {
+      const batch = await ctx.client.listQuotesPage(page, { modifiedSince });
+      if (batch.length === 0) break;
+      await this.importQuoteBatch(ctx, batch, counts);
+      if (batch.length < XERO_PAGE_SIZE) break;
+    }
+
+    const syncedAt = new Date();
+    await this.touchEntityCoverage(ctx, 'quotes', counts, syncedAt);
+    invalidateDashboardFinanceCaches(companyId);
+    invalidateIntegrationReadCaches(companyId);
+
+    emitBusinessEvent({
+      companyId,
+      eventType: 'webhook.received',
+      entityType: 'quote',
+      entityId: companyId,
+      payload: {
+        source: 'xero_incremental_quotes',
+        refreshedAt: syncedAt.toISOString(),
+        createdCount: counts.createdCount,
+        updatedCount: counts.updatedCount,
+      },
+    });
+
+    return {
+      scope: 'quotes',
+      ...counts,
+      syncedAt: syncedAt.toISOString(),
+      delayed: false,
+    };
+  }
+
+  private async touchEntityCoverage(
+    ctx: SyncContext,
+    entity: XeroImportStage,
+    counts: XeroImportEntityCounts,
+    syncedAt: Date,
+  ): Promise<void> {
+    const existing = await this.db.query.xeroEntityCoverage.findFirst({
+      where: and(eq(xeroEntityCoverage.companyId, ctx.companyId), eq(xeroEntityCoverage.entity, entity)),
+    });
+
+    const payload = {
+      integrationConnectionId: ctx.connection.id,
+      entity,
+      modifiedSinceWatermark: syncedAt,
+      lastSyncedAt: syncedAt,
+      importedCount: (existing?.importedCount ?? 0) + counts.createdCount,
+      failedCount: (existing?.failedCount ?? 0) + counts.failedCount,
+      skippedCount: (existing?.skippedCount ?? 0) + counts.skippedCount,
+      lastError: counts.failedCount > 0 ? `${counts.failedCount} targeted refresh failure(s)` : null,
+      updatedAt: syncedAt,
+    };
+
+    if (existing) {
+      await this.db
+        .update(xeroEntityCoverage)
+        .set(payload)
+        .where(eq(xeroEntityCoverage.id, existing.id));
+      return;
+    }
+
+    await this.db.insert(xeroEntityCoverage).values({
+      companyId: ctx.companyId,
+      ...payload,
+    });
   }
 }
 
