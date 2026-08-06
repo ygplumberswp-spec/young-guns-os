@@ -1,16 +1,16 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { SocialConnectionProviderCard } from '@titan/shared';
 import {
   canManageSocialConnections,
   canViewSocialConnections,
 } from '@titan/shared';
-import { ApiClientError } from '../../lib/api-client';
 import { startFacebookOAuth } from '../../lib/facebook-business-api-client';
 import {
   fetchSocialConnectionsDashboard,
   startSocialConnectionOAuth,
 } from '../../lib/social-connection-api-client';
 import { useAuth } from '../../lib/auth-context';
+import { useStaffCachedQuery } from '../../lib/use-scoped-cached-query';
 import { IntegrationOverviewSection } from './IntegrationOverviewSection';
 import { SocialProviderOverviewCard } from './SocialProviderOverviewCard';
 
@@ -57,11 +57,6 @@ function SocialConnectionCardContainer({
 
 export function SocialConnectionsSection() {
   const { accessToken, user } = useAuth();
-  const [dashboard, setDashboard] = useState<Awaited<
-    ReturnType<typeof fetchSocialConnectionsDashboard>
-  > | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   const canView = useMemo(
     () => (user ? canViewSocialConnections({ roleName: user.roleName, permissions: user.permissions }) : false),
@@ -72,32 +67,25 @@ export function SocialConnectionsSection() {
     [user],
   );
 
-  async function load() {
-    if (!accessToken || !canView) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await fetchSocialConnectionsDashboard(accessToken);
-      setDashboard(data);
-    } catch (err) {
-      setError(err instanceof ApiClientError ? err.message : 'Could not load social connections.');
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    void load();
-  }, [accessToken, canView]);
+  const socialQuery = useStaffCachedQuery({
+    queryKey: 'integrations/social-connections-dashboard',
+    enabled: Boolean(accessToken) && canView,
+    staleTimeMs: 30_000,
+    fetcher: (signal) => fetchSocialConnectionsDashboard(accessToken!, { signal }),
+  });
 
   if (!canView) {
     return null;
   }
 
+  const dashboard = socialQuery.data;
+  const loading = socialQuery.isLoading && !dashboard;
+  const error = socialQuery.error;
+
   return (
     <IntegrationOverviewSection
       title="Social connections"
-      loading={loading && !dashboard}
+      loading={loading}
       skeletonCount={SOCIAL_LOADING_SKELETON_COUNT}
       error={error}
       emptyTitle={!loading && dashboard?.providers.length === 0 ? 'No social providers available' : undefined}

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { Suspense, lazy, useEffect } from 'react';
 import { OPS_SNAPSHOT_FOLLOW_UP_MS } from '@titan/shared';
 import { useAuth } from '../../lib/auth-context';
 import { fetchExecutiveDashboardSummary } from '../../lib/dashboard-api-client';
@@ -6,13 +6,14 @@ import {
   fetchOpsIntelligenceSnapshot,
   refreshOpsIntelligenceSnapshot,
 } from '../../lib/ops-intelligence-api-client';
+import { useDeferredMount } from '../../lib/use-deferred-mount';
 import { useStaffCachedQuery } from '../../lib/use-scoped-cached-query';
 import { SectionErrorBoundary } from '../../components/ux';
 import { useCartrackLivePositions } from '../dispatch/useCartrackLivePositions';
 import { ActiveJobsPanel } from './ActiveJobsPanel';
-import { AuraExecutiveChatPanel } from './AuraExecutiveChatPanel';
 import { CompletedTodayPanel } from './CompletedTodayPanel';
 import { ConnectionsPanel } from './ConnectionsPanel';
+import { DashboardSectionSkeleton } from './DashboardSectionSkeleton';
 import { ExecutiveDashboardHeader } from './ExecutiveDashboardHeader';
 import { FleetOverviewPanel } from './FleetOverviewPanel';
 import { LiveOperationsPanel } from './LiveOperationsPanel';
@@ -23,23 +24,40 @@ import { QuickLinksPanel } from './QuickLinksPanel';
 import { ScheduleOverviewPanel } from './ScheduleOverviewPanel';
 import { TodayAtAGlancePanel } from './TodayAtAGlancePanel';
 
+const AuraExecutiveChatPanel = lazy(async () => {
+  const mod = await import('./AuraExecutiveChatPanel');
+  return { default: mod.AuraExecutiveChatPanel };
+});
+
+/** Defer secondary panels so executive summary paints first (PERF-001). */
+const DEFER_OPS_MS = 120;
+const DEFER_FLEET_MS = 180;
+const DEFER_SCHEDULE_MS = 280;
+const DEFER_CONNECTIONS_MS = 360;
+const DEFER_AURA_MS = 520;
+
 export function ExecutiveDashboard() {
   const { accessToken, user } = useAuth();
+  const authReady = Boolean(accessToken);
+
+  const deferOps = useDeferredMount(authReady, DEFER_OPS_MS);
+  const deferFleet = useDeferredMount(authReady, DEFER_FLEET_MS);
+  const deferSchedule = useDeferredMount(authReady, DEFER_SCHEDULE_MS);
+  const deferConnections = useDeferredMount(authReady, DEFER_CONNECTIONS_MS);
+  const deferAura = useDeferredMount(authReady, DEFER_AURA_MS);
 
   const summaryQuery = useStaffCachedQuery({
     queryKey: 'dashboard/executive-summary',
-    enabled: Boolean(accessToken),
-    fetcher: async () => fetchExecutiveDashboardSummary(accessToken!),
+    enabled: authReady,
+    fetcher: (signal) => fetchExecutiveDashboardSummary(accessToken!, { signal }),
   });
 
   const opsQuery = useStaffCachedQuery({
     queryKey: 'ops-intelligence/snapshot',
-    enabled: Boolean(accessToken),
-    fetcher: async () => fetchOpsIntelligenceSnapshot(accessToken!),
+    enabled: authReady && deferOps,
+    fetcher: (signal) => fetchOpsIntelligenceSnapshot(accessToken!, { signal }),
   });
 
-  // One Cartrack poller for the whole dashboard. Fleet Overview, the map and the glance
-  // card read the same payload rather than each opening its own polling loop.
   const {
     tracking,
     isPolling,
@@ -47,7 +65,7 @@ export function ExecutiveDashboard() {
     error: fleetError,
   } = useCartrackLivePositions({
     accessToken,
-    enabled: Boolean(accessToken),
+    enabled: authReady && deferFleet,
   });
 
   const summary = summaryQuery.data;
@@ -62,9 +80,6 @@ export function ExecutiveDashboard() {
   const opsGeneratedAt = opsSnapshot?.generatedAt ?? null;
   const refetchOps = opsQuery.refetch;
 
-  // The snapshot says when an evaluation is still running behind it. Look again once
-  // it should have landed, so a stale or still-evaluating card catches up on its own
-  // instead of waiting for the Owner to reload the page.
   useEffect(() => {
     if (!opsRefreshing && opsDataAvailable) return;
     const timer = setTimeout(() => void refetchOps(), OPS_SNAPSHOT_FOLLOW_UP_MS);
@@ -72,8 +87,6 @@ export function ExecutiveDashboard() {
   }, [opsRefreshing, opsDataAvailable, opsGeneratedAt, refetchOps]);
 
   const refetchSummary = () => void summaryQuery.refetch();
-  // Retry means "go and look again", so it triggers the live re-evaluation rather
-  // than re-reading the stored snapshot it just showed.
   const refreshOps = () => {
     void (async () => {
       if (accessToken) {
@@ -91,7 +104,7 @@ export function ExecutiveDashboard() {
         isLoading={isLoading}
       />
 
-      {opsEvents.length > 0 || opsQuery.error ? (
+      {deferOps && (opsEvents.length > 0 || opsQuery.error) ? (
         <SectionErrorBoundary sectionName="Operations intelligence" onRetry={refreshOps}>
           <OpsIntelligenceAlerts
             events={opsEvents}
@@ -108,20 +121,24 @@ export function ExecutiveDashboard() {
         <SectionErrorBoundary sectionName="Today at a glance" onRetry={refetchSummary}>
           <TodayAtAGlancePanel
             summary={summary ?? null}
-            tracking={tracking}
-            fleetError={fleetError}
+            tracking={deferFleet ? tracking : null}
+            fleetError={deferFleet ? fleetError : null}
             isLoading={isLoading}
             error={loadError}
             onRetry={refetchSummary}
           />
         </SectionErrorBoundary>
         <SectionErrorBoundary sectionName="Fleet overview">
-          <FleetOverviewPanel
-            tracking={tracking}
-            lastFetchedAt={fleetFetchedAt}
-            error={fleetError}
-            isLoading={!tracking && !fleetError}
-          />
+          {deferFleet ? (
+            <FleetOverviewPanel
+              tracking={tracking}
+              lastFetchedAt={fleetFetchedAt}
+              error={fleetError}
+              isLoading={!tracking && !fleetError}
+            />
+          ) : (
+            <DashboardSectionSkeleton rows={3} />
+          )}
         </SectionErrorBoundary>
         <SectionErrorBoundary sectionName="Priorities">
           <PrioritiesSummaryPanel
@@ -133,7 +150,13 @@ export function ExecutiveDashboard() {
           />
         </SectionErrorBoundary>
         <SectionErrorBoundary sectionName="AURA executive chat">
-          <AuraExecutiveChatPanel />
+          {deferAura ? (
+            <Suspense fallback={<DashboardSectionSkeleton rows={4} />}>
+              <AuraExecutiveChatPanel />
+            </Suspense>
+          ) : (
+            <DashboardSectionSkeleton rows={4} />
+          )}
         </SectionErrorBoundary>
       </div>
 
@@ -141,11 +164,11 @@ export function ExecutiveDashboard() {
         <SectionErrorBoundary sectionName="Live fleet map" onRetry={refetchSummary}>
           <LiveOperationsPanel
             jobs={liveJobs}
-            tracking={tracking}
+            tracking={deferFleet ? tracking : null}
             lastFetchedAt={fleetFetchedAt}
             isPolling={isPolling}
-            fleetError={fleetError}
-            opsStrip={opsSnapshot?.liveStrip ?? null}
+            fleetError={deferFleet ? fleetError : null}
+            opsStrip={deferOps ? (opsSnapshot?.liveStrip ?? null) : null}
             opsStripLoading={opsLoading}
             opsStripError={opsQuery.error}
             opsFreshness={opsSnapshot?.freshness ?? null}
@@ -180,12 +203,15 @@ export function ExecutiveDashboard() {
           />
         </SectionErrorBoundary>
         <SectionErrorBoundary sectionName="Schedule overview">
-          <ScheduleOverviewPanel />
+          {deferSchedule ? (
+            <ScheduleOverviewPanel />
+          ) : (
+            <DashboardSectionSkeleton rows={4} />
+          )}
         </SectionErrorBoundary>
         <SectionErrorBoundary sectionName="Quick links">
           <QuickLinksPanel />
         </SectionErrorBoundary>
-        {/* Completed Today sits directly above Connections in the fourth column. */}
         <div className="exec-dashboard-row__stack">
           <SectionErrorBoundary sectionName="Completed today" onRetry={refetchSummary}>
             <CompletedTodayPanel
@@ -198,7 +224,11 @@ export function ExecutiveDashboard() {
             />
           </SectionErrorBoundary>
           <SectionErrorBoundary sectionName="Connections">
-            <ConnectionsPanel />
+            {deferConnections ? (
+              <ConnectionsPanel />
+            ) : (
+              <DashboardSectionSkeleton rows={6} />
+            )}
           </SectionErrorBoundary>
         </div>
       </div>

@@ -25,7 +25,7 @@ export function ConnectionsPanel() {
   const { accessToken } = useAuth();
 
   const hubQuery = useStaffCachedQuery({
-    queryKey: 'integrations/hub-dashboard',
+    queryKey: 'integrations/hub-dashboard:simple',
     enabled: Boolean(accessToken),
     fetcher: async (signal) =>
       fetchIntegrationHubDashboard(accessToken!, { signal, simple: true }),
@@ -73,12 +73,9 @@ export function ConnectionsPanel() {
   const footerState = dashboardConnectionsFooterState(rows);
   const attentionCount = rows.filter((row) => row.status !== 'connected').length;
 
-  const isLoading =
-    (hubQuery.isLoading && !hubQuery.data) ||
-    (autoSyncQuery.isLoading && !autoSyncQuery.data) ||
-    (socialQuery.isLoading && !socialQuery.data);
-
-  const loadError = hubQuery.error ?? socialQuery.error;
+  const hasAnyData = Boolean(hubQuery.data ?? autoSyncQuery.data ?? socialQuery.data);
+  const isInitialLoad = !hasAnyData && (hubQuery.isLoading || autoSyncQuery.isLoading || socialQuery.isLoading);
+  const loadError = hubQuery.error ?? autoSyncQuery.error ?? socialQuery.error;
 
   return (
     <Panel
@@ -86,7 +83,7 @@ export function ConnectionsPanel() {
       description="Integration connection status"
       headerAction={<Link href="/integrations">Manage</Link>}
     >
-      {isLoading ? (
+      {isInitialLoad ? (
         <DashboardSectionSkeleton rows={DASHBOARD_CONNECTION_SKELETON_ROWS} />
       ) : loadError && rows.length === 0 ? (
         <div>

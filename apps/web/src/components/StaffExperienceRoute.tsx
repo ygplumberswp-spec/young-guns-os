@@ -35,10 +35,7 @@ export function OwnerStaffRoute({ children }: OwnerStaffRouteProps) {
     }
   }, [experience, isAuthenticated, isLoading, pathname, setLocation, user]);
 
-  if (isLoading) {
-    return <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>Loading...</div>;
-  }
-
+  // ProtectedRoute already gates session bootstrap — avoid a second full-page wait here.
   if (!isAuthenticated || !user) {
     return null;
   }
