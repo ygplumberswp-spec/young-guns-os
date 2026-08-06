@@ -10,7 +10,7 @@
 ## Active work (do not interrupt)
 
 **XERO-002** — Controlled live proof gate sequence (Gates 5B–7 remaining).  
-**Do not implement PRICEBOOK-001, JOB-COST-001, DASH-002, OCC-001, FNB-CASH-001, or other major features during active Xero proof.**
+**Do not implement PRICEBOOK-001, JOB-COST-001, DASH-002, OCC-001, FNB-CASH-001, AURA-GROWTH-001, or other major features during active Xero proof.**
 
 See: [TITAN_XERO_002_LIVE_PROOF_PLAN.md](./TITAN_XERO_002_LIVE_PROOF_PLAN.md)
 
@@ -32,11 +32,44 @@ Execute in order after prior gates close. Production forbidden until explicit pr
 | 5b | EXP-REC-001 | Receipt and Till-Slip Capture | Child — recorded |
 | 5c | INV-PRICE-001 | Supplier Price List Import | Child — recorded |
 | 6 | **FNB-CASH-001** | **FNB Bank Feed & Cash Intelligence** | **RECORDED** — Phase 1 audit only |
-| 7 | — | Full BrowserStack role and journey audit | Planned |
-| 8 | — | Remaining integration and platform roadmap | Ongoing |
-| 9 | **UI-THEME-001** | **App-wide visual finishing (Premium Dark Mode)** | Recorded only |
-| 10 | — | Young Guns controlled pilot | Gate |
-| 11 | — | Production hardening and launch | Gate |
+| 7 | **AURA-GROWTH-001** | **AURA Growth Planner (EXEC-010)** | **RECORDED** — not implemented |
+| 8 | — | Full BrowserStack role and journey audit | Planned |
+| 9 | — | Remaining integration and platform roadmap | Ongoing |
+| 10 | **UI-THEME-001** | **App-wide visual finishing (Premium Dark Mode)** | Recorded only |
+| 11 | — | Young Guns controlled pilot | Gate |
+| 12 | — | Production hardening and launch | Gate |
+
+---
+
+## AURA-FIRST-001 — permanent AI Companion Standard
+
+**Status:** DOCUMENTED ONLY — permanent product rule  
+**Documentation:** [TITAN_AURA_AI_COMPANION_STANDARD.md](./TITAN_AURA_AI_COMPANION_STANDARD.md) · [TITAN_AURA_MODULE_COMPANION_MATRIX.md](./TITAN_AURA_MODULE_COMPANION_MATRIX.md)
+
+Every major module requires an AURA specialist behind the single AURA interface. No disconnected per-agent chat UIs.
+
+---
+
+## AURA-GROWTH-001 phased delivery (after OCC-001 + data foundations)
+
+| Phase | ID | Scope |
+|-------|-----|-------|
+| A | AURA-GROWTH-001A | Business baseline, targets and constraints |
+| B | AURA-GROWTH-001B | Annual, quarterly and 90-day growth plans |
+| C | AURA-GROWTH-001C | Revenue, profit and margin growth planning |
+| D | AURA-GROWTH-001D | Marketing, lead-source and conversion growth |
+| E | AURA-GROWTH-001E | Capacity, recruitment, training and fleet planning |
+| F | AURA-GROWTH-001F | Service, suburb, region and branch expansion planning |
+| G | AURA-GROWTH-001G | Growth initiative ownership and progress tracking |
+| H | AURA-GROWTH-001H | Weekly Growth Review and Monthly Owner Growth Plan |
+| I | AURA-GROWTH-001I | What-if scenarios and cash-aware growth modelling |
+| J | AURA-GROWTH-001J | Outcome measurement and approved growth learning |
+
+**Specialist agent:** EXEC-010 Business Strategist (existing — not duplicated)
+
+**Documentation:** [TITAN_AURA_GROWTH_PLANNER_SPECIFICATION.md](./TITAN_AURA_GROWTH_PLANNER_SPECIFICATION.md)
+
+**Prerequisites:** PRICEBOOK-001 · JOB-COST-001C · TITAN-BI-001 · DASH-002 · OCC-001 · verified financial/operational data
 
 ---
 
@@ -144,6 +177,7 @@ Execute in order after prior gates close. Production forbidden until explicit pr
 | [TITAN_GAP_CLOSURE_PLAN.md](./TITAN_GAP_CLOSURE_PLAN.md) | Gap tracking and enterprise priorities |
 | [TITAN_MASTER_COMPLETION_CHECKLIST.md](./TITAN_MASTER_COMPLETION_CHECKLIST.md) | Requirement-level status |
 | [TITAN_INTEGRATION_REGISTER.md](./TITAN_INTEGRATION_REGISTER.md) | Integration catalogue |
+| [TITAN_AURA_AI_COMPANION_STANDARD.md](./TITAN_AURA_AI_COMPANION_STANDARD.md) | AURA-FIRST-001 permanent rule |
 | [TITAN_AGENT_ACTIVATION_ROADMAP.md](./TITAN_AGENT_ACTIVATION_ROADMAP.md) | Agent workforce phases |
 
 ---
@@ -158,4 +192,4 @@ Execute in order after prior gates close. Production forbidden until explicit pr
 
 ---
 
-*Roadmap updated 2026-08-06 to register FNB-CASH-001. No code changes.*
+*Roadmap updated 2026-08-06 to register AURA-FIRST-001 and AURA-GROWTH-001. No code changes.*

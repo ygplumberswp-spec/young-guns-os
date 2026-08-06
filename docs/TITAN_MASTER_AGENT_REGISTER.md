@@ -200,7 +200,7 @@ Each table row below includes **implementation evidence status** and **activatio
 | EXEC-007 | Executive Command Agent | **Partial** | **Shadow mode** | executive | `packages/shared/src/agents.ts` → `executive` |
 | EXEC-008 | Daily Owner Briefing Agent | **Missing** | **Defined** | — | No executable agent implementation |
 | EXEC-009 | Business Coach Agent | **Missing** | **Defined** | — | No executable agent implementation |
-| EXEC-010 | Business Strategist Agent | **Missing** | **Defined** | — | No executable agent implementation |
+| EXEC-010 | Business Strategist Agent | **Missing** | **Defined** | — | AURA-GROWTH-001 product capability — growth planning, cash-aware expansion, initiative tracking. See [TITAN_AURA_GROWTH_PLANNER_SPECIFICATION.md](./TITAN_AURA_GROWTH_PLANNER_SPECIFICATION.md). Alias: Growth Strategy Agent, Growth Planner AI. |
 | EXEC-011 | Business Analyst Agent | **Missing** | **Defined** | — | No executable agent implementation |
 | EXEC-012 | Business Development Specialist | **Missing** | **Defined** | — | No executable agent implementation |
 | EXEC-013 | Market Research Agent | **Missing** | **Defined** | — | No executable agent implementation |

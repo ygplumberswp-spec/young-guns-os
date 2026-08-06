@@ -39,7 +39,11 @@
 
 **OCC-001 (2026-08-06):** Owner Command Center & AURA Business Coach — **documented only**, not implemented. Sequenced **after DASH-002** and **JOB-COST-001C** minimum. Extends **DASH-001** (approved). **Do not implement during active Xero proof.** See [TITAN_OWNER_COMMAND_CENTER_AURA_COACH_SPECIFICATION.md](./TITAN_OWNER_COMMAND_CENTER_AURA_COACH_SPECIFICATION.md), [TITAN_ROADMAP.md](./TITAN_ROADMAP.md).
 
-**FNB-CASH-001 (2026-08-06):** FNB Bank Feed & Cash Intelligence — **documented only**, not implemented. Phase 1 audit only until XERO-002 closes. **No FNB credentials or production connection.** See [TITAN_FNB_BANK_FEED_CASH_INTELLIGENCE_SPECIFICATION.md](./TITAN_FNB_BANK_FEED_CASH_INTELLIGENCE_SPECIFICATION.md), [TITAN_ROADMAP.md](./TITAN_ROADMAP.md).
+**FNB-CASH-001 (2026-08-06):** FNB Bank Feed & Cash Intelligence — **documented only**, not implemented. Phase 1 audit only until XERO-002 closes. See [TITAN_FNB_BANK_FEED_CASH_INTELLIGENCE_SPECIFICATION.md](./TITAN_FNB_BANK_FEED_CASH_INTELLIGENCE_SPECIFICATION.md).
+
+**AURA-FIRST-001 (2026-08-06):** TITAN AI Companion Standard — **permanent product rule**, documented only. Every major module requires an AURA specialist. See [TITAN_AURA_AI_COMPANION_STANDARD.md](./TITAN_AURA_AI_COMPANION_STANDARD.md), [TITAN_AURA_MODULE_COMPANION_MATRIX.md](./TITAN_AURA_MODULE_COMPANION_MATRIX.md).
+
+**AURA-GROWTH-001 (2026-08-06):** AURA Growth Planner — **documented only**, not implemented. Expands **EXEC-010** (no new agent). See [TITAN_AURA_GROWTH_PLANNER_SPECIFICATION.md](./TITAN_AURA_GROWTH_PLANNER_SPECIFICATION.md).
 
 **Integrations overview (2026-08-06):** Enterprise polish on PR #10 — unified cards, enterprise status lines, fine-details finishing. **Pending Owner approval** — not complete until signed off.
 
@@ -117,11 +121,27 @@ Execute in order. Do **not** skip gates. Production is forbidden until step 16 g
 
 Boolean columns use **YES** / **NO** / **—** (not applicable).
 
+### AI Companion field (AURA-FIRST-001)
+
+Major milestones must populate **AI Companion** with: agent ID · `NOT REQUIRED (reason)` · `PENDING`. Full matrix: [TITAN_AURA_MODULE_COMPANION_MATRIX.md](./TITAN_AURA_MODULE_COMPANION_MATRIX.md). No major module may be marked fully complete without a defined companion (or documented exemption).
+
+---
+
+## AI Companion register (AURA-FIRST-001)
+
+| ID | Requirement | AI Companion | Status |
+|----|-------------|--------------|--------|
+| AURA-FIRST | AURA-FIRST-001 AI Companion Standard | All modules — see matrix | DOCUMENTED ONLY |
+| AURA-GROWTH | AURA-GROWTH-001 Growth Planner | EXEC-010 Business Strategist | DOCUMENTED ONLY |
+| AG-001A–J | Growth Planner phases A–J | EXEC-010 | DOCUMENTED ONLY |
+
+Full matrix: [TITAN_AURA_MODULE_COMPANION_MATRIX.md](./TITAN_AURA_MODULE_COMPANION_MATRIX.md)
+
 ---
 
 ## Requirements register
 
-**Total requirement rows:** 260
+**Total requirement rows:** 273
 
 | ID | Area | Requirement | Status | Built locally | Tests passed | Real DB/provider connected | RBAC tested | Tenant isolation tested | Deployed to staging | Authenticated E2E passed | Desktop verified | Tablet verified | Mobile verified | Claude verified | Gemini verified | Owner verified | Production ready | Evidence | Commit | Migration/provider dependency | Blocker | Next action |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -376,6 +396,18 @@ Boolean columns use **YES** / **NO** / **—** (not applicable).
 | FNB-001B | bank | Read-only staging connection; deduplicated import | **DOCUMENTED ONLY** | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_FNB_BANK_FEED_ARCHITECTURE.md | 2026-08-06 | FNB-001A | Phase 2 — staging only |
 | FNB-001C | bank | Payment matching, expense suggestions, job-cost allocation | **DOCUMENTED ONLY** | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_FNB_BANK_FEED_CASH_INTELLIGENCE_SPECIFICATION.md §3–5 | 2026-08-06 | JOB-COST-001 | Phase 3 |
 | FNB-001D | bank | Cash forecasting and AURA financial intelligence | **DOCUMENTED ONLY** | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_FNB_BANK_FEED_CASH_INTELLIGENCE_SPECIFICATION.md §6–7 | 2026-08-06 | OCC-001 | Phase 4 |
+| AURA-FIRST | aura | AURA-FIRST-001 TITAN AI Companion Standard | **DOCUMENTED ONLY** | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_AURA_AI_COMPANION_STANDARD.md | 2026-08-06 |  | Permanent product rule |
+| AURA-GROWTH | aura | AURA-GROWTH-001 AURA Growth Planner | **DOCUMENTED ONLY** | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_AURA_GROWTH_PLANNER_SPECIFICATION.md | 2026-08-06 | OCC-001 | EXEC-010 expanded |
+| AG-001A | aura | Business baseline, targets and constraints | **DOCUMENTED ONLY** | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_AURA_GROWTH_PLANNER_SPECIFICATION.md | 2026-08-06 | AURA-GROWTH | Phase A |
+| AG-001B | aura | Annual, quarterly and 90-day growth plans | **DOCUMENTED ONLY** | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_AURA_GROWTH_PLANNER_SPECIFICATION.md | 2026-08-06 | AG-001A | Phase B |
+| AG-001C | aura | Revenue, profit and margin growth planning | **DOCUMENTED ONLY** | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_AURA_GROWTH_PLANNER_SPECIFICATION.md | 2026-08-06 | JOB-COST-001C | Phase C |
+| AG-001D | aura | Marketing, lead-source and conversion growth | **DOCUMENTED ONLY** | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_AURA_GROWTH_PLANNER_SPECIFICATION.md | 2026-08-06 | AG-001C | Phase D |
+| AG-001E | aura | Capacity, recruitment, training and fleet planning | **DOCUMENTED ONLY** | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_AURA_GROWTH_PLANNER_SPECIFICATION.md | 2026-08-06 | AG-001C | Phase E |
+| AG-001F | aura | Service, suburb, region and branch expansion planning | **DOCUMENTED ONLY** | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_AURA_GROWTH_PLANNER_SPECIFICATION.md | 2026-08-06 | AG-001C | Phase F |
+| AG-001G | aura | Growth initiative ownership and progress tracking | **DOCUMENTED ONLY** | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_AURA_GROWTH_PLANNER_SPECIFICATION.md | 2026-08-06 | AG-001B | Phase G |
+| AG-001H | aura | Weekly Growth Review and Monthly Owner Growth Plan | **DOCUMENTED ONLY** | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_AURA_GROWTH_PLANNER_SPECIFICATION.md | 2026-08-06 | AG-001G | Phase H |
+| AG-001I | aura | What-if scenarios and cash-aware growth modelling | **DOCUMENTED ONLY** | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_AURA_GROWTH_PLANNER_SPECIFICATION.md | 2026-08-06 | FNB-CASH-001 | Phase I |
+| AG-001J | aura | Outcome measurement and approved growth learning | **DOCUMENTED ONLY** | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_AURA_GROWTH_PLANNER_SPECIFICATION.md | 2026-08-06 | AG-001H | Phase J |
 | INT-011 | notifications | Push + in-app notification delivery | PARTIALLY IMPLEMENTED | YES | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | notification_intelligence agent scaffold | f8cc0c4 |  |  |  |
 | INT-012 | Gmail | Integrations hub truthful NOT IMPLEMENTED badge | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | IntegrationAutoSyncStatusPanel | f8cc0c4 |  |  |  |
 | INT-OVERVIEW-001 | integrations | Integrations overview + Dashboard Connections — enterprise status alignment | BUILT LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | PR #10; ConnectionsPanel; IntegrationOverviewCard | INT-UI-001B |  | Owner visual approval pending | Owner sign-off |
@@ -751,7 +783,8 @@ See [TITAN_ROADMAP.md](./TITAN_ROADMAP.md) for authoritative order:
 | 4 | **OCC-001** | Owner Command Center & AURA Business Coach |
 | 5 | **AI-FIN-DOC-001** | AI Financial Capture Engine (+ AP-DOC-001, EXP-REC-001, INV-PRICE-001) |
 | 6 | **FNB-CASH-001** | FNB Bank Feed & Cash Intelligence |
-| 7 | — | Full BrowserStack role and journey audit |
+| 7 | **AURA-GROWTH-001** | AURA Growth Planner (EXEC-010) |
+| 8 | — | Full BrowserStack role and journey audit |
 | 8 | — | Remaining integration and platform roadmap |
 | 9 | **UI-THEME-001** | App-wide visual finishing |
 | 10 | — | Young Guns controlled pilot |

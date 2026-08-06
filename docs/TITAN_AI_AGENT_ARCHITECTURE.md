@@ -18,6 +18,8 @@ This is the authoritative reference for:
 
 It exists so that agent completeness is judged against a written standard and real evidence, never against a page name, a nav entry, or a placeholder screen.
 
+**AURA-FIRST-001 (2026-08-06):** Every major business module requires an AURA specialist behind the single AURA interface. See [TITAN_AURA_AI_COMPANION_STANDARD.md](./TITAN_AURA_AI_COMPANION_STANDARD.md) and [TITAN_AURA_MODULE_COMPANION_MATRIX.md](./TITAN_AURA_MODULE_COMPANION_MATRIX.md).
+
 ---
 
 ## 2. Agent list — recorded
@@ -34,7 +36,7 @@ The Owner has provided the complete 77-agent list. It is recorded exactly as giv
 2. Business Strategy AI
 3. CEO Dashboard AI
 4. Business Analyst AI
-5. Growth Planner AI
+5. Growth Planner AI → **EXEC-010 Business Strategist Agent** — product capability **AURA-GROWTH-001**. See [TITAN_AURA_GROWTH_PLANNER_SPECIFICATION.md](./TITAN_AURA_GROWTH_PLANNER_SPECIFICATION.md).
 6. Decision Support AI
 
 **Finance Intelligence (8)**

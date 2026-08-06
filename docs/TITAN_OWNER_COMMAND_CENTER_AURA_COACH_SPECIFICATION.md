@@ -26,6 +26,7 @@ The **Owner Command Center** is the first screen after login and shows complete 
 | **PRICEBOOK-001** | Pricing intelligence for what-if and underpriced-service detection. |
 | **AI-FIN-DOC-001** | Approved financial capture feeds cash and cost truth. |
 | **EXEC-009** | Business Coach Agent — executable implementation of AURA coaching layer. |
+| **EXEC-010 / AURA-GROWTH-001** | Growth Planner — growth target, gap, initiatives in command center and CEO reviews. |
 
 **No duplicate metrics or formulas.** All financial figures use centrally versioned services (JOB-COST-001, finance APIs, Xero freshness).
 
@@ -40,7 +41,9 @@ The **Owner Command Center** is the first screen after login and shows complete 
 | [TITAN_JOB_COSTING_PROFIT_ENGINE_SPECIFICATION.md](./TITAN_JOB_COSTING_PROFIT_ENGINE_SPECIFICATION.md) | Profit and margin truth |
 | [TITAN_MASTER_PRICEBOOK_SPECIFICATION.md](./TITAN_MASTER_PRICEBOOK_SPECIFICATION.md) | Pricing truth |
 | [TITAN_MASTER_AGENT_REGISTER.md](./TITAN_MASTER_AGENT_REGISTER.md) | EXEC-009 Business Coach Agent |
-| [TITAN_AI_AGENT_ARCHITECTURE.md](./TITAN_AI_AGENT_ARCHITECTURE.md) | Agent governance |
+| [TITAN_AURA_GROWTH_PLANNER_SPECIFICATION.md](./TITAN_AURA_GROWTH_PLANNER_SPECIFICATION.md) | AURA-GROWTH-001 — EXEC-010 Growth Planner |
+| [TITAN_AURA_AI_COMPANION_STANDARD.md](./TITAN_AURA_AI_COMPANION_STANDARD.md) | AURA-FIRST-001 permanent rule |
+| [TITAN_AURA_MODULE_COMPANION_MATRIX.md](./TITAN_AURA_MODULE_COMPANION_MATRIX.md) | Module ↔ specialist matrix |
 | [TITAN_ROADMAP.md](./TITAN_ROADMAP.md) | Locked platform sequence |
 
 ---
@@ -89,6 +92,7 @@ Every morning AURA generates a personalised executive briefing for the Owner.
 4. Today's Biggest Opportunity
 5. Today's Biggest Risk
 6. Top 3 Actions (numbered, actionable)
+7. **Growth Planner summary** (AURA-GROWTH-001 / EXEC-010) — target, gap, top growth action, constraint
 
 ### Rules
 

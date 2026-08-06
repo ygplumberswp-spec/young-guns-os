@@ -2,7 +2,7 @@
 
 **Audit type:** READ-ONLY planning artifact — no new features  
 **Generated (UTC):** 2026-08-05  
-**Last updated (UTC):** 2026-08-06 — FNB-CASH-001 recorded (not implemented); XERO-002 Gate sequence remains active  
+**Last updated (UTC):** 2026-08-06 — AURA-FIRST-001 and AURA-GROWTH-001 recorded; XERO-002 Gate sequence remains active  
 **Base HEAD:** `cc0abbcde96902711fc0e141590144470abc5444` → task branch `cursor/titan-xero-002-p0-finance`  
 **Branch:** `cursor/titan-v1-integration`  
 **Scope:** Unmet **accepted** requirements only — deferred items at end  
@@ -258,6 +258,54 @@ Photo, PDF, spreadsheet or authorised email attachment → secure validation →
 **Cross-links:** BANK-IMPORT-001 · INT-010 · XERO-002 · XERO-003 · AI-FIN-DOC-001 · JOB-COST-001 · OCC-001
 
 **Governance:** Owner approves provider and security plan before live credentials. Stop gate after each phase with evidence package.
+
+---
+
+### AURA-FIRST-001 — TITAN AI Companion Standard (RECORD ONLY — permanent product rule)
+
+**Status:** Documented only. **Permanent product rule** — not optional for major modules.
+
+**Recorded (UTC):** 2026-08-06
+
+Every major business module must have an AURA specialist behind the single AURA interface. Operating model: Observe → Analyse → Explain → Recommend → Draft → Human Review → Human Approval → Execute → Measure → Learn.
+
+**Documentation:**
+
+- [TITAN_AURA_AI_COMPANION_STANDARD.md](./TITAN_AURA_AI_COMPANION_STANDARD.md)
+- [TITAN_AURA_MODULE_COMPANION_MATRIX.md](./TITAN_AURA_MODULE_COMPANION_MATRIX.md)
+
+**Checklist gate:** AI Companion field required on major milestones. No module fully complete without defined companion (or documented "not required" reason).
+
+---
+
+### AURA-GROWTH-001 — AURA Growth Planner (RECORD ONLY — do not implement during XERO-002)
+
+**Status:** Documented only. **Not implemented.**
+
+**Recorded (UTC):** 2026-08-06
+
+**Specialist agent:** **EXEC-010 Business Strategist Agent** (existing — **no new agent**, count remains **307**)
+
+**Placement:** After OCC-001 and verified data foundations (PRICEBOOK-001, JOB-COST-001C, TITAN-BI-001, DASH-002).
+
+| Phase | ID | Scope |
+|-------|-----|-------|
+| A | AURA-GROWTH-001A | Business baseline, targets and constraints |
+| B | AURA-GROWTH-001B | Annual, quarterly and 90-day growth plans |
+| C | AURA-GROWTH-001C | Revenue, profit and margin growth planning |
+| D | AURA-GROWTH-001D | Marketing, lead-source and conversion growth |
+| E | AURA-GROWTH-001E | Capacity, recruitment, training and fleet planning |
+| F | AURA-GROWTH-001F | Service, suburb, region and branch expansion planning |
+| G | AURA-GROWTH-001G | Growth initiative ownership and progress tracking |
+| H | AURA-GROWTH-001H | Weekly Growth Review and Monthly Owner Growth Plan |
+| I | AURA-GROWTH-001I | What-if scenarios and cash-aware growth modelling |
+| J | AURA-GROWTH-001J | Outcome measurement and approved growth learning |
+
+**Documentation:** [TITAN_AURA_GROWTH_PLANNER_SPECIFICATION.md](./TITAN_AURA_GROWTH_PLANNER_SPECIFICATION.md)
+
+**Cross-links:** EXEC-010 · OCC-001 · PRICEBOOK-001 · JOB-COST-001 · FNB-CASH-001 · DASH-001/002
+
+**Governance:** Cash-aware growth. No automatic price, spend, hire, or expansion execution.
 
 ---
 
