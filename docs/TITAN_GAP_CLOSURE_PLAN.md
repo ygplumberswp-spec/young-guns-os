@@ -2,9 +2,9 @@
 
 **Audit type:** READ-ONLY planning artifact — no new features  
 **Generated (UTC):** 2026-08-05  
-**Last updated (UTC):** 2026-08-06 — AGENT-001B restore approved 307-agent workforce scope  
-**Base HEAD:** `23debd9cfa90a05ab31f051b76d3e7a86708b14f`  
-**Branch:** `cursor/titan-agent-register-001`  
+**Last updated (UTC):** 2026-08-06 — XERO-001A integrate parked Xero audit evidence  
+**Base HEAD:** `1f32ed83ece1c1122a7c333aeb6b0d3c1cb3f10f`  
+**Branch:** `cursor/titan-v1-integration`  
 **Scope:** Unmet **accepted** requirements only — deferred items at end  
 
 ---
@@ -25,11 +25,43 @@
 
 **Facebook (J-6.7F14 deployed to staging):** Young Guns Plumbing - Cape Town connected and verified. Content permissions granted (publish, schedule, comments, reply, Page details, insights). Webhook fields **feed** + **mention** provider-confirmed; Meta dashboard sample delivery succeeded; no webhook error; polling fallback every 15 minutes. Genuine live Page event pending (Meta app unpublished). Messenger and Lead Ads outside scope. **Not production-complete.**
 
-**XERO-002:** **Parked** — no work started.
+**XERO-001 audit (2026-08-06):** [TITAN_XERO_FULL_AUDIT_REPORT.md](./TITAN_XERO_FULL_AUDIT_REPORT.md) — read-only staging recount complete. OAuth connected; read import partial; attachments provider-blocked; full chain **not proven**.
+
+**XERO-002:** **Parked** — no implementation work started. Next locked task after Owner approval of XERO-001 audit.
 
 **Owner approval gate:** Review [TITAN_MASTER_AGENT_REGISTER.md](./TITAN_MASTER_AGENT_REGISTER.md) (AGENT-001B restoration) before any agent activation work.
 
 **Universal integration gap:** Client-facing wizard must hide developer setup per [INT-UNIVERSAL-001](./TITAN_INTEGRATION_REGISTER.md).
+
+---
+
+## Xero gaps (XERO-001 audit 2026-08-06)
+
+**Report:** [TITAN_XERO_FULL_AUDIT_REPORT.md](./TITAN_XERO_FULL_AUDIT_REPORT.md)
+
+### P0 — blocks Young Guns internal pilot
+
+| ID | Action | Requirements |
+|----|--------|--------------|
+| X-P0-1 | Fix attachment stage / scope diagnosis | XERO-004 (audit programme) |
+| X-P0-2 | Owner authenticated quote→invoice→payment E2E proof | XERO-005, BC-024 |
+| X-P0-3 | Close 159 unmapped customers | XERO-009 |
+| X-P0-4 | Recover stale/running import job safely | XERO-002 (implementation — parked) |
+| X-P0-5 | Live-verify write approval execute path | XERO-008 |
+| X-P0-6 | Yoco payment link implementation | XERO-006, FIN-013 |
+| X-P0-7 | Reconciliation workflow proof | XERO-007 |
+
+### P1 — first 30 days
+
+| ID | Action |
+|----|--------|
+| X-P1-1 | Credit notes + tracking category import |
+| X-P1-2 | Configure scheduled Xero sync |
+| X-P1-3 | Persist granted scopes on connection row |
+| X-P1-4 | Playwright authenticated Xero journeys |
+| X-P1-5 | Reduce sync log failure noise / date parsing |
+
+**Next locked task after Owner approval:** XERO-002 implementation (see audit report §Q). Do not start without Owner gate.
 
 ---
 

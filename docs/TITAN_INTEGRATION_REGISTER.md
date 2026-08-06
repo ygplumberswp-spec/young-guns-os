@@ -3,7 +3,7 @@
 **Document ID:** INT register (includes INT-UNIVERSAL-001)  
 **Document type:** Permanent provider and integration source of truth — documentation only  
 **Generated (UTC):** 2026-08-06  
-**Last updated (UTC):** 2026-08-06 — AGENT-001B restore approved 307-agent workforce scope  
+**Last updated (UTC):** 2026-08-06 — XERO-001A integrate parked Xero audit evidence  
 **No provider calls made during register maintenance**  
 
 **Related documents:**
@@ -181,15 +181,48 @@ Facebook integration is **staging-complete for J-6.7F14** but **must not be mark
 
 ---
 
-## Xero
+## Xero (Young Guns — XERO-001 audit 2026-08-06)
 
 | Field | Value |
 |-------|-------|
 | Integration ID | `INT-XERO-001` |
-| Status | **Partial** |
-| Evidence | Xero settings UI, sync services, RBAC tests |
-| Blocker | OAuth on staging; two-way write Owner approval |
-| Agent impact | FIN-006 Xero Reconciliation — Partial |
+| Module | `/integrations/xero`, finance documents |
+| Tenant | Young Guns (`095aef76-fef5-4139-af37-a42f2d7e2faf`) |
+| Organisation | Young Guns Plumbing (`20176b90-a093-4da1-a04e-8ae616f89fef`) |
+| Connection status | **connected** (staging DB read-only) |
+| Last sync | `2026-08-05T16:55:39.411Z` |
+| Audit report | [TITAN_XERO_FULL_AUDIT_REPORT.md](./TITAN_XERO_FULL_AUDIT_REPORT.md) |
+
+### Imported counts (@ XERO-001 read-only recount)
+
+| Entity | TITAN count | Mapping count |
+|--------|------------:|--------------:|
+| Customers | 837 | 678 |
+| Quotes | 251 | 251 |
+| Invoices | 587 | 585 |
+| Payments | 512 | 511 |
+| Bank transactions | 3,111 | — |
+| Attachments | **0** | — |
+| Credit notes | 0 | — |
+| Accounts | 69 | — |
+
+### Verdict summary
+
+| Capability | Verdict |
+|------------|---------|
+| OAuth connection (staging) | Verified complete |
+| Read import (contacts/invoices/payments/bank) | Partial |
+| Attachments | Provider-blocked |
+| Two-way write (approval queue) | Implemented but not live-verified |
+| Full business chain | **Not proven** |
+| Internal pilot | Owner-action required |
+| Production | Not applicable (forbidden) |
+
+**Historical note:** Prior reports cited ~900 contacts / 585 invoices / 511 payments / 3,095 bank tx / 0 attachments — current recount is **close on invoices/payments/bank**, **attachments still 0**, contacts **678 mapped** (not 900).
+
+**XERO-002 remains parked** — implementation work blocked until Owner reopens after XERO-001 audit review.
+
+**Agent impact:** FIN-006 Xero Reconciliation — Partial · FIN-014 Xero Integration — Provider-blocked until XERO-002 un-parked.
 
 ---
 

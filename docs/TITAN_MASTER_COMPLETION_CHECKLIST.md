@@ -15,7 +15,9 @@
 | **Updated (UTC)** | 2026-08-06 |
 | **Agent register** | [TITAN_MASTER_AGENT_REGISTER.md](./TITAN_MASTER_AGENT_REGISTER.md) (AGENT-001) |
 | **Binding rule** | `TITAN_BINDING_ACCEPTANCE_RULE.md` (10 criteria) |
-| **Audit sources** | `TITAN_COMPLETE_APP_AUDIT.md`, `TITAN_ACCEPTANCE_REGISTER.md`, `TITAN_GAP_BACKLOG.md`, `TITAN_AURA_AGENT_COLLABORATION_AUDIT.md`, finance J-6.x phase evidence |
+| **Audit sources** | `TITAN_COMPLETE_APP_AUDIT.md`, `TITAN_ACCEPTANCE_REGISTER.md`, `TITAN_GAP_BACKLOG.md`, `TITAN_AURA_AGENT_COLLABORATION_AUDIT.md`, finance J-6.x phase evidence, [TITAN_XERO_FULL_AUDIT_REPORT.md](./TITAN_XERO_FULL_AUDIT_REPORT.md) (XERO-001) |
+
+**XERO-001 (2026-08-06):** Evidence-first read-only audit completed — see [TITAN_XERO_FULL_AUDIT_REPORT.md](./TITAN_XERO_FULL_AUDIT_REPORT.md). OAuth connected on staging; read import partial; attachments provider-blocked; full chain **not proven**. Do not mark Xero complete. **XERO-002 remains parked.**
 
 ---
 
