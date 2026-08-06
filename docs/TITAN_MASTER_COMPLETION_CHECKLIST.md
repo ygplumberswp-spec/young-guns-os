@@ -17,7 +17,9 @@
 | **Binding rule** | `TITAN_BINDING_ACCEPTANCE_RULE.md` (10 criteria) |
 | **Audit sources** | `TITAN_COMPLETE_APP_AUDIT.md`, `TITAN_ACCEPTANCE_REGISTER.md`, `TITAN_GAP_BACKLOG.md`, `TITAN_AURA_AGENT_COLLABORATION_AUDIT.md`, finance J-6.x phase evidence, [TITAN_XERO_FULL_AUDIT_REPORT.md](./TITAN_XERO_FULL_AUDIT_REPORT.md) (XERO-001) |
 
-**XERO-002 (2026-08-06):** P0 gap closure implemented — connection health, scope persistence, stale sync recovery, customer mapping, reconciliation model, finance UI. **Do not mark Xero complete.** Live proof: [TITAN_XERO_002_LIVE_PROOF_PLAN.md](./TITAN_XERO_002_LIVE_PROOF_PLAN.md).
+**XERO-002 (2026-08-06):** P0 gap closure implemented — connection health, scope persistence, stale sync recovery, customer mapping, reconciliation model, finance UI. **Do not mark Xero complete.** Live proof: [TITAN_XERO_002_LIVE_PROOF_PLAN.md](./TITAN_XERO_002_LIVE_PROOF_PLAN.md). **Do not begin live proof** until Integrations overview is approved and **PERF-001** + **DASH-001** are formally sequenced — see [Next enterprise priorities](#next-enterprise-priorities-record-only).
+
+**Integrations overview (2026-08-06):** Enterprise polish on PR #10 — unified cards, enterprise status lines, fine-details finishing. **Pending Owner approval** — not complete until signed off.
 
 ---
 
@@ -97,7 +99,7 @@ Boolean columns use **YES** / **NO** / **—** (not applicable).
 
 ## Requirements register
 
-**Total requirement rows:** 257
+**Total requirement rows:** 260
 
 | ID | Area | Requirement | Status | Built locally | Tests passed | Real DB/provider connected | RBAC tested | Tenant isolation tested | Deployed to staging | Authenticated E2E passed | Desktop verified | Tablet verified | Mobile verified | Claude verified | Gemini verified | Owner verified | Production ready | Evidence | Commit | Migration/provider dependency | Blocker | Next action |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -321,6 +323,9 @@ Boolean columns use **YES** / **NO** / **—** (not applicable).
 | INT-010 | bank | Open banking / bank feed integration | NOT FOUND | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  | Future scope |  |
 | INT-011 | notifications | Push + in-app notification delivery | PARTIALLY IMPLEMENTED | YES | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | notification_intelligence agent scaffold | f8cc0c4 |  |  |  |
 | INT-012 | Gmail | Integrations hub truthful NOT IMPLEMENTED badge | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | IntegrationAutoSyncStatusPanel | f8cc0c4 |  |  |  |
+| INT-OVERVIEW-001 | integrations | Integrations overview — enterprise connection status + unified card system + fine-details finishing | BUILT LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | PR #10; IntegrationOverviewCard | 2bdec03 |  | Owner visual approval pending | Owner sign-off on /integrations |
+| PERF-001 | performance | TITAN Performance Foundation — measurable speed audit and repair (load, navigation, API waterfalls, bundles, DB, caching, mobile) | NOT FOUND | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  |  |  | High-priority enterprise gap — record only | Owner sequences after INT-OVERVIEW-001 |
+| DASH-001 | dashboard | Owner Dashboard — Business Heartbeat redesign (financial truth, ops, fleet, leads, alerts, AURA exec recs; no irrelevant stock metrics) | PARTIALLY IMPLEMENTED | YES | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | Owner Command Centre routes | f8cc0c4 |  | Not enterprise-demo ready | Owner sequences after PERF-001 |
 | MKT-001 | marketing | Marketing consent + eligibility gates (POPIA) | DEPLOYED TO STAGING | YES | NO | NO | NO | NO | YES | NO | NO | NO | NO | YES | YES | NO | NO | UX-H/UX-026 | f8cc0c4 |  |  |  |
 | MKT-002 | marketing | Campaign execute — honest SEND_PATH_NOT_IMPLEMENTED | DEPLOYED TO STAGING | YES | NO | NO | NO | NO | YES | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  |  |  |
 | MKT-003 | marketing | Live email/SMS/WhatsApp campaign send | NOT FOUND | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  | Provider + Owner approval |  |
@@ -422,7 +427,10 @@ These phases are **documented and visible in backlog/plans** but must **not** be
 | **Reports & analytics** | KPI definitions on home; quote→cash reporting; BI warehouse useful wiring | FRZ-008, RPT-002–004 | **QUEUED** |
 | **Technician tracking** | Live en-route map; portal ETA; Cartrack Directions | UX-030, FLT-008, EXE-005 | **QUEUED** |
 | **Integrations live** | Cartrack, WhatsApp live send, Gmail backend, Google Calendar, Meta/Google ads | COM-001–008, INT-009 | **QUEUED** — credential gates |
-| **Xero complete sync** | Background import GO; two-way write verify; official numbering live | XERO-002, XERO-004 | **IN PROGRESS** — import running |
+| **Integrations overview enterprise polish** | Unified cards, status lines, sales-demo surface on `/integrations` | INT-OVERVIEW-001, PR #10 | **BUILT LOCALLY** — Owner approval pending |
+| **TITAN Performance Foundation** | Load, navigation, API waterfalls, bundles, DB indexes, caching, mobile perf + metrics | PERF-001 | **RECORDED — NOT STARTED** — high-priority; Owner sequences after Integrations approval |
+| **Owner Dashboard — Business Heartbeat** | Financial truth, ops heartbeat, fleet, leads, alerts, AURA exec recs; enterprise-demo ready | DASH-001 | **RECORDED — NOT STARTED** — high-priority; after PERF-001 (unless Owner approves parallel) |
+| **Xero live proof** | Controlled staging write E2E | XERO-002 | **BLOCKED** — do not begin until INT-OVERVIEW-001 + PERF-001 + DASH-001 formally sequenced |
 | **Pricebook YGP-001** | Tenant-scoped pricebook DB replacing temp YG constants | FIN-014, FIN-015 | **QUEUED** |
 | **Configuration Studio** | Draft / preview / version / rollback (FRZ-019) | TITAN_FRZ019_CONFIG_STUDIO_AUDIT.md | **QUEUED** |
 | **Domain events app-wide** | Materials, invoice, document, webhook → live UI invalidation | BIND-003, BIND-004 | **QUEUED** |
@@ -665,7 +673,26 @@ Items **J66A-001 … J66A-005** in the register above are targeted for completio
 | Staging release | **NO-GO** |
 | Production | **FORBIDDEN** |
 | Primary blockers | No staging credentials locally; migrations 0176–0178 not applied; Owner finance E2E not run; J-6.6A in progress |
-| Next action | Complete J-6.6A → commit → Owner approval → execute master sequence steps 3–16 |
+| Next action | Owner approve Integrations overview (PR #10) → formally sequence PERF-001 + DASH-001 → then Xero live proof |
+
+---
+
+## Next enterprise priorities (RECORD ONLY)
+
+**Do not implement during Integrations overview approval or before Owner formal sequencing.**
+
+After **INT-OVERVIEW-001** (Integrations overview) receives Owner approval, the next two separate high-priority tasks are:
+
+| Order | ID | Task | Status | Quality bar |
+|------:|-----|------|--------|-------------|
+| 1 | **PERF-001** | **TITAN Performance Foundation** | **RECORDED — NOT STARTED** | Enterprise Product Quality Gate + Fine Details & Finishing |
+| 2 | **DASH-001** | **Owner Dashboard — Business Heartbeat** | **RECORDED — NOT STARTED** | Same standard as Integrations overview |
+
+**PERF-001 scope (future):** Initial load, route navigation, API waterfalls, duplicate requests, oversized JS bundles, full-page reloads, slow DB queries, missing indexes, unpaginated lists, blocking provider calls, missing caching, repeated auth checks, layout-shift loading, blank screens, mobile/tablet slowness — with **measurable before/after evidence**.
+
+**DASH-001 scope (future):** Redesign around business heartbeat — financial truth (revenue/cash/profit, margin), jobs/dispatch, overdue work, quotes/sales follow-up, invoices/collections, technicians/duration, fleet, leads, recurring maintenance, integration alerts, AURA executive recommendations, source freshness and drill-down. **Exclude** irrelevant low-stock/supplier-order metrics for Young Guns Plumbing.
+
+**Sequencing gate:** **XERO-002 live proof must not begin** until Integrations overview is approved and PERF-001 + DASH-001 are formally sequenced by Owner.
 
 ---
 
@@ -686,4 +713,4 @@ Items **J66A-001 … J66A-005** in the register above are targeted for completio
 
 ---
 
-*Generated requirement count: **243** rows. Update this document when any row changes classification; do not maintain competing checklists elsewhere.*
+*Generated requirement count: **246** rows. Update this document when any row changes classification; do not maintain competing checklists elsewhere.*

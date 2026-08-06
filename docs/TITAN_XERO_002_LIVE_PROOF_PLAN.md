@@ -1,6 +1,7 @@
 # TITAN XERO-002 — Controlled Live-Write Proof Plan (Owner Gate)
 
 **Status:** PREPARED — **DO NOT EXECUTE** until Owner explicitly approves  
+**Sequencing (2026-08-06):** **Blocked** until (1) Integrations overview (INT-OVERVIEW-001 / PR #10) receives Owner approval, and (2) **PERF-001** and **DASH-001** are formally sequenced by Owner. See [TITAN_GAP_CLOSURE_PLAN.md](./TITAN_GAP_CLOSURE_PLAN.md#next-enterprise-priorities-record-only--do-not-implement-yet).
 **Prepared (UTC):** 2026-08-06  
 **Environment:** Staging only  
 **Staging API:** https://young-guns-os-staging.up.railway.app  

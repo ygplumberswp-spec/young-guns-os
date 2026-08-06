@@ -2,7 +2,7 @@
 
 **Audit type:** READ-ONLY planning artifact — no new features  
 **Generated (UTC):** 2026-08-05  
-**Last updated (UTC):** 2026-08-06 — XERO-002 P0 finance gap closure (implementation complete; live proof gated)  
+**Last updated (UTC):** 2026-08-06 — Integrations overview enterprise polish complete (PR #10 pending Owner approval); next enterprise priorities recorded below  
 **Base HEAD:** `cc0abbcde96902711fc0e141590144470abc5444` → task branch `cursor/titan-xero-002-p0-finance`  
 **Branch:** `cursor/titan-v1-integration`  
 **Scope:** Unmet **accepted** requirements only — deferred items at end  
@@ -29,9 +29,74 @@
 
 **XERO-002 (2026-08-06):** Implementation complete on task branch — connection health, scope persistence, stale-job recovery, customer mapping dry-run, reconciliation model, finance UI panels. **Live proof NOT executed.** See [TITAN_XERO_002_LIVE_PROOF_PLAN.md](./TITAN_XERO_002_LIVE_PROOF_PLAN.md).
 
-**Owner approval gate:** Approve **XERO-002 LIVE PROOF** plan before any provider write on staging.
+**Integrations overview (2026-08-06):** Enterprise connection status + unified card system + fine-details finishing pass on branch `cursor/integrations-ui-polish-enterprise-status-998f` ([PR #10](https://github.com/ygplumberswp-spec/young-guns-os/pull/10)). **Pending Owner approval** — do not treat as complete until visual sign-off.
+
+**Owner approval gate (sequencing):** Do **not** begin **XERO-002 LIVE PROOF** until the Integrations overview is approved and the next two enterprise priorities below are **formally sequenced** by Owner. See [Next enterprise priorities](#next-enterprise-priorities-record-only--do-not-implement-yet).
 
 **Universal integration gap:** Client-facing wizard must hide developer setup per [INT-UNIVERSAL-001](./TITAN_INTEGRATION_REGISTER.md).
+
+---
+
+## Next enterprise priorities (RECORD ONLY — do not implement yet)
+
+**Status:** High-priority enterprise gaps — **documented only**. No implementation during Integrations overview or before Owner formal sequencing.
+
+**Formal sequence after Integrations overview approval:**
+
+| Order | Task ID | Name | Gate |
+|------:|---------|------|------|
+| 0 | INT-OVERVIEW-001 | Integrations overview enterprise polish | **Pending Owner approval** (PR #10) |
+| 1 | **PERF-001** | **TITAN Performance Foundation** | Owner sequences after step 0 |
+| 2 | **DASH-001** | **Owner Dashboard — Business Heartbeat** | Owner sequences after PERF-001 (or parallel if explicitly approved) |
+| 3 | XERO-002 | Xero live proof (Owner gate) | **Blocked** until steps 0–2 formally sequenced |
+
+Both tasks must meet the **Enterprise Product Quality Gate** and **Fine Details & Finishing** standard applied to the Integrations overview.
+
+### PERF-001 — TITAN Performance Foundation
+
+**Gap:** Current page loading is too slow and feels unfinished. Actual and perceived speed must improve with measurable evidence.
+
+**Future audit and repair scope (not started):**
+
+- Initial application load
+- Route-to-route navigation
+- API request waterfalls
+- Duplicate requests
+- Oversized JavaScript bundles
+- Unnecessary full-page reloads
+- Slow database queries
+- Missing indexes
+- Large unpaginated lists
+- Blocking provider calls
+- Missing caching
+- Repeated authentication checks
+- Loading-state layout shifts
+- Blank screens
+- Slow mobile and tablet performance
+
+**Deliverable:** Measurable performance evidence (before/after metrics) plus improved perceived and actual speed.
+
+### DASH-001 — Owner Dashboard — Business Heartbeat
+
+**Gap:** Current Owner Dashboard has significant visual, information and usability gaps — **not enterprise-demo ready**.
+
+**Future redesign scope (not started)** — centre on business heartbeat:
+
+- Financial truth (revenue vs cash vs profit; monthly profit and margin)
+- Jobs and dispatch; overdue operational work
+- Quotes and sales follow-up
+- Invoices and collections
+- Technicians and job duration
+- Fleet
+- Leads
+- Recurring maintenance
+- System and integration alerts
+- AURA executive recommendations
+- Source freshness and drill-down evidence
+
+**Explicit exclusions:** Do not add irrelevant low-stock or supplier-order metrics where they do not apply to Young Guns Plumbing.
+
+**Quality bar:** Same Enterprise Product Quality Gate + Fine Details & Finishing as Integrations overview.
 
 ---
 
@@ -61,7 +126,7 @@
 | X-P1-4 | Playwright authenticated Xero journeys |
 | X-P1-5 | Reduce sync log failure noise / date parsing |
 
-**Next locked task:** **XERO-002 LIVE PROOF** (Owner gate) — see [TITAN_XERO_002_LIVE_PROOF_PLAN.md](./TITAN_XERO_002_LIVE_PROOF_PLAN.md). Do not start unrelated integrations.
+**Next locked task:** **PERF-001 — TITAN Performance Foundation** (after Integrations overview Owner approval). **XERO-002 LIVE PROOF remains blocked** until PERF-001 and DASH-001 are formally sequenced — see [TITAN_XERO_002_LIVE_PROOF_PLAN.md](./TITAN_XERO_002_LIVE_PROOF_PLAN.md).
 
 ---
 
@@ -165,6 +230,7 @@
 
 | Phase | Focus | Type |
 |-------|-------|------|
+| **0** | **Next enterprise priorities (PERF-001, DASH-001)** | **Recorded — Owner sequencing required** |
 | 1 | Staging verification | Verification only |
 | 2 | Security & data integrity | Implementation + verify |
 | 3 | E2E business chain | Implementation + verify |
@@ -172,4 +238,4 @@
 | 5 | Partial modules | Implementation |
 | 6 | Deferred | Owner approval gates |
 
-**Next recommended action:** Owner review this audit → approve Phase 1 staging verification sprint (J-6.7G).
+**Next recommended action:** Owner approve Integrations overview (PR #10) → formally sequence **PERF-001** then **DASH-001** → then approve Xero live proof.
