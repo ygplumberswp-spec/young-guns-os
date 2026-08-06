@@ -1,0 +1,1540 @@
+{
+  "agent001RoleCount": 191,
+  "permanentAgentCount": 307,
+  "decisionsSummary": {
+    "match": 147,
+    "alias": 44,
+    "duplicate": 0,
+    "family": 0
+  },
+  "rows": [
+    {
+      "agent001Index": 1,
+      "agent001Role": "AURA (Central Executive Coordinator)",
+      "permanentAgentId": "AURA-001",
+      "permanentAgentName": "AURA Central Intelligence",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID AURA-001"
+    },
+    {
+      "agent001Index": 2,
+      "agent001Role": "Chief Executive Agent",
+      "permanentAgentId": "EXEC-001",
+      "permanentAgentName": "Chief Executive Officer Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID EXEC-001"
+    },
+    {
+      "agent001Index": 3,
+      "agent001Role": "Chief Operating Agent",
+      "permanentAgentId": "EXEC-002",
+      "permanentAgentName": "Chief Operating Officer Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID EXEC-002"
+    },
+    {
+      "agent001Index": 4,
+      "agent001Role": "Chief Financial Agent",
+      "permanentAgentId": "EXEC-003",
+      "permanentAgentName": "Chief Financial Officer Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID EXEC-003"
+    },
+    {
+      "agent001Index": 5,
+      "agent001Role": "Chief Technology Agent",
+      "permanentAgentId": "EXEC-004",
+      "permanentAgentName": "Chief Technology Officer Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID EXEC-004"
+    },
+    {
+      "agent001Index": 6,
+      "agent001Role": "Chief Product Agent",
+      "permanentAgentId": "EXEC-005",
+      "permanentAgentName": "Chief Product Officer Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID EXEC-005"
+    },
+    {
+      "agent001Index": 7,
+      "agent001Role": "Chief Data Agent",
+      "permanentAgentId": "EXEC-006",
+      "permanentAgentName": "Chief Data Officer Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID EXEC-006"
+    },
+    {
+      "agent001Index": 8,
+      "agent001Role": "Executive Strategy Agent",
+      "permanentAgentId": "EXEC-007",
+      "permanentAgentName": "Executive Command Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID EXEC-007"
+    },
+    {
+      "agent001Index": 9,
+      "agent001Role": "Business Coach Agent",
+      "permanentAgentId": "EXEC-009",
+      "permanentAgentName": "Business Coach Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID EXEC-009"
+    },
+    {
+      "agent001Index": 10,
+      "agent001Role": "Business Analyst Agent",
+      "permanentAgentId": "EXEC-011",
+      "permanentAgentName": "Business Analyst Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID EXEC-011"
+    },
+    {
+      "agent001Index": 11,
+      "agent001Role": "Growth Strategy Agent",
+      "permanentAgentId": "EXEC-010",
+      "permanentAgentName": "Business Strategist Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID EXEC-010"
+    },
+    {
+      "agent001Index": 12,
+      "agent001Role": "Risk and Decision Support Agent",
+      "permanentAgentId": "EXEC-016",
+      "permanentAgentName": "Risk and Opportunity Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID EXEC-016"
+    },
+    {
+      "agent001Index": 13,
+      "agent001Role": "Chartered Accountant-level Finance Agent",
+      "permanentAgentId": "FIN-001",
+      "permanentAgentName": "Chartered Accountant-Level Finance Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID FIN-001"
+    },
+    {
+      "agent001Index": 14,
+      "agent001Role": "Financial Controller Agent",
+      "permanentAgentId": "FIN-004",
+      "permanentAgentName": "Financial Controller Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID FIN-004"
+    },
+    {
+      "agent001Index": 15,
+      "agent001Role": "Management Accountant Agent",
+      "permanentAgentId": "FIN-002",
+      "permanentAgentName": "Management Accountant Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID FIN-002"
+    },
+    {
+      "agent001Index": 16,
+      "agent001Role": "Bookkeeper Agent",
+      "permanentAgentId": "FIN-003",
+      "permanentAgentName": "Bookkeeper Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID FIN-003"
+    },
+    {
+      "agent001Index": 17,
+      "agent001Role": "Accounts Receivable Agent",
+      "permanentAgentId": "FIN-010",
+      "permanentAgentName": "Invoice Follow-Up Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID FIN-010"
+    },
+    {
+      "agent001Index": 18,
+      "agent001Role": "Accounts Payable Agent",
+      "permanentAgentId": "FIN-003",
+      "permanentAgentName": "Bookkeeper Agent",
+      "decision": "Alias",
+      "reason": "Alias of Bookkeeper Agent → same permanent ID FIN-003"
+    },
+    {
+      "agent001Index": 19,
+      "agent001Role": "Cashflow Forecasting Agent",
+      "permanentAgentId": "FIN-007",
+      "permanentAgentName": "Cash-Flow Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID FIN-007"
+    },
+    {
+      "agent001Index": 20,
+      "agent001Role": "Budgeting Agent",
+      "permanentAgentId": "FIN-009",
+      "permanentAgentName": "Budgeting Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID FIN-009"
+    },
+    {
+      "agent001Index": 21,
+      "agent001Role": "Profitability Agent",
+      "permanentAgentId": "FIN-013",
+      "permanentAgentName": "Job Costing and Margin Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID FIN-013"
+    },
+    {
+      "agent001Index": 22,
+      "agent001Role": "Pricing and Margin Protection Agent",
+      "permanentAgentId": "FIN-017",
+      "permanentAgentName": "Pricing Director Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID FIN-017"
+    },
+    {
+      "agent001Index": 23,
+      "agent001Role": "Tax/VAT Support Agent",
+      "permanentAgentId": "FIN-005",
+      "permanentAgentName": "Tax and Compliance Preparation Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID FIN-005"
+    },
+    {
+      "agent001Index": 24,
+      "agent001Role": "Payroll Agent",
+      "permanentAgentId": "FIN-014",
+      "permanentAgentName": "Payroll Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID FIN-014"
+    },
+    {
+      "agent001Index": 25,
+      "agent001Role": "Bank Reconciliation Agent",
+      "permanentAgentId": "FIN-006",
+      "permanentAgentName": "Xero Reconciliation Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID FIN-006"
+    },
+    {
+      "agent001Index": 26,
+      "agent001Role": "Xero Integration Agent",
+      "permanentAgentId": "FIN-006",
+      "permanentAgentName": "Xero Reconciliation Agent",
+      "decision": "Alias",
+      "reason": "Alias of Bank Reconciliation Agent → same permanent ID FIN-006"
+    },
+    {
+      "agent001Index": 27,
+      "agent001Role": "Yoco Reconciliation Agent",
+      "permanentAgentId": "FIN-006",
+      "permanentAgentName": "Xero Reconciliation Agent",
+      "decision": "Alias",
+      "reason": "Alias of Bank Reconciliation Agent → same permanent ID FIN-006"
+    },
+    {
+      "agent001Index": 28,
+      "agent001Role": "Debt Collection and Follow-up Agent",
+      "permanentAgentId": "FIN-010",
+      "permanentAgentName": "Invoice Follow-Up Agent",
+      "decision": "Alias",
+      "reason": "Alias of Accounts Receivable Agent → same permanent ID FIN-010"
+    },
+    {
+      "agent001Index": 29,
+      "agent001Role": "Financial Audit Agent",
+      "permanentAgentId": "FIN-015",
+      "permanentAgentName": "Fraud and Financial Anomaly Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID FIN-015"
+    },
+    {
+      "agent001Index": 30,
+      "agent001Role": "Sales Director Agent",
+      "permanentAgentId": "CRM-001",
+      "permanentAgentName": "Sales Director Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID CRM-001"
+    },
+    {
+      "agent001Index": 31,
+      "agent001Role": "Lead Qualification Agent",
+      "permanentAgentId": "CRM-003",
+      "permanentAgentName": "Lead Qualification Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID CRM-003"
+    },
+    {
+      "agent001Index": 32,
+      "agent001Role": "Sales Follow-up Agent",
+      "permanentAgentId": "CRM-004",
+      "permanentAgentName": "Sales Follow-Up Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID CRM-004"
+    },
+    {
+      "agent001Index": 33,
+      "agent001Role": "Non-pushy Lead Hunting Agent",
+      "permanentAgentId": "CRM-002",
+      "permanentAgentName": "Sales Specialist Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID CRM-002"
+    },
+    {
+      "agent001Index": 34,
+      "agent001Role": "Objection Handling Agent",
+      "permanentAgentId": "CRM-006",
+      "permanentAgentName": "Objection Handling Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID CRM-006"
+    },
+    {
+      "agent001Index": 35,
+      "agent001Role": "Negotiation Support Agent",
+      "permanentAgentId": "CRM-007",
+      "permanentAgentName": "Commercial Negotiation Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID CRM-007"
+    },
+    {
+      "agent001Index": 36,
+      "agent001Role": "Proposal Agent",
+      "permanentAgentId": "CRM-007",
+      "permanentAgentName": "Commercial Negotiation Agent",
+      "decision": "Alias",
+      "reason": "Alias of Negotiation Support Agent → same permanent ID CRM-007"
+    },
+    {
+      "agent001Index": 37,
+      "agent001Role": "Quote Follow-up Agent",
+      "permanentAgentId": "CRM-005",
+      "permanentAgentName": "Quote Follow-Up Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID CRM-005"
+    },
+    {
+      "agent001Index": 38,
+      "agent001Role": "Customer Retention Agent",
+      "permanentAgentId": "CRM-016",
+      "permanentAgentName": "Customer Retention Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID CRM-016"
+    },
+    {
+      "agent001Index": 39,
+      "agent001Role": "Service Agreement Agent",
+      "permanentAgentId": "CRM-020",
+      "permanentAgentName": "Membership/HomeShield Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID CRM-020"
+    },
+    {
+      "agent001Index": 40,
+      "agent001Role": "Business Development Agent",
+      "permanentAgentId": "EXEC-012",
+      "permanentAgentName": "Business Development Specialist",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID EXEC-012"
+    },
+    {
+      "agent001Index": 41,
+      "agent001Role": "Commercial Tender Agent",
+      "permanentAgentId": "QS-006",
+      "permanentAgentName": "Tender and Commercial Quote Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID QS-006"
+    },
+    {
+      "agent001Index": 42,
+      "agent001Role": "Partnership Agent",
+      "permanentAgentId": "SaaS-005",
+      "permanentAgentName": "Partnerships Director Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID SaaS-005"
+    },
+    {
+      "agent001Index": 43,
+      "agent001Role": "Competitor Research Agent",
+      "permanentAgentId": "EXEC-014",
+      "permanentAgentName": "Competitor Intelligence Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID EXEC-014"
+    },
+    {
+      "agent001Index": 44,
+      "agent001Role": "Market Opportunity Agent",
+      "permanentAgentId": "EXEC-014",
+      "permanentAgentName": "Competitor Intelligence Agent",
+      "decision": "Alias",
+      "reason": "Alias of Competitor Research Agent → same permanent ID EXEC-014"
+    },
+    {
+      "agent001Index": 45,
+      "agent001Role": "Chief Marketing Agent",
+      "permanentAgentId": "MKT-001",
+      "permanentAgentName": "Marketing Director Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID MKT-001"
+    },
+    {
+      "agent001Index": 46,
+      "agent001Role": "Marketing Strategy Agent",
+      "permanentAgentId": "MKT-010",
+      "permanentAgentName": "Content Strategy Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID MKT-010"
+    },
+    {
+      "agent001Index": 47,
+      "agent001Role": "Campaign Planning Agent",
+      "permanentAgentId": "MKT-019",
+      "permanentAgentName": "Campaign Planning Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID MKT-019"
+    },
+    {
+      "agent001Index": 48,
+      "agent001Role": "Social Media Agent",
+      "permanentAgentId": "MKT-007",
+      "permanentAgentName": "Social Media Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID MKT-007"
+    },
+    {
+      "agent001Index": 49,
+      "agent001Role": "Facebook Agent",
+      "permanentAgentId": "MKT-007",
+      "permanentAgentName": "Social Media Agent",
+      "decision": "Alias",
+      "reason": "Alias of Social Media Agent → same permanent ID MKT-007"
+    },
+    {
+      "agent001Index": 50,
+      "agent001Role": "Instagram Agent",
+      "permanentAgentId": "MKT-007",
+      "permanentAgentName": "Social Media Agent",
+      "decision": "Alias",
+      "reason": "Alias of Social Media Agent → same permanent ID MKT-007"
+    },
+    {
+      "agent001Index": 51,
+      "agent001Role": "TikTok Agent",
+      "permanentAgentId": "MKT-007",
+      "permanentAgentName": "Social Media Agent",
+      "decision": "Alias",
+      "reason": "Alias of Social Media Agent → same permanent ID MKT-007"
+    },
+    {
+      "agent001Index": 52,
+      "agent001Role": "LinkedIn Agent",
+      "permanentAgentId": "MKT-007",
+      "permanentAgentName": "Social Media Agent",
+      "decision": "Alias",
+      "reason": "Alias of Social Media Agent → same permanent ID MKT-007"
+    },
+    {
+      "agent001Index": 53,
+      "agent001Role": "YouTube Agent",
+      "permanentAgentId": "MKT-007",
+      "permanentAgentName": "Social Media Agent",
+      "decision": "Alias",
+      "reason": "Alias of Social Media Agent → same permanent ID MKT-007"
+    },
+    {
+      "agent001Index": 54,
+      "agent001Role": "Google Business Profile Agent",
+      "permanentAgentId": "MKT-006",
+      "permanentAgentName": "Google Business Profile Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID MKT-006"
+    },
+    {
+      "agent001Index": 55,
+      "agent001Role": "Content Writing Agent",
+      "permanentAgentId": "MKT-011",
+      "permanentAgentName": "Content Calendar Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID MKT-011"
+    },
+    {
+      "agent001Index": 56,
+      "agent001Role": "Graphic Design Agent",
+      "permanentAgentId": "CRE-002",
+      "permanentAgentName": "Senior Graphic Designer Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID CRE-002"
+    },
+    {
+      "agent001Index": 57,
+      "agent001Role": "Video Production Agent",
+      "permanentAgentId": "VID-005",
+      "permanentAgentName": "Short-Form Video Creator Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID VID-005"
+    },
+    {
+      "agent001Index": 58,
+      "agent001Role": "Video Quality-Control Agent",
+      "permanentAgentId": "VID-017",
+      "permanentAgentName": "Video Quality Controller Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID VID-017"
+    },
+    {
+      "agent001Index": 59,
+      "agent001Role": "Brand Compliance Agent",
+      "permanentAgentId": "CRE-011",
+      "permanentAgentName": "Brand Consistency Reviewer Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID CRE-011"
+    },
+    {
+      "agent001Index": 60,
+      "agent001Role": "Reputation and Reviews Agent",
+      "permanentAgentId": "CRM-018",
+      "permanentAgentName": "Review and Referral Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID CRM-018"
+    },
+    {
+      "agent001Index": 61,
+      "agent001Role": "SEO Agent",
+      "permanentAgentId": "MKT-005",
+      "permanentAgentName": "Local SEO Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID MKT-005"
+    },
+    {
+      "agent001Index": 62,
+      "agent001Role": "Website Content Agent",
+      "permanentAgentId": "MKT-014",
+      "permanentAgentName": "SEO Content Writer",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID MKT-014"
+    },
+    {
+      "agent001Index": 63,
+      "agent001Role": "Email Marketing Agent",
+      "permanentAgentId": "MKT-016",
+      "permanentAgentName": "Email Campaign Writer",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID MKT-016"
+    },
+    {
+      "agent001Index": 64,
+      "agent001Role": "Trend Hunter Agent",
+      "permanentAgentId": "MKT-024",
+      "permanentAgentName": "Industry Trend Analyst",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID MKT-024"
+    },
+    {
+      "agent001Index": 65,
+      "agent001Role": "Marketing Analytics Agent",
+      "permanentAgentId": "MKT-003",
+      "permanentAgentName": "Marketing Analytics Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID MKT-003"
+    },
+    {
+      "agent001Index": 66,
+      "agent001Role": "Media Library Agent",
+      "permanentAgentId": "MKT-008",
+      "permanentAgentName": "Community Management Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID MKT-008"
+    },
+    {
+      "agent001Index": 67,
+      "agent001Role": "Operations Manager Agent",
+      "permanentAgentId": "OPS-001",
+      "permanentAgentName": "Operations Manager Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID OPS-001"
+    },
+    {
+      "agent001Index": 68,
+      "agent001Role": "Dispatch Agent",
+      "permanentAgentId": "OPS-002",
+      "permanentAgentName": "Dispatch Coordinator Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID OPS-002"
+    },
+    {
+      "agent001Index": 69,
+      "agent001Role": "Scheduling Agent",
+      "permanentAgentId": "OPS-003",
+      "permanentAgentName": "Scheduling Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID OPS-003"
+    },
+    {
+      "agent001Index": 70,
+      "agent001Role": "Job Coordinator Agent",
+      "permanentAgentId": "OPS-004",
+      "permanentAgentName": "Emergency Triage Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID OPS-004"
+    },
+    {
+      "agent001Index": 71,
+      "agent001Role": "Technician Support Agent",
+      "permanentAgentId": "OPS-010",
+      "permanentAgentName": "Field Execution Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID OPS-010"
+    },
+    {
+      "agent001Index": 72,
+      "agent001Role": "Job Progress Agent",
+      "permanentAgentId": "OPS-006",
+      "permanentAgentName": "Job Progress Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID OPS-006"
+    },
+    {
+      "agent001Index": 73,
+      "agent001Role": "Job Timer Agent",
+      "permanentAgentId": "OPS-006",
+      "permanentAgentName": "Job Progress Agent",
+      "decision": "Alias",
+      "reason": "Alias of Job Progress Agent → same permanent ID OPS-006"
+    },
+    {
+      "agent001Index": 74,
+      "agent001Role": "Route Optimisation Agent",
+      "permanentAgentId": "FLT-011",
+      "permanentAgentName": "Route Efficiency Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID FLT-011"
+    },
+    {
+      "agent001Index": 75,
+      "agent001Role": "Google Maps Agent",
+      "permanentAgentId": "FLT-002",
+      "permanentAgentName": "Google Maps and Routing Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID FLT-002"
+    },
+    {
+      "agent001Index": 76,
+      "agent001Role": "Fleet Coordination Agent",
+      "permanentAgentId": "FLT-001",
+      "permanentAgentName": "Fleet Manager Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID FLT-001"
+    },
+    {
+      "agent001Index": 77,
+      "agent001Role": "Emergency Response Agent",
+      "permanentAgentId": "OPS-004",
+      "permanentAgentName": "Emergency Triage Agent",
+      "decision": "Alias",
+      "reason": "Alias of Job Coordinator Agent → same permanent ID OPS-004"
+    },
+    {
+      "agent001Index": 78,
+      "agent001Role": "Recurring Maintenance Agent",
+      "permanentAgentId": "OPS-008",
+      "permanentAgentName": "Recurring Maintenance Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID OPS-008"
+    },
+    {
+      "agent001Index": 79,
+      "agent001Role": "Service Agreement Operations Agent",
+      "permanentAgentId": "OPS-008",
+      "permanentAgentName": "Recurring Maintenance Agent",
+      "decision": "Alias",
+      "reason": "Alias of Recurring Maintenance Agent → same permanent ID OPS-008"
+    },
+    {
+      "agent001Index": 80,
+      "agent001Role": "Quality Control Agent",
+      "permanentAgentId": "OPS-005",
+      "permanentAgentName": "Capacity Planning Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID OPS-005"
+    },
+    {
+      "agent001Index": 81,
+      "agent001Role": "Customer ETA Agent",
+      "permanentAgentId": "OPS-009",
+      "permanentAgentName": "Technician ETA Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID OPS-009"
+    },
+    {
+      "agent001Index": 82,
+      "agent001Role": "Job Completion Agent",
+      "permanentAgentId": "OPS-012",
+      "permanentAgentName": "Job Completion Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID OPS-012"
+    },
+    {
+      "agent001Index": 83,
+      "agent001Role": "Follow-up and Callback Agent",
+      "permanentAgentId": "CRM-004",
+      "permanentAgentName": "Sales Follow-Up Agent",
+      "decision": "Alias",
+      "reason": "Alias of Sales Follow-up Agent → same permanent ID CRM-004"
+    },
+    {
+      "agent001Index": 84,
+      "agent001Role": "Plumbing Technical Advisor Agent",
+      "permanentAgentId": "QS-003",
+      "permanentAgentName": "Plumbing Estimator Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID QS-003"
+    },
+    {
+      "agent001Index": 85,
+      "agent001Role": "SANS Compliance Agent",
+      "permanentAgentId": "LEG-007",
+      "permanentAgentName": "Plumbing and Trade Compliance Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID LEG-007"
+    },
+    {
+      "agent001Index": 86,
+      "agent001Role": "Certificate of Compliance Agent",
+      "permanentAgentId": "LEG-012",
+      "permanentAgentName": "Municipal Permit and Approval Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID LEG-012"
+    },
+    {
+      "agent001Index": 87,
+      "agent001Role": "Geyser Compliance Agent",
+      "permanentAgentId": "LEG-007",
+      "permanentAgentName": "Plumbing and Trade Compliance Agent",
+      "decision": "Alias",
+      "reason": "Alias of SANS Compliance Agent → same permanent ID LEG-007"
+    },
+    {
+      "agent001Index": 88,
+      "agent001Role": "Drainage Diagnostic Agent",
+      "permanentAgentId": "QS-003",
+      "permanentAgentName": "Plumbing Estimator Agent",
+      "decision": "Alias",
+      "reason": "Alias of Plumbing Technical Advisor Agent → same permanent ID QS-003"
+    },
+    {
+      "agent001Index": 89,
+      "agent001Role": "CCTV Inspection Agent",
+      "permanentAgentId": "QS-008",
+      "permanentAgentName": "Cost Engineering Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID QS-008"
+    },
+    {
+      "agent001Index": 90,
+      "agent001Role": "Leak Detection Agent",
+      "permanentAgentId": "QS-003",
+      "permanentAgentName": "Plumbing Estimator Agent",
+      "decision": "Alias",
+      "reason": "Alias of Plumbing Technical Advisor Agent → same permanent ID QS-003"
+    },
+    {
+      "agent001Index": 91,
+      "agent001Role": "Bathroom Renovation Agent",
+      "permanentAgentId": "QS-003",
+      "permanentAgentName": "Plumbing Estimator Agent",
+      "decision": "Alias",
+      "reason": "Alias of Plumbing Technical Advisor Agent → same permanent ID QS-003"
+    },
+    {
+      "agent001Index": 92,
+      "agent001Role": "Construction Plumbing Agent",
+      "permanentAgentId": "QS-003",
+      "permanentAgentName": "Plumbing Estimator Agent",
+      "decision": "Alias",
+      "reason": "Alias of Plumbing Technical Advisor Agent → same permanent ID QS-003"
+    },
+    {
+      "agent001Index": 93,
+      "agent001Role": "Maintenance Planner Agent",
+      "permanentAgentId": "OPS-013",
+      "permanentAgentName": "Preventive Maintenance Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID OPS-013"
+    },
+    {
+      "agent001Index": 94,
+      "agent001Role": "Estimator Agent",
+      "permanentAgentId": "QS-003",
+      "permanentAgentName": "Plumbing Estimator Agent",
+      "decision": "Alias",
+      "reason": "Alias of Plumbing Technical Advisor Agent → same permanent ID QS-003"
+    },
+    {
+      "agent001Index": 95,
+      "agent001Role": "Quantity Surveyor Agent",
+      "permanentAgentId": "QS-001",
+      "permanentAgentName": "Quantity Surveyor Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID QS-001"
+    },
+    {
+      "agent001Index": 96,
+      "agent001Role": "Floor-plan Takeoff Agent",
+      "permanentAgentId": "QS-002",
+      "permanentAgentName": "Floor Plan Take-Off Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID QS-002"
+    },
+    {
+      "agent001Index": 97,
+      "agent001Role": "Bill of Quantities Agent",
+      "permanentAgentId": "QS-004",
+      "permanentAgentName": "General Trade Estimator Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID QS-004"
+    },
+    {
+      "agent001Index": 98,
+      "agent001Role": "Scope-of-work Agent",
+      "permanentAgentId": "QS-004",
+      "permanentAgentName": "General Trade Estimator Agent",
+      "decision": "Alias",
+      "reason": "Alias of Bill of Quantities Agent → same permanent ID QS-004"
+    },
+    {
+      "agent001Index": 99,
+      "agent001Role": "Materials Specification Agent",
+      "permanentAgentId": "QS-004",
+      "permanentAgentName": "General Trade Estimator Agent",
+      "decision": "Alias",
+      "reason": "Alias of Bill of Quantities Agent → same permanent ID QS-004"
+    },
+    {
+      "agent001Index": 100,
+      "agent001Role": "Inventory Controller Agent",
+      "permanentAgentId": "INV-001",
+      "permanentAgentName": "Inventory Control Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID INV-001"
+    },
+    {
+      "agent001Index": 101,
+      "agent001Role": "Warehouse Agent",
+      "permanentAgentId": "INV-002",
+      "permanentAgentName": "Warehouse Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID INV-002"
+    },
+    {
+      "agent001Index": 102,
+      "agent001Role": "Tool Tracking Agent",
+      "permanentAgentId": "INV-003",
+      "permanentAgentName": "Tool Tracking Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID INV-003"
+    },
+    {
+      "agent001Index": 103,
+      "agent001Role": "Procurement Agent",
+      "permanentAgentId": "INV-004",
+      "permanentAgentName": "Procurement Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID INV-004"
+    },
+    {
+      "agent001Index": 104,
+      "agent001Role": "Supplier Management Agent",
+      "permanentAgentId": "INV-006",
+      "permanentAgentName": "Vendor Relationship Manager Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID INV-006"
+    },
+    {
+      "agent001Index": 105,
+      "agent001Role": "Purchase Order Agent",
+      "permanentAgentId": "INV-008",
+      "permanentAgentName": "Purchase Approval Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID INV-008"
+    },
+    {
+      "agent001Index": 106,
+      "agent001Role": "Supplier Price Hunting Agent",
+      "permanentAgentId": "QS-013",
+      "permanentAgentName": "Supplier Price-Hunting Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID QS-013"
+    },
+    {
+      "agent001Index": 107,
+      "agent001Role": "Market Price Analyst Agent",
+      "permanentAgentId": "QS-014",
+      "permanentAgentName": "Market Pricing Analyst",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID QS-014"
+    },
+    {
+      "agent001Index": 108,
+      "agent001Role": "Material Availability Agent",
+      "permanentAgentId": "INV-009",
+      "permanentAgentName": "Demand Forecasting Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID INV-009"
+    },
+    {
+      "agent001Index": 109,
+      "agent001Role": "Supplier Performance Agent",
+      "permanentAgentId": "INV-006",
+      "permanentAgentName": "Vendor Relationship Manager Agent",
+      "decision": "Alias",
+      "reason": "Alias of Supplier Management Agent → same permanent ID INV-006"
+    },
+    {
+      "agent001Index": 110,
+      "agent001Role": "Stock Usage Audit Agent",
+      "permanentAgentId": "INV-010",
+      "permanentAgentName": "Stock Replenishment Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID INV-010"
+    },
+    {
+      "agent001Index": 111,
+      "agent001Role": "Customer Support Agent",
+      "permanentAgentId": "CRM-009",
+      "permanentAgentName": "Customer Service Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID CRM-009"
+    },
+    {
+      "agent001Index": 112,
+      "agent001Role": "WhatsApp Agent",
+      "permanentAgentId": "COM-004",
+      "permanentAgentName": "WhatsApp Business Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID COM-004"
+    },
+    {
+      "agent001Index": 113,
+      "agent001Role": "Email Agent",
+      "permanentAgentId": "COM-006",
+      "permanentAgentName": "Email Inbox Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID COM-006"
+    },
+    {
+      "agent001Index": 114,
+      "agent001Role": "Gmail Organisation Agent",
+      "permanentAgentId": "COM-006",
+      "permanentAgentName": "Email Inbox Agent",
+      "decision": "Alias",
+      "reason": "Alias of Email Agent → same permanent ID COM-006"
+    },
+    {
+      "agent001Index": 115,
+      "agent001Role": "SMS Agent",
+      "permanentAgentId": "COM-005",
+      "permanentAgentName": "SMS Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID COM-005"
+    },
+    {
+      "agent001Index": 116,
+      "agent001Role": "AI Receptionist Agent",
+      "permanentAgentId": "COM-001",
+      "permanentAgentName": "AI Phone Receptionist",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID COM-001"
+    },
+    {
+      "agent001Index": 117,
+      "agent001Role": "Calling Agent",
+      "permanentAgentId": "COM-001",
+      "permanentAgentName": "AI Phone Receptionist",
+      "decision": "Alias",
+      "reason": "Alias of AI Receptionist Agent → same permanent ID COM-001"
+    },
+    {
+      "agent001Index": 118,
+      "agent001Role": "Booking Agent",
+      "permanentAgentId": "COM-001",
+      "permanentAgentName": "AI Phone Receptionist",
+      "decision": "Alias",
+      "reason": "Alias of AI Receptionist Agent → same permanent ID COM-001"
+    },
+    {
+      "agent001Index": 119,
+      "agent001Role": "Complaint Resolution Agent",
+      "permanentAgentId": "CRM-013",
+      "permanentAgentName": "Complaint Resolution Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID CRM-013"
+    },
+    {
+      "agent001Index": 120,
+      "agent001Role": "Customer Satisfaction Agent",
+      "permanentAgentId": "CRM-010",
+      "permanentAgentName": "Customer Success Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID CRM-010"
+    },
+    {
+      "agent001Index": 121,
+      "agent001Role": "Review Request Agent",
+      "permanentAgentId": "CRM-018",
+      "permanentAgentName": "Review and Referral Agent",
+      "decision": "Alias",
+      "reason": "Alias of Reputation and Reviews Agent → same permanent ID CRM-018"
+    },
+    {
+      "agent001Index": 122,
+      "agent001Role": "Client Portal Support Agent",
+      "permanentAgentId": "CRM-009",
+      "permanentAgentName": "Customer Service Agent",
+      "decision": "Alias",
+      "reason": "Alias of Customer Support Agent → same permanent ID CRM-009"
+    },
+    {
+      "agent001Index": 123,
+      "agent001Role": "Unified Communications Agent",
+      "permanentAgentId": "COM-008",
+      "permanentAgentName": "Unified Communications Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID COM-008"
+    },
+    {
+      "agent001Index": 124,
+      "agent001Role": "HR Manager Agent",
+      "permanentAgentId": "HR-001",
+      "permanentAgentName": "HR Manager Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID HR-001"
+    },
+    {
+      "agent001Index": 125,
+      "agent001Role": "Recruitment Agent",
+      "permanentAgentId": "HR-002",
+      "permanentAgentName": "Recruitment Specialist Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID HR-002"
+    },
+    {
+      "agent001Index": 126,
+      "agent001Role": "Candidate Screening Agent",
+      "permanentAgentId": "HR-002",
+      "permanentAgentName": "Recruitment Specialist Agent",
+      "decision": "Alias",
+      "reason": "Alias of Recruitment Agent → same permanent ID HR-002"
+    },
+    {
+      "agent001Index": 127,
+      "agent001Role": "Onboarding Agent",
+      "permanentAgentId": "HR-009",
+      "permanentAgentName": "Leadership Development Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID HR-009"
+    },
+    {
+      "agent001Index": 128,
+      "agent001Role": "Training Agent",
+      "permanentAgentId": "HR-007",
+      "permanentAgentName": "Technician Performance Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID HR-007"
+    },
+    {
+      "agent001Index": 129,
+      "agent001Role": "Timesheet Agent",
+      "permanentAgentId": "HR-005",
+      "permanentAgentName": "Attendance Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID HR-005"
+    },
+    {
+      "agent001Index": 130,
+      "agent001Role": "Overtime Agent",
+      "permanentAgentId": "HR-006",
+      "permanentAgentName": "Payroll and Overtime Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID HR-006"
+    },
+    {
+      "agent001Index": 131,
+      "agent001Role": "Performance Management Agent",
+      "permanentAgentId": "HR-004",
+      "permanentAgentName": "Performance Management Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID HR-004"
+    },
+    {
+      "agent001Index": 132,
+      "agent001Role": "Staff Scheduling Agent",
+      "permanentAgentId": "HR-005",
+      "permanentAgentName": "Attendance Agent",
+      "decision": "Alias",
+      "reason": "Alias of Timesheet Agent → same permanent ID HR-005"
+    },
+    {
+      "agent001Index": 133,
+      "agent001Role": "Labour Compliance Agent",
+      "permanentAgentId": "LEG-003",
+      "permanentAgentName": "Employment Compliance Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID LEG-003"
+    },
+    {
+      "agent001Index": 134,
+      "agent001Role": "Legal Support Agent",
+      "permanentAgentId": "LEG-001",
+      "permanentAgentName": "Legal Counsel Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID LEG-001"
+    },
+    {
+      "agent001Index": 135,
+      "agent001Role": "Contract Agent",
+      "permanentAgentId": "LEG-002",
+      "permanentAgentName": "Contract Review Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID LEG-002"
+    },
+    {
+      "agent001Index": 136,
+      "agent001Role": "POPIA and Privacy Agent",
+      "permanentAgentId": "LEG-005",
+      "permanentAgentName": "POPIA and Privacy Officer Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID LEG-005"
+    },
+    {
+      "agent001Index": 137,
+      "agent001Role": "Health and Safety Agent",
+      "permanentAgentId": "LEG-008",
+      "permanentAgentName": "Health and Safety Officer Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID LEG-008"
+    },
+    {
+      "agent001Index": 138,
+      "agent001Role": "Policy Agent",
+      "permanentAgentId": "HR-017",
+      "permanentAgentName": "SOP Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID HR-017"
+    },
+    {
+      "agent001Index": 139,
+      "agent001Role": "Disciplinary Process Support Agent",
+      "permanentAgentId": "HR-002",
+      "permanentAgentName": "Recruitment Specialist Agent",
+      "decision": "Alias",
+      "reason": "Alias of Recruitment Agent → same permanent ID HR-002"
+    },
+    {
+      "agent001Index": 140,
+      "agent001Role": "Product Manager Agent",
+      "permanentAgentId": "SW-016",
+      "permanentAgentName": "Product Manager Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID SW-016"
+    },
+    {
+      "agent001Index": 141,
+      "agent001Role": "Project Manager Agent",
+      "permanentAgentId": "EXEC-017",
+      "permanentAgentName": "Programme Manager Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID EXEC-017"
+    },
+    {
+      "agent001Index": 142,
+      "agent001Role": "Software Architecture Agent",
+      "permanentAgentId": "SW-015",
+      "permanentAgentName": "Architecture Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID SW-015"
+    },
+    {
+      "agent001Index": 143,
+      "agent001Role": "Backend Development Agent",
+      "permanentAgentId": "SW-003",
+      "permanentAgentName": "Frontend Engineering Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID SW-003"
+    },
+    {
+      "agent001Index": 144,
+      "agent001Role": "Frontend Development Agent",
+      "permanentAgentId": "SW-002",
+      "permanentAgentName": "Software Engineering Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID SW-002"
+    },
+    {
+      "agent001Index": 145,
+      "agent001Role": "Mobile Development Agent",
+      "permanentAgentId": "SW-004",
+      "permanentAgentName": "Backend Engineering Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID SW-004"
+    },
+    {
+      "agent001Index": 146,
+      "agent001Role": "Database Agent",
+      "permanentAgentId": "SW-005",
+      "permanentAgentName": "Mobile App Engineer Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID SW-005"
+    },
+    {
+      "agent001Index": 147,
+      "agent001Role": "Integration Agent",
+      "permanentAgentId": "SW-008",
+      "permanentAgentName": "Cloud and Infrastructure Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID SW-008"
+    },
+    {
+      "agent001Index": 148,
+      "agent001Role": "API Agent",
+      "permanentAgentId": "SW-008",
+      "permanentAgentName": "Cloud and Infrastructure Agent",
+      "decision": "Alias",
+      "reason": "Alias of Integration Agent → same permanent ID SW-008"
+    },
+    {
+      "agent001Index": 149,
+      "agent001Role": "DevOps Agent",
+      "permanentAgentId": "SW-009",
+      "permanentAgentName": "Integration Engineer Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID SW-009"
+    },
+    {
+      "agent001Index": 150,
+      "agent001Role": "Release Agent",
+      "permanentAgentId": "SW-022",
+      "permanentAgentName": "Release Manager Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID SW-022"
+    },
+    {
+      "agent001Index": 151,
+      "agent001Role": "QA Agent",
+      "permanentAgentId": "SW-020",
+      "permanentAgentName": "Automated Testing Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID SW-020"
+    },
+    {
+      "agent001Index": 152,
+      "agent001Role": "Security Agent",
+      "permanentAgentId": "SW-011",
+      "permanentAgentName": "Site Reliability Engineer Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID SW-011"
+    },
+    {
+      "agent001Index": 153,
+      "agent001Role": "Incident Response Agent",
+      "permanentAgentId": "LEG-015",
+      "permanentAgentName": "Emergency and Disaster Response Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID LEG-015"
+    },
+    {
+      "agent001Index": 154,
+      "agent001Role": "System Health Agent",
+      "permanentAgentId": "SW-024",
+      "permanentAgentName": "System Health and Self-Healing Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID SW-024"
+    },
+    {
+      "agent001Index": 155,
+      "agent001Role": "Performance Agent",
+      "permanentAgentId": "SW-024",
+      "permanentAgentName": "System Health and Self-Healing Agent",
+      "decision": "Alias",
+      "reason": "Alias of System Health Agent → same permanent ID SW-024"
+    },
+    {
+      "agent001Index": 156,
+      "agent001Role": "Data Quality Agent",
+      "permanentAgentId": "DAT-003",
+      "permanentAgentName": "Data Quality Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID DAT-003"
+    },
+    {
+      "agent001Index": 157,
+      "agent001Role": "Data Migration Agent",
+      "permanentAgentId": "DAT-005",
+      "permanentAgentName": "Master Data Management Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID DAT-005"
+    },
+    {
+      "agent001Index": 158,
+      "agent001Role": "Documentation Agent",
+      "permanentAgentId": "SW-023",
+      "permanentAgentName": "Technical Documentation Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID SW-023"
+    },
+    {
+      "agent001Index": 159,
+      "agent001Role": "Technical Support Agent",
+      "permanentAgentId": "SW-026",
+      "permanentAgentName": "Technical Support Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID SW-026"
+    },
+    {
+      "agent001Index": 160,
+      "agent001Role": "Chief Audit Agent",
+      "permanentAgentId": "AUD-001",
+      "permanentAgentName": "Chief Audit Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID AUD-001"
+    },
+    {
+      "agent001Index": 161,
+      "agent001Role": "Application Auditor",
+      "permanentAgentId": "AUD-002",
+      "permanentAgentName": "Application Auditor",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID AUD-002"
+    },
+    {
+      "agent001Index": 162,
+      "agent001Role": "Browser and User-Journey Auditor",
+      "permanentAgentId": "AUD-003",
+      "permanentAgentName": "Browser and User-Journey Auditor",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID AUD-003"
+    },
+    {
+      "agent001Index": 163,
+      "agent001Role": "Role and Permission Auditor",
+      "permanentAgentId": "AUD-004",
+      "permanentAgentName": "Role and Permission Auditor",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID AUD-004"
+    },
+    {
+      "agent001Index": 164,
+      "agent001Role": "Tenant-Isolation Auditor",
+      "permanentAgentId": "AUD-005",
+      "permanentAgentName": "Tenant-Isolation Auditor",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID AUD-005"
+    },
+    {
+      "agent001Index": 165,
+      "agent001Role": "Financial Data Auditor",
+      "permanentAgentId": "AUD-006",
+      "permanentAgentName": "Financial Data Auditor",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID AUD-006"
+    },
+    {
+      "agent001Index": 166,
+      "agent001Role": "Integration Auditor",
+      "permanentAgentId": "AUD-007",
+      "permanentAgentName": "Integration Auditor",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID AUD-007"
+    },
+    {
+      "agent001Index": 167,
+      "agent001Role": "Mobile and Responsive Auditor",
+      "permanentAgentId": "AUD-008",
+      "permanentAgentName": "Mobile and Responsive Auditor",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID AUD-008"
+    },
+    {
+      "agent001Index": 168,
+      "agent001Role": "Accessibility Auditor",
+      "permanentAgentId": "AUD-009",
+      "permanentAgentName": "Accessibility Auditor",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID AUD-009"
+    },
+    {
+      "agent001Index": 169,
+      "agent001Role": "Security and Privacy Auditor",
+      "permanentAgentId": "AUD-010",
+      "permanentAgentName": "Security and Privacy Auditor",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID AUD-010"
+    },
+    {
+      "agent001Index": 170,
+      "agent001Role": "Data Quality Auditor",
+      "permanentAgentId": "AUD-011",
+      "permanentAgentName": "Data Quality Auditor",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID AUD-011"
+    },
+    {
+      "agent001Index": 171,
+      "agent001Role": "Document and Compliance Auditor",
+      "permanentAgentId": "AUD-012",
+      "permanentAgentName": "Document and Compliance Auditor",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID AUD-012"
+    },
+    {
+      "agent001Index": 172,
+      "agent001Role": "Performance and Reliability Auditor",
+      "permanentAgentId": "AUD-013",
+      "permanentAgentName": "Performance and Reliability Auditor",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID AUD-013"
+    },
+    {
+      "agent001Index": 173,
+      "agent001Role": "Acceptance Register Reconciliation Agent",
+      "permanentAgentId": "AUD-014",
+      "permanentAgentName": "Acceptance Register Reconciliation Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID AUD-014"
+    },
+    {
+      "agent001Index": 174,
+      "agent001Role": "Market Research Agent",
+      "permanentAgentId": "EXEC-013",
+      "permanentAgentName": "Market Research Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID EXEC-013"
+    },
+    {
+      "agent001Index": 175,
+      "agent001Role": "Competitor Intelligence Agent",
+      "permanentAgentId": "EXEC-014",
+      "permanentAgentName": "Competitor Intelligence Agent",
+      "decision": "Alias",
+      "reason": "Alias of Competitor Research Agent → same permanent ID EXEC-014"
+    },
+    {
+      "agent001Index": 176,
+      "agent001Role": "Industry Trend Agent",
+      "permanentAgentId": "MKT-023",
+      "permanentAgentName": "Cape Town Trend Research Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID MKT-023"
+    },
+    {
+      "agent001Index": 177,
+      "agent001Role": "Technology Research Agent",
+      "permanentAgentId": "MKT-030",
+      "permanentAgentName": "Seasonal Campaign Research Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID MKT-030"
+    },
+    {
+      "agent001Index": 178,
+      "agent001Role": "Supplier Intelligence Agent",
+      "permanentAgentId": "QS-013",
+      "permanentAgentName": "Supplier Price-Hunting Agent",
+      "decision": "Alias",
+      "reason": "Alias of Supplier Price Hunting Agent → same permanent ID QS-013"
+    },
+    {
+      "agent001Index": 179,
+      "agent001Role": "Regulatory Research Agent",
+      "permanentAgentId": "LEG-007",
+      "permanentAgentName": "Plumbing and Trade Compliance Agent",
+      "decision": "Alias",
+      "reason": "Alias of SANS Compliance Agent → same permanent ID LEG-007"
+    },
+    {
+      "agent001Index": 180,
+      "agent001Role": "Customer Behaviour Agent",
+      "permanentAgentId": "MKT-027",
+      "permanentAgentName": "Customer Behaviour Research Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID MKT-027"
+    },
+    {
+      "agent001Index": 181,
+      "agent001Role": "Location and Expansion Agent",
+      "permanentAgentId": "SaaS-011",
+      "permanentAgentName": "Geographic Expansion Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID SaaS-011"
+    },
+    {
+      "agent001Index": 182,
+      "agent001Role": "SaaS Opportunity Agent",
+      "permanentAgentId": "SaaS-012",
+      "permanentAgentName": "New Industry Research Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID SaaS-012"
+    },
+    {
+      "agent001Index": 183,
+      "agent001Role": "Multi-industry Research Agent",
+      "permanentAgentId": "SaaS-012",
+      "permanentAgentName": "New Industry Research Agent",
+      "decision": "Alias",
+      "reason": "Alias of SaaS Opportunity Agent → same permanent ID SaaS-012"
+    },
+    {
+      "agent001Index": 184,
+      "agent001Role": "Agent Performance Evaluator",
+      "permanentAgentId": "SW-014",
+      "permanentAgentName": "Prompt and Agent Engineer Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID SW-014"
+    },
+    {
+      "agent001Index": 185,
+      "agent001Role": "Prompt and Instruction Optimisation Agent",
+      "permanentAgentId": "SW-014",
+      "permanentAgentName": "Prompt and Agent Engineer Agent",
+      "decision": "Alias",
+      "reason": "Alias of Agent Performance Evaluator → same permanent ID SW-014"
+    },
+    {
+      "agent001Index": 186,
+      "agent001Role": "Workflow Improvement Agent",
+      "permanentAgentId": "SW-014",
+      "permanentAgentName": "Prompt and Agent Engineer Agent",
+      "decision": "Alias",
+      "reason": "Alias of Agent Performance Evaluator → same permanent ID SW-014"
+    },
+    {
+      "agent001Index": 187,
+      "agent001Role": "Knowledge Curator Agent",
+      "permanentAgentId": "HR-016",
+      "permanentAgentName": "Knowledge Manager Agent",
+      "decision": "Existing 307-agent match",
+      "reason": "Maps to approved permanent ID HR-016"
+    },
+    {
+      "agent001Index": 188,
+      "agent001Role": "Model Evaluation Agent",
+      "permanentAgentId": "SW-014",
+      "permanentAgentName": "Prompt and Agent Engineer Agent",
+      "decision": "Alias",
+      "reason": "Alias of Agent Performance Evaluator → same permanent ID SW-014"
+    },
+    {
+      "agent001Index": 189,
+      "agent001Role": "Controlled Experiment Agent",
+      "permanentAgentId": "SW-014",
+      "permanentAgentName": "Prompt and Agent Engineer Agent",
+      "decision": "Alias",
+      "reason": "Alias of Agent Performance Evaluator → same permanent ID SW-014"
+    },
+    {
+      "agent001Index": 190,
+      "agent001Role": "Regression Detection Agent",
+      "permanentAgentId": "SW-024",
+      "permanentAgentName": "System Health and Self-Healing Agent",
+      "decision": "Alias",
+      "reason": "Alias of System Health Agent → same permanent ID SW-024"
+    },
+    {
+      "agent001Index": 191,
+      "agent001Role": "Rollback Coordinator Agent",
+      "permanentAgentId": "SW-022",
+      "permanentAgentName": "Release Manager Agent",
+      "decision": "Alias",
+      "reason": "Alias of Release Agent → same permanent ID SW-022"
+    }
+  ]
+}

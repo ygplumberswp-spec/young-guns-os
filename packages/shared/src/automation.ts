@@ -2,7 +2,7 @@ export type WorkflowStatus = 'draft' | 'pending_approval' | 'active' | 'paused';
 
 export const WORKFLOW_STATUS_OPTIONS: Array<{ value: WorkflowStatus; label: string }> = [
   { value: 'draft', label: 'Draft' },
-  { value: 'pending_approval', label: 'Pending approval' },
+  { value: 'pending_approval', label: 'Pending Approval' },
   { value: 'active', label: 'Active' },
   { value: 'paused', label: 'Paused' },
 ];
@@ -10,9 +10,13 @@ export const WORKFLOW_STATUS_OPTIONS: Array<{ value: WorkflowStatus; label: stri
 export type BusinessEventType =
   | 'customer.created'
   | 'customer.updated'
+  | 'customer.status_changed'
   | 'job.created'
   | 'job.scheduled'
+  | 'job.booked'
+  | 'job.assigned'
   | 'job.status_changed'
+  | 'job.updated'
   | 'job.completed'
   | 'job.material_used'
   | 'quote.created'
@@ -26,12 +30,18 @@ export type BusinessEventType =
   | 'whatsapp.message.received'
   | 'quote.accepted'
   | 'lead.created'
+  | 'lead.status_changed'
+  | 'lead.updated'
   | 'lead.converted'
+  | 'lead.deleted'
+  | 'customer.deleted'
+  | 'job.deleted'
   | 'dispatch.handoff'
   | 'procurement.purchase_order_approved'
   | 'voice.call.completed'
   | 'support.escalated'
   | 'marketing.campaign.completed'
+  | 'maintenance.due'
   | 'scheduled.time'
   | 'webhook.received';
 
@@ -40,6 +50,8 @@ export type WorkflowTriggerType =
   | 'job_created'
   | 'job_status_changed'
   | 'job_scheduled'
+  | 'job_booked'
+  | 'job_assigned'
   | 'job_completed'
   | 'job_material_used'
   | 'customer_created'
@@ -60,36 +72,40 @@ export type WorkflowTriggerType =
   | 'voice_call_completed'
   | 'support_escalated'
   | 'marketing_campaign_completed'
+  | 'maintenance_due'
   | 'scheduled_time'
   | 'webhook';
 
 export const WORKFLOW_TRIGGER_TYPE_OPTIONS: Array<{ value: WorkflowTriggerType; label: string }> = [
   { value: 'manual', label: 'Manual' },
-  { value: 'customer_created', label: 'Customer created' },
-  { value: 'customer_updated', label: 'Customer updated' },
-  { value: 'job_created', label: 'Job created' },
-  { value: 'job_scheduled', label: 'Job scheduled' },
-  { value: 'job_status_changed', label: 'Job status changed' },
-  { value: 'job_completed', label: 'Job completed' },
-  { value: 'job_material_used', label: 'Job material used (for future stock decrement)' },
-  { value: 'quote_created', label: 'Quote created' },
-  { value: 'invoice_created', label: 'Invoice created' },
-  { value: 'payment_received', label: 'Payment received' },
-  { value: 'invoice_overdue', label: 'Invoice overdue' },
-  { value: 'stock_threshold_reached', label: 'Stock threshold reached' },
-  { value: 'vehicle_status_changed', label: 'Vehicle status changed' },
-  { value: 'gps_event', label: 'GPS event' },
-  { value: 'communication_received', label: 'Communication received' },
-  { value: 'whatsapp_message_received', label: 'WhatsApp message received' },
-  { value: 'quote_accepted', label: 'Quote accepted' },
-  { value: 'lead_created', label: 'Lead created' },
-  { value: 'lead_converted', label: 'Lead converted' },
-  { value: 'purchase_order_approved', label: 'Purchase order approved' },
-  { value: 'voice_call_completed', label: 'Voice call completed' },
-  { value: 'support_escalated', label: 'Customer support escalated' },
-  { value: 'marketing_campaign_completed', label: 'Marketing campaign completed' },
-  { value: 'scheduled_time', label: 'Scheduled time trigger' },
-  { value: 'webhook', label: 'Webhook trigger' },
+  { value: 'customer_created', label: 'Customer Created' },
+  { value: 'customer_updated', label: 'Customer Updated' },
+  { value: 'job_created', label: 'Job Created' },
+  { value: 'job_booked', label: 'Job Booked' },
+  { value: 'job_scheduled', label: 'Job Scheduled' },
+  { value: 'job_assigned', label: 'Job Assigned' },
+  { value: 'job_status_changed', label: 'Job Status Changed' },
+  { value: 'job_completed', label: 'Job Completed' },
+  { value: 'job_material_used', label: 'Job Material Used (For Future Stock Decrement)' },
+  { value: 'quote_created', label: 'Quote Created' },
+  { value: 'invoice_created', label: 'Invoice Created' },
+  { value: 'payment_received', label: 'Payment Received' },
+  { value: 'invoice_overdue', label: 'Invoice Overdue' },
+  { value: 'stock_threshold_reached', label: 'Stock Threshold Reached' },
+  { value: 'vehicle_status_changed', label: 'Vehicle Status Changed' },
+  { value: 'gps_event', label: 'GPS Event' },
+  { value: 'communication_received', label: 'Communication Received' },
+  { value: 'whatsapp_message_received', label: 'WhatsApp Message Received' },
+  { value: 'quote_accepted', label: 'Quote Accepted' },
+  { value: 'lead_created', label: 'Lead Created' },
+  { value: 'lead_converted', label: 'Lead Converted' },
+  { value: 'purchase_order_approved', label: 'Purchase Order Approved' },
+  { value: 'voice_call_completed', label: 'Voice Call Completed' },
+  { value: 'support_escalated', label: 'Customer Support Escalated' },
+  { value: 'marketing_campaign_completed', label: 'Marketing Campaign Completed' },
+  { value: 'maintenance_due', label: 'Maintenance Due' },
+  { value: 'scheduled_time', label: 'Scheduled Time Trigger' },
+  { value: 'webhook', label: 'Webhook Trigger' },
 ];
 
 export type WorkflowActionType =
@@ -114,37 +130,39 @@ export type WorkflowActionType =
   | 'create_purchase_order_draft'
   | 'generate_report'
   | 'create_follow_up'
+  | 'trigger_aura_suggestion'
   | 'run_ai_agent'
   | 'update_record'
   | 'create_approval_request'
   | 'execute_approved_step';
 
 export const WORKFLOW_ACTION_TYPE_OPTIONS: Array<{ value: WorkflowActionType; label: string }> = [
-  { value: 'log_customer_activity', label: 'Create customer activity' },
-  { value: 'update_customer', label: 'Update customer (approval required)' },
-  { value: 'update_job_status', label: 'Update job status (approval required)' },
-  { value: 'assign_job_task', label: 'Assign job task (approval required)' },
-  { value: 'send_communication', label: 'Send communication draft' },
-  { value: 'send_email_draft', label: 'Create email draft' },
-  { value: 'send_whatsapp_template', label: 'Create WhatsApp template draft' },
-  { value: 'send_whatsapp_draft', label: 'Create WhatsApp payment reminder draft' },
-  { value: 'create_payment_reminder', label: 'Create payment reminder draft' },
-  { value: 'ask_aura_agent', label: 'Ask AURA agent for decision' },
-  { value: 'generate_summary', label: 'Generate summary' },
-  { value: 'create_task', label: 'Create task' },
-  { value: 'assign_user', label: 'Assign user (approval required)' },
-  { value: 'notify_user', label: 'Notify user' },
-  { value: 'send_internal_notification', label: 'Send internal notification' },
-  { value: 'create_draft_sms', label: 'Create draft SMS' },
-  { value: 'create_draft_customer_response', label: 'Create draft customer response' },
-  { value: 'generate_recommendation', label: 'Generate recommendation' },
-  { value: 'create_purchase_order_draft', label: 'Create purchase order draft' },
-  { value: 'generate_report', label: 'Generate report (approval required)' },
-  { value: 'create_follow_up', label: 'Create follow-up draft' },
-  { value: 'run_ai_agent', label: 'Run AI agent (approval required)' },
-  { value: 'update_record', label: 'Update record (approval required)' },
-  { value: 'create_approval_request', label: 'Create approval request' },
-  { value: 'execute_approved_step', label: 'Execute approved workflow step' },
+  { value: 'log_customer_activity', label: 'Create Customer Activity' },
+  { value: 'update_customer', label: 'Update Customer (Approval Required)' },
+  { value: 'update_job_status', label: 'Update Job Status (Approval Required)' },
+  { value: 'assign_job_task', label: 'Assign Job Task (Approval Required)' },
+  { value: 'send_communication', label: 'Send Communication Draft' },
+  { value: 'send_email_draft', label: 'Create Email Draft' },
+  { value: 'send_whatsapp_template', label: 'Create WhatsApp Template Draft' },
+  { value: 'send_whatsapp_draft', label: 'Create WhatsApp Payment Reminder Draft' },
+  { value: 'create_payment_reminder', label: 'Create Payment Reminder Draft' },
+  { value: 'ask_aura_agent', label: 'Ask AURA Agent For Decision' },
+  { value: 'generate_summary', label: 'Generate Summary' },
+  { value: 'create_task', label: 'Create Task' },
+  { value: 'assign_user', label: 'Assign User (Approval Required)' },
+  { value: 'notify_user', label: 'Notify User (In-App)' },
+  { value: 'send_internal_notification', label: 'Send Internal Notification (In-App)' },
+  { value: 'create_draft_sms', label: 'Create Draft SMS' },
+  { value: 'create_draft_customer_response', label: 'Create Draft Customer Response' },
+  { value: 'generate_recommendation', label: 'Generate Recommendation' },
+  { value: 'create_purchase_order_draft', label: 'Create Purchase Order Draft' },
+  { value: 'generate_report', label: 'Generate Report (Approval Required)' },
+  { value: 'create_follow_up', label: 'Create Follow-Up Draft' },
+  { value: 'trigger_aura_suggestion', label: 'Trigger AURA Suggestion (Draft)' },
+  { value: 'run_ai_agent', label: 'Run AI Agent (Approval Required)' },
+  { value: 'update_record', label: 'Update Record (Approval Required)' },
+  { value: 'create_approval_request', label: 'Create Approval Request' },
+  { value: 'execute_approved_step', label: 'Execute Approved Workflow Step' },
 ];
 
 export type WorkflowConditionOperator =
@@ -155,21 +173,21 @@ export const WORKFLOW_CONDITION_OPERATOR_OPTIONS: Array<{
   label: string;
 }> = [
   { value: 'equals', label: 'Equals' },
-  { value: 'not_equals', label: 'Does not equal' },
+  { value: 'not_equals', label: 'Does Not Equal' },
   { value: 'exists', label: 'Exists' },
-  { value: 'not_exists', label: 'Does not exist' },
+  { value: 'not_exists', label: 'Does Not Exist' },
   { value: 'contains', label: 'Contains' },
-  { value: 'greater_than', label: 'Greater than' },
-  { value: 'less_than', label: 'Less than' },
+  { value: 'greater_than', label: 'Greater Than' },
+  { value: 'less_than', label: 'Less Than' },
 ];
 
 export const WORKFLOW_CONDITION_FIELD_OPTIONS: Array<{ value: string; label: string }> = [
-  { value: 'invoice.status', label: 'Invoice status' },
-  { value: 'invoice.amountCents', label: 'Invoice amount' },
-  { value: 'job.status', label: 'Job status' },
-  { value: 'customer.status', label: 'Customer status' },
-  { value: 'vehicle.status', label: 'Vehicle status' },
-  { value: 'payment.amountCents', label: 'Payment amount' },
+  { value: 'invoice.status', label: 'Invoice Status' },
+  { value: 'invoice.amountCents', label: 'Invoice Amount' },
+  { value: 'job.status', label: 'Job Status' },
+  { value: 'customer.status', label: 'Customer Status' },
+  { value: 'vehicle.status', label: 'Vehicle Status' },
+  { value: 'payment.amountCents', label: 'Payment Amount' },
 ];
 
 export type WorkflowExecutionStatus = 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
@@ -200,7 +218,7 @@ export const WORKFLOW_RUN_STATUS_OPTIONS: Array<{ value: WorkflowRunStatus; labe
   { value: 'completed', label: 'Completed' },
   { value: 'failed', label: 'Failed' },
   { value: 'skipped', label: 'Skipped' },
-  { value: 'awaiting_approval', label: 'Awaiting approval' },
+  { value: 'awaiting_approval', label: 'Awaiting Approval' },
 ];
 
 export type WorkflowTriggerSummary = {
@@ -492,9 +510,13 @@ export type RunWorkflowRequest = {
 export const BUSINESS_EVENT_TO_TRIGGER: Record<BusinessEventType, WorkflowTriggerType> = {
   'customer.created': 'customer_created',
   'customer.updated': 'customer_updated',
+  'customer.status_changed': 'customer_updated',
   'job.created': 'job_created',
   'job.scheduled': 'job_scheduled',
+  'job.booked': 'job_booked',
+  'job.assigned': 'job_assigned',
   'job.status_changed': 'job_status_changed',
+  'job.updated': 'job_status_changed',
   'job.completed': 'job_completed',
   'job.material_used': 'job_material_used',
   'quote.created': 'quote_created',
@@ -508,12 +530,18 @@ export const BUSINESS_EVENT_TO_TRIGGER: Record<BusinessEventType, WorkflowTrigge
   'whatsapp.message.received': 'whatsapp_message_received',
   'quote.accepted': 'quote_accepted',
   'lead.created': 'lead_created',
+  'lead.status_changed': 'lead_created',
+  'lead.updated': 'lead_created',
   'lead.converted': 'lead_converted',
+  'lead.deleted': 'lead_created',
+  'customer.deleted': 'customer_updated',
+  'job.deleted': 'job_status_changed',
   'dispatch.handoff': 'job_scheduled',
   'procurement.purchase_order_approved': 'purchase_order_approved',
   'voice.call.completed': 'voice_call_completed',
   'support.escalated': 'support_escalated',
   'marketing.campaign.completed': 'marketing_campaign_completed',
+  'maintenance.due': 'maintenance_due',
   'scheduled.time': 'scheduled_time',
   'webhook.received': 'webhook',
 };

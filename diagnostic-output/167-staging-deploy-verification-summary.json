@@ -1,0 +1,24 @@
+{
+  "sprint": "020",
+  "at": "2026-08-01T08:56:00.000Z",
+  "repoHead": "58a16b7",
+  "stagingProjectRef": "cpkuwtaipjxeipvbssvn",
+  "localJournal": 106,
+  "appUrlFixCommitted": true,
+  "railwayTokenInEnv": false,
+  "railwayCliInstalled": false,
+  "railwayCliWhoami": "UNAUTHORIZED_OR_MISSING",
+  "railwayRedeploy": "BLOCKED_NO_RAILWAY_TOKEN",
+  "healthReadyHttp": 503,
+  "healthReadyCode": "DB_UNAVAILABLE",
+  "healthDbReason": "28P01",
+  "smokePhase5": "SKIPPED_HEALTH_NOT_200",
+  "smokePhase6": "SKIPPED_HEALTH_NOT_200",
+  "smokePhase8_12": "SKIPPED_HEALTH_NOT_200",
+  "verdict": "NO-GO_PUBLIC_STAGING",
+  "blockers": [
+    "Railway staging API DATABASE_URL auth mismatch (28P01) — sync Railway env to validated staging credentials + redeploy API",
+    "RAILWAY_TOKEN unset and railway CLI not authenticated — cannot trigger redeploy from this runner; Owner must redeploy titan-staging-api and titan-staging-web from commit 58a16b7 (or later) so APP_URL fix is live",
+    "Public E2E smokes not rerun (health not 200)"
+  ]
+}

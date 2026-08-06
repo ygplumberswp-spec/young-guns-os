@@ -25,10 +25,20 @@ import type {
 } from '@titan/shared';
 import { isApiError } from '@titan/shared';
 
+import { AUTH_REFRESH_TIMEOUT_MS, DEFAULT_REQUEST_TIMEOUT_MS } from './api-client';
 import { resolveApiBase } from './runtime-env';
 
 function apiBase(): string {
   return resolveApiBase();
+}
+
+function timeoutSignal(timeoutMs: number): AbortSignal {
+  if (typeof AbortSignal.timeout === 'function') {
+    return AbortSignal.timeout(timeoutMs);
+  }
+  const controller = new AbortController();
+  setTimeout(() => controller.abort(), timeoutMs);
+  return controller.signal;
 }
 
 type RequestOptions = {
@@ -36,6 +46,7 @@ type RequestOptions = {
   body?: unknown;
   accessToken?: string | null;
   skipAuthRefresh?: boolean;
+  timeoutMs?: number;
 };
 
 let refreshPromise: Promise<PortalAuthSession | null> | null = null;
@@ -73,6 +84,7 @@ async function refreshPortalAccessToken(): Promise<PortalAuthSession | null> {
         const response = await fetch(`${apiBase()}/portal/auth/refresh`, {
           method: 'POST',
           credentials: 'include',
+          signal: timeoutSignal(AUTH_REFRESH_TIMEOUT_MS),
         });
 
         if (!response.ok) {
@@ -105,12 +117,25 @@ export async function portalRequest<T>(path: string, options: RequestOptions = {
     headers.Authorization = `Bearer ${options.accessToken}`;
   }
 
-  const response = await fetch(`${apiBase()}${path}`, {
-    method: options.method ?? 'GET',
-    headers,
-    credentials: 'include',
-    body,
-  });
+  const timeoutMs = options.timeoutMs === 0 ? undefined : (options.timeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS);
+  let response: Response;
+  try {
+    response = await fetch(`${apiBase()}${path}`, {
+      method: options.method ?? 'GET',
+      headers,
+      credentials: 'include',
+      body,
+      signal: timeoutMs ? timeoutSignal(timeoutMs) : undefined,
+    });
+  } catch (error) {
+    const aborted =
+      (error instanceof DOMException && (error.name === 'AbortError' || error.name === 'TimeoutError')) ||
+      (error instanceof Error && (error.name === 'AbortError' || error.name === 'TimeoutError'));
+    if (aborted) {
+      throw new PortalApiClientError('Request timed out', 408, 'REQUEST_TIMEOUT');
+    }
+    throw new PortalApiClientError('Cannot reach the TITAN API.', 0, 'NETWORK_ERROR');
+  }
 
   if (response.status === 401 && !options.skipAuthRefresh && options.accessToken) {
     const refreshed = await refreshPortalAccessToken();
@@ -151,16 +176,21 @@ export async function portalLogout(): Promise<void> {
 }
 
 export async function restorePortalSession(): Promise<PortalAuthPayload | null> {
-  const response = await fetch(`${apiBase()}/portal/auth/refresh`, {
-    method: 'POST',
-    credentials: 'include',
-  });
+  try {
+    const response = await fetch(`${apiBase()}/portal/auth/refresh`, {
+      method: 'POST',
+      credentials: 'include',
+      signal: timeoutSignal(AUTH_REFRESH_TIMEOUT_MS),
+    });
 
-  if (!response.ok) {
+    if (!response.ok) {
+      return null;
+    }
+
+    return parseResponse<PortalAuthPayload>(response);
+  } catch {
     return null;
   }
-
-  return parseResponse<PortalAuthPayload>(response);
 }
 
 export async function fetchPortalInvitePreview(token: string) {

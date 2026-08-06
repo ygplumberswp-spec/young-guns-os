@@ -1,0 +1,150 @@
+{
+  "generatedAt": "2026-08-01T18:15:20.760Z",
+  "label": "217-cartrack-staging-verify",
+  "branch": "cursor/integration-lock-auto-sync",
+  "stagingApi": "https://young-guns-os-staging.up.railway.app",
+  "stagingWeb": "https://comfortable-determination-staging.up.railway.app",
+  "hosts": {
+    "web": "comfortable-determination-staging (titan-staging-web)",
+    "api": "young-guns-os-staging (integration-lock API)"
+  },
+  "deploy": {
+    "apiHealthReady": "finished",
+    "schedulersEnabled": true
+  },
+  "health": {
+    "ready": {
+      "httpStatus": 200,
+      "body": {
+        "status": "ready",
+        "database": "connected",
+        "redis": "not_configured",
+        "providersEnabled": true,
+        "schedulersEnabled": true,
+        "workersEnabled": false,
+        "webhooksEnabled": false,
+        "timestamp": "2026-08-01T18:15:21.611Z"
+      }
+    },
+    "live": {
+      "httpStatus": 200
+    }
+  },
+  "cartrack": {
+    "connectionRows": 1,
+    "status": "connected",
+    "companyIdPrefix": "095aef76…",
+    "connectedAt": "2026-08-01T17:58:12.889Z",
+    "lastSyncAt": "2026-08-01T18:11:01.735Z",
+    "lastError": null,
+    "hasCredentials": true,
+    "syncHealth": "healthy",
+    "mappedCount": 2,
+    "totalMappingRows": 2,
+    "unmappedCount": 0,
+    "liveAutoMapProof": true
+  },
+  "registrations": {
+    "CF172047": {
+      "status": "auto_matched",
+      "mappingIdPrefix": "af990ce9…",
+      "vehicleIdPrefix": "1a19a54b…",
+      "vehicleName": "CF172047",
+      "licensePlate": "CF172047",
+      "externalRegistration": "CF172047"
+    },
+    "CF77263": {
+      "status": "auto_matched",
+      "mappingIdPrefix": "a979153c…",
+      "vehicleIdPrefix": "1aab5139…",
+      "vehicleName": "CF77263",
+      "licensePlate": "CF77263",
+      "externalRegistration": "CF77263"
+    }
+  },
+  "gps": {
+    "positionCount": 0,
+    "latest": []
+  },
+  "backgroundSync": {
+    "lastSyncAt": "2026-08-01T18:11:01.735Z",
+    "recentJobs": [
+      {
+        "jobType": "manual",
+        "status": "completed",
+        "syncScope": null,
+        "startedAt": "2026-08-01T18:10:54.844Z",
+        "completedAt": "2026-08-01T18:11:02.030Z",
+        "errorPrefix": null,
+        "autoMappedCount": 0,
+        "positionsStored": 0
+      },
+      {
+        "jobType": "manual",
+        "status": "completed",
+        "syncScope": null,
+        "startedAt": "2026-08-01T17:58:16.125Z",
+        "completedAt": "2026-08-01T17:58:22.781Z",
+        "errorPrefix": null,
+        "autoMappedCount": 0,
+        "positionsStored": 0
+      },
+      {
+        "jobType": "manual",
+        "status": "completed",
+        "syncScope": null,
+        "startedAt": "2026-08-01T17:56:07.370Z",
+        "completedAt": "2026-08-01T17:56:13.309Z",
+        "errorPrefix": null,
+        "autoMappedCount": 0,
+        "positionsStored": 0
+      },
+      {
+        "jobType": "manual",
+        "status": "completed",
+        "syncScope": null,
+        "startedAt": "2026-08-01T17:55:04.955Z",
+        "completedAt": "2026-08-01T17:55:11.462Z",
+        "errorPrefix": null,
+        "autoMappedCount": 0,
+        "positionsStored": 0
+      },
+      {
+        "jobType": "manual",
+        "status": "completed",
+        "syncScope": null,
+        "startedAt": "2026-08-01T17:54:47.675Z",
+        "completedAt": "2026-08-01T17:54:52.522Z",
+        "errorPrefix": null,
+        "autoMappedCount": 0,
+        "positionsStored": 0
+      }
+    ],
+    "connector": {
+      "status": "disconnected",
+      "autoSync": {
+        "lastError": null,
+        "nextRetryAt": null,
+        "lastAttemptAt": "2026-08-01T18:10:53.952Z",
+        "lastSuccessAt": "2026-08-01T18:11:02.623Z",
+        "consecutiveFailures": 0,
+        "initialSyncCompleted": true,
+        "lastRecordsProcessed": 2
+      },
+      "updatedAt": "2026-08-01T18:11:02.921Z"
+    },
+    "auditActions": []
+  },
+  "duplicates": {
+    "vehicleIdCollisions": 0,
+    "externalIdCollisions": 0,
+    "pass": true
+  },
+  "auditComplete": {
+    "yes": true,
+    "blockers": []
+  },
+  "apiProbe": {
+    "ownerTokenUsed": false
+  }
+}

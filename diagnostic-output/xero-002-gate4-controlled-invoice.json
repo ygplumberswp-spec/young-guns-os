@@ -1,0 +1,138 @@
+{
+  "label": "XERO-002-gate4-controlled-invoice",
+  "ownerApproval": "XERO-002 GATE 4 GO",
+  "startedAt": "2026-08-06T16:55:34.354Z",
+  "testLabel": "TITAN XERO E2E TEST — 2026-08-06T16:55:34.354Z",
+  "mode": "staging-write-approval-workflow",
+  "precheck": {
+    "stagingApiHealth": 200,
+    "connectionStatus": "connected",
+    "organisationName": "Young Guns Plumbing"
+  },
+  "gate3Quote": {
+    "idMasked": "934ffe5c…",
+    "quoteNumber": "Q-0253"
+  },
+  "countsBefore": {
+    "invoices": 588,
+    "invoiceMappings": 585,
+    "writeApprovals": 2,
+    "payments": 512,
+    "refreshJobs": 0
+  },
+  "countsAfter": {
+    "invoices": 589,
+    "invoiceMappings": 586,
+    "writeApprovals": 3,
+    "payments": 512,
+    "refreshJobs": 0
+  },
+  "quoteConversion": {
+    "quoteIdMasked": "934ffe5c…",
+    "statusSet": "accepted",
+    "amountPreparedCents": 57500
+  },
+  "invoice": {
+    "idMasked": "069661b1…",
+    "invoiceNumber": "TITAN-INV-000589",
+    "status": "draft",
+    "amountCents": 57500,
+    "currency": "ZAR",
+    "linkedQuoteNumber": "Q-0253",
+    "titleSet": "TITAN XERO E2E TEST — 2026-08-06T16:55:34.354Z"
+  },
+  "approval": {
+    "approvalIdMasked": "b26a6a49…",
+    "via": "write-approval-workflow"
+  },
+  "pushFirst": {
+    "push": {
+      "providerOk": true,
+      "idempotent": false,
+      "via": "write-approval-execute"
+    },
+    "xero": {
+      "xeroInvoiceIdMasked": "4615427d…",
+      "xeroInvoiceNumber": "INV-0586",
+      "isDraft": true
+    }
+  },
+  "pushRetry": {
+    "push": {
+      "idempotent": true,
+      "via": "write-approval-execute-retry"
+    },
+    "xero": {
+      "xeroInvoiceIdMasked": "4615427d…",
+      "xeroInvoiceNumber": "INV-0586"
+    }
+  },
+  "mapping": {
+    "afterFirst": {
+      "xeroInvoiceIdMasked": "4615427d…",
+      "xeroInvoiceNumber": "INV-0586",
+      "syncStatus": "synced",
+      "hasXeroInvoiceId": true,
+      "hasOfficialNumber": true
+    },
+    "afterRetry": {
+      "xeroInvoiceIdMasked": "4615427d…",
+      "xeroInvoiceNumber": "INV-0586",
+      "syncStatus": "synced",
+      "hasXeroInvoiceId": true,
+      "hasOfficialNumber": true
+    }
+  },
+  "idempotency": {
+    "sameXeroInvoiceIdAfterRetry": true,
+    "mappingRowsForXeroInvoice": 1,
+    "retryWasIdempotent": true,
+    "officialNumberStored": true
+  },
+  "targetedRefresh": {
+    "attempted": false,
+    "note": "Targeted refresh requires gate4 route or local proof — push stores official number directly"
+  },
+  "confirmations": {
+    "quoteConvertedToDraftInvoice": true,
+    "xeroInvoiceIdStored": true,
+    "officialXeroInvoiceNumberStored": true,
+    "retryDidNotDuplicate": true,
+    "invoiceNotEmailedOrAuthorised": true,
+    "targetedRefreshAttempted": false,
+    "noPaymentWrite": true,
+    "noSecretLeakage": true,
+    "productionUntouched": true,
+    "gate5NotExecuted": true
+  },
+  "verdict": "PASS",
+  "startingHead": "dec39bab8c64bc9109e2c36e4bd5fbaf5c5b84bb",
+  "authSource": "temp_gate4_owner",
+  "workflowRetry": {
+    "status": 200,
+    "result": {
+      "idempotent": false,
+      "code": "ALREADY_EXECUTED",
+      "status": "DRAFT",
+      "xeroInvoiceId": "4615427d-da11-42c0-975e-af8dd32960c8",
+      "xeroInvoiceNumber": "INV-0586"
+    }
+  },
+  "usedLocalProof": false,
+  "usedWorkflowFallback": true,
+  "syncLogs": [
+    {
+      "action": "push",
+      "status": "success",
+      "message": "Pushed invoice draft to Xero (approval b26a6a49-0edb-47c9-9ef2-1996440203af)"
+    }
+  ],
+  "countsDelta": {
+    "invoices": 1,
+    "invoiceMappings": 1,
+    "writeApprovals": 1,
+    "payments": 0
+  },
+  "completedAt": "2026-08-06T16:55:59.746Z",
+  "endingHead": "dec39bab8c64bc9109e2c36e4bd5fbaf5c5b84bb"
+}

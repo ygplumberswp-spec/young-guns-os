@@ -1,0 +1,64 @@
+{
+  "label": "FRZ018g",
+  "commit": "3120483",
+  "generatedAt": "2026-08-01T11:17:14.279Z",
+  "apiOrigin": "https://young-guns-os-staging.up.railway.app",
+  "results": [
+    {
+      "name": "api_health_ready",
+      "status": "PASS",
+      "detail": "database connected"
+    },
+    {
+      "name": "api_owner_sync_flow",
+      "status": "PARTIAL",
+      "detail": "OWNER_ACCESS_TOKEN not set — DB enqueue only"
+    },
+    {
+      "name": "db_xero_connected",
+      "status": "PASS",
+      "detail": "Young Guns Plumbing"
+    },
+    {
+      "name": "db_import_job_checkpoint_metadata",
+      "status": "PARTIAL",
+      "detail": "latest status=running, no checkpoint yet"
+    },
+    {
+      "name": "db_background_job_active",
+      "status": "PASS",
+      "detail": "job=8e6aec9b-2d99-493c-85b8-75f61d7f414b status=running"
+    },
+    {
+      "name": "db_last_sync_at_populated",
+      "status": "PARTIAL",
+      "detail": "null — expected until full background import completes"
+    }
+  ],
+  "checklist": {},
+  "verdict": "PARTIAL",
+  "dbSnapshot": {
+    "organisationName": "Young Guns Plumbing",
+    "lastSyncAt": null,
+    "lastError": null,
+    "customerMappings": 85,
+    "invoiceMappings": 0,
+    "paymentMappings": 0,
+    "recentJobs": [
+      {
+        "id": "8e6aec9b-2d99-493c-85b8-75f61d7f414b",
+        "status": "running",
+        "currentStage": null,
+        "completedStages": [],
+        "errorPrefix": null
+      },
+      {
+        "id": "16cab3a5-cde4-4658-9ece-5ab026731697",
+        "status": "failed",
+        "currentStage": null,
+        "completedStages": [],
+        "errorPrefix": "Xero sync failed during contacts. Xero sync timed out after 90s during contacts. Partial imports wer"
+      }
+    ]
+  }
+}

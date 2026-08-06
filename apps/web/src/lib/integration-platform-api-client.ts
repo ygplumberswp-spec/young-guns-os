@@ -64,12 +64,11 @@ export async function fetchIntegrationConnectors(accessToken: string) {
 export async function syncIntegrationConnectors(accessToken: string) {
   const data = await request<{
     connectors: IntegrationConnectorSummary[];
-    xeroSync: XeroImportSyncResult | null;
+    xeroSync: (XeroImportSyncResult & { queued?: boolean }) | null;
   }>('/integration-platform/connectors/sync', {
     accessToken,
     method: 'POST',
-    // Align with server overall import budget (90s) plus small network buffer.
-    timeoutMs: 100_000,
+    timeoutMs: 15_000,
   });
   return data;
 }

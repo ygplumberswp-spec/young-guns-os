@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { FormEvent, useEffect, useState } from 'react';
-import { Link, useLocation } from 'wouter';
-import { Button, Input, PageHeader } from '@titan/ui';
+import { useLocation } from 'wouter';
+import { Button, Input } from '@titan/ui';
 import { ApiClientError } from '../../lib/api-client';
 import { createDocumentCategory } from '../../lib/documents-api';
 import { useAuth } from '../../lib/auth-context';
@@ -44,13 +45,8 @@ export function CategoryCreatePage() {
   return (
     <div className="documents-page">
       <PageHeader
-        title="New category"
+        title="New Category"
         description="Create a category for organising document records."
-        actions={
-          <Link href="/documents/categories">
-            <Button variant="secondary">Back to categories</Button>
-          </Link>
-        }
       />
       <DocumentsNav />
       {error ? <p className="form-error">{error}</p> : null}

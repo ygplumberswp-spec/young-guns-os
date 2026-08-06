@@ -111,7 +111,7 @@ export type RecommendationsResponse = {
 export type AuraMemoryCategory = 'business_rule' | 'preference' | 'process' | 'note';
 
 export const AURA_MEMORY_CATEGORY_OPTIONS: Array<{ value: AuraMemoryCategory; label: string }> = [
-  { value: 'business_rule', label: 'Business rule' },
+  { value: 'business_rule', label: 'Business Rule' },
   { value: 'preference', label: 'Preference' },
   { value: 'process', label: 'Process' },
   { value: 'note', label: 'Note' },
@@ -122,7 +122,9 @@ export type AuraMemorySummary = {
   category: AuraMemoryCategory;
   information: string;
   importance: number;
+  enabled: boolean;
   createdByUserId: string | null;
+  updatedByUserId: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -137,4 +139,5 @@ export type UpdateAuraMemoryRequest = {
   category?: AuraMemoryCategory;
   information?: string;
   importance?: number;
+  enabled?: boolean;
 };

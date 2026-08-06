@@ -1,0 +1,147 @@
+/**
+ * Young Guns shared utility classes — token-based replacements for legacy cyan/teal Tailwind.
+ * Use these instead of text-cyan-* / bg-cyan-* / border-cyan-* in application surfaces.
+ */
+
+.skip-to-content {
+  position: absolute;
+  left: -9999px;
+  top: 0.75rem;
+  z-index: 100;
+  padding: 0.5rem 1rem;
+  border-radius: var(--titan-radius-md);
+  background: var(--yg-blue-primary);
+  color: var(--yg-text-primary);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: var(--titan-focus-ring);
+}
+
+.skip-to-content:focus {
+  left: 0.75rem;
+  outline: none;
+}
+
+.yg-link {
+  color: var(--yg-blue-primary);
+  text-decoration: none;
+}
+
+.yg-link:hover {
+  text-decoration: underline;
+}
+
+.yg-text-accent {
+  color: var(--yg-blue-primary);
+}
+
+.yg-text-accent-soft {
+  color: var(--yg-blue-hover);
+}
+
+.yg-text-accent-muted {
+  color: var(--yg-text-secondary);
+}
+
+.yg-text-accent-subtle {
+  color: var(--yg-text-muted);
+}
+
+.yg-label-accent {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--yg-text-muted);
+}
+
+.yg-panel-accent {
+  border-color: var(--yg-info-badge-border) !important;
+  background: var(--yg-info-badge-bg) !important;
+  color: var(--yg-text-secondary) !important;
+}
+
+.yg-panel-muted {
+  border-color: var(--titan-border) !important;
+  background: var(--yg-bg-surface) !important;
+}
+
+.yg-info-banner {
+  border: 1px solid var(--yg-info-badge-border);
+  background: var(--yg-info-badge-bg);
+  color: var(--yg-text-secondary);
+  border-radius: var(--titan-radius-md);
+}
+
+.yg-tab-active {
+  border: 1px solid var(--yg-info-badge-border);
+  background: var(--yg-blue-muted);
+  color: var(--yg-text-primary);
+  box-shadow: 0 0 0 1px rgba(var(--titan-accent-rgb), 0.25);
+}
+
+.yg-card-accent {
+  border: 1px solid rgba(var(--titan-accent-rgb), 0.2);
+  background: var(--yg-bg-surface);
+}
+
+.yg-card-accent:hover {
+  border-color: rgba(var(--titan-accent-rgb), 0.4);
+}
+
+.command-centre-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--titan-section-gap);
+  color: var(--titan-text);
+}
+
+.command-centre-page__nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+  font-size: 0.875rem;
+}
+
+.command-centre-page__tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.command-centre-page__tab {
+  border: 1px solid var(--titan-border);
+  border-radius: var(--titan-radius-sm);
+  background: var(--titan-surface);
+  color: var(--titan-text-secondary);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  padding: 0.5rem 0.75rem;
+  min-height: 2.25rem;
+  cursor: pointer;
+  font-family: var(--titan-font-ui);
+}
+
+.command-centre-page__tab:hover {
+  background: var(--titan-surface-hover);
+  color: var(--titan-text);
+}
+
+.command-centre-page__tab:focus-visible {
+  outline: none;
+  box-shadow: var(--titan-focus-ring);
+}
+
+.command-centre-page__tab--active {
+  background: var(--titan-accent-soft);
+  border-color: var(--titan-accent);
+  color: var(--titan-text);
+}
+
+.completion-report-preview {
+  width: 100%;
+  min-height: 480px;
+  border: 1px solid var(--titan-border);
+  background: var(--yg-bg-surface);
+  border-radius: var(--titan-radius-md);
+}

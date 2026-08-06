@@ -1,4 +1,5 @@
 import { useEffect, useMemo } from 'react';
+import { Link } from 'wouter';
 import { LoadingState, StatCard } from '@titan/ui';
 import { hasAnyPermission } from '@titan/auth/browser';
 import { fetchCrmStats } from '../../lib/crm-api';
@@ -15,6 +16,8 @@ import { scheduleDashboardBackgroundPrep } from '../../lib/route-prefetch-regist
 import { DASHBOARD_METRICS } from './constants';
 import { DashboardMetricIcon } from './DashboardMetricIcon';
 import { DashboardWelcome } from './DashboardWelcome';
+import { SummaryCardGrid } from '../../components/ux';
+import { CustomerValueMetricsPanel } from '../crm/CustomerValueMetricsPanel';
 
 export function DashboardStats() {
   const { accessToken, user } = useAuth();
@@ -102,6 +105,7 @@ export function DashboardStats() {
   const openQuotes = financeStats.data?.openQuoteCount ?? 0;
   const revenue = financeStats.data?.revenueMtdCents ?? 0;
   const outstanding = financeStats.data?.outstandingCents ?? 0;
+  const overdueInvoices = financeStats.data?.overdueInvoiceCount ?? 0;
   const stockAlerts = inventoryStats.data?.lowStockCount ?? 0;
   const fleetInUse = fleetStats.data?.inUseCount ?? 0;
   const activeLeads = leadStats.data?.activeLeadCount ?? 0;
@@ -113,6 +117,7 @@ export function DashboardStats() {
     openQuotes > 0 ||
     revenue > 0 ||
     outstanding > 0 ||
+    overdueInvoices > 0 ||
     stockAlerts > 0 ||
     fleetInUse > 0 ||
     activeLeads > 0;
@@ -180,6 +185,15 @@ export function DashboardStats() {
         visible: canViewFinance,
       };
     }
+    if (metric.id === 'overdue-invoices') {
+      return {
+        ...metric,
+        value: canViewFinance ? String(overdueInvoices) : '—',
+        hint: canViewFinance ? metric.hint : 'No finance permission',
+        loading: canViewFinance && financeStats.isLoading && !financeStats.data,
+        visible: canViewFinance,
+      };
+    }
     if (metric.id === 'stock-alerts') {
       return {
         ...metric,
@@ -217,11 +231,20 @@ export function DashboardStats() {
         hasAnyData={hasAnyData}
         summaryLine={summaryLine}
       />
-      <section className="dashboard-stats" aria-label="Business metrics">
+      <SummaryCardGrid columns={4} className="dashboard-stats">
         {metrics.map((metric) => (
           <div key={metric.id} className="dashboard-stat-card">
             {metric.loading ? (
               <LoadingState label={`Loading ${metric.label.toLowerCase()}…`} />
+            ) : metric.href ? (
+              <Link href={metric.href} className="dashboard-stat-card__link">
+                <StatCard
+                  label={metric.label}
+                  value={metric.value}
+                  hint={metric.hint}
+                  icon={<DashboardMetricIcon metricId={metric.id} />}
+                />
+              </Link>
             ) : (
               <StatCard
                 label={metric.label}
@@ -232,7 +255,8 @@ export function DashboardStats() {
             )}
           </div>
         ))}
-      </section>
+      </SummaryCardGrid>
+      {canViewCustomers ? <CustomerValueMetricsPanel compact /> : null}
     </>
   );
 }
