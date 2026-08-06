@@ -22,10 +22,11 @@
 | [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) | **AGENT-003** | **COMPLETE_LOCAL_ONLY** |
 | [TITAN_AGENT_ACTIVATION_ROADMAP.md](./TITAN_AGENT_ACTIVATION_ROADMAP.md) | **AGENT-004** | **COMPLETE_LOCAL_ONLY** — Phases A–F |
 | [TITAN_INTEGRATION_REGISTER.md](./TITAN_INTEGRATION_REGISTER.md) | **INT-UNIVERSAL-001** | **Updated** — universal integration wizard standard |
+| [TITAN_AUDIT_DEPARTMENT_AND_TOOLING_STANDARD.md](./TITAN_AUDIT_DEPARTMENT_AND_TOOLING_STANDARD.md) | Prior programme (AGT-005) | **Retained** — AUD department framework unchanged |
 
 **Agent status reconciliation (@ AGENT-001):** 0 Active · 1 Supervised (AURA-001) · 1 Implemented but inactive (MKT-005 Facebook) · 2 Build-ready · remainder Defined/Planned · **no false Active claims**.
 
-**Facebook (Young Guns staging):** Page connected with content features granted (staging). Webhook subscription code at `23debd9`; live webhook event proof **pending Owner deploy**. No Facebook post or reply created during verification.
+**Facebook (Young Guns staging — J-6.7F14 deployed):** Young Guns Plumbing - Cape Town is **connected and verified** on staging. Content permissions granted for publishing, scheduling, reading comments, replying to comments, Page details and insights. Meta provider-confirmed webhook fields: **feed** and **mention**. Meta dashboard sample webhook delivery **succeeded**; no webhook error recorded. Polling fallback **active every 15 minutes**. A genuine live Young Guns Page event remains **pending** because the Meta app is **unpublished**. Messenger and Lead Ads remain **outside completed scope** (separate Meta approval). Facebook is **not production-complete**.
 
 **XERO-002:** **Parked** — unchanged; no Xero work started in AGENT-001.
 
@@ -38,11 +39,21 @@
 | AGENT-003 | Learning and Governance Standard | **COMPLETE_LOCAL_ONLY** | — | Wire into agent runtime Phase A exit |
 | AGENT-004 | Activation Roadmap (Phases A–F) | **COMPLETE_LOCAL_ONLY** | — | Owner approve phase order |
 | INT-UNIVERSAL-001 | Universal Integration Wizard Standard | **COMPLETE_LOCAL_ONLY** | — | Implement wizard UX per provider |
-| AGENT-005 | Any agent marked Active | **NOT_STARTED** | No agent meets bar | Tools + tests + Owner activation gate |
-| AGENT-006 | Facebook webhook live event proof | **STAGING_OUTDATED** | Owner deploy staging | Deploy `23debd9`; Subscribe webhooks; verify event |
-| AGENT-007 | XERO-002 execution agents | **DEFERRED** | Owner parked XERO-002 | Await Owner reopen — do not start |
 
-*Prior rows AGT-001–AGT-010 superseded by AGENT-001–007 naming; historical evidence retained in git history.*
+**Historical acceptance rows (superseded naming — evidence retained):**
+
+| Requirement ID | Requirement name | Superseded by | Notes |
+|----------------|------------------|---------------|-------|
+| AGT-001 | Permanent master agent register | AGENT-001 | Prior count 307; AGENT-001 uses 191 minimum extensible set |
+| AGT-002 | Agent capability matrix | AGENT-002 | — |
+| AGT-003 | Controlled self-learning governance | AGENT-003 | — |
+| AGT-004 | 15-phase activation roadmap | AGENT-004 | Replaced by Phases A–F |
+| AGT-005 | Permanent Audit Department framework | AGENT-001 § K | 14 AUD agents in register |
+| AGT-006 | Integration register | INT-UNIVERSAL-001 | — |
+| AGT-007 | Any agent marked Verified complete | AGENT-004 gates | Still 0 Active |
+| AGT-008 | Facebook advanced publishing/messaging | — | Messenger/Lead Ads outside J-6.7F14 scope |
+| AGT-009 | QS plan take-off → BOQ → quote chain | AGENT-004 Phase C+ | NOT_STARTED |
+| AGT-010 | Final Stage 2 business chain audit | — | NOT_STARTED |
 
 ---
 

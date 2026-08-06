@@ -112,7 +112,7 @@ Legend: **R** Read · **P** Propose · **D** Draft · **A** Approve (human) · *
 | MKT-010 Google Business Profile | X | X | X | X | X | R,D |
 | Brand Compliance / Reputation | R,M all connected channels | R,M | R,M | R,M | R,M | R,M |
 
-**Facebook truth (2026-08-06):** Staging connection complete for Young Guns; content features and webhook subscription code pushed (`23debd9`); live event proof pending Owner deploy. Agents remain **Implemented but inactive** until activation gate.
+**Facebook truth (staging — J-6.7F14 deployed):** Young Guns Plumbing - Cape Town connected and verified. Content permissions granted. Webhook fields **feed** + **mention** provider-confirmed; Meta dashboard sample delivery succeeded; no webhook error; polling fallback every 15 minutes. Genuine live Page event pending (Meta app unpublished). Messenger and Lead Ads outside scope. **Not production-complete.** MKT-005 remains **Implemented but inactive** until agent activation gate.
 
 ### Operations integrations
 

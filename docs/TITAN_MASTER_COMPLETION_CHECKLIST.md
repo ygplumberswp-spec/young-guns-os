@@ -45,6 +45,8 @@ Prior register estimate (**~27% verified live** on 116-row traceability) remains
 
 **Note:** Documentation complete ≠ agent implementation complete. No agent marked **Active** without activation gate evidence.
 
+**Facebook (staging — J-6.7F14 deployed):** Connected and verified; content permissions granted; webhooks feed+mention provider-confirmed; Meta dashboard sample delivery succeeded; genuine live Page event pending (Meta app unpublished); not production-complete.
+
 ---
 
 ## Merged master sequence (16 steps)

@@ -15,12 +15,12 @@
 |-----|------:|--------------|
 | Agents Defined / Planned (no executable loop) | majority of 191 | [TITAN_AGENT_ACTIVATION_ROADMAP.md](./TITAN_AGENT_ACTIVATION_ROADMAP.md) Phases B–F |
 | Supervised (AURA only) | 1 | Phase B exit → expand read-only agents |
-| Implemented but inactive | 1 (Facebook) | Phase C–E; webhook live proof pending deploy |
+| Implemented but inactive | 1 (Facebook) | Phase C–E; agent activation gate not yet passed |
 | Build-ready | 2 | Phase D prerequisites |
 | **Active** | **0** | None — do not fake |
 | AUD department agents | 14 Defined | Phase A approved → Phase B shadow |
 
-**Facebook:** Connection and content features complete on staging. Webhook subscription at `23debd9` — **live event proof pending Owner deploy**. Not a blocker for AGENT-001 documentation.
+**Facebook (J-6.7F14 deployed to staging):** Young Guns Plumbing - Cape Town connected and verified. Content permissions granted (publish, schedule, comments, reply, Page details, insights). Webhook fields **feed** + **mention** provider-confirmed; Meta dashboard sample delivery succeeded; no webhook error; polling fallback every 15 minutes. Genuine live Page event pending (Meta app unpublished). Messenger and Lead Ads outside scope. **Not production-complete.**
 
 **XERO-002:** **Parked** — no work started.
 

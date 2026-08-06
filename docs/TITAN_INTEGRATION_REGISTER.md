@@ -89,7 +89,7 @@ Records connection infrastructure for TITAN integrations. Integration completion
 
 ---
 
-## Facebook Business (Young Guns — recorded 2026-08-06)
+## Facebook Business (Young Guns — J-6.7F14 deployed to staging)
 
 | Field | Value |
 |-------|-------|
@@ -97,24 +97,33 @@ Records connection infrastructure for TITAN integrations. Integration completion
 | Module | `/facebook-business` |
 | API | `apps/api/src/services/facebook-business.service.ts` |
 | Tenant | Young Guns (`095aef76-fef5-4139-af37-a42f2d7e2faf`) |
-| **Page connection** | **Connected (staging)** — Young Guns Plumbing - Cape Town |
+| **Page** | **Young Guns Plumbing - Cape Town** — connected and verified |
 | Page ID | `394603137072407` |
+| Environment | **Staging only** — not production-complete |
+| Deployed task | J-6.7F14 (`23debd9cfa90a05ab31f051b76d3e7a86708b14f`) |
 | Staging API | https://young-guns-os-staging.up.railway.app |
 | Staging Web | https://comfortable-determination-staging.up.railway.app |
-| Code HEAD (webhook fix) | `23debd9cfa90a05ab31f051b76d3e7a86708b14f` |
 
-### Granted scopes (@ 2026-08-06)
+### Content permissions granted (@ staging)
 
-`pages_show_list`, `business_management`, `pages_read_engagement`, `pages_read_user_content`, `pages_manage_posts`, `pages_manage_engagement`, `pages_manage_metadata`, `read_insights`, `public_profile`
+Publishing · scheduling · reading comments · replying to comments · Page details · insights.
 
-### Webhook status (J-6.7F14)
+### Webhook status (J-6.7F14 — staging)
 
 | Item | State |
 |------|-------|
-| Webhook code | Pushed — `feed` + `mention` fields only; Owner Subscribe action |
-| `webhook_subscribed_at` (staging DB) | NULL pending Owner deploy + Subscribe |
-| Live event proof | **Pending** — no test post created |
-| Polling fallback | **Active** — 15-minute backfill preserved |
+| Deployed to staging | **Yes** — J-6.7F14 |
+| Provider-confirmed fields | **feed**, **mention** |
+| Meta dashboard sample delivery | **Succeeded** |
+| Webhook errors recorded | **None** |
+| Polling fallback | **Active** — every 15 minutes |
+| Genuine live Young Guns Page event | **Pending** — Meta app is **unpublished** |
+| Messenger webhooks | **Outside completed scope** — requires separate Meta approval |
+| Lead Ads webhooks | **Outside completed scope** — requires separate Meta approval |
+
+### Production boundary
+
+Facebook integration is **staging-complete for J-6.7F14** but **must not be marked production-complete**.
 
 ### Client journey compliance
 
@@ -124,16 +133,16 @@ Records connection infrastructure for TITAN integrations. Integration completion
 | Choose Page | ✅ |
 | TITAN verifies | ✅ |
 | Server-side encrypted save | ✅ |
-| Developer dashboard required for client | ❌ Must not be required — platform admin configures Meta App webhook URL |
+| Developer dashboard required for client | ❌ Platform admin configures Meta App webhook URL |
 
 ### Agent impact
 
 | Agent | Register ID | Status |
 |-------|-------------|--------|
-| Facebook Agent | MKT-005 | **Implemented but inactive** — publish requires Owner approval |
+| Facebook Agent | MKT-005 | **Implemented but inactive** — integration staging-ready; agent activation gate not passed |
 | Social Media Agent | MKT-004 | **Defined** |
 
-**Not a blocker** for non-Facebook agent documentation work. **XERO-002 remains parked.**
+**XERO-002 remains parked.**
 
 ## Instagram Business
 

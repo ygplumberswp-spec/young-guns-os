@@ -1543,7 +1543,7 @@ Owner
 | **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
 | **Current implementation status** | **Implemented but inactive** |
 | **Activation phase** | Phase C |
-| **Notes** | Facebook Business module exists; webhook subscription pending Owner deploy proof |
+| **Notes** | J-6.7F14 deployed to staging; Page connected and verified; webhooks feed+mention provider-confirmed; agent activation gate not passed |
 #### MKT-006 — Instagram Agent
 
 | Field | Value |

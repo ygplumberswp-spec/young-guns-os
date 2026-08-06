@@ -14,8 +14,8 @@
 - **No agent is activated by this document alone.** Activation requires tools, RBAC, tests, audit wiring, and Owner approval per phase gate.
 - Phases are sequential gates; parallel preparation within a phase is allowed when dependencies are met.
 - **Do not invent milestone numbers** beyond Phase A–F defined here.
-- Facebook advanced capabilities and webhook live proof remain **pending Owner deploy** — not a blocker for Phase A–B documentation and read-only agents.
-- **XERO-002 remains parked** — Xero execution agents stay **Planned** until Owner reopens.
+- Facebook J-6.7F14 **deployed to staging** — connected, verified, webhooks feed+mention confirmed; genuine live Page event pending (Meta app unpublished); **not production-complete**
+- **XERO-002 remains parked** — Xero execution agents stay **Planned** until Owner reopens
 
 ---
 
