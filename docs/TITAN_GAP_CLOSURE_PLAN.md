@@ -2,7 +2,7 @@
 
 **Audit type:** READ-ONLY planning artifact — no new features  
 **Generated (UTC):** 2026-08-05  
-**Last updated (UTC):** 2026-08-06 — OCC-001 recorded (not implemented); XERO-002 Gate sequence remains active  
+**Last updated (UTC):** 2026-08-06 — FNB-CASH-001 recorded (not implemented); XERO-002 Gate sequence remains active  
 **Base HEAD:** `cc0abbcde96902711fc0e141590144470abc5444` → task branch `cursor/titan-xero-002-p0-finance`  
 **Branch:** `cursor/titan-v1-integration`  
 **Scope:** Unmet **accepted** requirements only — deferred items at end  
@@ -228,6 +228,36 @@ Photo, PDF, spreadsheet or authorised email attachment → secure validation →
 **Governance:** Owner/Company Owner only. Real data only. AURA advises; Owner approves all financial and pricing decisions. No automatic data changes.
 
 **Implementation gate:** Forbidden during active XERO-002 Gate proof sequence.
+
+---
+
+### FNB-CASH-001 — FNB Bank Feed & Cash Intelligence (RECORD ONLY — Phase 1 audit only during XERO-002)
+
+**Status:** Documented only. **Not implemented.** **No FNB credentials, no production connection.**
+
+**Recorded (UTC):** 2026-08-06
+
+**Initial tenant:** Young Guns Plumbing — FNB business account
+
+**Placement:** After **AI-FIN-DOC-001** record; Phase 1 audit may be Owner-sequenced during XERO-002 close window.
+
+| Phase | ID | Scope |
+|-------|-----|-------|
+| 1 | FNB-CASH-001A | Audit Xero bank-feed architecture; FNB gap report — **no code** |
+| 2 | FNB-CASH-001B | Read-only staging connection; deduplicated import; Xero reconciliation verify |
+| 3 | FNB-CASH-001C | Payment matching, expense suggestions, job-cost allocation |
+| 4 | FNB-CASH-001D | Cash forecasting and AURA financial intelligence |
+
+**Documentation:**
+
+- [TITAN_FNB_BANK_FEED_CASH_INTELLIGENCE_SPECIFICATION.md](./TITAN_FNB_BANK_FEED_CASH_INTELLIGENCE_SPECIFICATION.md)
+- [TITAN_FNB_BANK_FEED_ARCHITECTURE.md](./TITAN_FNB_BANK_FEED_ARCHITECTURE.md)
+
+**Accounting truth:** Xero remains ledger of record. No FNB app scraping. No password/OTP storage. Read-only initial release.
+
+**Cross-links:** BANK-IMPORT-001 · INT-010 · XERO-002 · XERO-003 · AI-FIN-DOC-001 · JOB-COST-001 · OCC-001
+
+**Governance:** Owner approves provider and security plan before live credentials. Stop gate after each phase with evidence package.
 
 ---
 

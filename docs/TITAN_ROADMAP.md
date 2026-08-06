@@ -10,7 +10,7 @@
 ## Active work (do not interrupt)
 
 **XERO-002** — Controlled live proof gate sequence (Gates 5B–7 remaining).  
-**Do not implement PRICEBOOK-001, JOB-COST-001, DASH-002, OCC-001, or other major features during active Xero proof.**
+**Do not implement PRICEBOOK-001, JOB-COST-001, DASH-002, OCC-001, FNB-CASH-001, or other major features during active Xero proof.**
 
 See: [TITAN_XERO_002_LIVE_PROOF_PLAN.md](./TITAN_XERO_002_LIVE_PROOF_PLAN.md)
 
@@ -31,11 +31,28 @@ Execute in order after prior gates close. Production forbidden until explicit pr
 | 5a | AP-DOC-001 | Supplier Invoice Import | Child — recorded |
 | 5b | EXP-REC-001 | Receipt and Till-Slip Capture | Child — recorded |
 | 5c | INV-PRICE-001 | Supplier Price List Import | Child — recorded |
-| 6 | — | Full BrowserStack role and journey audit | Planned |
-| 7 | — | Remaining integration and platform roadmap | Ongoing |
-| 8 | **UI-THEME-001** | **App-wide visual finishing (Premium Dark Mode)** | Recorded only |
-| 9 | — | Young Guns controlled pilot | Gate |
-| 10 | — | Production hardening and launch | Gate |
+| 6 | **FNB-CASH-001** | **FNB Bank Feed & Cash Intelligence** | **RECORDED** — Phase 1 audit only |
+| 7 | — | Full BrowserStack role and journey audit | Planned |
+| 8 | — | Remaining integration and platform roadmap | Ongoing |
+| 9 | **UI-THEME-001** | **App-wide visual finishing (Premium Dark Mode)** | Recorded only |
+| 10 | — | Young Guns controlled pilot | Gate |
+| 11 | — | Production hardening and launch | Gate |
+
+---
+
+## FNB-CASH-001 phased delivery (Young Guns FNB — after XERO-002 close)
+
+| Phase | ID | Scope |
+|-------|-----|-------|
+| 1 | FNB-CASH-001A | Audit Xero bank-feed architecture; FNB gap report — **no code** |
+| 2 | FNB-CASH-001B | Read-only staging connection; import and deduplicate; Xero reconciliation verify |
+| 3 | FNB-CASH-001C | Payment matching, expense suggestions, job-cost allocation |
+| 4 | FNB-CASH-001D | Cash forecasting and AURA financial intelligence |
+
+**Documentation:**
+
+- [TITAN_FNB_BANK_FEED_CASH_INTELLIGENCE_SPECIFICATION.md](./TITAN_FNB_BANK_FEED_CASH_INTELLIGENCE_SPECIFICATION.md)
+- [TITAN_FNB_BANK_FEED_ARCHITECTURE.md](./TITAN_FNB_BANK_FEED_ARCHITECTURE.md)
 
 ---
 
@@ -141,4 +158,4 @@ Execute in order after prior gates close. Production forbidden until explicit pr
 
 ---
 
-*Roadmap updated 2026-08-06 to register OCC-001. No code changes.*
+*Roadmap updated 2026-08-06 to register FNB-CASH-001. No code changes.*

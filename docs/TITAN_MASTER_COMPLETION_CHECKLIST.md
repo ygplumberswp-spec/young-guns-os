@@ -39,6 +39,8 @@
 
 **OCC-001 (2026-08-06):** Owner Command Center & AURA Business Coach — **documented only**, not implemented. Sequenced **after DASH-002** and **JOB-COST-001C** minimum. Extends **DASH-001** (approved). **Do not implement during active Xero proof.** See [TITAN_OWNER_COMMAND_CENTER_AURA_COACH_SPECIFICATION.md](./TITAN_OWNER_COMMAND_CENTER_AURA_COACH_SPECIFICATION.md), [TITAN_ROADMAP.md](./TITAN_ROADMAP.md).
 
+**FNB-CASH-001 (2026-08-06):** FNB Bank Feed & Cash Intelligence — **documented only**, not implemented. Phase 1 audit only until XERO-002 closes. **No FNB credentials or production connection.** See [TITAN_FNB_BANK_FEED_CASH_INTELLIGENCE_SPECIFICATION.md](./TITAN_FNB_BANK_FEED_CASH_INTELLIGENCE_SPECIFICATION.md), [TITAN_ROADMAP.md](./TITAN_ROADMAP.md).
+
 **Integrations overview (2026-08-06):** Enterprise polish on PR #10 — unified cards, enterprise status lines, fine-details finishing. **Pending Owner approval** — not complete until signed off.
 
 ---
@@ -368,7 +370,12 @@ Boolean columns use **YES** / **NO** / **—** (not applicable).
 | INT-007 | Maps | Google Maps autocomplete (finance addresses) | BUILT LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 | Google Maps API |  |  |
 | INT-008 | Maps | Live Directions / ETA routing | NOT FOUND | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  | FLT-008 deferred |  |
 | INT-009 | social | Meta/Google ads adapters live | FOUNDATION ONLY | YES | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  | MKT-003 not connected |  |
-| INT-010 | bank | Open banking / bank feed integration | NOT FOUND | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  | Future scope |  |
+| INT-010 | bank | Open banking / bank feed integration | **DOCUMENTED ONLY** | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_FNB_BANK_FEED_CASH_INTELLIGENCE_SPECIFICATION.md | 2026-08-06 | FNB-CASH-001 | Superseded by FNB-CASH-001 spec |
+| FNB-001 | bank | FNB-CASH-001 FNB Bank Feed & Cash Intelligence | **DOCUMENTED ONLY** | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_FNB_BANK_FEED_CASH_INTELLIGENCE_SPECIFICATION.md | 2026-08-06 | XERO-002 | Phase 1 audit after Xero close |
+| FNB-001A | bank | Audit Xero bank-feed architecture; FNB gap report | **DOCUMENTED ONLY** | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_FNB_BANK_FEED_ARCHITECTURE.md | 2026-08-06 | BANK-IMPORT-001 | Phase 1 — no code |
+| FNB-001B | bank | Read-only staging connection; deduplicated import | **DOCUMENTED ONLY** | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_FNB_BANK_FEED_ARCHITECTURE.md | 2026-08-06 | FNB-001A | Phase 2 — staging only |
+| FNB-001C | bank | Payment matching, expense suggestions, job-cost allocation | **DOCUMENTED ONLY** | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_FNB_BANK_FEED_CASH_INTELLIGENCE_SPECIFICATION.md §3–5 | 2026-08-06 | JOB-COST-001 | Phase 3 |
+| FNB-001D | bank | Cash forecasting and AURA financial intelligence | **DOCUMENTED ONLY** | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_FNB_BANK_FEED_CASH_INTELLIGENCE_SPECIFICATION.md §6–7 | 2026-08-06 | OCC-001 | Phase 4 |
 | INT-011 | notifications | Push + in-app notification delivery | PARTIALLY IMPLEMENTED | YES | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | notification_intelligence agent scaffold | f8cc0c4 |  |  |  |
 | INT-012 | Gmail | Integrations hub truthful NOT IMPLEMENTED badge | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | IntegrationAutoSyncStatusPanel | f8cc0c4 |  |  |  |
 | INT-OVERVIEW-001 | integrations | Integrations overview + Dashboard Connections — enterprise status alignment | BUILT LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | PR #10; ConnectionsPanel; IntegrationOverviewCard | INT-UI-001B |  | Owner visual approval pending | Owner sign-off |
@@ -743,11 +750,12 @@ See [TITAN_ROADMAP.md](./TITAN_ROADMAP.md) for authoritative order:
 | 3 | **DASH-002** | Customisable no-gap Dashboard grid |
 | 4 | **OCC-001** | Owner Command Center & AURA Business Coach |
 | 5 | **AI-FIN-DOC-001** | AI Financial Capture Engine (+ AP-DOC-001, EXP-REC-001, INV-PRICE-001) |
-| 6 | — | Full BrowserStack role and journey audit |
-| 7 | — | Remaining integration and platform roadmap |
-| 8 | **UI-THEME-001** | App-wide visual finishing |
-| 9 | — | Young Guns controlled pilot |
-| 10 | — | Production hardening and launch |
+| 6 | **FNB-CASH-001** | FNB Bank Feed & Cash Intelligence |
+| 7 | — | Full BrowserStack role and journey audit |
+| 8 | — | Remaining integration and platform roadmap |
+| 9 | **UI-THEME-001** | App-wide visual finishing |
+| 10 | — | Young Guns controlled pilot |
+| 11 | — | Production hardening and launch |
 
 After **INT-OVERVIEW-001** (Integrations overview) receives Owner approval, the completed prerequisite sequence was:
 
