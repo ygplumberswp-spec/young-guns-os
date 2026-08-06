@@ -237,7 +237,7 @@ Both tasks must meet the **Enterprise Product Quality Gate** and **Fine Details 
 
 | Phase | Focus | Type |
 |-------|-------|------|
-| **0** | **Next enterprise priorities (PERF-001, DASH-001)** | **Recorded — Owner sequencing required** |
+| **0** | **Next enterprise priorities (PERF-001, XERO-003, DASH-001)** | **Recorded — Owner sequencing required** |
 | 1 | Staging verification | Verification only |
 | 2 | Security & data integrity | Implementation + verify |
 | 3 | E2E business chain | Implementation + verify |

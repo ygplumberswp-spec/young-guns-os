@@ -1,4 +1,5 @@
 import { PageHeader } from '../../components/ux';
+import { mapBooleanConnectionToEnterpriseLabel } from '../../features/integrations/enterprise-overview-status';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Button, EmptyState, Input, Panel, StatCard } from '@titan/ui';
 import type { FleetExecutiveDashboard } from '@titan/shared';
@@ -340,7 +341,7 @@ export function FleetIntelligencePage() {
             <StatCard label="GPS Positions" value={String(dashboard.gpsPositionCount)} />
             <StatCard
               label="Cartrack"
-              value={dashboard.cartrackConnected ? 'Connected' : 'Disconnected'}
+              value={mapBooleanConnectionToEnterpriseLabel(dashboard.cartrackConnected)}
             />
             <StatCard label="Pending Actions" value={String(dashboard.pendingActionCount)} />
           </div>

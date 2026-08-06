@@ -7,6 +7,7 @@ import {
   formatVehiclePositionFreshness,
   resolveVehiclePositionAddressDisplay,
 } from '@titan/shared';
+import { mapFleetConnectionDisplayToEnterpriseLabel } from '../integrations/enterprise-overview-status';
 import { Button, EmptyState, Panel } from '@titan/ui';
 import { DashboardSectionSkeleton } from './DashboardSectionSkeleton';
 import { DashboardSourceMeta } from './DashboardSourceMeta';
@@ -135,7 +136,7 @@ export function FleetOverviewPanel({
       <DashboardSourceMeta
         source={
           tracking
-            ? `Cartrack · ${formatFleetConnectionDisplayLabel(tracking.connectionDisplayState)}`
+            ? `Cartrack · ${mapFleetConnectionDisplayToEnterpriseLabel(formatFleetConnectionDisplayLabel(tracking.connectionDisplayState))}`
             : 'Cartrack'
         }
         updatedAt={lastFetchedAt}

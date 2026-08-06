@@ -13,6 +13,7 @@ import {
   formatVehicleMotionLabel,
   formatVehiclePositionFreshness,
 } from '@titan/shared';
+import { mapFleetConnectionDisplayToEnterpriseLabel } from '../integrations/enterprise-overview-status';
 import { Button, EmptyState, Panel } from '@titan/ui';
 import { GoogleMapView, type MapMarker } from '../maps/GoogleMapView';
 import {
@@ -225,7 +226,9 @@ export function LiveOperationsPanel({
           ) : null}
           {tracking ? (
             <span className="exec-live-ops-map__footer-note">
-              {formatFleetConnectionDisplayLabel(tracking.connectionDisplayState)}
+              {mapFleetConnectionDisplayToEnterpriseLabel(
+                formatFleetConnectionDisplayLabel(tracking.connectionDisplayState),
+              )}
               {lastFetchedAt ? ' · TITAN refreshed just now' : ''}
             </span>
           ) : null}

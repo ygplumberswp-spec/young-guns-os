@@ -2,12 +2,12 @@ import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Link } from 'wouter';
 import { Button, EmptyState, Input, Panel, StatCard } from '@titan/ui';
 import {
-  formatSocialConnectionStatus,
   SOCIAL_PLATFORM_LABELS,
   SOCIAL_PLATFORMS,
   type SocialMediaDashboard,
   type SocialPlatform,
 } from '@titan/shared';
+import { mapSocialMediaFoundationStatusLabel } from '../../features/integrations/enterprise-overview-status';
 import { PageHeader } from '../../components/ux';
 import { useAuth } from '../../lib/auth-context';
 import {
@@ -411,7 +411,7 @@ export function SocialMediaIntegrationsPage() {
                         <p className="text-xs text-slate-500">{connection.displayName}</p>
                       </div>
                       <span className="rounded bg-zinc-800 px-2 py-0.5 text-xs yg-text-accent-soft">
-                        {formatSocialConnectionStatus(connection.status)}
+                        {mapSocialMediaFoundationStatusLabel(connection.status)}
                       </span>
                     </div>
                     <p className="text-xs text-slate-400">

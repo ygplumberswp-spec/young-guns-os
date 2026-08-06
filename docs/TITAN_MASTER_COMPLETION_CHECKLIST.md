@@ -677,7 +677,7 @@ Items **J66A-001 … J66A-005** in the register above are targeted for completio
 | Staging release | **NO-GO** |
 | Production | **FORBIDDEN** |
 | Primary blockers | No staging credentials locally; migrations 0176–0178 not applied; Owner finance E2E not run; J-6.6A in progress |
-| Next action | Owner approve Integrations overview (PR #10) → formally sequence PERF-001 + DASH-001 → then Xero live proof |
+| Next action | Owner approve INT-OVERVIEW-001 → formally sequence PERF-001 → XERO-003 → DASH-001 → then XERO-002 live proof |
 
 ---
 
@@ -685,13 +685,14 @@ Items **J66A-001 … J66A-005** in the register above are targeted for completio
 
 **Do not implement during Integrations overview approval or before Owner formal sequencing.**
 
-After **INT-OVERVIEW-001** (Integrations overview) receives Owner approval, the next two separate high-priority tasks are:
+After **INT-OVERVIEW-001** (Integrations overview) receives Owner approval, the next sequenced tasks are:
 
-| Order | ID | Task | Status | Quality bar |
-|------:|-----|------|--------|-------------|
-| 1 | **PERF-001** | **TITAN Performance Foundation** | **RECORDED — NOT STARTED** | Enterprise Product Quality Gate + Fine Details & Finishing |
-| 2 | **XERO-003** | **Near-real-time Xero quote, invoice and payment intersync** | **RECORDED — NOT STARTED** | Measurable latency + honest freshness |
-| 3 | **DASH-001** | **Owner Dashboard — Business Heartbeat** | **RECORDED — NOT STARTED** | Same standard as Integrations overview |
+| Order | ID | Task |
+|------:|-----|------|
+| 1 | **PERF-001** | TITAN Performance Foundation |
+| 2 | **XERO-003** | Near-real-time Xero quote, invoice and payment intersync |
+| 3 | **DASH-001** | Owner Dashboard Business Heartbeat |
+| 4 | **XERO-002** | Controlled Xero live proof (Owner gate) |
 
 **PERF-001 scope (future):** Initial load, route navigation, API waterfalls, duplicate requests, oversized JS bundles, full-page reloads, slow DB queries, missing indexes, unpaginated lists, blocking provider calls, missing caching, repeated auth checks, layout-shift loading, blank screens, mobile/tablet slowness — with **measurable before/after evidence**.
 
