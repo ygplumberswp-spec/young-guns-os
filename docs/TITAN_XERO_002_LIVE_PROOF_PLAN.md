@@ -1,7 +1,8 @@
 # TITAN XERO-002 — Controlled Live-Write Proof Plan (Owner Gate)
 
 **Status:** PREPARED — **DO NOT EXECUTE** until Owner explicitly approves each gate  
-**Preflight (2026-08-06):** [TITAN_XERO_002A_LIVE_PROOF_PREFLIGHT.md](./TITAN_XERO_002A_LIVE_PROOF_PREFLIGHT.md) — read-only evidence complete  
+**Preflight (2026-08-06):** [TITAN_XERO_002A_LIVE_PROOF_PREFLIGHT.md](./TITAN_XERO_002A_LIVE_PROOF_PREFLIGHT.md)  
+**Gate 2 (2026-08-06):** [TITAN_XERO_002_GATE_2_READONLY_PROOF.md](./TITAN_XERO_002_GATE_2_READONLY_PROOF.md) — **PARTIAL** (org live-read verified; full proof after staging API deploy)
 **Sequencing (2026-08-06):** DASH-001 **approved and closed**. Live proof remains gated per section **G1–G7** below.
 **Prepared (UTC):** 2026-08-06  
 **Environment:** Staging only  
@@ -37,9 +38,11 @@
 
 ### GATE 2 — Read-only proof
 
+**Execution (2026-08-06):** PARTIAL — `POST /integrations/xero/test` returned **Young Guns Plumbing** (live Xero read). Full contact/invoice/attachment proof via `POST /integrations/xero/gate2-readonly-proof` pending staging API deploy of `b4e991c`.
+
 | | |
 |---|---|
-| **Prerequisites** | Gate 1 pass or skipped; Owner signed in |
+| **Prerequisites** | Gate 1 pass or skipped; staging API deployed with Gate 2 route |
 | **Owner action** | Open linked customer; open existing invoice; view attachment metadata if available |
 | **Expected result** | Tenant mapping correct; attachment metadata lists without error; **no writes** |
 | **Stop condition** | Any write prompt or provider error — stop and capture audit |

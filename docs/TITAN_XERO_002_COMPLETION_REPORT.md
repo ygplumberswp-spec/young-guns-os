@@ -1,8 +1,9 @@
 # TITAN XERO-002 — Completion Report (Implementation vs Live Proof)
 
-**Status:** Implementation complete · Live proof **NOT EXECUTED**  
+**Status:** Implementation complete · Gate 2 **PARTIAL** (org live-read verified)  
 **Last updated (UTC):** 2026-08-06  
-**Preflight:** [TITAN_XERO_002A_LIVE_PROOF_PREFLIGHT.md](./TITAN_XERO_002A_LIVE_PROOF_PREFLIGHT.md)
+**Preflight:** [TITAN_XERO_002A_LIVE_PROOF_PREFLIGHT.md](./TITAN_XERO_002A_LIVE_PROOF_PREFLIGHT.md)  
+**Gate 2:** [TITAN_XERO_002_GATE_2_READONLY_PROOF.md](./TITAN_XERO_002_GATE_2_READONLY_PROOF.md)
 
 ---
 
@@ -27,9 +28,9 @@
 
 | Gate | Status |
 |------|--------|
-| G1 Reconnect / scope | **Not required** for attachment scope (granted 2026-08-06) — conditional on Gate 2 |
-| G2 Read-only proof | **Pending Owner approval** |
-| G3 Controlled quote | Blocked |
+| G1 Reconnect / scope | **Not required** — scope granted 2026-08-06 |
+| G2 Read-only proof | **PARTIAL** — live org test PASS; contact/invoice/attachment pending staging API deploy |
+| G3 Controlled quote | Blocked — awaiting Gate 2 completion |
 | G4 Controlled invoice | Blocked |
 | G5 Payment | Blocked |
 | G6 Attachment read | Blocked |
@@ -59,6 +60,7 @@
 
 ## Single next action
 
-Owner approves **XERO-002A preflight**, then authorises **Gate 2 read-only proof** on staging.
+1. **Owner:** Redeploy staging API from canonical `b4e991c`, then re-run `node diagnostic-output/xero-002-gate2-readonly-proof.mjs`.
+2. After Gate 2 **PASS**, approve **Gate 3** separately for one controlled DRAFT quote.
 
 **Do not mark Xero production-complete until Gates 2–7 succeed.**
