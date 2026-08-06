@@ -437,6 +437,17 @@ export class XeroClient {
     return invoices[0]!;
   }
 
+  async fetchPayment(paymentId: string): Promise<XeroPaymentRecord> {
+    const payload = await this.apiRequest('GET', `/Payments/${paymentId}`);
+    const payments = extractPayments(payload);
+
+    if (payments.length === 0) {
+      throw new XeroError('NOT_FOUND', 'Xero payment not found');
+    }
+
+    return payments[0]!;
+  }
+
   async fetchQuote(quoteId: string): Promise<XeroQuoteRecord> {
     const payload = await this.apiRequest('GET', `/Quotes/${quoteId}`);
     const quotes = extractQuotes(payload);

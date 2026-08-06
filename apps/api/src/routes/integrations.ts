@@ -27,6 +27,8 @@ import type { XeroReconciliationService } from '../services/xero-reconciliation.
 import type { XeroRealtimeIntersyncService } from '../services/xero-realtime-intersync.service.js';
 import type { XeroGate2ReadonlyProofService } from '../services/xero-gate2-readonly-proof.service.js';
 import { XeroGate2ReadonlyProofError } from '../services/xero-gate2-readonly-proof.service.js';
+import type { XeroGate5bPaymentObservationService } from '../services/xero-gate5b-payment-observation.service.js';
+import { XeroGate5bPaymentObservationError } from '../services/xero-gate5b-payment-observation.service.js';
 import type { XeroGate3ControlledQuoteService } from '../services/xero-gate3-controlled-quote.service.js';
 import { XeroGate3ControlledQuoteError } from '../services/xero-gate3-controlled-quote.service.js';
 import type { XeroGate4ControlledInvoiceService } from '../services/xero-gate4-controlled-invoice.service.js';
@@ -199,6 +201,11 @@ const gate4ControlledInvoiceSchema = z.object({
   runTargetedRefresh: z.boolean().optional(),
 });
 
+const gate5bPaymentObservationSchema = z.object({
+  invoiceId: z.string().uuid(),
+  runTargetedRefresh: z.boolean().optional(),
+});
+
 const resolveXeroConflictSchema = z.object({
   entityType: z.enum(['invoice', 'contact', 'payment']),
   entityId: z.string().uuid(),
@@ -222,6 +229,7 @@ type IntegrationsRouterDeps = {
   xeroGate2ReadonlyProofService?: XeroGate2ReadonlyProofService;
   xeroGate3ControlledQuoteService?: XeroGate3ControlledQuoteService;
   xeroGate4ControlledInvoiceService?: XeroGate4ControlledInvoiceService;
+  xeroGate5bPaymentObservationService?: XeroGate5bPaymentObservationService;
   teamService: TeamService;
   appUrl: string;
   jwtSecret: string;
@@ -265,6 +273,7 @@ export function createIntegrationsRouter({
   xeroGate2ReadonlyProofService,
   xeroGate3ControlledQuoteService,
   xeroGate4ControlledInvoiceService,
+  xeroGate5bPaymentObservationService,
   teamService,
   appUrl,
   jwtSecret,
@@ -735,6 +744,57 @@ export function createIntegrationsRouter({
           return;
         }
         handleXeroSyncError(res, error);
+      }
+    },
+  );
+
+  router.post(
+    '/xero/gate5b-payment-observation',
+    requireAnyPermission('integrations:manage'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+
+      if (!xeroGate5bPaymentObservationService) {
+        res.status(503).json({
+          error: {
+            code: 'NOT_CONFIGURED',
+            message: 'Gate 5B payment observation is not configured.',
+          },
+        });
+        return;
+      }
+
+      const parsed = gate5bPaymentObservationSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({
+          error: { code: 'VALIDATION_ERROR', message: parsed.error.issues[0]?.message ?? 'Invalid body' },
+        });
+        return;
+      }
+
+      try {
+        const result = await xeroGate5bPaymentObservationService.observePaymentState({
+          companyId,
+          invoiceId: parsed.data.invoiceId,
+          runTargetedRefresh: parsed.data.runTargetedRefresh ?? true,
+        });
+        res.json({ data: { result } });
+      } catch (error) {
+        if (error instanceof XeroGate5bPaymentObservationError) {
+          const status =
+            error.code === 'ORG_MISMATCH'
+              ? 409
+              : error.code === 'MAPPING_INVALID' ||
+                  error.code === 'PAYMENT_MAPPING_MISSING' ||
+                  error.code === 'PAYMENT_MAPPING_INVALID' ||
+                  error.code === 'PAYMENT_MAPPING_MISMATCH' ||
+                  error.code === 'INVOICE_NOT_FOUND'
+                ? 404
+                : 502;
+          res.status(status).json({ error: { code: error.code, message: error.message } });
+          return;
+        }
+        handleXeroOAuthError(res, error);
       }
     },
   );

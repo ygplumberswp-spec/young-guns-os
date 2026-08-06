@@ -1,11 +1,12 @@
 # TITAN XERO-002 — Completion Report (Implementation vs Live Proof)
 
-**Status:** Implementation complete · Gate 2 **PASS** · Gate 3 **PASS** · Gate 4 **PASS**  
+**Status:** Implementation complete · Gate 2 **PASS** · Gate 3 **PASS** · Gate 4 **PASS** · Gate 5B **PASS**  
 **Last updated (UTC):** 2026-08-06  
 **Preflight:** [TITAN_XERO_002A_LIVE_PROOF_PREFLIGHT.md](./TITAN_XERO_002A_LIVE_PROOF_PREFLIGHT.md)  
 **Gate 2:** [TITAN_XERO_002_GATE_2_READONLY_PROOF.md](./TITAN_XERO_002_GATE_2_READONLY_PROOF.md)  
 **Gate 3:** [TITAN_XERO_002_GATE_3_CONTROLLED_QUOTE_PROOF.md](./TITAN_XERO_002_GATE_3_CONTROLLED_QUOTE_PROOF.md)  
-**Gate 4:** [TITAN_XERO_002_GATE_4_CONTROLLED_INVOICE_PROOF.md](./TITAN_XERO_002_GATE_4_CONTROLLED_INVOICE_PROOF.md)
+**Gate 4:** [TITAN_XERO_002_GATE_4_CONTROLLED_INVOICE_PROOF.md](./TITAN_XERO_002_GATE_4_CONTROLLED_INVOICE_PROOF.md)  
+**Gate 5B:** [TITAN_XERO_002_GATE_5B_PAYMENT_OBSERVATION.md](./TITAN_XERO_002_GATE_5B_PAYMENT_OBSERVATION.md)
 
 ---
 
@@ -34,7 +35,8 @@
 | G2 Read-only proof | **PASS** — contact/invoice/attachment metadata verified on staging |
 | G3 Controlled quote | **PASS** — one DRAFT quote pushed; retry idempotent (Q-0253) |
 | G4 Controlled invoice | **PASS** — one DRAFT invoice pushed; official number **INV-0586** |
-| G5 Payment | Blocked — awaiting separate Owner approval |
+| G5B Payment observation | **PASS** — read-only **INV-0280**; states separated; counts unchanged |
+| G5 Controlled payment write | Blocked — awaiting separate Owner approval |
 | G6 Attachment read | Blocked |
 | G7 Reconciliation observe | Blocked |
 
@@ -62,8 +64,10 @@
 
 ## Single next action
 
-**Approve Gate 5 separately** for controlled payment proof on staging.
+**Approve Gate 6 separately** for attachment metadata proof on staging.
 
-Reply **`XERO-002 GATE 5 GO`** to authorise supervised Gate 5 only. Do **not** auto-execute.
+Reply **`XERO-002 GATE 6 GO`** to authorise supervised Gate 6 only. Do **not** auto-execute Gate 6 or Gate 7.
 
-**Do not mark Xero production-complete until Gates 5–7 succeed.**
+**Optional post-deploy:** Re-run Gate 5B harness after staging API includes `gate5b-payment-observation` for live payment fetch + targeted refresh.
+
+**Do not mark Xero production-complete until Gates 6–7 succeed.**

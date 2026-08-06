@@ -97,6 +97,7 @@ import { XeroRealtimeIntersyncService } from './services/xero-realtime-intersync
 import { XeroGate2ReadonlyProofService } from './services/xero-gate2-readonly-proof.service.js';
 import { XeroGate3ControlledQuoteService } from './services/xero-gate3-controlled-quote.service.js';
 import { XeroGate4ControlledInvoiceService } from './services/xero-gate4-controlled-invoice.service.js';
+import { XeroGate5bPaymentObservationService } from './services/xero-gate5b-payment-observation.service.js';
 import { createXeroWebhookRouter } from './routes/xero-webhook.js';
 import { WhatsappService } from './services/whatsapp.service.js';
 import { WhatsappContactEnrichmentService } from './services/whatsapp-contact-enrichment.service.js';
@@ -573,18 +574,6 @@ const xeroOAuthService = XeroOAuthService.create({
   oauthConfig: xeroOAuthConfig,
 });
 const xeroGate2ReadonlyProofService = new XeroGate2ReadonlyProofService(db, xeroOAuthService);
-const xeroGate3ControlledQuoteService = new XeroGate3ControlledQuoteService(
-  db,
-  xeroOAuthService,
-  xeroSyncService,
-  xeroWriteApprovalGate,
-);
-const xeroGate4ControlledInvoiceService = new XeroGate4ControlledInvoiceService(
-  db,
-  xeroOAuthService,
-  xeroSyncService,
-  xeroWriteApprovalGate,
-);
 const gmailOAuthConfig = resolveGmailOAuthConfig(env, apiPublicUrl);
 bootLog('gmail oauth resolved', {
   oauthConfigured: gmailOAuthConfig.configured,
@@ -642,6 +631,23 @@ const xeroSyncService = XeroSyncService.create({
   writeApprovalGate: xeroWriteApprovalGate,
   mappingConflictService: xeroMappingConflictService,
 });
+const xeroGate5bPaymentObservationService = new XeroGate5bPaymentObservationService(
+  db,
+  xeroOAuthService,
+  xeroSyncService,
+);
+const xeroGate3ControlledQuoteService = new XeroGate3ControlledQuoteService(
+  db,
+  xeroOAuthService,
+  xeroSyncService,
+  xeroWriteApprovalGate,
+);
+const xeroGate4ControlledInvoiceService = new XeroGate4ControlledInvoiceService(
+  db,
+  xeroOAuthService,
+  xeroSyncService,
+  xeroWriteApprovalGate,
+);
 const xeroFinancialMemoryService = new XeroFinancialMemoryService(db, xeroSyncService);
 const xeroCustomerMappingService = XeroCustomerMappingService.create(db);
 const xeroReconciliationService = XeroReconciliationService.create(db);
@@ -1976,6 +1982,7 @@ app.use(
     xeroGate2ReadonlyProofService,
     xeroGate3ControlledQuoteService,
     xeroGate4ControlledInvoiceService,
+    xeroGate5bPaymentObservationService,
     teamService,
     appUrl: env.APP_URL,
     jwtSecret: env.JWT_SECRET,

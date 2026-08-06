@@ -4,6 +4,7 @@
 **Preflight (2026-08-06):** [TITAN_XERO_002A_LIVE_PROOF_PREFLIGHT.md](./TITAN_XERO_002A_LIVE_PROOF_PREFLIGHT.md)  
 **Gate 2 (2026-08-06):** [TITAN_XERO_002_GATE_2_READONLY_PROOF.md](./TITAN_XERO_002_GATE_2_READONLY_PROOF.md) — **PASS**  
 **Gate 4 (2026-08-06):** [TITAN_XERO_002_GATE_4_CONTROLLED_INVOICE_PROOF.md](./TITAN_XERO_002_GATE_4_CONTROLLED_INVOICE_PROOF.md) — **PASS**
+**Gate 5B (2026-08-06):** [TITAN_XERO_002_GATE_5B_PAYMENT_OBSERVATION.md](./TITAN_XERO_002_GATE_5B_PAYMENT_OBSERVATION.md) — **PASS** (read-only; INV-0280)
 **Sequencing (2026-08-06):** DASH-001 **approved and closed**. Live proof remains gated per section **G1–G7** below.
 **Prepared (UTC):** 2026-08-06  
 **Environment:** Staging only  
@@ -60,13 +61,19 @@
 
 ### GATE 5 — Controlled payment proof
 
+**Gate 5A (preflight):** OPTION B — observe existing **INV-0280** (read-only).
+
+**Gate 5B (2026-08-06):** **PASS** — read-only payment state observation on **INV-0280**; truth states separated (Xero payment ≠ reconciled ≠ Yoco). Evidence: `diagnostic-output/xero-002-gate5b-payment-observation.json`.
+
 | | |
 |---|---|
 | **Prerequisites** | Gate 4 pass; separate Owner approval |
-| **Owner action** | Only if Owner confirms real authorised transaction — or Yoco sandbox if configured |
-| **Expected result** | Yoco event recorded; Xero payment import separate; reconciliation states distinct |
-| **Rollback** | Refund if real payment |
+| **Owner action** | Gate 5B: observe only — no writes. Gate 5 write path still blocked pending separate approval. |
+| **Expected result** | Payment states distinct; no duplicate mappings; counts unchanged |
+| **Rollback** | N/A (read-only) |
 | **Forbidden** | Fabricated payment; equating Yoco paid with reconciled |
+
+**Post-deploy:** Re-run Gate 5B harness after `gate5b-payment-observation` route deploys to staging for live `fetchPayment` + targeted refresh.
 
 ### GATE 6 — Attachment proof
 
