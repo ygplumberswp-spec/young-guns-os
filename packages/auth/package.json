@@ -18,7 +18,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json && tsc -p tsconfig.browser.build.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "npm run build && node --test dist/role-experience.test.js dist/rbac-matrix.test.js"
+    "test": "npm run build && node --test dist/role-experience.test.js dist/rbac-matrix.test.js dist/tokens.test.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",

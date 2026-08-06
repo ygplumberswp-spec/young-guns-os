@@ -603,6 +603,7 @@ export const siTenders = pgTable('si_tenders', {
   deadline: timestamp('deadline', { withTimezone: true }),
   status: text('status').notNull().default('draft'),
   workflowStatus: siWorkflowStatusEnum('workflow_status').notNull().default('draft'),
+  quoteId: uuid('quote_id'),
   ownerUserId: uuid('owner_user_id').references(() => users.id, { onDelete: 'set null' }),
   evaluationOutcome: text('evaluation_outcome'),
   winLossReason: text('win_loss_reason'),

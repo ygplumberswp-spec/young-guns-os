@@ -40,6 +40,15 @@ const JOB_MUTATION_PREFIXES = [
   'mobile/jobs',
   'mobile/workforce-dashboard',
 ] as const;
+const SCHEDULING_MUTATION_PREFIXES = [
+  'scheduling/calendar',
+  'scheduling/assignees',
+  'mobile/scheduling',
+  'jobs/list',
+  'jobs/stats',
+  'mobile/jobs',
+  'mobile/workforce-dashboard',
+] as const;
 const QUOTE_MUTATION_PREFIXES = [
   'finance/quotes',
   'finance/stats',
@@ -58,6 +67,11 @@ const PAYMENT_MUTATION_PREFIXES = [
   'finance/jobs',
   'finance/invoices',
 ] as const;
+const INTEGRATION_MUTATION_PREFIXES = [
+  'integrations/xero',
+  'integration-platform',
+  'background-work',
+] as const;
 const TEAM_MUTATION_PREFIXES = ['team/members', 'team/invites', 'team/roles'] as const;
 
 export function invalidateAfterCustomerMutation(
@@ -72,6 +86,13 @@ export function invalidateAfterJobMutation(
   accessToken: string | null,
 ): void {
   invalidateStaffQueryPrefixes(scope, accessToken, [...JOB_MUTATION_PREFIXES]);
+}
+
+export function invalidateAfterScheduleMutation(
+  scope: QueryCacheScope,
+  accessToken: string | null,
+): void {
+  invalidateStaffQueryPrefixes(scope, accessToken, [...SCHEDULING_MUTATION_PREFIXES]);
 }
 
 export function invalidateAfterQuoteMutation(
@@ -95,6 +116,13 @@ export function invalidateAfterPaymentMutation(
   invalidateStaffQueryPrefixes(scope, accessToken, [...PAYMENT_MUTATION_PREFIXES]);
 }
 
+export function invalidateAfterIntegrationMutation(
+  scope: QueryCacheScope,
+  accessToken: string | null,
+): void {
+  invalidateStaffQueryPrefixes(scope, accessToken, [...INTEGRATION_MUTATION_PREFIXES]);
+}
+
 export function invalidateAfterTeamMutation(
   scope: QueryCacheScope,
   accessToken: string | null,
@@ -114,6 +142,11 @@ export function useStaffMutationInvalidation() {
   const invalidateJobs = useCallback(() => {
     if (!scope) return;
     invalidateAfterJobMutation(scope, accessToken);
+  }, [accessToken, scope]);
+
+  const invalidateScheduling = useCallback(() => {
+    if (!scope) return;
+    invalidateAfterScheduleMutation(scope, accessToken);
   }, [accessToken, scope]);
 
   const invalidateQuotes = useCallback(() => {
@@ -139,6 +172,7 @@ export function useStaffMutationInvalidation() {
   return {
     invalidateCustomers,
     invalidateJobs,
+    invalidateScheduling,
     invalidateQuotes,
     invalidateInvoices,
     invalidatePayments,

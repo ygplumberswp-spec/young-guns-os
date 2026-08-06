@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { Link, useLocation, useSearch } from 'wouter';
-import { Button, Input, PageHeader } from '@titan/ui';
+import { useLocation, useSearch } from 'wouter';
+import { Button, Input } from '@titan/ui';
 import type { AgentKey, AgentProfileStatus, AgentRegistryEntry } from '@titan/shared';
 import { AGENT_PROFILE_STATUS_OPTIONS } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
@@ -113,13 +114,8 @@ export function AgentProfileCreatePage() {
   return (
     <div className="agents-page">
       <PageHeader
-        title="Configure agent profile"
+        title="Configure Agent Profile"
         description="Create a tenant-scoped profile with suggested permissions and tool grants."
-        actions={
-          <Link href="/aura/agents">
-            <Button variant="secondary">Back to dashboard</Button>
-          </Link>
-        }
       />
       <AgentsNav />
       {error ? <p className="form-error">{error}</p> : null}
@@ -147,7 +143,7 @@ export function AgentProfileCreatePage() {
           </select>
         </label>
         <Input
-          label="Profile name"
+          label="Profile Name"
           value={name}
           onChange={(e) => setName(e.target.value)}
           required

@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'wouter';
-import { Button, EmptyState, PageHeader, Panel } from '@titan/ui';
+import { Button, EmptyState, Panel } from '@titan/ui';
 import type { WiManagerWorkspaceSummary } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import {
@@ -107,7 +108,7 @@ export function ManagerWorkspacePage() {
           <Panel title="Pending Timesheet Approvals">
             {workspace.pendingTimesheetApprovals.length === 0 ? (
               <EmptyState
-                title="No pending timesheets"
+                title="No Pending Timesheets"
                 description="Submitted timesheets awaiting approval appear here."
               />
             ) : (
@@ -136,7 +137,7 @@ export function ManagerWorkspacePage() {
           <Panel title="Pending Leave Approvals">
             {workspace.pendingLeaveApprovals.length === 0 ? (
               <EmptyState
-                title="No pending leave"
+                title="No Pending Leave"
                 description="Leave requests awaiting approval appear here."
               />
             ) : (
@@ -165,7 +166,7 @@ export function ManagerWorkspacePage() {
           <Panel title="Team Performance">
             {workspace.teamPerformance.length === 0 ? (
               <EmptyState
-                title="No performance data"
+                title="No Performance Data"
                 description="Capture performance from real job completion data."
               />
             ) : (
@@ -180,7 +181,7 @@ export function ManagerWorkspacePage() {
           <Panel title="Compliance Risks">
             {workspace.complianceRisks.length === 0 ? (
               <EmptyState
-                title="No certification risks"
+                title="No Certification Risks"
                 description="Expiring certifications appear here."
               />
             ) : (

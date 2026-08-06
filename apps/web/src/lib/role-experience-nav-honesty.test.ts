@@ -3,7 +3,7 @@ import { describe, it } from 'node:test';
 import { filterOwnerStaffNav } from './role-experience.js';
 
 describe('filterOwnerStaffNav (UX-K)', () => {
-  it('owner sees Quotes/Invoices/Payments without Finance duplicate, plus enterprise + dispatcher', () => {
+  it('owner sees Quotes/Invoices/Payments without Finance duplicate, plus Live Dispatch', () => {
     const items = filterOwnerStaffNav({
       roleName: 'Company Owner',
       permissions: ['*'],
@@ -15,12 +15,12 @@ describe('filterOwnerStaffNav (UX-K)', () => {
     assert.ok(labels.includes('Invoices'));
     assert.ok(labels.includes('Payments'));
     assert.equal(labels.includes('Finance'), false);
-    assert.ok(hrefs.includes('/enterprise-modules'));
     assert.ok(hrefs.includes('/mobile-platform/dispatcher'));
+    assert.equal(hrefs.includes('/enterprise-modules'), false);
     assert.equal(hrefs.filter((h) => h === '/finance/quotes').length, 1);
   });
 
-  it('dispatcher sees Dispatcher console and does not see enterprise modules', () => {
+  it('dispatcher sees Live Dispatch and does not see enterprise modules', () => {
     const items = filterOwnerStaffNav({
       roleName: 'Dispatcher',
       permissions: [

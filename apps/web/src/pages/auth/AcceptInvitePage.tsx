@@ -114,14 +114,14 @@ function AcceptInviteForm() {
           <form className="auth-form" onSubmit={(event) => void handleSubmit(event)}>
             <div className="auth-form__row">
               <Input
-                label="First name"
+                label="First Name"
                 name="firstName"
                 value={firstName}
                 onChange={(event) => setFirstName(event.target.value)}
                 required
               />
               <Input
-                label="Last name"
+                label="Last Name"
                 name="lastName"
                 value={lastName}
                 onChange={(event) => setLastName(event.target.value)}

@@ -1,5 +1,6 @@
+import { PageHeader } from '../../components/ux';
 import { useEffect, useMemo, useState } from 'react';
-import { Button, EmptyState, PageHeader, Panel, StatCard } from '@titan/ui';
+import { Button, EmptyState, Panel, StatCard } from '@titan/ui';
 import type { EnterpriseDocumentAiDashboard } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import {
@@ -231,7 +232,7 @@ export function DocumentAiPage() {
       {isLoading ? (
         <Panel title="Loading">Loading document AI dashboard…</Panel>
       ) : !dashboard ? (
-        <EmptyState title="No data" description="Document AI dashboard is unavailable." />
+        <EmptyState title="No Data" description="Document AI dashboard is unavailable." />
       ) : (
         <>
           {activeTab === 'overview' ? (
@@ -284,7 +285,7 @@ export function DocumentAiPage() {
             <Panel title="Document Inbox">
               {dashboard.inboxDocuments.length === 0 ? (
                 <EmptyState
-                  title="No documents"
+                  title="No Documents"
                   description="Uploaded documents appear here from real document records."
                 />
               ) : (
@@ -310,7 +311,7 @@ export function DocumentAiPage() {
             <Panel title="OCR Queue">
               {dashboard.ocrQueue.length === 0 ? (
                 <EmptyState
-                  title="No OCR jobs"
+                  title="No OCR Jobs"
                   description="OCR jobs appear here when queued for real documents."
                 />
               ) : (
@@ -333,7 +334,7 @@ export function DocumentAiPage() {
             <Panel title="Review Queue">
               {dashboard.reviewQueue.length === 0 ? (
                 <EmptyState
-                  title="No review items"
+                  title="No Review Items"
                   description="Low-confidence extractions and matches create review tasks."
                 />
               ) : (
@@ -356,7 +357,7 @@ export function DocumentAiPage() {
             <Panel title="Classifications">
               {dashboard.classifications.length === 0 ? (
                 <EmptyState
-                  title="No classifications"
+                  title="No Classifications"
                   description="Document classifications appear after processing real documents."
                 />
               ) : (
@@ -380,7 +381,7 @@ export function DocumentAiPage() {
             <Panel title="Extraction Templates">
               {dashboard.extractionTemplates.length === 0 ? (
                 <EmptyState
-                  title="No templates"
+                  title="No Templates"
                   description="Configure extraction templates for structured field capture."
                 />
               ) : (
@@ -441,7 +442,7 @@ export function DocumentAiPage() {
             <Panel title="Document Intelligence">
               {dashboard.intelligenceRecords.length === 0 ? (
                 <EmptyState
-                  title="No intelligence records"
+                  title="No Intelligence Records"
                   description="Summaries, expiry alerts, and duplicate detection appear from real document analysis."
                 />
               ) : (
@@ -464,7 +465,7 @@ export function DocumentAiPage() {
             <Panel title="Workflow Drafts">
               {dashboard.workflowDrafts.length === 0 ? (
                 <EmptyState
-                  title="No workflow drafts"
+                  title="No Workflow Drafts"
                   description="Approved documents can create draft actions requiring human approval."
                 />
               ) : (
@@ -507,7 +508,7 @@ export function DocumentAiPage() {
               {isSupplementaryLoading ? <p>Loading audit logs…</p> : null}
               {auditLogs.length === 0 ? (
                 <EmptyState
-                  title="No audit logs"
+                  title="No Audit Logs"
                   description="Document AI actions are recorded for complete auditability."
                 />
               ) : (

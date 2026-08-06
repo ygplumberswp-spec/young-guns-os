@@ -94,16 +94,16 @@ export type AuraGenerateContext = {
     invoiceCount: number;
     paymentCount: number;
     recentQuotes: Array<{
+      id: string;
       quoteNumber: string;
-      title: string;
       status: string;
       customerName: string;
       amountCents: number;
       currency: string;
     }>;
     recentInvoices: Array<{
+      id: string;
       invoiceNumber: string;
-      title: string;
       status: string;
       customerName: string;
       amountCents: number;
@@ -740,6 +740,38 @@ export type AuraGenerateContext = {
       category: string;
       information: string;
       importance: number;
+    }>;
+  };
+  dayPlanning?: {
+    planDate: string;
+    planCount: number;
+    plans: Array<{
+      content: string;
+      category: string | null;
+      status: string;
+      planDate: string;
+    }>;
+  };
+  dayPlan?: {
+    planDate: string;
+    priorityCount: number;
+    priorities: Array<{
+      priorityText: string;
+      department: string | null;
+      status: string;
+      planDate: string;
+    }>;
+  };
+  businessRules?: {
+    ruleCount: number;
+    rules: Array<{
+      name: string;
+      instruction: string;
+      ruleType: string;
+      category: string;
+      department: string | null;
+      assignedAgentRole: string | null;
+      approvalRequired: boolean;
     }>;
   };
   recommendations?: {

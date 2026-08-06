@@ -158,12 +158,12 @@ export class EnterpriseReleaseManagementVersionService {
       companyId,
       versionKey: 'titan_v1_0_0',
       versionNumber: '1.0.0',
-      versionName: 'TITAN Business OS v1.0.0',
+      versionName: 'TITAN v1.0.0',
       status: 'unknown',
       releaseNotes: {
-        title: 'TITAN Business OS v1.0.0 — Initial Public Release',
+        title: 'TITAN v1.0.0 — Initial Public Release',
         summary:
-          'First public release of TITAN Business OS, delivering integrated enterprise business operations, mobile field workforce, AI agents, and production launch capabilities.',
+          'First public release of TITAN, delivering integrated enterprise business operations, mobile field workforce, AI agents, and production launch capabilities.',
         highlights: [
           'Complete enterprise module suite (CRM, jobs, finance, fleet, inventory)',
           'Mobile platform with offline sync, push notifications, and field intelligence',

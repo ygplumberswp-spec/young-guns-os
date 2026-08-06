@@ -1,11 +1,15 @@
 import { FormEvent, useState } from 'react';
 import { Link, useLocation, useSearch } from 'wouter';
-import { getStaffHomePath } from '@titan/auth/browser';
 import { AuthLayout } from '../../layouts/AuthLayout';
 import { Button, Input } from '@titan/ui';
 import { useAuth } from '../../lib/auth-context';
-import { toStaffIdentity } from '../../lib/role-experience';
-import { ApiClientError } from '../../lib/api-client';
+import { ApiClientError, isLoginMfaChallenge, MFA_CHALLENGE_STORAGE_KEY, MFA_LOGIN_REDIRECT_PATH } from '../../lib/api-client';
+import { isSessionExpiredLoginReason } from '../../lib/session-expiry-routing';
+import {
+  clearStaffAuthReturnPath,
+  resolveStaffPostLoginPath,
+  staffAuthReturnFromSearch,
+} from '../../lib/staff-auth-return-routing';
 import { GuestRoute } from '../../components/ProtectedRoute';
 
 export function LoginPage() {
@@ -32,9 +36,20 @@ function LoginForm() {
     setIsSubmitting(true);
 
     try {
-      const session = await login({ email, password });
-      const homePath = session?.user ? getStaffHomePath(toStaffIdentity(session.user)) : '/';
-      setLocation(homePath);
+      const result = await login({ email, password });
+      if (isLoginMfaChallenge(result)) {
+        sessionStorage.setItem(MFA_CHALLENGE_STORAGE_KEY, result.mfaChallengeToken);
+        setLocation(MFA_LOGIN_REDIRECT_PATH);
+        return;
+      }
+      // Session expiry always lands on role home — ignore leftover returnTo.
+      if (isSessionExpiredLoginReason(reason)) {
+        clearStaffAuthReturnPath();
+        setLocation(resolveStaffPostLoginPath(result.user, null));
+      } else {
+        staffAuthReturnFromSearch(search);
+        setLocation(resolveStaffPostLoginPath(result.user));
+      }
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : 'Unable to sign in');
     } finally {
@@ -45,7 +60,7 @@ function LoginForm() {
   return (
     <AuthLayout
       banner={
-        reason === 'session_expired' ? (
+        isSessionExpiredLoginReason(reason) ? (
           <p className="auth-banner auth-banner--warning" role="status">
             Your session expired. Sign in again to continue.
           </p>
