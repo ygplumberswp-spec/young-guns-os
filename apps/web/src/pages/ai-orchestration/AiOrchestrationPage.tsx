@@ -1,5 +1,6 @@
+import { PageHeader } from '../../components/ux';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { Button, EmptyState, Input, PageHeader, Panel, StatCard } from '@titan/ui';
+import { Button, EmptyState, Input, Panel, StatCard } from '@titan/ui';
 import type {
   AiExecutiveDashboard,
   AiProviderSummary,
@@ -229,7 +230,7 @@ export function AiOrchestrationPage() {
   if (!canView) {
     return (
       <EmptyState
-        title="AI orchestration unavailable"
+        title="AI Orchestration Unavailable"
         description="You do not have permission to view AI orchestration."
       />
     );
@@ -284,10 +285,10 @@ export function AiOrchestrationPage() {
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <StatCard label="Providers" value={String(dashboard.providerCount)} />
             <StatCard label="Healthy" value={String(dashboard.healthyProviderCount)} />
-            <StatCard label="Pending actions" value={String(dashboard.pendingActionCount)} />
-            <StatCard label="Total tokens" value={String(dashboard.costAnalytics.totalTokens)} />
+            <StatCard label="Pending Actions" value={String(dashboard.pendingActionCount)} />
+            <StatCard label="Total Tokens" value={String(dashboard.costAnalytics.totalTokens)} />
           </div>
-          <Panel title="Executive summary">
+          <Panel title="Executive Summary">
             <p className="text-sm text-slate-600">{dashboard.summary}</p>
           </Panel>
         </div>
@@ -296,7 +297,7 @@ export function AiOrchestrationPage() {
       {!isLoading && activeTab === 'providers' ? (
         <div className="space-y-4">
           {canManage ? (
-            <Panel title="Register provider">
+            <Panel title="Register Provider">
               <form className="grid gap-3 md:grid-cols-2" onSubmit={handleCreateProvider}>
                 <label className="text-sm">
                   Provider
@@ -317,16 +318,16 @@ export function AiOrchestrationPage() {
                   </select>
                 </label>
                 <div className="flex items-end">
-                  <Button type="submit">Save provider configuration</Button>
+                  <Button type="submit">Save Provider Configuration</Button>
                 </div>
               </form>
             </Panel>
           ) : null}
 
-          <Panel title="Provider registry">
+          <Panel title="Provider Registry">
             {providers.length === 0 ? (
               <EmptyState
-                title="No providers configured"
+                title="No Providers Configured"
                 description="Register a provider to begin multi-model routing."
               />
             ) : (
@@ -350,10 +351,10 @@ export function AiOrchestrationPage() {
             )}
           </Panel>
 
-          <Panel title="Model capabilities">
+          <Panel title="Model Capabilities">
             {models.length === 0 ? (
               <EmptyState
-                title="No models registered"
+                title="No Models Registered"
                 description="Models appear when providers are configured."
               />
             ) : (
@@ -377,10 +378,10 @@ export function AiOrchestrationPage() {
       ) : null}
 
       {!isLoading && activeTab === 'routing' ? (
-        <Panel title="Routing rules">
+        <Panel title="Routing Rules">
           {routingRules.length === 0 ? (
             <EmptyState
-              title="No routing rules"
+              title="No Routing Rules"
               description="Create routing rules to control model selection by task category."
             />
           ) : (
@@ -402,10 +403,10 @@ export function AiOrchestrationPage() {
       {!isLoading && activeTab === 'prompts' ? (
         <div className="space-y-4">
           {canManage ? (
-            <Panel title="Create prompt template">
+            <Panel title="Create Prompt Template">
               <form className="space-y-3" onSubmit={handleCreatePrompt}>
                 <Input
-                  label="Template name"
+                  label="Template Name"
                   value={promptName}
                   onChange={(event) => setPromptName(event.target.value)}
                 />
@@ -417,15 +418,15 @@ export function AiOrchestrationPage() {
                     onChange={(event) => setPromptContent(event.target.value)}
                   />
                 </label>
-                <Button type="submit">Submit for approval</Button>
+                <Button type="submit">Submit For Approval</Button>
               </form>
             </Panel>
           ) : null}
 
-          <Panel title="Prompt templates">
+          <Panel title="Prompt Templates">
             {templates.length === 0 ? (
               <EmptyState
-                title="No prompt templates"
+                title="No Prompt Templates"
                 description="Create centralized prompt templates with approval workflow."
               />
             ) : (
@@ -442,10 +443,10 @@ export function AiOrchestrationPage() {
             )}
           </Panel>
 
-          <Panel title="Prompt versions">
+          <Panel title="Prompt Versions">
             {versions.length === 0 ? (
               <EmptyState
-                title="No prompt versions"
+                title="No Prompt Versions"
                 description="Version history appears after templates are created."
               />
             ) : (
@@ -465,13 +466,13 @@ export function AiOrchestrationPage() {
       ) : null}
 
       {!isLoading && activeTab === 'costs' && dashboard ? (
-        <Panel title="Cost intelligence">
+        <Panel title="Cost Intelligence">
           <div className="grid gap-4 md:grid-cols-2">
             <StatCard
-              label="Total cost (cents)"
+              label="Total Cost (Cents)"
               value={String(dashboard.costAnalytics.totalCostCents)}
             />
-            <StatCard label="Total tokens" value={String(dashboard.costAnalytics.totalTokens)} />
+            <StatCard label="Total Tokens" value={String(dashboard.costAnalytics.totalTokens)} />
           </div>
           {dashboard.costAnalytics.recommendations.length > 0 ? (
             <ul className="mt-4 list-disc space-y-1 pl-5 text-sm text-slate-600">
@@ -484,14 +485,14 @@ export function AiOrchestrationPage() {
       ) : null}
 
       {!isLoading && activeTab === 'quality' && dashboard ? (
-        <Panel title="Quality analytics">
+        <Panel title="Quality Analytics">
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <StatCard
               label="Evaluations"
               value={String(dashboard.qualityAnalytics.evaluationCount)}
             />
             <StatCard
-              label="Success rate"
+              label="Success Rate"
               value={
                 dashboard.qualityAnalytics.successRate !== null
                   ? `${Math.round(dashboard.qualityAnalytics.successRate * 100)}%`
@@ -499,7 +500,7 @@ export function AiOrchestrationPage() {
               }
             />
             <StatCard
-              label="Avg response time"
+              label="Avg Response Time"
               value={
                 dashboard.qualityAnalytics.averageResponseTimeMs !== null
                   ? `${dashboard.qualityAnalytics.averageResponseTimeMs} ms`
@@ -507,7 +508,7 @@ export function AiOrchestrationPage() {
               }
             />
             <StatCard
-              label="Hallucination reports"
+              label="Hallucination Reports"
               value={String(dashboard.qualityAnalytics.hallucinationReportCount)}
             />
           </div>
@@ -517,7 +518,7 @@ export function AiOrchestrationPage() {
       {!isLoading && activeTab === 'actions' ? (
         <div className="space-y-4">
           {canManage ? (
-            <Panel title="Draft configuration action">
+            <Panel title="Draft Configuration Action">
               <form className="space-y-3" onSubmit={handleCreateAction}>
                 <Input
                   label="Subject"
@@ -532,15 +533,15 @@ export function AiOrchestrationPage() {
                     onChange={(event) => setActionRecommendation(event.target.value)}
                   />
                 </label>
-                <Button type="submit">Submit for approval</Button>
+                <Button type="submit">Submit For Approval</Button>
               </form>
             </Panel>
           ) : null}
 
-          <Panel title="Pending and recent actions">
+          <Panel title="Pending And Recent Actions">
             {actions.length === 0 ? (
               <EmptyState
-                title="No configuration actions"
+                title="No Configuration Actions"
                 description="Draft prompt or provider changes require approval before execution."
               />
             ) : (
@@ -567,32 +568,32 @@ export function AiOrchestrationPage() {
                 <p>{gatewayStatus.summary}</p>
                 <div className="mt-4 grid gap-3 md:grid-cols-3">
                   <StatCard
-                    label="Configured providers"
+                    label="Configured Providers"
                     value={String(gatewayStatus.configuredProviderCount)}
                   />
                   <StatCard
-                    label="Healthy providers"
+                    label="Healthy Providers"
                     value={String(gatewayStatus.healthyProviderCount)}
                   />
-                  <StatCard label="Routing rules" value={String(gatewayStatus.routingRuleCount)} />
+                  <StatCard label="Routing Rules" value={String(gatewayStatus.routingRuleCount)} />
                   <StatCard
-                    label="Memory sync records"
+                    label="Memory Sync Records"
                     value={String(gatewayStatus.memorySyncCount)}
                   />
                   <StatCard
-                    label="Comparison runs"
+                    label="Comparison Runs"
                     value={String(gatewayStatus.comparisonRunCount)}
                   />
                   <StatCard
-                    label="Access mode"
+                    label="Access Mode"
                     value={gatewayStatus.aiAccessMode.replace(/_/g, ' ')}
                   />
                 </div>
               </Panel>
-              <Panel title="Recent failovers">
+              <Panel title="Recent Failovers">
                 {failovers.length === 0 ? (
                   <EmptyState
-                    title="No failovers recorded"
+                    title="No Failovers Recorded"
                     description="Failover events appear when providers are unavailable."
                   />
                 ) : (
@@ -618,7 +619,7 @@ export function AiOrchestrationPage() {
       {activeTab === 'comparisons' ? (
         <div className="space-y-4">
           {canManage ? (
-            <Panel title="Run model comparison">
+            <Panel title="Run Model Comparison">
               <p className="mb-3 text-sm text-slate-600">
                 Sends the same task to multiple approved models, compares outputs, and requires
                 human approval before execution.
@@ -660,15 +661,15 @@ export function AiOrchestrationPage() {
                     onChange={(event) => setComparisonPrompt(event.target.value)}
                   />
                 </label>
-                <Button type="submit">Compare models</Button>
+                <Button type="submit">Compare Models</Button>
               </form>
             </Panel>
           ) : null}
 
-          <Panel title="Comparison runs">
+          <Panel title="Comparison Runs">
             {comparisonRuns.length === 0 ? (
               <EmptyState
-                title="No comparison runs"
+                title="No Comparison Runs"
                 description="High-impact tasks can be compared across multiple models."
               />
             ) : (

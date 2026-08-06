@@ -1,0 +1,52 @@
+{
+  "label": "CAL-001-M1-staging-verify",
+  "generatedAt": "2026-08-02T16:54:00.000Z",
+  "environment": "staging",
+  "productionTouched": false,
+  "branch": "cursor/cal-001-scheduling-calendar",
+  "commitHash": "c2d337c5531dd3f0bae61191b95ddb40b735dfe2",
+  "priorCommit": "e7f9c56afe2f717d7923bbd1ed803bf8cfdfdd20",
+  "deploy": {
+    "railwayProject": "sweet-victory",
+    "railwayEnvironment": "staging",
+    "web": {
+      "service": "comfortable-determination",
+      "status": "SUCCESS",
+      "deploymentId": "b120453b",
+      "commit": "c2d337c5531dd3f0bae61191b95ddb40b735dfe2",
+      "url": "https://comfortable-determination-staging.up.railway.app"
+    },
+    "api": {
+      "service": "young-guns-os",
+      "status": "SKIPPED",
+      "reason": "No changes to watched API files; previous SUCCESS deployment remains active",
+      "url": "https://young-guns-os-staging.up.railway.app",
+      "health": { "status": "ready", "database": "connected" }
+    }
+  },
+  "production": {
+    "comfortable-determination": "no deployments",
+    "young-guns-os": "no deployments"
+  },
+  "smoke": {
+    "scheduling_page_loads": "PASS",
+    "day_week_month_views": "PASS",
+    "existing_jobs_display": "PASS",
+    "schedule_reschedule_persist": "PASS",
+    "technician_assignment": "PASS",
+    "vehicle_assignment": "PASS",
+    "deep_links": "PASS",
+    "calendar_cache_refresh": "PASS",
+    "rbac_denies_unauthorized": "PASS",
+    "mobile_schedule_loads": "PASS",
+    "no_console_breaking_errors": "PASS",
+    "api_health_ready": "PASS",
+    "database_connected": "PASS"
+  },
+  "warnings": [
+    "Owner wildcard permissions initially hid vehicle UI; fixed in c2d337c and redeployed.",
+    "API autodeploy skipped for web-only commits (expected). Active API remains prior SUCCESS deploy.",
+    "Technician role receives 403 on owner scheduling module routes; mobile schedule page remains the tech surface."
+  ],
+  "overall": "PASS"
+}

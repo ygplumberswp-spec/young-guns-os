@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Link, useLocation } from 'wouter';
-import { Button, Input, PageHeader } from '@titan/ui';
+import { Button, Input } from '@titan/ui';
 import type { CustomerSummary, JobSummary } from '@titan/shared';
 import {
   COMMUNICATION_CHANNEL_OPTIONS,
@@ -154,13 +155,8 @@ export function MessageCreatePage() {
   return (
     <div className="communications-page">
       <PageHeader
-        title="Log communication"
+        title="Log Communication"
         description="Record a customer interaction in your communication history."
-        actions={
-          <Link href="/communications/messages">
-            <Button variant="secondary">Back to history</Button>
-          </Link>
-        }
       />
       <CommunicationsNav />
       {error ? <p className="form-error">{error}</p> : null}
@@ -270,7 +266,7 @@ export function MessageCreatePage() {
             />
           </label>
           <Input
-            label="Occurred at"
+            label="Occurred At"
             type="datetime-local"
             value={occurredAt}
             onChange={(e) => setOccurredAt(e.target.value)}

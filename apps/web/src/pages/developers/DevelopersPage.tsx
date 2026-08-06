@@ -1,5 +1,6 @@
+import { PageHeader } from '../../components/ux';
 import { useEffect, useMemo, useState } from 'react';
-import { Button, EmptyState, PageHeader, Panel, StatCard } from '@titan/ui';
+import { Button, EmptyState, Panel, StatCard } from '@titan/ui';
 import { DEVELOPER_SDK_LANGUAGES, type EnterpriseDeveloperPlatformDashboard } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import {
@@ -199,7 +200,7 @@ export function DevelopersPage() {
       {isLoading ? (
         <Panel title="Loading">Loading developer platform…</Panel>
       ) : !dashboard ? (
-        <EmptyState title="No data" description="Developer platform dashboard is unavailable." />
+        <EmptyState title="No Data" description="Developer platform dashboard is unavailable." />
       ) : (
         <>
           {activeTab === 'explorer' ? (
@@ -289,7 +290,7 @@ export function DevelopersPage() {
 
               {dashboard.sdkPackages.length === 0 ? (
                 <EmptyState
-                  title="No SDK packages"
+                  title="No SDK Packages"
                   description="Generate official SDK packages for TypeScript, JavaScript, Node.js, Python, C#, Java, or Go."
                 />
               ) : (
@@ -338,7 +339,7 @@ export function DevelopersPage() {
 
               {dashboard.installedExtensions.length === 0 ? (
                 <EmptyState
-                  title="No installed extensions"
+                  title="No Installed Extensions"
                   description="Create and install tenant extensions. No demo extensions are included."
                 />
               ) : (
@@ -376,7 +377,7 @@ export function DevelopersPage() {
             <Panel title="Extension Marketplace">
               {dashboard.marketplaceListings.length === 0 ? (
                 <EmptyState
-                  title="No marketplace listings"
+                  title="No Marketplace Listings"
                   description="Published extensions appear here after tenant review and approval. No fake listings are seeded."
                 />
               ) : (
@@ -433,7 +434,7 @@ export function DevelopersPage() {
                   </div>
                 ) : (
                   <EmptyState
-                    title="No dead-letter entries"
+                    title="No Dead-Letter Entries"
                     description="Failed webhook deliveries appear here."
                   />
                 )}
@@ -498,7 +499,7 @@ export function DevelopersPage() {
               <Panel title="Changelog">
                 {dashboard.changelog.length === 0 ? (
                   <EmptyState
-                    title="No changelog entries"
+                    title="No Changelog Entries"
                     description="Platform changelog is populated on first access."
                   />
                 ) : (
@@ -517,7 +518,7 @@ export function DevelopersPage() {
                 )}
               </Panel>
 
-              <Panel title="OpenAPI">
+              <Panel title="Openapi">
                 {dashboard.openapiSpec ? (
                   <p>
                     Latest spec: {dashboard.openapiSpec.title} v{dashboard.openapiSpec.version} —
@@ -525,7 +526,7 @@ export function DevelopersPage() {
                   </p>
                 ) : (
                   <EmptyState
-                    title="No OpenAPI spec"
+                    title="No Openapi Spec"
                     description="Generate an OpenAPI specification from the versioned REST API surface."
                   />
                 )}

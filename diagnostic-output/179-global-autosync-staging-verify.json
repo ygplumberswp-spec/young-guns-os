@@ -1,0 +1,61 @@
+{
+  "label": "GLOBAL-AUTOSYNC-179",
+  "generatedAt": "2026-08-01T11:18:54.494Z",
+  "apiOrigin": "https://young-guns-os-staging.up.railway.app",
+  "architectureDoc": "TITAN_GLOBAL_REALTIME_AUTO_SYNC_ARCHITECTURE.md",
+  "results": [
+    {
+      "name": "api_health_ready",
+      "status": "PASS",
+      "detail": "ok"
+    },
+    {
+      "name": "api_background_work_status",
+      "status": "PARTIAL",
+      "detail": "OWNER_ACCESS_TOKEN not set"
+    },
+    {
+      "name": "api_connectors_sync_quick",
+      "status": "PARTIAL",
+      "detail": "OWNER_ACCESS_TOKEN not set"
+    },
+    {
+      "name": "db_xero_connected",
+      "status": "PASS",
+      "detail": "Young Guns Plumbing"
+    },
+    {
+      "name": "db_xero_auto_sync_schedule",
+      "status": "PASS",
+      "detail": "1"
+    },
+    {
+      "name": "db_checkpoint_metadata",
+      "status": "PASS",
+      "detail": "contacts"
+    },
+    {
+      "name": "db_no_90s_timeout_errors",
+      "status": "PASS",
+      "detail": "no 90s timeout in recent jobs"
+    }
+  ],
+  "verdict": "PARTIAL",
+  "dbSnapshot": {
+    "organisationName": "Young Guns Plumbing",
+    "lastSyncAt": null,
+    "scheduleCount": 1,
+    "recentImportJobs": [
+      {
+        "id": "8e6aec9b-2d99-493c-85b8-75f61d7f414b",
+        "status": "running",
+        "stage": "contacts"
+      },
+      {
+        "id": "16cab3a5-cde4-4658-9ece-5ab026731697",
+        "status": "failed",
+        "stage": null
+      }
+    ]
+  }
+}

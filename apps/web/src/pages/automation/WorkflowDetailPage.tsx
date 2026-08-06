@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { Link, useRoute } from 'wouter';
-import { Button, Input, PageHeader, Panel } from '@titan/ui';
+import { useRoute } from 'wouter';
+import { Button, Input, Panel } from '@titan/ui';
 import type {
   WorkflowActionType,
   WorkflowConditionOperator,
@@ -291,15 +292,19 @@ export function WorkflowDetailPage() {
     }
   }
 
-  if (isLoading) return <p className="page-muted">Loading workflow…</p>;
+  if (isLoading) {
+    return (
+      <div className="page-shell">
+        <PageHeader title="Workflow" description="Workflow detail" />
+        <p className="page-muted">Loading workflow…</p>
+      </div>
+    );
+  }
 
   if (!workflow) {
     return (
       <div className="automation-page">
-        <PageHeader title="Workflow not found" description="This workflow could not be found." />
-        <Link href="/automation" className="automation-link">
-          Back to workflows
-        </Link>
+        <PageHeader title="Workflow Not Found" description="This workflow could not be found." />
       </div>
     );
   }
@@ -311,9 +316,6 @@ export function WorkflowDetailPage() {
         description="Visual workflow builder with triggers, conditions, ordered actions, and execution history."
         actions={
           <div className="automation-detail-actions">
-            <Link href="/automation">
-              <Button variant="secondary">Back to workflows</Button>
-            </Link>
             {canWrite ? (
               <>
                 <Button
@@ -366,7 +368,7 @@ export function WorkflowDetailPage() {
           </Button>
         </form>
       ) : (
-        <Panel title="Workflow details">
+        <Panel title="Workflow Details">
           <dl className="automation-detail-grid">
             <div>
               <dt>Status</dt>
@@ -481,7 +483,7 @@ export function WorkflowDetailPage() {
         ) : null}
       </Panel>
 
-      <Panel title="THEN — Actions (ordered)">
+      <Panel title="THEN — Actions (Ordered)">
         {workflow.actions.length === 0 ? (
           <p className="page-muted">No actions configured yet.</p>
         ) : (
@@ -533,7 +535,7 @@ export function WorkflowDetailPage() {
         ) : null}
       </Panel>
 
-      <Panel title="Workflow runs">
+      <Panel title="Workflow Runs">
         {runs.length === 0 ? (
           <p className="page-muted">
             No runs recorded yet. Activate the workflow and wait for matching events.
@@ -610,7 +612,7 @@ export function WorkflowDetailPage() {
         </Panel>
       ) : null}
 
-      <Panel title="Execution history">
+      <Panel title="Execution History">
         {executions.length === 0 ? (
           <p className="page-muted">No executions recorded yet.</p>
         ) : (
