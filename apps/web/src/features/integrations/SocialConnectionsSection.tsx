@@ -1,56 +1,34 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'wouter';
 import { Button, LoadingState, Panel } from '@titan/ui';
-import type { SocialConnectionProviderCard, SocialPublishingProvider } from '@titan/shared';
+import type { SocialConnectionProviderCard } from '@titan/shared';
 import {
   canManageSocialConnections,
   canViewSocialConnections,
-  FACEBOOK_PAGE_SELECTION_WORKSPACE_PATH,
 } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import {
-  checkFacebookConnection,
-  disconnectFacebook,
   startFacebookOAuth,
-  startFacebookPageReadOAuth,
-  startFacebookReconnectWizardOAuth,
 } from '../../lib/facebook-business-api-client';
 import {
-  checkSocialConnectionHealth,
-  disconnectSocialConnection,
-  fetchSocialConnectionAccounts,
-  fetchSocialConnectionSetup,
   fetchSocialConnectionsDashboard,
-  reconnectSocialConnection,
-  selectSocialConnectionAccount,
   startSocialConnectionOAuth,
 } from '../../lib/social-connection-api-client';
 import { useAuth } from '../../lib/auth-context';
-import { FacebookConnectionActions } from './FacebookConnectionActions';
-
-function statusPillModifier(status: SocialConnectionProviderCard['foundationStatus']): string {
-  switch (status) {
-    case 'CONNECTED':
-      return 'success';
-    case 'ERROR':
-    case 'RECONNECT_REQUIRED':
-      return 'danger';
-    case 'ACCOUNT_SELECTION_REQUIRED':
-    case 'CONNECTING':
-      return 'warning';
-    case 'PROVIDER_REVIEW_REQUIRED':
-    case 'NOT_CONFIGURED':
-      return 'muted';
-    default:
-      return 'neutral';
-  }
-}
+import {
+  EnterpriseConnectionStatusLine,
+  enterpriseConnectionActionLabel,
+} from './EnterpriseConnectionStatusLine';
+import {
+  deriveSocialEnterpriseConnectionStatus,
+  resolveSocialEnterpriseActionHref,
+  socialEnterpriseActionUsesConnectFlow,
+} from './enterprise-connection-status';
 
 function SocialConnectionCard({
   card,
   canManage,
   accessToken,
-  onRefresh,
 }: {
   card: SocialConnectionProviderCard;
   canManage: boolean;
@@ -59,16 +37,15 @@ function SocialConnectionCard({
 }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
-  const [setupOpen, setSetupOpen] = useState(false);
-  const [setupText, setSetupText] = useState<string | null>(null);
-  const [confirmDisconnect, setConfirmDisconnect] = useState(false);
-  const [selectOpen, setSelectOpen] = useState(false);
+
+  const connectionStatus = deriveSocialEnterpriseConnectionStatus(card);
+  const actionLabel = enterpriseConnectionActionLabel(connectionStatus);
+  const actionHref = resolveSocialEnterpriseActionHref(card, connectionStatus);
+  const usesConnectFlow = socialEnterpriseActionUsesConnectFlow(card, connectionStatus);
 
   async function handleConnect() {
     setBusy(true);
     setError(null);
-    setSuccess(null);
     try {
       if (card.delegatedTo === 'facebook_business') {
         const result = await startFacebookOAuth(accessToken, '/facebook-business');
@@ -86,265 +63,37 @@ function SocialConnectionCard({
     }
   }
 
-  async function handleReconnect() {
-    setBusy(true);
-    setError(null);
-    setSuccess(null);
-    try {
-      if (card.delegatedTo === 'facebook_business') {
-        const result = await startFacebookReconnectWizardOAuth(accessToken, '/facebook-business');
-        window.location.assign(result.authorizationUrl);
-        return;
-      }
-      const { authorizationUrl } = await reconnectSocialConnection(accessToken, card.provider);
-      window.location.assign(authorizationUrl);
-    } catch (err) {
-      setError(err instanceof ApiClientError ? err.message : 'Reconnect failed.');
-      setBusy(false);
-    }
-  }
-
-  async function handleGrantPageRead() {
-    setBusy(true);
-    setError(null);
-    setSuccess(null);
-    try {
-      const result = await startFacebookPageReadOAuth(accessToken, '/integrations');
-      window.location.assign(result.authorizationUrl);
-    } catch (err) {
-      setError(err instanceof ApiClientError ? err.message : 'Could not start Page read authorisation.');
-      setBusy(false);
-    }
-  }
-
-  async function handleHealth() {
-    setBusy(true);
-    setError(null);
-    setSuccess(null);
-    try {
-      if (card.delegatedTo === 'facebook_business') {
-        const result = await checkFacebookConnection(accessToken);
-        setSuccess(`Check health complete — ${result.stateLabel}. ${result.detail}`);
-      } else {
-        const result = await checkSocialConnectionHealth(accessToken, card.provider);
-        setSuccess(result.message || 'Health check complete.');
-      }
-      onRefresh();
-    } catch (err) {
-      setError(err instanceof ApiClientError ? err.message : 'Health check failed.');
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function handleDisconnect() {
-    setBusy(true);
-    setError(null);
-    setSuccess(null);
-    try {
-      if (card.delegatedTo === 'facebook_business') {
-        await disconnectFacebook(accessToken);
-        setSuccess('Facebook disconnected. Stored credentials were cleared.');
-      } else {
-        await disconnectSocialConnection(accessToken, card.provider);
-        setSuccess('Disconnected.');
-      }
-      setConfirmDisconnect(false);
-      onRefresh();
-    } catch (err) {
-      setError(err instanceof ApiClientError ? err.message : 'Disconnect failed.');
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function handleViewSetup() {
-    setBusy(true);
-    setError(null);
-    try {
-      const req = await fetchSocialConnectionSetup(accessToken, card.provider);
-      setSetupText(
-        [
-          `Env: ${req.envVariables.join(', ') || 'See documentation'}`,
-          `Callback: ${req.callbackUrlPattern}`,
-          ...req.ownerPortalSteps.map((s) => `• ${s}`),
-        ].join('\n'),
-      );
-      setSetupOpen(true);
-    } catch (err) {
-      setError(err instanceof ApiClientError ? err.message : 'Could not load setup requirements.');
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function handleCompleteSelection() {
-    setBusy(true);
-    setError(null);
-    try {
-      const accounts = await fetchSocialConnectionAccounts(accessToken, card.provider);
-      const first = accounts[0];
-      if (!first) {
-        setError('No accounts available from provider discovery.');
-        return;
-      }
-      const selection = buildSelection(card.provider, first.id);
-      await selectSocialConnectionAccount(accessToken, {
-        provider: card.provider,
-        selection,
-      });
-      setSelectOpen(false);
-      onRefresh();
-    } catch (err) {
-      setError(err instanceof ApiClientError ? err.message : 'Account selection failed.');
-    } finally {
-      setBusy(false);
-    }
-  }
-
   return (
-    <article className="social-connection-card" data-provider={card.provider}>
-      <header className="social-connection-card__header">
+    <article className="social-connection-card integrations-simple-row" data-provider={card.provider}>
+      <div className="integrations-simple-row__main">
         <strong>{card.label}</strong>
-        <span className={`status-pill status-pill--${statusPillModifier(card.foundationStatus)}`}>
-          {card.statusLabel}
-        </span>
-      </header>
-      {card.delegatedTo === 'facebook_business' && card.managementPath ? (
-        <p className="page-muted">
-          Canonical connection:{' '}
-          <Link href={card.managementPath}>Facebook Business workspace</Link>
-        </p>
-      ) : null}
-      {card.selectedAccountLabel ? (
-        <p className="page-muted">Selected: {card.selectedAccountLabel}</p>
-      ) : null}
-      {card.lastHealthCheckAt ? (
-        <p className="social-connection-card__meta">
-          Last check: {new Date(card.lastHealthCheckAt).toLocaleString()}
-        </p>
-      ) : null}
-      {card.setupRequirementCategory ? (
-        <p className="page-muted">Setup: {card.setupRequirementCategory.replace(/_/g, ' ')}</p>
-      ) : null}
-      {card.statusDetail ? <p className="page-muted">{card.statusDetail}</p> : null}
-      {card.facebookPageIdentity ? (
-        <dl className="facebook-page-identity-mismatch">
-          <dt>Currently stored</dt>
-          <dd>
-            {card.facebookPageIdentity.storedPageName ?? 'Unknown Page'}
-            {card.facebookPageIdentity.storedPageIdMasked
-              ? ` · Page ID ending ${card.facebookPageIdentity.storedPageIdMasked.replace(/^···/, '')}`
-              : null}
-          </dd>
-          <dt>Expected</dt>
-          <dd>
-            {card.facebookPageIdentity.expectedPageName ?? 'Verified Page'}
-            {card.facebookPageIdentity.expectedPageIdMasked
-              ? ` · Page ID ending ${card.facebookPageIdentity.expectedPageIdMasked.replace(/^···/, '')}`
-              : null}
-          </dd>
-        </dl>
-      ) : null}
-      {success ? <p className="form-success">{success}</p> : null}
-      {card.safeErrorMessage ? <p className="form-error">{card.safeErrorMessage}</p> : null}
-      {error ? <p className="form-error">{error}</p> : null}
-      {setupOpen && setupText ? (
-        <pre className="social-connection-card__setup">{setupText}</pre>
-      ) : null}
-      {canManage ? (
-        card.delegatedTo === 'facebook_business' ? (
-          <FacebookConnectionActions
-            foundationStatus={card.foundationStatus}
-            connectionState={card.facebookConnectionState}
-            busy={busy}
-            canManage={canManage}
-            confirmDisconnect={confirmDisconnect}
-            choosePageHref={card.accountSelectionPath}
-            pageSelectionMismatch={card.pageSelectionMismatch}
-            showViewSetup={card.canViewSetupRequirements}
-            onConnect={() => void handleConnect()}
-            onChoosePage={() => {
-              window.location.assign(FACEBOOK_PAGE_SELECTION_WORKSPACE_PATH);
-            }}
-            onGrantPageRead={() => void handleGrantPageRead()}
-            onCheckHealth={() => void handleHealth()}
-            onReconnect={() => void handleReconnect()}
-            onDisconnect={() => void handleDisconnect()}
-            onRequestDisconnect={() => setConfirmDisconnect(true)}
-            onCancelDisconnect={() => setConfirmDisconnect(false)}
-            onViewSetup={() => void handleViewSetup()}
-          />
+        <EnterpriseConnectionStatusLine status={connectionStatus} />
+      </div>
+      <div className="integrations-simple-row__aside">
+        {canManage && usesConnectFlow ? (
+          <Button
+            size="sm"
+            variant="secondary"
+            disabled={busy}
+            onClick={() => void handleConnect()}
+          >
+            {actionLabel}
+          </Button>
+        ) : actionHref ? (
+          <Link href={actionHref}>
+            <Button size="sm" variant="secondary">
+              {actionLabel}
+            </Button>
+          </Link>
         ) : (
-          <div className="social-connection-card__actions">
-            {card.canConnect ? (
-              <Button size="sm" variant="primary" disabled={busy} onClick={() => void handleConnect()}>
-                Connect
-              </Button>
-            ) : null}
-            {card.canCompleteAccountSelection ? (
-              <Button
-                size="sm"
-                variant="secondary"
-                disabled={busy}
-                onClick={() => {
-                  setSelectOpen(true);
-                  void handleCompleteSelection();
-                }}
-              >
-                Complete account selection
-              </Button>
-            ) : null}
-            {card.canReconnect ? (
-              <Button size="sm" variant="secondary" disabled={busy} onClick={() => void handleReconnect()}>
-                Reconnect
-              </Button>
-            ) : null}
-            {card.canDisconnect ? (
-              confirmDisconnect ? (
-                <>
-                  <Button size="sm" variant="destructive" disabled={busy} onClick={() => void handleDisconnect()}>
-                    Confirm disconnect
-                  </Button>
-                  <Button size="sm" variant="ghost" disabled={busy} onClick={() => setConfirmDisconnect(false)}>
-                    Cancel
-                  </Button>
-                </>
-              ) : (
-                <Button size="sm" variant="secondary" disabled={busy} onClick={() => setConfirmDisconnect(true)}>
-                  Disconnect
-                </Button>
-              )
-            ) : null}
-            {card.foundationStatus === 'CONNECTED' ? (
-              <Button size="sm" variant="ghost" disabled={busy} onClick={() => void handleHealth()}>
-                Check health
-              </Button>
-            ) : null}
-            {card.canViewSetupRequirements ? (
-              <Button size="sm" variant="ghost" disabled={busy} onClick={() => void handleViewSetup()}>
-                View setup requirements
-              </Button>
-            ) : null}
-          </div>
-        )
-      ) : null}
-      {selectOpen ? <p className="page-muted">Validating account selection…</p> : null}
+          <Button size="sm" variant="secondary" disabled>
+            {actionLabel}
+          </Button>
+        )}
+      </div>
+      {error ? <p className="form-error social-connection-card__error">{error}</p> : null}
     </article>
   );
-}
-
-function buildSelection(provider: SocialPublishingProvider, primaryId: string) {
-  switch (provider) {
-    case 'facebook':
-      return { facebookPageId: primaryId };
-    case 'instagram':
-      return { instagramBusinessAccountId: primaryId };
-    case 'tiktok':
-      return { tiktokAccountId: primaryId };
-    default:
-      return {};
-  }
 }
 
 export function SocialConnectionsSection() {

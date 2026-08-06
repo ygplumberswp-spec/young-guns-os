@@ -41,8 +41,10 @@ describe('facebook connection actions click path (J-6.7F8)', () => {
     assert.ok(pageSource.includes('pageStored={Boolean(connection.pageId)}'));
   });
 
-  it('Integrations card navigates to the Page-selection workspace for choose correct Page', () => {
-    assert.ok(integrationsSource.includes('FACEBOOK_PAGE_SELECTION_WORKSPACE_PATH'));
-    assert.ok(integrationsSource.includes('window.location.assign(FACEBOOK_PAGE_SELECTION_WORKSPACE_PATH)'));
+  it('Integrations overview card links to Facebook Business workspace for Manage/Review', () => {
+    assert.ok(integrationsSource.includes('resolveSocialEnterpriseActionHref'));
+    assert.ok(integrationsSource.includes('EnterpriseConnectionStatusLine'));
+    const statusSource = readFileSync(join(here, 'enterprise-connection-status.ts'), 'utf8');
+    assert.ok(statusSource.includes('managementPath'));
   });
 });

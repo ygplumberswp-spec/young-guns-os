@@ -21,7 +21,14 @@ import { SimpleAdvancedToggle } from '../../components/SimpleAdvancedToggle';
 import { SocialConnectionsSection } from '../../features/integrations/SocialConnectionsSection';
 import { canAccessIntegrations, canManageIntegrations } from '../../features/integrations/utils';
 import {
-  capabilityStateToPillModifier,
+  EnterpriseConnectionStatusLine,
+  enterpriseConnectionActionLabel,
+} from '../../features/integrations/EnterpriseConnectionStatusLine';
+import {
+  deriveHubEnterpriseConnectionStatus,
+  resolveHubEnterpriseActionHref,
+} from '../../features/integrations/enterprise-connection-status';
+import {
   formatProviderCategory,
   formatSyncJobStatus,
   formatWebhookEventStatus,
@@ -76,10 +83,22 @@ function IntegrationCategoryLinks() {
   );
 }
 
+function resolveHubOverviewActionLabel(
+  status: ReturnType<typeof deriveHubEnterpriseConnectionStatus>,
+  provider: IntegrationProviderStatus,
+): string {
+  if (
+    (status === 'not_connected' && !provider.canConnect && provider.settingsPath) ||
+    provider.capabilityState === 'not_implemented'
+  ) {
+    return 'View status';
+  }
+  return enterpriseConnectionActionLabel(status);
+}
+
 /**
- * Decision 4 / UX-G — status pill and action are always derived from the
- * backend-computed capabilityState, never from connectionStatus alone. A
- * "not_implemented" provider must never render a working Connect button.
+ * Decision 4 / UX-G — overview cards show enterprise connection status only.
+ * Technical sync, token, and scope details belong on provider Manage/Review pages.
  */
 function SimpleProviderRow({
   provider,
@@ -88,52 +107,22 @@ function SimpleProviderRow({
   provider: IntegrationProviderStatus;
   autoSync?: IntegrationProviderAutoSyncStatus;
 }) {
-  const isNotImplemented = provider.capabilityState === 'not_implemented';
-  const actionLabel =
-    provider.capabilityState === 'connected_usable'
-      ? 'Configure'
-      : provider.capabilityState === 'failed_degraded'
-        ? 'Reconnect'
-        : 'Connect';
+  const connectionStatus = deriveHubEnterpriseConnectionStatus(provider, autoSync);
+  const actionLabel = resolveHubOverviewActionLabel(connectionStatus, provider);
+  const actionHref = resolveHubEnterpriseActionHref(provider, connectionStatus);
 
   return (
     <article className="integrations-simple-row">
       <div className="integrations-simple-row__main">
         <strong>{provider.name}</strong>
-        <p className="page-muted">{provider.description}</p>
-        {provider.lastSyncAt ? (
-          <p className="integrations-simple-row__meta">
-            Last sync: {new Date(provider.lastSyncAt).toLocaleString()}
-          </p>
-        ) : null}
-        {autoSync?.nextScheduledSyncAt ? (
-          <p className="integrations-simple-row__meta">
-            Next auto-sync: {new Date(autoSync.nextScheduledSyncAt).toLocaleString()}
-          </p>
-        ) : null}
-        {autoSync?.correctiveAction ? (
-          <p className="integrations-simple-row__meta">{autoSync.correctiveAction}</p>
-        ) : null}
-        {provider.lastError ? <p className="form-error">{provider.lastError}</p> : null}
+        <EnterpriseConnectionStatusLine status={connectionStatus} />
+        <p className="page-muted integrations-simple-row__description">{provider.description}</p>
       </div>
       <div className="integrations-simple-row__aside">
-        <span
-          className={`status-pill status-pill--${capabilityStateToPillModifier(provider.capabilityState)}`}
-        >
-          {autoSync?.uiStateLabel ?? provider.capabilityLabel}
-        </span>
-        {provider.canConnect && provider.settingsPath ? (
-          <Link href={provider.settingsPath}>
+        {actionHref ? (
+          <Link href={actionHref}>
             <Button size="sm" variant="secondary">
               {actionLabel}
-            </Button>
-          </Link>
-        ) : provider.settingsPath ? (
-          <Link href={provider.settingsPath}>
-            <Button size="sm" variant="secondary">
-              {provider.provider === 'n8n' || isNotImplemented
-                ? 'View in Automation'
-                : actionLabel}
             </Button>
           </Link>
         ) : (
