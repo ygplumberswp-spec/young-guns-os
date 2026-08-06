@@ -1,9 +1,10 @@
 # TITAN XERO-002 — Completion Report (Implementation vs Live Proof)
 
-**Status:** Implementation complete · Gate 2 **PARTIAL** (org live-read verified)  
+**Status:** Implementation complete · Gate 2 **PASS** · Gate 3 **PASS**  
 **Last updated (UTC):** 2026-08-06  
 **Preflight:** [TITAN_XERO_002A_LIVE_PROOF_PREFLIGHT.md](./TITAN_XERO_002A_LIVE_PROOF_PREFLIGHT.md)  
-**Gate 2:** [TITAN_XERO_002_GATE_2_READONLY_PROOF.md](./TITAN_XERO_002_GATE_2_READONLY_PROOF.md)
+**Gate 2:** [TITAN_XERO_002_GATE_2_READONLY_PROOF.md](./TITAN_XERO_002_GATE_2_READONLY_PROOF.md)  
+**Gate 3:** [TITAN_XERO_002_GATE_3_CONTROLLED_QUOTE_PROOF.md](./TITAN_XERO_002_GATE_3_CONTROLLED_QUOTE_PROOF.md)
 
 ---
 
@@ -29,9 +30,9 @@
 | Gate | Status |
 |------|--------|
 | G1 Reconnect / scope | **Not required** — scope granted 2026-08-06 |
-| G2 Read-only proof | **PARTIAL** — live org test PASS; contact/invoice/attachment pending staging API deploy |
-| G3 Controlled quote | Blocked — awaiting Gate 2 completion |
-| G4 Controlled invoice | Blocked |
+| G2 Read-only proof | **PASS** — contact/invoice/attachment metadata verified on staging |
+| G3 Controlled quote | **PASS** — one DRAFT quote pushed; retry idempotent (Q-0253) |
+| G4 Controlled invoice | Blocked — awaiting separate Owner approval |
 | G5 Payment | Blocked |
 | G6 Attachment read | Blocked |
 | G7 Reconciliation observe | Blocked |
@@ -60,7 +61,8 @@
 
 ## Single next action
 
-1. **Owner:** Redeploy staging API from canonical `b4e991c`, then re-run `node diagnostic-output/xero-002-gate2-readonly-proof.mjs`.
-2. After Gate 2 **PASS**, approve **Gate 3** separately for one controlled DRAFT quote.
+**Approve Gate 4 separately** for one controlled DRAFT invoice on staging.
 
-**Do not mark Xero production-complete until Gates 2–7 succeed.**
+Reply **`XERO-002 GATE 4 GO`** to authorise supervised Gate 4 only. Do **not** auto-execute.
+
+**Do not mark Xero production-complete until Gates 4–7 succeed.**

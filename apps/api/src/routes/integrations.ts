@@ -27,6 +27,8 @@ import type { XeroReconciliationService } from '../services/xero-reconciliation.
 import type { XeroRealtimeIntersyncService } from '../services/xero-realtime-intersync.service.js';
 import type { XeroGate2ReadonlyProofService } from '../services/xero-gate2-readonly-proof.service.js';
 import { XeroGate2ReadonlyProofError } from '../services/xero-gate2-readonly-proof.service.js';
+import type { XeroGate3ControlledQuoteService } from '../services/xero-gate3-controlled-quote.service.js';
+import { XeroGate3ControlledQuoteError } from '../services/xero-gate3-controlled-quote.service.js';
 import type { TeamService } from '../services/team.service.js';
 import { createAuthMiddleware, type AuthenticatedRequest } from '../middleware/auth.js';
 import { requireAnyPermission } from '../middleware/rbac.js';
@@ -186,6 +188,10 @@ const gate2ReadonlyProofSchema = z.object({
   invoiceId: z.string().uuid(),
 });
 
+const gate3ControlledQuoteSchema = z.object({
+  quoteId: z.string().uuid(),
+});
+
 const resolveXeroConflictSchema = z.object({
   entityType: z.enum(['invoice', 'contact', 'payment']),
   entityId: z.string().uuid(),
@@ -207,6 +213,7 @@ type IntegrationsRouterDeps = {
   xeroReconciliationService?: XeroReconciliationService;
   xeroRealtimeIntersyncService?: XeroRealtimeIntersyncService;
   xeroGate2ReadonlyProofService?: XeroGate2ReadonlyProofService;
+  xeroGate3ControlledQuoteService?: XeroGate3ControlledQuoteService;
   teamService: TeamService;
   appUrl: string;
   jwtSecret: string;
@@ -248,6 +255,7 @@ export function createIntegrationsRouter({
   xeroReconciliationService,
   xeroRealtimeIntersyncService,
   xeroGate2ReadonlyProofService,
+  xeroGate3ControlledQuoteService,
   teamService,
   appUrl,
   jwtSecret,
@@ -623,6 +631,53 @@ export function createIntegrationsRouter({
           return;
         }
         handleXeroOAuthError(res, error);
+      }
+    },
+  );
+
+  router.post(
+    '/xero/gate3-controlled-quote',
+    requireAnyPermission('integrations:manage'),
+    async (req, res) => {
+      const auth = getAuth(req);
+      const { companyId, userId } = auth;
+
+      if (!xeroGate3ControlledQuoteService) {
+        res.status(503).json({
+          error: { code: 'NOT_CONFIGURED', message: 'Gate 3 controlled quote proof is not configured.' },
+        });
+        return;
+      }
+
+      const parsed = gate3ControlledQuoteSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({
+          error: { code: 'VALIDATION_ERROR', message: parsed.error.issues[0]?.message ?? 'Invalid body' },
+        });
+        return;
+      }
+
+      try {
+        const result = await xeroGate3ControlledQuoteService.pushApprovedDraftQuote({
+          companyId,
+          quoteId: parsed.data.quoteId,
+          actorUserId: userId,
+        });
+        res.json({ data: { result } });
+      } catch (error) {
+        if (error instanceof XeroGate3ControlledQuoteError) {
+          const status =
+            error.code === 'ORG_MISMATCH'
+              ? 409
+              : error.code === 'WRITE_NOT_APPROVED' || error.code === 'APPROVAL_EXPIRED'
+                ? 403
+                : error.code === 'QUOTE_NOT_DRAFT'
+                  ? 409
+                  : 502;
+          res.status(status).json({ error: { code: error.code, message: error.message } });
+          return;
+        }
+        handleXeroSyncError(res, error);
       }
     },
   );

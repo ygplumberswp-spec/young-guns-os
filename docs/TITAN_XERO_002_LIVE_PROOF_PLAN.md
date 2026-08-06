@@ -2,7 +2,8 @@
 
 **Status:** PREPARED — **DO NOT EXECUTE** until Owner explicitly approves each gate  
 **Preflight (2026-08-06):** [TITAN_XERO_002A_LIVE_PROOF_PREFLIGHT.md](./TITAN_XERO_002A_LIVE_PROOF_PREFLIGHT.md)  
-**Gate 2 (2026-08-06):** [TITAN_XERO_002_GATE_2_READONLY_PROOF.md](./TITAN_XERO_002_GATE_2_READONLY_PROOF.md) — **PARTIAL** (org live-read verified; full proof after staging API deploy)
+**Gate 2 (2026-08-06):** [TITAN_XERO_002_GATE_2_READONLY_PROOF.md](./TITAN_XERO_002_GATE_2_READONLY_PROOF.md) — **PASS**  
+**Gate 3 (2026-08-06):** [TITAN_XERO_002_GATE_3_CONTROLLED_QUOTE_PROOF.md](./TITAN_XERO_002_GATE_3_CONTROLLED_QUOTE_PROOF.md) — **PASS**
 **Sequencing (2026-08-06):** DASH-001 **approved and closed**. Live proof remains gated per section **G1–G7** below.
 **Prepared (UTC):** 2026-08-06  
 **Environment:** Staging only  
@@ -38,7 +39,7 @@
 
 ### GATE 2 — Read-only proof
 
-**Execution (2026-08-06):** PARTIAL — `POST /integrations/xero/test` returned **Young Guns Plumbing** (live Xero read). Full contact/invoice/attachment proof via `POST /integrations/xero/gate2-readonly-proof` pending staging API deploy of `b4e991c`.
+**Execution (2026-08-06):** **PASS** — contact, invoice, and attachment metadata verified on staging via `POST /integrations/xero/gate2-readonly-proof`.
 
 | | |
 |---|---|
@@ -51,14 +52,7 @@
 
 ### GATE 3 — Controlled quote proof
 
-| | |
-|---|---|
-| **Prerequisites** | Gate 2 pass; **Confirmed linked** test customer; explicit Owner approval |
-| **Owner action** | Create one **DRAFT** quote labelled `TITAN XERO E2E TEST`; approve write; push once |
-| **Expected result** | Official Xero quote ID stored; retry does not duplicate |
-| **Stop condition** | Duplicate Xero quote on retry — stop proof |
-| **Rollback** | Void/delete draft in Xero; remove TITAN draft |
-| **Forbidden** | Send quote to customer |
+**Execution (2026-08-06):** **PASS** — DRAFT quote **Q-0253** pushed once; retry did not duplicate. Evidence: `diagnostic-output/xero-002-gate3-controlled-quote.json`.
 
 ### GATE 4 — Controlled invoice proof
 
@@ -177,8 +171,8 @@ Replace timestamp at execution time.
 
 ## Single next Owner action
 
-**Approve XERO-002A preflight**, then authorise **Gate 2 (read-only proof)** on staging. Do not begin Gate 3+ until Gate 2 evidence is reviewed.
+**Approve Gate 4 (controlled DRAFT invoice)** on staging after reviewing Gate 3 evidence. Do not begin Gate 4+ until explicitly authorised.
 
-Reply **"XERO-002 GATE 2 GO"** to authorise supervised Gate 2 only.
+Reply **"XERO-002 GATE 4 GO"** to authorise supervised Gate 4 only.
 
 **Do not mark Xero production-complete** until this proof succeeds.

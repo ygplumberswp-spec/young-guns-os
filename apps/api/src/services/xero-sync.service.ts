@@ -4115,6 +4115,107 @@ export class XeroSyncService {
     };
   }
 
+  /**
+   * Owner-approved single quote push. Idempotent when mapping already has xeroQuoteId.
+   * Creates DRAFT quote in Xero only — never sends/issues.
+   */
+  async executeApprovedQuotePush(input: {
+    companyId: string;
+    quoteId: string;
+    approvalId: string;
+    actorUserId: string;
+  }): Promise<Record<string, unknown>> {
+    const ctx = await this.createSyncContext(input.companyId);
+    const quote = await this.db.query.quotes.findFirst({
+      where: and(eq(quotes.companyId, input.companyId), eq(quotes.id, input.quoteId)),
+    });
+    if (!quote) {
+      throw new XeroSyncError('NOT_FOUND', 'Quote not found');
+    }
+
+    const existingMapping = await this.db.query.xeroQuoteMappings.findFirst({
+      where: and(
+        eq(xeroQuoteMappings.companyId, input.companyId),
+        eq(xeroQuoteMappings.quoteId, input.quoteId),
+      ),
+    });
+
+    if (existingMapping?.xeroQuoteId) {
+      const remote = await ctx.client.fetchQuote(existingMapping.xeroQuoteId);
+      await this.upsertQuoteMapping(ctx, quote.id, existingMapping.xeroQuoteId, 'synced');
+      await this.writeLog(ctx, {
+        entityType: 'quote',
+        entityId: quote.id,
+        xeroEntityId: existingMapping.xeroQuoteId,
+        action: 'push',
+        status: 'success',
+        message: 'Idempotent quote push — existing Xero mapping reused',
+      });
+      return {
+        idempotent: true,
+        xeroQuoteId: existingMapping.xeroQuoteId,
+        xeroQuoteNumber: remote.quoteNumber,
+        status: remote.status,
+      };
+    }
+
+    const customerMapping = await this.db.query.xeroCustomerMappings.findFirst({
+      where: and(
+        eq(xeroCustomerMappings.companyId, input.companyId),
+        eq(xeroCustomerMappings.customerId, quote.customerId),
+        eq(xeroCustomerMappings.syncStatus, 'synced'),
+      ),
+    });
+    if (!customerMapping?.xeroContactId) {
+      throw new XeroSyncError(
+        'VALIDATION',
+        'Customer must be mapped to a Xero contact before quote push',
+      );
+    }
+
+    const remote = await ctx.client.createQuote({
+      contactId: customerMapping.xeroContactId,
+      quoteNumber: quote.quoteNumber,
+      title: quote.title,
+      amountCents: quote.amountCents,
+      currency: quote.currency,
+      expiryDate: quote.validUntil?.toISOString().slice(0, 10) ?? null,
+    });
+
+    await this.upsertQuoteMapping(ctx, quote.id, remote.quoteId, 'synced');
+
+    await this.writeLog(ctx, {
+      entityType: 'quote',
+      entityId: quote.id,
+      xeroEntityId: remote.quoteId,
+      action: 'push',
+      status: 'success',
+      message: `Pushed quote draft to Xero (approval ${input.approvalId})`,
+    });
+
+    await this.db.insert(securityAuditLogs).values({
+      companyId: input.companyId,
+      userId: input.actorUserId,
+      category: 'integrations',
+      action: 'xero_quote_push_executed',
+      entityType: 'quote',
+      entityId: quote.id,
+      metadata: {
+        approvalId: input.approvalId,
+        xeroQuoteId: remote.quoteId,
+        xeroQuoteNumber: remote.quoteNumber,
+      },
+    });
+
+    invalidateIntegrationReadCaches(input.companyId);
+    return {
+      idempotent: false,
+      xeroQuoteId: remote.quoteId,
+      xeroQuoteNumber: remote.quoteNumber,
+      status: remote.status,
+    };
+  }
+
   async executeApprovedPaymentPush(input: {
     companyId: string;
     paymentId: string;
