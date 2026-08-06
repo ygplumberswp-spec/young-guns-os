@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'wouter';
-import { Button, EmptyState, PageHeader, Panel } from '@titan/ui';
+import { Button, EmptyState, Panel } from '@titan/ui';
 import {
   COMMUNICATION_CHANNEL_OPTIONS,
   COMMUNICATION_DELIVERY_STATE_OPTIONS,
@@ -115,7 +116,7 @@ export function MessageListPage() {
         actions={
           canWrite ? (
             <Link href="/communications/messages/new">
-              <Button>Log communication</Button>
+              <Button>Log Communication</Button>
             </Link>
           ) : undefined
         }
@@ -128,18 +129,18 @@ export function MessageListPage() {
       {!isLoading && !error ? (
         messages.length === 0 ? (
           <EmptyState
-            title="No communications yet"
+            title="No Communications Yet"
             description="Log your first customer interaction to start building communication history."
             action={
               canWrite ? (
                 <Link href="/communications/messages/new">
-                  <Button>Log communication</Button>
+                  <Button>Log Communication</Button>
                 </Link>
               ) : undefined
             }
           />
         ) : (
-          <Panel title="Communication history">
+          <Panel title="Communication History">
             <div className="communications-table-wrap">
               <table className="communications-table">
                 <thead>

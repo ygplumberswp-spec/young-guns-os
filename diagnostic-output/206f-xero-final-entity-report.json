@@ -1,0 +1,114 @@
+{
+  "label": "206f-xero-final-entity-report",
+  "generatedAt": "2026-08-03T23:06:52.914Z",
+  "connection": {
+    "status": "connected",
+    "last_sync_at": "2026-08-03T17:06:33.809Z",
+    "last_error": null,
+    "connected_at": "2026-08-01T10:20:52.209Z",
+    "organisation_name": "Young Guns Plumbing",
+    "organisation_id": "20176b90-a093-4da1-a04e-8ae616f89fef",
+    "tenant_id": "20176b90-a093-4da1-a04e-8ae616f89fef",
+    "base_currency": "ZAR",
+    "credentials_encrypted_present": true
+  },
+  "perEntity": [
+    {
+      "entity_type": "customer",
+      "success": 22011,
+      "failed": 4383,
+      "failed_invalid_date": 0,
+      "failed_missing_table": 4136,
+      "first_attempt": "2026-08-01T10:45:33.265Z",
+      "last_attempt": "2026-08-03T23:06:53.469Z"
+    },
+    {
+      "entity_type": "quote",
+      "success": 0,
+      "failed": 747,
+      "failed_invalid_date": 747,
+      "failed_missing_table": 0,
+      "first_attempt": "2026-08-03T18:57:42.190Z",
+      "last_attempt": "2026-08-03T21:46:51.758Z"
+    },
+    {
+      "entity_type": "invoice",
+      "success": 149,
+      "failed": 21856,
+      "failed_invalid_date": 17674,
+      "failed_missing_table": 4157,
+      "first_attempt": "2026-08-01T11:35:32.687Z",
+      "last_attempt": "2026-08-03T21:59:54.329Z"
+    },
+    {
+      "entity_type": "bank_transaction",
+      "success": 3093,
+      "failed": 11357,
+      "failed_invalid_date": 0,
+      "failed_missing_table": 11357,
+      "first_attempt": "2026-08-01T13:40:13.252Z",
+      "last_attempt": "2026-08-03T22:34:16.153Z"
+    }
+  ],
+  "storedRowCounts": {
+    "customers": 811,
+    "invoices": 5,
+    "quotes": 0,
+    "payments": 0,
+    "xero_customer_mappings": 678,
+    "xero_invoice_mappings": 5,
+    "xero_payment_mappings": 0,
+    "xero_quote_mappings": 0
+  },
+  "neverAttemptedEntities": [
+    "account",
+    "tracking_category",
+    "bill",
+    "credit_note",
+    "attachment"
+  ],
+  "invoiceBusinessDates": {
+    "oldest_issued": "2026-08-01T11:41:58.366Z",
+    "newest_issued": "2026-08-01T11:43:40.497Z",
+    "with_due_date": 0,
+    "n": 5
+  },
+  "activeImportJobs": 37,
+  "recentImportJobs": [
+    {
+      "id": "6b1cf692-4061-4613-a6c1-c6d85ad7a040",
+      "status": "completed",
+      "started_at": "2026-08-03T23:02:54.340Z",
+      "completed_at": "2026-08-03T23:03:00.120Z",
+      "error_message": null
+    },
+    {
+      "id": "023a4bdc-05dc-4d92-ae10-82b28afd8c21",
+      "status": "completed",
+      "started_at": "2026-08-03T22:58:55.693Z",
+      "completed_at": "2026-08-03T22:58:56.776Z",
+      "error_message": null
+    },
+    {
+      "id": "96353471-d98a-431d-99de-25759bf6abf7",
+      "status": "completed",
+      "started_at": "2026-08-03T22:47:01.843Z",
+      "completed_at": "2026-08-03T22:47:12.177Z",
+      "error_message": null
+    },
+    {
+      "id": "18671270-6a93-42a1-ba06-aa165f4a46f9",
+      "status": "running",
+      "started_at": "2026-08-03T22:44:27.409Z",
+      "completed_at": null,
+      "error_message": null
+    },
+    {
+      "id": "b957ce5e-1f2b-427b-a4f5-fff905d44281",
+      "status": "completed",
+      "started_at": "2026-08-03T22:31:31.496Z",
+      "completed_at": "2026-08-03T22:31:36.819Z",
+      "error_message": null
+    }
+  ]
+}

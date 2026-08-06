@@ -34,6 +34,26 @@ export function resolveApiBaseFrom(
 }
 
 /**
+ * When the UI is on a different origin than the configured API URL, use the
+ * same-origin nginx `/api/v1` proxy so httpOnly refresh cookies survive reload.
+ */
+export function coerceSameOriginApiBase(base: string, pageOrigin?: string): string {
+  if (!pageOrigin || !base.startsWith('http')) {
+    return base;
+  }
+
+  try {
+    if (new URL(base).origin !== pageOrigin) {
+      return '/api/v1';
+    }
+  } catch {
+    // Keep configured base when URL parsing fails.
+  }
+
+  return base;
+}
+
+/**
  * API origin for non-proxied deploys (Railway/Render separate services).
  * Empty → same-origin `/api/v1` (Vite proxy or nginx reverse proxy).
  */
@@ -42,9 +62,15 @@ export function resolveApiBase(): string {
     typeof window !== 'undefined' &&
     Object.prototype.hasOwnProperty.call(window, '__TITAN_API_BASE__');
   const runtimeValue = runtimeDefined ? window.__TITAN_API_BASE__ : undefined;
-  return resolveApiBaseFrom(
+  const base = resolveApiBaseFrom(
     String(import.meta.env.VITE_API_BASE_URL || ''),
     runtimeDefined,
     runtimeValue,
   );
+
+  if (typeof window !== 'undefined') {
+    return coerceSameOriginApiBase(base, window.location.origin);
+  }
+
+  return base;
 }

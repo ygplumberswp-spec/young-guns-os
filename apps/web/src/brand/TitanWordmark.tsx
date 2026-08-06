@@ -51,9 +51,9 @@ export function TitanWordmark({
               <stop offset="100%" stopColor="#ffffff" stopOpacity="0.08" />
             </linearGradient>
             <linearGradient id={edgeId} x1="0%" y1="100%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.7" />
+              <stop offset="0%" stopColor="#1f7aec" stopOpacity="0.7" />
               <stop offset="45%" stopColor="#e2e8f0" stopOpacity="0.15" />
-              <stop offset="100%" stopColor="#38bdf8" stopOpacity="0.45" />
+              <stop offset="100%" stopColor="#54a6ff" stopOpacity="0.45" />
             </linearGradient>
           </>
         ) : null}

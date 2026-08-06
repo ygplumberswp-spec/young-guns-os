@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'wouter';
-import { Button, EmptyState, PageHeader, Panel, StatCard } from '@titan/ui';
+import { Button, EmptyState, Panel, StatCard } from '@titan/ui';
 import type {
   EnterpriseIndustryPackDashboard,
   IpCertificateSummary,
@@ -189,7 +190,7 @@ export function IndustryPacksPage() {
     return (
       <div className="automation-page">
         <EmptyState
-          title="Access denied"
+          title="Access Denied"
           description="You do not have permission to view industry packs."
         />
       </div>
@@ -303,7 +304,7 @@ export function IndustryPacksPage() {
             <p>Loading installed packs...</p>
           ) : installedPacks.length === 0 ? (
             <EmptyState
-              title="No installed packs"
+              title="No Installed Packs"
               description="Install industry packs from the marketplace."
             />
           ) : (
@@ -328,7 +329,7 @@ export function IndustryPacksPage() {
             <p>Loading marketplace...</p>
           ) : marketplacePacks.length === 0 ? (
             <EmptyState
-              title="No marketplace packs"
+              title="No Marketplace Packs"
               description="Built-in industry packs will appear here."
             />
           ) : (
@@ -364,7 +365,7 @@ export function IndustryPacksPage() {
             <p>Loading templates...</p>
           ) : templates.length === 0 ? (
             <EmptyState
-              title="No templates"
+              title="No Templates"
               description="Create job, inspection, quote, and workflow templates per installed pack."
             />
           ) : (
@@ -387,7 +388,7 @@ export function IndustryPacksPage() {
             <p>Loading compliance frameworks...</p>
           ) : complianceFrameworks.length === 0 ? (
             <EmptyState
-              title="No compliance frameworks"
+              title="No Compliance Frameworks"
               description="Configure country and industry-specific compliance frameworks."
             />
           ) : (
@@ -414,7 +415,7 @@ export function IndustryPacksPage() {
             <p>Loading certificates...</p>
           ) : certificates.length === 0 ? (
             <EmptyState
-              title="No certificates"
+              title="No Certificates"
               description="Certificates are generated from real completed work only."
             />
           ) : (
@@ -437,7 +438,7 @@ export function IndustryPacksPage() {
             <p>Loading equipment catalog...</p>
           ) : equipmentCatalog.length === 0 ? (
             <EmptyState
-              title="No equipment catalog entries"
+              title="No Equipment Catalog Entries"
               description="Add industry-specific equipment catalogs with manufacturers, models, and service intervals."
             />
           ) : (
@@ -457,7 +458,7 @@ export function IndustryPacksPage() {
       {activeTab === 'reports' ? (
         <Panel title="Reports">
           <EmptyState
-            title="Industry report templates"
+            title="Industry Report Templates"
             description="Report templates are managed per installed pack. Create templates via Templates or ask the Industry Intelligence agent."
           />
         </Panel>
@@ -470,7 +471,7 @@ export function IndustryPacksPage() {
             <pre className="code-block">{JSON.stringify(dashboard.analytics.metrics, null, 2)}</pre>
           ) : (
             <EmptyState
-              title="No analytics captured"
+              title="No Analytics Captured"
               description="Capture analytics to measure industry KPIs."
             />
           )}

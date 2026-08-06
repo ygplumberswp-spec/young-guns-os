@@ -31,9 +31,9 @@ export const N8N_EXECUTION_STATUS_OPTIONS: Array<{
   { value: 'running', label: 'Running' },
   { value: 'succeeded', label: 'Succeeded' },
   { value: 'failed', label: 'Failed' },
-  { value: 'timed_out', label: 'Timed out' },
+  { value: 'timed_out', label: 'Timed Out' },
   { value: 'cancelled', label: 'Cancelled' },
-  { value: 'awaiting_approval', label: 'Awaiting approval' },
+  { value: 'awaiting_approval', label: 'Awaiting Approval' },
 ];
 
 export const N8N_CAPABILITY_TO_INTEGRATION: Record<N8nCapabilityState, IntegrationCapabilityState> =

@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { useEffect, useState } from 'react';
 import { Link } from 'wouter';
-import { Button, EmptyState, PageHeader, Panel } from '@titan/ui';
+import { Button, EmptyState, Panel } from '@titan/ui';
 import { QUOTE_STATUS_OPTIONS } from '@titan/shared';
 import {
   PortalApiClientError,
@@ -59,11 +60,11 @@ export function PortalQuotesPage() {
       />
       {error ? <p className="form-error">{error}</p> : null}
       {success ? <p className="form-success">{success}</p> : null}
-      <Panel title="Quote history">
+      <Panel title="Quote History">
         {quotes.length === 0 ? (
           <EmptyState
             className="titan-empty-state--compact"
-            title="No quotes"
+            title="No Quotes"
             description="Quotes shared with your account will appear here."
           />
         ) : (
@@ -75,7 +76,7 @@ export function PortalQuotesPage() {
                   className="portal-list__link"
                 >
                   <strong>
-                    {quote.quoteNumber} · {quote.title}
+                    {quote.displayQuoteNumber} · {quote.customerName}
                   </strong>
                   <span>
                     {formatStatus(quote.status)} · v{quote.versionNumber}

@@ -1,4 +1,5 @@
 import type { JobAddressInput, JobPriority, JobSiteContactInput } from './job-contract.js';
+import type { JobExecutionPhase } from './job-execution.js';
 
 export type JobStatus = 'new' | 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
 export type { JobPriority, JobAddressInput, JobSiteContactInput };
@@ -19,6 +20,10 @@ export type JobAddressSnapshot = {
   postalCode: string | null;
   unit: string | null;
   display: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  placeId: string | null;
+  formattedAddress: string | null;
 };
 
 export type JobSiteContactSnapshot = {
@@ -39,7 +44,13 @@ export type JobSummary = {
   jobType: string | null;
   priority: JobPriority;
   status: JobStatus;
+  /** Field execution phase (dual-track with status). Null when not loaded. */
+  executionPhase: JobExecutionPhase | null;
   addressDisplay: string | null;
+  /** Verified snapshot coordinates when geocoded — never invented. */
+  latitude: number | null;
+  longitude: number | null;
+  placeId: string | null;
   siteContactMobile: string | null;
   scheduledAt: string | null;
   scheduledEndAt: string | null;
@@ -47,6 +58,8 @@ export type JobSummary = {
   assignedUserName: string | null;
   createdAt: string;
   updatedAt: string;
+  /** Customer-visible technician ETA when tracking applies (portal/mobile). */
+  etaAt: string | null;
 };
 
 export type JobDocumentLink = {
@@ -83,6 +96,11 @@ export type CreateJobPropertyInput = {
   postalCode: string;
   unit?: string | null;
   isPrimary?: boolean;
+  latitude?: number | null;
+  longitude?: number | null;
+  placeId?: string | null;
+  formattedAddress?: string | null;
+  geocodeStatus?: 'unverified' | 'verified' | 'failed' | null;
 };
 
 export type CreateJobDocumentInput = {
@@ -151,6 +169,12 @@ export type CustomerPropertySummary = {
   unit: string | null;
   addressDisplay: string | null;
   isPrimary: boolean;
+  latitude: number | null;
+  longitude: number | null;
+  placeId: string | null;
+  formattedAddress: string | null;
+  geocodedAt: string | null;
+  geocodeStatus: 'unverified' | 'verified' | 'failed' | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -164,6 +188,11 @@ export type CreateCustomerPropertyRequest = {
   postalCode?: string | null;
   unit?: string | null;
   isPrimary?: boolean;
+  latitude?: number | null;
+  longitude?: number | null;
+  placeId?: string | null;
+  formattedAddress?: string | null;
+  geocodeStatus?: 'unverified' | 'verified' | 'failed' | null;
 };
 
 export type UpdateCustomerPropertyRequest = {
@@ -175,4 +204,9 @@ export type UpdateCustomerPropertyRequest = {
   postalCode?: string | null;
   unit?: string | null;
   isPrimary?: boolean;
+  latitude?: number | null;
+  longitude?: number | null;
+  placeId?: string | null;
+  formattedAddress?: string | null;
+  geocodeStatus?: 'unverified' | 'verified' | 'failed' | null;
 };

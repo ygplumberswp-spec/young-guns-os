@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import type { InventoryService } from '../services/inventory.service.js';
 import { InventoryError } from '../services/inventory.service.js';
+import type { StockMovementsService } from '../services/stock-movements.service.js';
 import type { TeamService } from '../services/team.service.js';
 import { createAuthMiddleware, type AuthenticatedRequest } from '../middleware/auth.js';
 import { requireAnyPermission } from '../middleware/rbac.js';
@@ -37,6 +38,7 @@ const setStockSchema = z.object({
 
 type InventoryRouterDeps = {
   inventoryService: InventoryService;
+  stockMovementsService: StockMovementsService;
   teamService: TeamService;
   jwtSecret: string;
   authService: import('../services/auth.service.js').AuthService;
@@ -48,6 +50,7 @@ function getAuth(req: import('express').Request) {
 
 export function createInventoryRouter({
   inventoryService,
+  stockMovementsService,
   teamService,
   jwtSecret,
   authService,
@@ -69,6 +72,24 @@ export function createInventoryRouter({
       const { companyId } = getAuth(req);
       const stats = await inventoryService.getStats(companyId);
       res.json({ data: stats });
+    },
+  );
+
+  router.get(
+    '/movements',
+    requireAnyPermission('inventory:read', 'inventory:write'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      const itemId = typeof req.query.itemId === 'string' ? req.query.itemId : undefined;
+      const locationId =
+        typeof req.query.locationId === 'string' ? req.query.locationId : undefined;
+      const jobId = typeof req.query.jobId === 'string' ? req.query.jobId : undefined;
+      const movements = await stockMovementsService.listMovements(companyId, {
+        itemId,
+        locationId,
+        jobId,
+      });
+      res.json({ data: { movements } });
     },
   );
 

@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'wouter';
-import { Button, EmptyState, PageHeader, Panel } from '@titan/ui';
+import { Button, EmptyState, Panel } from '@titan/ui';
 import type { WiSelfServiceSummary } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import { fetchSelfService } from '../../lib/enterprise-workforce-intelligence-api-client';
@@ -80,7 +81,7 @@ export function SelfServicePage() {
               </ul>
             ) : (
               <EmptyState
-                title="No workforce profile"
+                title="No Workforce Profile"
                 description="Your HR profile has not been created yet."
               />
             )}
@@ -89,7 +90,7 @@ export function SelfServicePage() {
           <Panel title="My Timesheets">
             {selfService.timesheets.length === 0 ? (
               <EmptyState
-                title="No timesheets"
+                title="No Timesheets"
                 description="Submit timesheets through this workspace or mobile."
               />
             ) : (
@@ -106,7 +107,7 @@ export function SelfServicePage() {
           <Panel title="My Leave">
             {selfService.leaveApplications.length === 0 ? (
               <EmptyState
-                title="No leave applications"
+                title="No Leave Applications"
                 description="Request leave when leave categories are configured."
               />
             ) : (
@@ -123,7 +124,7 @@ export function SelfServicePage() {
           <Panel title="Certifications & Training">
             {selfService.certifications.length === 0 && selfService.training.length === 0 ? (
               <EmptyState
-                title="No records"
+                title="No Records"
                 description="Certifications and training records appear when configured by HR."
               />
             ) : (

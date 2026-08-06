@@ -54,16 +54,16 @@ export type LeadDuplicateResolution =
 
 export const LEAD_STATUS_OPTIONS: Array<{ value: LeadStatus; label: string }> = [
   { value: 'new', label: 'New' },
-  { value: 'attempted_contact', label: 'Attempted contact' },
+  { value: 'attempted_contact', label: 'Attempted Contact' },
   { value: 'contacted', label: 'Contacted' },
   { value: 'qualified', label: 'Qualified' },
-  { value: 'awaiting_information', label: 'Awaiting information' },
-  { value: 'quote_required', label: 'Quote / estimate required' },
-  { value: 'ready_to_book', label: 'Ready to book' },
+  { value: 'awaiting_information', label: 'Awaiting Information' },
+  { value: 'quote_required', label: 'Quote / Estimate Required' },
+  { value: 'ready_to_book', label: 'Ready To Book' },
   { value: 'opportunity', label: 'Opportunity' },
-  { value: 'converted', label: 'Converted / won' },
-  { value: 'lost', label: 'Lost / not proceeding' },
-  { value: 'duplicate', label: 'Duplicate / spam' },
+  { value: 'converted', label: 'Converted / Won' },
+  { value: 'lost', label: 'Lost / Not Proceeding' },
+  { value: 'duplicate', label: 'Duplicate / Spam' },
 ];
 
 export const LEAD_TERMINAL_STATUSES: LeadStatus[] = ['converted', 'lost', 'duplicate'];
@@ -72,12 +72,12 @@ export const LEAD_ACTIVITY_TYPE_OPTIONS: Array<{ value: LeadActivityType; label:
   { value: 'call', label: 'Call' },
   { value: 'email', label: 'Email' },
   { value: 'meeting', label: 'Meeting' },
-  { value: 'follow_up', label: 'Follow-up' },
+  { value: 'follow_up', label: 'Follow-Up' },
   { value: 'note', label: 'Note' },
-  { value: 'handoff', label: 'Sales handoff' },
-  { value: 'status_change', label: 'Status change' },
+  { value: 'handoff', label: 'Sales Handoff' },
+  { value: 'status_change', label: 'Status Change' },
   { value: 'conversion', label: 'Conversion' },
-  { value: 'duplicate_override', label: 'Duplicate override' },
+  { value: 'duplicate_override', label: 'Duplicate Override' },
   { value: 'other', label: 'Other' },
 ];
 

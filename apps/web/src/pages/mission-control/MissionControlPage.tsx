@@ -1,6 +1,8 @@
+import { PageHeader } from '../../components/ux';
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'wouter';
-import { Button, EmptyState, LoadingState, PageHeader, Panel, StatCard, TabNav } from '@titan/ui';
+import { Button, EmptyState, LoadingState, Panel, StatCard, TabNav } from '@titan/ui';
+import { NAV_LABELS } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import {
   acknowledgeMissionControlAlert,
@@ -15,6 +17,8 @@ import { useAuth } from '../../lib/auth-context';
 import { useStaffCachedQuery } from '../../lib/use-scoped-cached-query';
 import { SimpleAdvancedToggle } from '../../components/SimpleAdvancedToggle';
 import { AnalyticsTabPanel } from '../../features/analytics/AnalyticsTabPanel';
+import { DayPlanningPanel } from '../../features/aura/DayPlanningPanel';
+import { canWriteCompanyMemory } from '@titan/auth/browser';
 import {
   canAccessMissionControl,
   canManageMissionControl,
@@ -38,6 +42,16 @@ export function MissionControlPage() {
   const canView = useMemo(() => (user ? canAccessMissionControl(user.permissions) : false), [user]);
   const canWrite = useMemo(
     () => (user ? canManageMissionControl(user.permissions) : false),
+    [user],
+  );
+  const canWriteDayPlan = useMemo(
+    () =>
+      user
+        ? canWriteCompanyMemory({
+            roleName: user.roleName,
+            permissions: user.permissions,
+          })
+        : false,
     [user],
   );
 
@@ -103,8 +117,8 @@ export function MissionControlPage() {
     return (
       <div className="automation-page">
         <PageHeader
-          title="Mission Control"
-          description="You do not have permission to view mission control."
+          title={NAV_LABELS.companyHealth}
+          description="You do not have permission to view company health."
         />
       </div>
     );
@@ -165,8 +179,8 @@ export function MissionControlPage() {
   return (
     <div className="automation-page page-shell">
       <PageHeader
-        title="Mission Control"
-        description="Business overview, critical actions and operational priorities."
+        title={NAV_LABELS.companyHealth}
+        description="Business overview, today’s operational priorities, and critical actions."
         actions={
           canWrite ? (
             <div className="page-header-actions">
@@ -204,9 +218,9 @@ export function MissionControlPage() {
       />
 
       {isLoading ? (
-        <LoadingState label="Loading mission control summary…" />
+        <LoadingState label="Loading Mission Control Summary…" />
       ) : !dashboard ? (
-        <EmptyState title="No data" description="Mission control dashboard is unavailable." />
+        <EmptyState title="No Data" description="Mission control dashboard is unavailable." />
       ) : (
         <>
           {activeTab === 'dashboard' ? (
@@ -221,7 +235,13 @@ export function MissionControlPage() {
                 <StatCard label="Pending Actions" value={String(dashboard.pendingActionCount)} />
               </div>
 
-              <Panel title="Business overview">
+              {accessToken ? (
+                <Panel title="Today's plan">
+                  <DayPlanningPanel accessToken={accessToken} canWrite={canWriteDayPlan} />
+                </Panel>
+              ) : null}
+
+              <Panel title="Business Overview">
                 <p>{dashboard.summary}</p>
               </Panel>
 
@@ -231,7 +251,7 @@ export function MissionControlPage() {
                   error={modulesError}
                   hasData={moduleSnapshots !== undefined}
                   isEmpty={moduleSnapshots !== undefined && (visibleSnapshots?.length ?? 0) === 0}
-                  emptyTitle="No systems to show"
+                  emptyTitle="No Systems To Show"
                   emptyDescription="No module snapshots available."
                   loadingLabel="Loading module systems…"
                   onRetry={() => void refetchModules()}
@@ -281,7 +301,7 @@ export function MissionControlPage() {
                 <Panel title="Department Health">
                   {dashboard.departmentHealth.length === 0 ? (
                     <EmptyState
-                      title="No department health"
+                      title="No Department Health"
                       description="Refresh department health from module data."
                     />
                   ) : (
@@ -322,7 +342,7 @@ export function MissionControlPage() {
             <Panel title="Enterprise Alert Center">
               {dashboard.recentAlerts.length === 0 ? (
                 <EmptyState
-                  title="No alerts"
+                  title="No Alerts"
                   description="Sync alerts from executive, automation, integration, and digital twin modules."
                 />
               ) : (
@@ -359,7 +379,7 @@ export function MissionControlPage() {
             <Panel title="Incident Management">
               {dashboard.activeIncidents.length === 0 ? (
                 <EmptyState
-                  title="No active incidents"
+                  title="No Active Incidents"
                   description="Incidents are tracked when created by your team — no demo incidents are generated."
                 />
               ) : (
@@ -399,7 +419,7 @@ export function MissionControlPage() {
               ) : null}
               {dashboard.timelineEvents.length === 0 ? (
                 <EmptyState
-                  title="No events"
+                  title="No Events"
                   description="Sync the cross-module event stream from live data."
                 />
               ) : (
@@ -438,7 +458,7 @@ export function MissionControlPage() {
               ) : null}
               {dashboard.operationsMap.length === 0 ? (
                 <EmptyState
-                  title="No map points"
+                  title="No Map Points"
                   description="Capture fleet positions and active jobs from real GPS and job records."
                 />
               ) : (
@@ -465,7 +485,7 @@ export function MissionControlPage() {
             <Panel title="AI Executive Intelligence">
               {dashboard.recommendations.length === 0 ? (
                 <EmptyState
-                  title="No recommendations"
+                  title="No Recommendations"
                   description="Generate recommendations from real alert, incident, and health signals."
                 />
               ) : (

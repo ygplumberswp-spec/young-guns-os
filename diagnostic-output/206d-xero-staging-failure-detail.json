@@ -1,0 +1,300 @@
+{
+  "label": "206d-xero-staging-failure-detail",
+  "generatedAt": "2026-08-03T22:59:54.150Z",
+  "distinctFailureCauses": [
+    {
+      "entity_type": "invoice",
+      "shape": "Invalid time value",
+      "n": 17674,
+      "oldest": "2026-08-01T11:35:32.687Z",
+      "newest": "2026-08-03T21:59:54.329Z"
+    },
+    {
+      "entity_type": "bank_transaction",
+      "shape": "Failed query (see fullSample)",
+      "n": 11357,
+      "oldest": "2026-08-03T17:58:42.449Z",
+      "newest": "2026-08-03T22:34:16.153Z"
+    },
+    {
+      "entity_type": "invoice",
+      "shape": "Failed query (see fullSample)",
+      "n": 4157,
+      "oldest": "2026-08-01T11:57:41.979Z",
+      "newest": "2026-08-03T21:56:28.920Z"
+    },
+    {
+      "entity_type": "customer",
+      "shape": "Failed query (see fullSample)",
+      "n": 4136,
+      "oldest": "2026-08-01T12:21:46.639Z",
+      "newest": "2026-08-01T21:14:23.540Z"
+    },
+    {
+      "entity_type": "quote",
+      "shape": "Invalid time value",
+      "n": 747,
+      "oldest": "2026-08-03T18:57:42.190Z",
+      "newest": "2026-08-03T21:46:51.758Z"
+    },
+    {
+      "entity_type": "invoice",
+      "shape": "Xero write blocked: no approval for invoice_create on invoice:1aaaa421-b74a-4cf3-9685-c2f60b1e007e",
+      "n": 5,
+      "oldest": "2026-08-02T11:29:03.247Z",
+      "newest": "2026-08-02T11:29:59.507Z"
+    },
+    {
+      "entity_type": "invoice",
+      "shape": "Xero write blocked: no approval for invoice_create on invoice:7c726b98-325b-4601-8b4a-9647c9f50540",
+      "n": 5,
+      "oldest": "2026-08-02T11:29:04.445Z",
+      "newest": "2026-08-02T11:30:00.675Z"
+    },
+    {
+      "entity_type": "invoice",
+      "shape": "Xero write blocked: no approval for invoice_create on invoice:3138e9af-46b9-4c69-ae26-55aec9fb26d9",
+      "n": 5,
+      "oldest": "2026-08-02T11:29:05.609Z",
+      "newest": "2026-08-02T11:30:01.852Z"
+    },
+    {
+      "entity_type": "invoice",
+      "shape": "Xero write blocked: no approval for invoice_create on invoice:360931e8-ac3a-40f7-bcd8-81bcc43cd585",
+      "n": 5,
+      "oldest": "2026-08-02T11:29:02.017Z",
+      "newest": "2026-08-02T11:29:58.323Z"
+    },
+    {
+      "entity_type": "invoice",
+      "shape": "Xero write blocked: no approval for invoice_create on invoice:c93e4674-a123-4f81-817b-c67a31cfcfb8",
+      "n": 5,
+      "oldest": "2026-08-02T11:29:06.788Z",
+      "newest": "2026-08-02T11:30:03.021Z"
+    },
+    {
+      "entity_type": "customer",
+      "shape": "Xero write blocked: no approval for contact_update on contact:d4a01aa7-8876-4030-ab65-3b9817702a75",
+      "n": 1,
+      "oldest": "2026-08-02T21:30:47.359Z",
+      "newest": "2026-08-02T21:30:47.359Z"
+    },
+    {
+      "entity_type": "customer",
+      "shape": "Xero write blocked: no approval for contact_update on contact:6cde8bf6-dfad-40db-a59e-40d27235a78d",
+      "n": 1,
+      "oldest": "2026-08-02T21:33:51.895Z",
+      "newest": "2026-08-02T21:33:51.895Z"
+    },
+    {
+      "entity_type": "customer",
+      "shape": "Xero write blocked: no approval for contact_update on contact:d13b5f68-90ff-4d7a-ad2b-02706b91b7b6",
+      "n": 1,
+      "oldest": "2026-08-02T21:32:52.621Z",
+      "newest": "2026-08-02T21:32:52.621Z"
+    },
+    {
+      "entity_type": "customer",
+      "shape": "Xero write blocked: no approval for contact_update on contact:920b0ea8-73cc-4e64-9bcf-bfbd8f5b8f44",
+      "n": 1,
+      "oldest": "2026-08-02T21:33:02.108Z",
+      "newest": "2026-08-02T21:33:02.108Z"
+    },
+    {
+      "entity_type": "customer",
+      "shape": "Xero write blocked: no approval for contact_update on contact:cf176d7f-7c3c-44a1-afdf-1bbaa11d9c9e",
+      "n": 1,
+      "oldest": "2026-08-02T21:31:26.685Z",
+      "newest": "2026-08-02T21:31:26.685Z"
+    },
+    {
+      "entity_type": "customer",
+      "shape": "Xero write blocked: no approval for contact_update on contact:5467df67-7297-45bd-bfa7-f46f5ccb4d95",
+      "n": 1,
+      "oldest": "2026-08-02T21:32:56.200Z",
+      "newest": "2026-08-02T21:32:56.200Z"
+    },
+    {
+      "entity_type": "customer",
+      "shape": "Xero write blocked: no approval for contact_update on contact:cb038a9d-e20b-44f5-ac5f-61ac864f2d5a",
+      "n": 1,
+      "oldest": "2026-08-02T21:32:27.229Z",
+      "newest": "2026-08-02T21:32:27.229Z"
+    },
+    {
+      "entity_type": "customer",
+      "shape": "Xero write blocked: no approval for contact_update on contact:e757ad0f-ba6f-4910-94f7-2848e87202ff",
+      "n": 1,
+      "oldest": "2026-08-02T21:33:28.296Z",
+      "newest": "2026-08-02T21:33:28.296Z"
+    },
+    {
+      "entity_type": "customer",
+      "shape": "Xero write blocked: no approval for contact_update on contact:a701b9a0-e124-472c-be9a-a4a263e50555",
+      "n": 1,
+      "oldest": "2026-08-02T21:30:29.503Z",
+      "newest": "2026-08-02T21:30:29.503Z"
+    },
+    {
+      "entity_type": "customer",
+      "shape": "Xero write blocked: no approval for contact_update on contact:7b85a05a-c498-4ac1-917f-5821ec6565a6",
+      "n": 1,
+      "oldest": "2026-08-02T21:32:50.203Z",
+      "newest": "2026-08-02T21:32:50.203Z"
+    }
+  ],
+  "failureTails": [
+    {
+      "entity_type": "customer",
+      "created_at": "2026-08-02T21:34:13.233Z",
+      "message_tail": "Xero write blocked: no approval for contact_update on contact:6e3a8a7e-de6b-41e7-bcbb-e3f15202d91b",
+      "details": null
+    },
+    {
+      "entity_type": "quote",
+      "created_at": "2026-08-03T21:46:51.758Z",
+      "message_tail": "Invalid time value",
+      "details": null
+    },
+    {
+      "entity_type": "invoice",
+      "created_at": "2026-08-03T21:59:54.329Z",
+      "message_tail": "Invalid time value",
+      "details": null
+    },
+    {
+      "entity_type": "bank_transaction",
+      "created_at": "2026-08-03T22:34:16.153Z",
+      "message_tail": "_id\", \"integration_connection_id\", \"xero_bank_transaction_id\", \"transaction_date\", \"amount_cents\", \"currency\", \"reference\", \"description\", \"category\", \"bank_account_code\", \"contact_name\", \"xero_contact_id\", \"status\", \"type\", \"is_reconciled\", \"source_provider\", \"source_synced_at\", \"source_import_job_id\", \"raw_summary\", \"created_at\", \"updated_at\" from \"xero_bank_transactions\" \"xeroBankTransactions\" where (\"xeroBankTransactions\".\"company_id\" = $1 and \"xeroBankTransactions\".\"xero_bank_transaction_id\" = $2) limit $3\nparams: 095aef76-fef5-4139-af37-a42f2d7e2faf,c4a2e821-2b9d-4662-b52a-63fc37963134,1",
+      "details": null
+    }
+  ],
+  "nonSqlFailures": [
+    {
+      "entity_type": "invoice",
+      "message": "Invalid time value",
+      "n": 17674,
+      "newest": "2026-08-03T21:59:54.329Z"
+    },
+    {
+      "entity_type": "quote",
+      "message": "Invalid time value",
+      "n": 747,
+      "newest": "2026-08-03T21:46:51.758Z"
+    },
+    {
+      "entity_type": "invoice",
+      "message": "Xero write blocked: no approval for invoice_create on invoice:1aaaa421-b74a-4cf3-9685-c2f60b1e007e",
+      "n": 5,
+      "newest": "2026-08-02T11:29:59.507Z"
+    },
+    {
+      "entity_type": "invoice",
+      "message": "Xero write blocked: no approval for invoice_create on invoice:360931e8-ac3a-40f7-bcd8-81bcc43cd585",
+      "n": 5,
+      "newest": "2026-08-02T11:29:58.323Z"
+    },
+    {
+      "entity_type": "invoice",
+      "message": "Xero write blocked: no approval for invoice_create on invoice:7c726b98-325b-4601-8b4a-9647c9f50540",
+      "n": 5,
+      "newest": "2026-08-02T11:30:00.675Z"
+    },
+    {
+      "entity_type": "invoice",
+      "message": "Xero write blocked: no approval for invoice_create on invoice:3138e9af-46b9-4c69-ae26-55aec9fb26d9",
+      "n": 5,
+      "newest": "2026-08-02T11:30:01.852Z"
+    },
+    {
+      "entity_type": "invoice",
+      "message": "Xero write blocked: no approval for invoice_create on invoice:c93e4674-a123-4f81-817b-c67a31cfcfb8",
+      "n": 5,
+      "newest": "2026-08-02T11:30:03.021Z"
+    },
+    {
+      "entity_type": "customer",
+      "message": "Xero write blocked: no approval for contact_update on contact:d4a01aa7-8876-4030-ab65-3b9817702a75",
+      "n": 1,
+      "newest": "2026-08-02T21:30:47.359Z"
+    },
+    {
+      "entity_type": "customer",
+      "message": "Xero write blocked: no approval for contact_update on contact:5467df67-7297-45bd-bfa7-f46f5ccb4d95",
+      "n": 1,
+      "newest": "2026-08-02T21:32:56.200Z"
+    },
+    {
+      "entity_type": "customer",
+      "message": "Xero write blocked: no approval for contact_update on contact:cb038a9d-e20b-44f5-ac5f-61ac864f2d5a",
+      "n": 1,
+      "newest": "2026-08-02T21:32:27.229Z"
+    },
+    {
+      "entity_type": "customer",
+      "message": "Xero write blocked: no approval for contact_update on contact:cf176d7f-7c3c-44a1-afdf-1bbaa11d9c9e",
+      "n": 1,
+      "newest": "2026-08-02T21:31:26.685Z"
+    },
+    {
+      "entity_type": "customer",
+      "message": "Xero write blocked: no approval for contact_update on contact:6cde8bf6-dfad-40db-a59e-40d27235a78d",
+      "n": 1,
+      "newest": "2026-08-02T21:33:51.895Z"
+    },
+    {
+      "entity_type": "customer",
+      "message": "Xero write blocked: no approval for contact_update on contact:d13b5f68-90ff-4d7a-ad2b-02706b91b7b6",
+      "n": 1,
+      "newest": "2026-08-02T21:32:52.621Z"
+    },
+    {
+      "entity_type": "customer",
+      "message": "Xero write blocked: no approval for contact_update on contact:920b0ea8-73cc-4e64-9bcf-bfbd8f5b8f44",
+      "n": 1,
+      "newest": "2026-08-02T21:33:02.108Z"
+    },
+    {
+      "entity_type": "customer",
+      "message": "Xero write blocked: no approval for contact_update on contact:e757ad0f-ba6f-4910-94f7-2848e87202ff",
+      "n": 1,
+      "newest": "2026-08-02T21:33:28.296Z"
+    },
+    {
+      "entity_type": "customer",
+      "message": "Xero write blocked: no approval for contact_update on contact:7b85a05a-c498-4ac1-917f-5821ec6565a6",
+      "n": 1,
+      "newest": "2026-08-02T21:32:50.203Z"
+    },
+    {
+      "entity_type": "customer",
+      "message": "Xero write blocked: no approval for contact_update on contact:ecb6cd2f-cd97-4a8a-b503-92cdaa8fbd57",
+      "n": 1,
+      "newest": "2026-08-02T21:33:30.665Z"
+    },
+    {
+      "entity_type": "customer",
+      "message": "Xero write blocked: no approval for contact_update on contact:af530b4d-ab54-45fe-a816-e67e1e18b3d1",
+      "n": 1,
+      "newest": "2026-08-02T21:32:34.373Z"
+    },
+    {
+      "entity_type": "customer",
+      "message": "Xero write blocked: no approval for contact_update on contact:a701b9a0-e124-472c-be9a-a4a263e50555",
+      "n": 1,
+      "newest": "2026-08-02T21:30:29.503Z"
+    },
+    {
+      "entity_type": "customer",
+      "message": "Xero write blocked: no approval for contact_update on contact:5308d3aa-8e1f-4d44-bee9-2f0f7d248fad",
+      "n": 1,
+      "newest": "2026-08-02T21:31:33.819Z"
+    }
+  ],
+  "duplicateContactDetail": [
+    {
+      "xero_contact_id": null,
+      "n": 4
+    }
+  ]
+}
