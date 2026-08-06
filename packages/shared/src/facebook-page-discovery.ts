@@ -5,6 +5,7 @@ import type {
   FacebookHistoricalPageReference,
   FacebookPendingPageCandidate,
 } from './facebook-direct-page-lookup.js';
+import type { FacebookPageDiscoverySessionSanitized } from './facebook-page-discovery-session.js';
 
 /** Canonical Graph fields for Page discovery (Meta /me/accounts). */
 export const FACEBOOK_PAGE_LIST_ENDPOINT = '/me/accounts';
@@ -72,6 +73,10 @@ export type FacebookPageDiscoveryResult = {
   pendingPageCandidate: FacebookPendingPageCandidate | null;
   /** Historical Owner reference — diagnostic only, never selection authority (J-6.7F10). */
   historicalPageReference: FacebookHistoricalPageReference | null;
+  /** Encrypted server-issued session token for basic Page selection (J-6.7F11). Never contains secrets in API diagnosis. */
+  discoverySessionToken: string | null;
+  /** Sanitized discovery session metadata for Owner-facing diagnosis. */
+  discoverySession: FacebookPageDiscoverySessionSanitized | null;
   /** Sanitized direct Page lookup when /me/accounts is empty or unusable. */
   directLookup: FacebookDirectPageLookupSanitized | null;
 };

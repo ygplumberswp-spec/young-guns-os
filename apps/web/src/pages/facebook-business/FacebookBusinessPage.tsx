@@ -327,6 +327,14 @@ export function FacebookBusinessPage() {
       return;
     }
 
+    const discoverySessionToken = pageDiscovery?.discoverySessionToken ?? null;
+    if (!discoverySessionToken) {
+      setPageSelectionError(
+        'Page discovery has expired or was not loaded from Meta. Reload Pages and try again.',
+      );
+      return;
+    }
+
     if (pageSelectInFlight.current) {
       return;
     }
@@ -339,7 +347,7 @@ export function FacebookBusinessPage() {
     setSelectingPageId(normalizedPageId);
 
     try {
-      const next = await selectFacebookPage(accessToken, normalizedPageId);
+      const next = await selectFacebookPage(accessToken, normalizedPageId, discoverySessionToken);
       setConnection(next);
       setPageDiscovery(null);
       setPageSelectionError(null);

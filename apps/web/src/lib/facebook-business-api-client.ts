@@ -14,6 +14,7 @@ import type {
   FacebookDirectPageLookupSanitized,
   FacebookPendingPageCandidate,
   FacebookHistoricalPageReference,
+  FacebookPageDiscoverySessionSanitized,
   FacebookBusinessPortfolioDiscoveryResult,
   FacebookPageIdentityDisplay,
   FacebookPermission,
@@ -81,6 +82,8 @@ export type FacebookPagesDiscoveryResponse = FacebookCombinedPageDiscoveryResult
   diagnosis: FacebookPageDiscoveryDiagnosis;
   pendingPageCandidate: FacebookPendingPageCandidate | null;
   historicalPageReference: FacebookHistoricalPageReference | null;
+  discoverySessionToken: string | null;
+  discoverySession: FacebookPageDiscoverySessionSanitized | null;
   directLookup: FacebookDirectPageLookupSanitized | null;
   businessPortfolio: FacebookBusinessPortfolioDiscoveryResult | null;
   needsBusinessPortfolioAccess: boolean;
@@ -231,11 +234,15 @@ export function fetchFacebookPages(accessToken: string) {
   return request<FacebookPagesDiscoveryResponse>(`${BASE}/pages`, { accessToken });
 }
 
-export function selectFacebookPage(accessToken: string, pageId: string) {
+export function selectFacebookPage(
+  accessToken: string,
+  pageId: string,
+  discoverySessionToken: string,
+) {
   return request<FacebookConnectionView>(`${BASE}/pages/select`, {
     method: 'POST',
     accessToken,
-    body: { pageId },
+    body: { pageId, discoverySessionToken },
   });
 }
 

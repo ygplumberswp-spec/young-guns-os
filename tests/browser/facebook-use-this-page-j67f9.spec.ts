@@ -29,7 +29,7 @@ test.describe('Facebook Use this Page selection regression (J-6.7F9)', () => {
       'utf8',
     );
     expect(clientSource).toMatch(/pages\/select/);
-    expect(clientSource).toMatch(/body: \{ pageId \}/);
+    expect(clientSource).toMatch(/body: \{ pageId, discoverySessionToken \}/);
     expect(routeSource).toMatch(/router\.post\('\/pages\/select'/);
     expect(routeSource).toMatch(/selectPageSchema/);
   });
@@ -59,8 +59,8 @@ test.describe('Facebook Use this Page selection regression (J-6.7F9)', () => {
       join(repoRoot, 'apps/api/src/services/facebook-business.service.ts'),
       'utf8',
     );
-    expect(serviceSource).toMatch(/assertFacebookPageIdentityAgreement/);
-    expect(serviceSource).toMatch(/verifyPageTokenViaMe/);
+    expect(serviceSource).toMatch(/parseFacebookPageDiscoverySessionToken/);
+    expect(serviceSource).toMatch(/resolveSelectableRowFromDiscoverySession/);
     expect(serviceSource).toMatch(/assertProviderPageRowMatchesSelection/);
     expect(serviceSource).toMatch(/await this\.db\.transaction/);
     expect(serviceSource).toMatch(/startReconnectWizardOAuth/);

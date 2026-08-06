@@ -34,11 +34,14 @@ import {
   mapRawFacebookAccountRow,
   resolveFacebookPageDiscoveryStatus,
   assertClientPageIdInMetaDiscovery,
-  assertFacebookPageIdentityAgreement,
+  assertDiscoverySessionBinding,
   assertProviderPageRowMatchesSelection,
   encodeFacebookReconnectWizardOAuthReturnPath,
+  FACEBOOK_PAGE_DETAILS_VERIFICATION_PENDING_MESSAGE,
+  FACEBOOK_PAGE_DISCOVERY_SESSION_TTL_MS,
   resolveFacebookHistoricalPageReference,
-  sanitizeFacebookPageIdentityAgreement,
+  resolveSelectableRowFromDiscoverySession,
+  sanitizeFacebookPageDiscoverySession,
   buildFacebookDirectPageLookupSanitized,
   buildFacebookPageIdentityDisplay,
   buildFacebookBusinessPortfolioDiscoveryDiagnosis,
@@ -65,6 +68,7 @@ import {
   type FacebookHistoricalPageReference,
   type FacebookPendingPageCandidate,
   type FacebookPageDiscoveryRow,
+  type FacebookPageDiscoverySessionRow,
   isYoungGunsFinanceTenant,
   shouldSendFacebookNotification,
   validateFacebookMedia,
@@ -103,6 +107,10 @@ import {
   companies,
 } from '@titan/db';
 import type { FacebookAppEnvConfig } from '../config.js';
+import {
+  issueFacebookPageDiscoverySessionToken,
+  parseFacebookPageDiscoverySessionToken,
+} from '../lib/facebook-discovery-session.crypto.js';
 import {
   decryptFacebookCredentials,
   encryptFacebookCredentials,
@@ -751,9 +759,40 @@ export class FacebookBusinessService {
             existing.metadata as Record<string, unknown> | null,
           ),
           pageName: verification.value?.name ?? existing.pageName,
+          pageUrl: verification.value?.link ?? existing.pageUrl,
+          pageCategory: verification.value?.category ?? existing.pageCategory,
+          metadata: {
+            ...((existing.metadata as Record<string, unknown> | null) ?? {}),
+            pageDetailsVerificationPending: !verification.outcome.ok,
+            pageIdentityVerified: verification.outcome.ok,
+          },
           updatedAt: new Date(),
         })
         .where(eq(fbConnections.id, existing.id));
+
+      if (verification.outcome.ok) {
+        try {
+          await graph.subscribePageWebhooks({
+            pageId: existing.pageId as string,
+            pageAccessToken: mergedCredentials.pageAccessToken,
+            fields: [...FACEBOOK_SUBSCRIBED_WEBHOOK_FIELDS],
+          });
+          await this.db
+            .update(fbConnections)
+            .set({ webhookSubscribedAt: new Date() })
+            .where(eq(fbConnections.id, existing.id));
+        } catch (error) {
+          await this.recordConnectionEvent({
+            companyId: stateRow.companyId,
+            connectionId: existing.id,
+            eventType: 'webhook_subscribe_failed',
+            stateBefore,
+            stateAfter: existing.state,
+            message: `Page read access granted, but webhook subscription failed: ${describeGraphError(error)}.`,
+            actorUserId: stateRow.userId,
+          });
+        }
+      }
 
       const refreshed = await this.loadConnection(stateRow.companyId);
       const resolved = await this.resolveState(refreshed);
@@ -1117,6 +1156,58 @@ export class FacebookBusinessService {
           }
         : status;
 
+    const encryptionKey = this.encryptionKey;
+    let discoverySessionToken: string | null = null;
+    let discoverySession = null;
+    if (encryptionKey) {
+      const listSummaries = await graph.listPages(userToken);
+      const sessionRows: FacebookPageDiscoverySessionRow[] = [];
+
+      for (const summary of listSummaries) {
+        if (!summary.id || !summary.name || !summary.accessToken) continue;
+        sessionRows.push({
+          id: summary.id,
+          name: summary.name,
+          accessToken: summary.accessToken,
+          category: summary.category,
+          source: 'me_accounts',
+        });
+      }
+
+      for (const businessPage of businessPortfolio?.pages ?? []) {
+        if (!businessPage.selectable || !businessPage.accessToken || !businessPage.id || !businessPage.name) {
+          continue;
+        }
+        if (sessionRows.some((row) => row.id === businessPage.id)) continue;
+        sessionRows.push({
+          id: businessPage.id,
+          name: businessPage.name,
+          accessToken: businessPage.accessToken,
+          category: null,
+          source: 'business_portfolio',
+        });
+      }
+
+      if (sessionRows.length > 0) {
+        const issuedAt = new Date();
+        const issued = issueFacebookPageDiscoverySessionToken({
+          encryptionKey,
+          payload: {
+            companyId: actor.companyId,
+            userId: actor.userId,
+            issuedAt: issuedAt.toISOString(),
+            expiresAt: new Date(issuedAt.getTime() + FACEBOOK_PAGE_DISCOVERY_SESSION_TTL_MS).toISOString(),
+            configuredAppId: config.appId,
+            tokenAppId: tokenInfo.appId,
+            tokenValid: tokenInfo.isValid,
+            rows: sessionRows,
+          },
+        });
+        discoverySessionToken = issued.token;
+        discoverySession = sanitizeFacebookPageDiscoverySession(issued.payload);
+      }
+    }
+
     return {
       status: resolvedStatus.status,
       detail: resolvedStatus.detail,
@@ -1140,6 +1231,8 @@ export class FacebookBusinessService {
       }),
       pendingPageCandidate,
       historicalPageReference,
+      discoverySessionToken,
+      discoverySession,
       directLookup,
       businessPortfolio,
       needsBusinessPortfolioAccess: needsBusinessPortfolioAccessFlag,
@@ -1230,10 +1323,10 @@ export class FacebookBusinessService {
   }
 
   /**
-   * Selects the Page and performs the verifying request. Only a successful
-   * response here can produce a `connected` state.
+   * Selects the Page using the exact /me/accounts row returned by Meta.
+   * Page-object verification runs only after pages_read_engagement is granted.
    */
-  async selectPage(actor: FacebookActor, pageId: string) {
+  async selectPage(actor: FacebookActor, pageId: string, discoverySessionToken: string) {
     this.assertManageConnection(actor);
     const config = this.requireAppConfig();
     const encryptionKey = this.requireEncryptionKey();
@@ -1248,146 +1341,100 @@ export class FacebookBusinessService {
       );
     }
 
-    const graph = this.graphClientFactory(config);
-    const discovery = await this.discoverPagesForSelection(actor);
-    const pages = await graph.listPages(userToken);
-    const pendingPageCandidate = discovery.pendingPageCandidate;
-    const businessPages = discovery.businessPortfolio?.pages ?? [];
-    const historicalReference = discovery.historicalPageReference;
+    let sessionPayload;
+    try {
+      sessionPayload = parseFacebookPageDiscoverySessionToken(discoverySessionToken, encryptionKey);
+    } catch {
+      throw new FacebookBusinessError(
+        'INVALID_STATE',
+        'That Page discovery session is invalid. Reload Pages from Meta and try again.',
+      );
+    }
 
+    const sessionBinding = assertDiscoverySessionBinding({
+      payload: sessionPayload,
+      companyId: actor.companyId,
+      userId: actor.userId,
+    });
+    if (!sessionBinding.ok) {
+      throw new FacebookBusinessError('INVALID_STATE', sessionBinding.reason);
+    }
+
+    const priorMetadata = row.metadata as Record<string, unknown> | null;
+    if (this.isDiscoverySessionConsumed(priorMetadata, sessionPayload.sessionId)) {
+      throw new FacebookBusinessError(
+        'INVALID_STATE',
+        'That Page discovery session was already used. Reload Pages from Meta and try again.',
+      );
+    }
+
+    const sessionRow = resolveSelectableRowFromDiscoverySession({
+      payload: sessionPayload,
+      pageId,
+    });
+    if (!sessionRow.ok) {
+      throw new FacebookBusinessError('PAGE_NOT_AUTHORISED', sessionRow.reason);
+    }
+
+    const graph = this.graphClientFactory(config);
+    const listedPageIds = (await graph.listPages(userToken)).map((entry) => entry.id);
     const pageIdCheck = assertClientPageIdInMetaDiscovery({
       clientPageId: pageId,
-      listedPageIds: pages.map((entry) => entry.id),
-      businessPortfolioPageIds: businessPages
-        .filter((entry) => entry.selectable)
+      listedPageIds,
+      businessPortfolioPageIds: sessionPayload.rows
+        .filter((entry) => entry.source === 'business_portfolio')
         .map((entry) => entry.id),
     });
     if (!pageIdCheck.allowed) {
       throw new FacebookBusinessError('PAGE_NOT_AUTHORISED', pageIdCheck.reason);
     }
 
-    let page = pages.find((entry) => entry.id === pageId) ?? null;
-
-    if (!page) {
-      const businessPage = businessPages.find((entry) => entry.id === pageId && entry.selectable);
-      if (businessPage?.accessToken) {
-        page = {
-          id: businessPage.id,
-          name: businessPage.name,
-          category: null,
-          accessToken: businessPage.accessToken,
-          tasks: [],
-        };
-      }
-    }
-
-    if (!page && pendingPageCandidate && pageId === pendingPageCandidate.pageId) {
-      const directResult = await graph.lookupPageDirect(pendingPageCandidate.pageId, userToken);
-      const probes = mapFacebookGraphDirectLookupToProbes(directResult);
-      const sanitized = buildFacebookDirectPageLookupSanitized({
-        candidate: pendingPageCandidate,
-        ...probes,
-      });
-
-      await this.audit(actor, 'connection.direct_page_lookup', row.id, {
-        phase: 'select_page',
-        status: sanitized.status,
-        httpStatus: sanitized.httpStatus,
-        providerErrorCode: sanitized.providerErrorCode,
-        hasAccessToken: sanitized.hasAccessToken,
-        idMatches: sanitized.idMatches,
-        nameMatches: sanitized.nameMatches,
-      });
-
-      if (!sanitized.selectable || !directResult.raw?.access_token) {
-        throw new FacebookBusinessError(sanitized.status, sanitized.detail);
-      }
-
-      page = {
-        id: pendingPageCandidate.pageId,
-        name: directResult.raw?.name ?? pendingPageCandidate.pageName,
-        category: null,
-        accessToken: directResult.raw!.access_token!,
-        tasks: [],
-      };
-    }
-
-    if (!page) {
-      const listed = discovery.pages.find((entry) => entry.id === pageId);
-      if (listed && !listed.selectable) {
-        throw new FacebookBusinessError(listed.status, listed.statusDetail);
-      }
-      const businessListed = businessPages.find((entry) => entry.id === pageId);
-      if (businessListed && !businessListed.selectable) {
-        throw new FacebookBusinessError(businessListed.status, businessListed.statusDetail);
-      }
-      if (discovery.directLookup && pageId === discovery.directLookup.candidatePageId) {
-        throw new FacebookBusinessError(discovery.directLookup.status, discovery.directLookup.detail);
-      }
-      throw new FacebookBusinessError(
-        'PAGE_NOT_AVAILABLE',
-        discovery.businessPortfolio?.detail ??
-          discovery.directLookup?.detail ??
-          'That Page could not be validated against Meta for this Facebook account.',
-      );
-    }
-
+    const historicalReference = await this.resolveHistoricalPageReferenceForCompany(actor.companyId);
     const providerRowCheck = assertProviderPageRowMatchesSelection({
       requestedPageId: pageId,
-      providerPageId: page.id,
-      providerPageName: page.name,
-      providerAccessToken: page.accessToken,
+      providerPageId: sessionRow.row.id,
+      providerPageName: sessionRow.row.name,
+      providerAccessToken: sessionRow.row.accessToken,
     });
     if (!providerRowCheck.ok) {
       throw new FacebookBusinessError('META_PAGE_ROW_INCOMPLETE', providerRowCheck.reason);
     }
-    page = {
+
+    const page = {
       id: providerRowCheck.pageId,
       name: providerRowCheck.pageName,
-      category: page.category,
+      category: sessionRow.row.category,
       accessToken: providerRowCheck.accessToken,
-      tasks: page.tasks,
+      tasks: [] as string[],
     };
 
-    const tokenMeIdentity = await this.probe(() =>
-      graph.verifyPageTokenViaMe(page.accessToken),
-    );
-    if (!tokenMeIdentity.outcome.ok || !tokenMeIdentity.value) {
-      throw new FacebookBusinessError(
-        'PAGE_IDENTITY_MISMATCH',
-        tokenMeIdentity.outcome.message ||
-          'Meta did not return a complete Page identity for the Page access token.',
-      );
-    }
-
-    const identityAgreement = assertFacebookPageIdentityAgreement({
-      accountsPageId: page.id,
-      accountsPageName: page.name,
-      tokenMePageId: tokenMeIdentity.value.id,
-      tokenMePageName: tokenMeIdentity.value.name,
-    });
-    if (!identityAgreement.ok) {
-      await this.audit(actor, 'connection.page_identity_mismatch', row.id, {
-        agreement: sanitizeFacebookPageIdentityAgreement(identityAgreement.agreement),
-      });
-      throw new FacebookBusinessError('PAGE_IDENTITY_MISMATCH', identityAgreement.reason);
-    }
-
-    const verification = await this.probe(() => graph.verifyPage(page.id, page.accessToken));
-    const priorMetadata = row.metadata as Record<string, unknown> | null;
+    const pendingVerificationOutcome: FacebookVerificationOutcome = {
+      ok: false,
+      authError: false,
+      permissionError: false,
+      providerUnavailable: false,
+      checkedAt: new Date(),
+      message: FACEBOOK_PAGE_DETAILS_VERIFICATION_PENDING_MESSAGE,
+    };
     const verificationUpdate = this.verificationColumns(
-      verification.outcome,
+      pendingVerificationOutcome,
       priorMetadata,
     );
     const pageSelectedAt = new Date().toISOString();
+    const consumedDiscoverySessionIds = this.markDiscoverySessionConsumed(
+      priorMetadata,
+      sessionPayload.sessionId,
+    );
     const nextMetadata = {
       ...(verificationUpdate.metadata ?? priorMetadata ?? {}),
       pageSelectedAt,
-      pageIdentityVerified: true,
+      pageIdentityVerified: false,
+      pageDetailsVerificationPending: true,
       providerVerifiedPageId: page.id,
-      providerVerifiedPageName: verification.value?.name || page.name,
-      pageIdentityAgreement: sanitizeFacebookPageIdentityAgreement(identityAgreement.agreement),
+      providerVerifiedPageName: page.name,
+      providerVerifiedFromDiscoverySession: sanitizeFacebookPageDiscoverySession(sessionPayload),
       reconnectWizardActive: false,
+      consumedDiscoverySessionIds,
     };
 
     await this.db.transaction(async (tx) => {
@@ -1395,9 +1442,9 @@ export class FacebookBusinessService {
         .update(fbConnections)
         .set({
           pageId: page.id,
-          pageName: verification.value?.name || page.name,
-          pageUrl: verification.value?.link ?? null,
-          pageCategory: verification.value?.category ?? page.category,
+          pageName: page.name,
+          pageUrl: null,
+          pageCategory: page.category,
           credentialsEncrypted: encryptFacebookCredentials(
             {
               version: 1,
@@ -1419,7 +1466,7 @@ export class FacebookBusinessService {
 
       const identityAfterWrite = resolveFacebookPageIdentity({
         storedPageId: page.id,
-        storedPageName: verification.value?.name || page.name,
+        storedPageName: page.name,
         historicalReference,
         providerVerifiedPageId: page.id,
         hasStoredCredentials: true,
@@ -1460,45 +1507,42 @@ export class FacebookBusinessService {
       eventType: 'page_selected',
       stateBefore: row.state,
       stateAfter: persistFacebookConnectionState(state.state),
-      message: `Page "${page.name}" selected. ${state.detail}`,
+      message: `Page "${page.name}" selected from Meta discovery. ${state.detail}`,
       actorUserId: actor.userId,
-      metadata: { pageId: page.id, pageName: page.name, verified: verification.outcome.ok },
+      metadata: {
+        pageId: page.id,
+        pageName: page.name,
+        verified: false,
+        pageDetailsVerificationPending: true,
+      },
     });
 
     await this.audit(actor, 'connection.page_selected', row.id, {
       pageId: page.id,
       pageName: page.name,
       state: state.state,
-      identityAgreement: sanitizeFacebookPageIdentityAgreement(identityAgreement.agreement),
+      discoverySession: sanitizeFacebookPageDiscoverySession(sessionPayload),
     });
 
-    // Webhook delivery is best effort: a missing subscription degrades to
-    // polling rather than failing the connection the Owner just made.
-    if (verification.outcome.ok) {
-      try {
-        await graph.subscribePageWebhooks({
-          pageId: page.id,
-          pageAccessToken: page.accessToken,
-          fields: [...FACEBOOK_SUBSCRIBED_WEBHOOK_FIELDS],
-        });
-        await this.db
-          .update(fbConnections)
-          .set({ webhookSubscribedAt: new Date() })
-          .where(eq(fbConnections.id, row.id));
-      } catch (error) {
-        await this.recordConnectionEvent({
-          companyId: actor.companyId,
-          connectionId: row.id,
-          eventType: 'webhook_subscribe_failed',
-          stateBefore: persistFacebookConnectionState(state.state),
-          stateAfter: persistFacebookConnectionState(state.state),
-          message: `Page connected, but webhook subscription failed: ${describeGraphError(error)}. Polling every ${FACEBOOK_SYNC_POLICY.pollingBackfillMinutes} minutes will be used instead.`,
-          actorUserId: actor.userId,
-        });
-      }
-    }
-
     return this.getConnection(actor);
+  }
+
+  private isDiscoverySessionConsumed(
+    metadata: Record<string, unknown> | null,
+    sessionId: string,
+  ): boolean {
+    const consumed = metadata?.consumedDiscoverySessionIds;
+    return Array.isArray(consumed) && consumed.includes(sessionId);
+  }
+
+  private markDiscoverySessionConsumed(
+    metadata: Record<string, unknown> | null,
+    sessionId: string,
+  ): string[] {
+    const prior = Array.isArray(metadata?.consumedDiscoverySessionIds)
+      ? (metadata!.consumedDiscoverySessionIds as string[])
+      : [];
+    return [...prior.filter((entry) => entry !== sessionId), sessionId].slice(-20);
   }
 
   /** Runs a real Graph request and records the outcome. */
@@ -1511,6 +1555,10 @@ export class FacebookBusinessService {
 
     const credentials = this.decryptCredentials(row);
     if (!credentials?.pageAccessToken || credentials.pageAccessToken.startsWith('pending:')) {
+      return this.getConnection(actor);
+    }
+
+    if (!hasFacebookPageReadEngagement(row.grantedPermissions ?? [])) {
       return this.getConnection(actor);
     }
 

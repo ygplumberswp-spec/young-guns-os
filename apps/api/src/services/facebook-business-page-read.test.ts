@@ -40,9 +40,10 @@ describe('facebook page identity binding (J-6.7F7)', () => {
     assert.ok(serviceSource.includes('facebookPageIdentityAllowsPageReadOAuth'));
     assert.ok(serviceSource.includes('FACEBOOK_PAGE_SELECTION_REQUIRED'));
     assert.ok(serviceSource.includes('FACEBOOK_SELECTED_PAGE_MISMATCH_MESSAGE'));
-    assert.ok(serviceSource.includes('assertFacebookPageIdentityAgreement'));
+    assert.ok(serviceSource.includes('parseFacebookPageDiscoverySessionToken'));
+    assert.ok(serviceSource.includes('FACEBOOK_PAGE_DETAILS_VERIFICATION_PENDING_MESSAGE'));
     assert.ok(serviceSource.includes('assertProviderPageRowMatchesSelection'));
-    assert.ok(serviceSource.includes('pageIdentityVerified: true'));
+    assert.ok(serviceSource.includes('pageIdentityVerified: false'));
     assert.ok(serviceSource.includes('await this.resolveState(row)'));
   });
 

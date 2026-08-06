@@ -16,7 +16,10 @@ import { verifyFacebookWebhookSignature } from '../lib/facebook-graph.client.js'
 import { createAuthMiddleware, type AuthenticatedRequest } from '../middleware/auth.js';
 
 const startOAuthSchema = z.object({ returnPath: z.string().trim().max(500).optional() });
-const selectPageSchema = z.object({ pageId: z.string().trim().min(1).max(64) });
+const selectPageSchema = z.object({
+  pageId: z.string().trim().min(1).max(64),
+  discoverySessionToken: z.string().trim().min(1).max(16_000),
+});
 
 const createContentSchema = z.object({
   title: z.string().trim().min(1).max(500),
@@ -320,6 +323,8 @@ export function createFacebookBusinessRouter({
         ...discovery,
         pendingPageCandidate: discovery.pendingPageCandidate,
         historicalPageReference: discovery.historicalPageReference,
+        discoverySessionToken: discovery.discoverySessionToken,
+        discoverySession: discovery.discoverySession,
         directLookup: discovery.directLookup,
         businessPortfolio: discovery.businessPortfolio,
         needsBusinessPortfolioAccess: discovery.needsBusinessPortfolioAccess,
@@ -343,7 +348,13 @@ export function createFacebookBusinessRouter({
       res.status(400).json({ error: { code: 'INVALID_REQUEST', message: 'A pageId is required.' } });
       return;
     }
-    wrap(res, next, () => facebookBusinessService.selectPage(toActor(req), parsed.data.pageId));
+    wrap(res, next, () =>
+      facebookBusinessService.selectPage(
+        toActor(req),
+        parsed.data.pageId,
+        parsed.data.discoverySessionToken,
+      ),
+    );
   });
 
   router.post('/connection/check', (req, res, next) =>

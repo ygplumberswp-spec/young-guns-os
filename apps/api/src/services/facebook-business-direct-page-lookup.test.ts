@@ -39,10 +39,15 @@ describe('Facebook direct page validation fallback (J-6.7F2 / J-6.7F3)', () => {
     assert.ok(serviceSource.includes("'PAGE_NOT_AUTHORISED'"));
   });
 
-  it('selectPage uses direct lookup token path for server candidate', () => {
-    assert.ok(serviceSource.includes("phase: 'select_page'"));
-    assert.ok(serviceSource.includes('pageAccessToken: page.accessToken'));
-    assert.ok(serviceSource.includes('encryptFacebookCredentials'));
+  it('selectPage stores server-side discovery row without direct Page-object lookup (J-6.7F11)', () => {
+    const selectBlock = serviceSource.slice(
+      serviceSource.indexOf('async selectPage('),
+      serviceSource.indexOf('private isDiscoverySessionConsumed'),
+    );
+    assert.equal(selectBlock.includes("phase: 'select_page'"), false);
+    assert.equal(selectBlock.includes('lookupPageDirect'), false);
+    assert.ok(selectBlock.includes('pageAccessToken: page.accessToken'));
+    assert.ok(selectBlock.includes('encryptFacebookCredentials'));
   });
 
   it('pending Page candidate is server-controlled from tenant/metadata', () => {

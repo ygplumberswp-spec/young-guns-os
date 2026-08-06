@@ -3,10 +3,6 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, it } from 'node:test';
-import {
-  YOUNG_GUNS_FACEBOOK_PAGE_ID,
-  YOUNG_GUNS_FACEBOOK_PAGE_NAME,
-} from '@titan/shared';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const pageSource = readFileSync(
@@ -30,9 +26,7 @@ const instagramSource = readFileSync(
   'utf8',
 );
 
-const OLD_WRONG_PAGE_ID = '394603137072407';
-
-describe('Facebook Page selection path (J-6.7F9 / J-6.7F10 reconnect wizard)', () => {
+describe('Facebook Page selection path (J-6.7F9 / J-6.7F10 / J-6.7F11)', () => {
   it('Use this Page button has explicit onClick and type="button"', () => {
     assert.ok(pageSource.includes('function UseThisPageButton'));
     assert.ok(pageSource.includes('onClick={() => onSelectPage(pageId)}'));
@@ -55,17 +49,11 @@ describe('Facebook Page selection path (J-6.7F9 / J-6.7F10 reconnect wizard)', (
     assert.ok(pageSource.includes('isThisPageSelecting ? \'Selecting Page…\''));
   });
 
-  it('Use this Page is not blocked by unrelated global isBusy', () => {
-    assert.equal(pageSource.includes('isBusy || isLoadingPages || (isSelectingPage'), false);
-    assert.ok(pageSource.includes('isLoadingPages || (isSelectingPage'));
-  });
-
   it('client does not gate selection on hardcoded verified Page id (J-6.7F10)', () => {
     assert.equal(
       pageSource.includes('Only the verified Young Guns Plumbing Page can be selected'),
       false,
     );
-    assert.equal(pageSource.includes('pendingPageCandidate?.pageId ?? null;\n    if (verifiedPageId'), false);
     assert.ok(pageSource.includes('pageSelectionError'));
     assert.ok(pageSource.includes('role="alert"'));
     assert.ok(pageSource.includes('pageDiscoveryRowSelectable'));
@@ -81,35 +69,38 @@ describe('Facebook Page selection path (J-6.7F9 / J-6.7F10 reconnect wizard)', (
     assert.ok(serviceSource.includes('buildReconnectWizardAuthorizeUrl'));
   });
 
-  it('API client posts authenticated pageId only — never Page tokens', () => {
+  it('basic selection uses server discovery session — no browser Page tokens (J-6.7F11)', () => {
+    assert.ok(pageSource.includes('pageDiscovery?.discoverySessionToken'));
+    assert.ok(apiClientSource.includes('discoverySessionToken'));
+    assert.ok(routeSource.includes('discoverySessionToken'));
+    const selectBlock = serviceSource.slice(
+      serviceSource.indexOf('async selectPage('),
+      serviceSource.indexOf('private isDiscoverySessionConsumed'),
+    );
+    assert.equal(selectBlock.includes('verifyPageTokenViaMe'), false);
+    assert.equal(selectBlock.includes('verifyPage('), false);
+  });
+
+  it('API client posts authenticated pageId and discoverySessionToken only', () => {
     assert.ok(apiClientSource.includes("`${BASE}/pages/select`"));
-    assert.ok(apiClientSource.includes('body: { pageId }'));
+    assert.ok(apiClientSource.includes('body: { pageId, discoverySessionToken }'));
     assert.equal(apiClientSource.includes('accessToken: page.accessToken'), false);
     assert.equal(apiClientSource.includes('pageAccessToken'), false);
   });
 
-  it('backend route contract is POST /pages/select with pageId schema', () => {
+  it('backend route contract is POST /pages/select with pageId and discoverySessionToken', () => {
     assert.ok(routeSource.includes("router.post('/pages/select'"));
     assert.ok(routeSource.includes('selectPageSchema'));
-    assert.ok(routeSource.includes('facebookBusinessService.selectPage'));
+    assert.ok(routeSource.includes('discoverySessionToken'));
   });
 
-  it('historical Young Guns Page id remains diagnostic constant only', () => {
-    assert.equal(YOUNG_GUNS_FACEBOOK_PAGE_ID, '61564442420962');
-    assert.equal(YOUNG_GUNS_FACEBOOK_PAGE_NAME, 'Young Guns Plumbing – Cape Town');
-    assert.notEqual(YOUNG_GUNS_FACEBOOK_PAGE_ID, OLD_WRONG_PAGE_ID);
-  });
-
-  it('selectPage validates Meta discovery, Page-token /me identity, and writes atomically', () => {
-    assert.ok(serviceSource.includes('assertClientPageIdInMetaDiscovery'));
-    assert.ok(serviceSource.includes('assertFacebookPageIdentityAgreement'));
-    assert.ok(serviceSource.includes('verifyPageTokenViaMe'));
+  it('selectPage validates Meta discovery session and writes atomically', () => {
+    assert.ok(serviceSource.includes('parseFacebookPageDiscoverySessionToken'));
+    assert.ok(serviceSource.includes('resolveSelectableRowFromDiscoverySession'));
     assert.ok(serviceSource.includes('assertProviderPageRowMatchesSelection'));
     assert.ok(serviceSource.includes('await this.db.transaction'));
     assert.ok(serviceSource.includes('providerVerifiedPageId: page.id'));
     assert.ok(serviceSource.includes('encryptFacebookCredentials'));
-    assert.ok(serviceSource.includes('identityAfterWrite.mismatch'));
-    assert.equal(serviceSource.includes('assertPageIdMatchesVerifiedCandidate({'), false);
   });
 
   it('success path refreshes connection and clears discovery panel', () => {

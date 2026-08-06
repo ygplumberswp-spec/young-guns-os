@@ -49,15 +49,17 @@ describe('Facebook Business OAuth hygiene and Page selection (J-6.7F)', () => {
     assert.ok(serviceSource.includes('resolveFacebookOAuthBrowserReturnPath'));
   });
 
-  it('selectPage validates Page against authenticated eligible list', () => {
-    assert.ok(serviceSource.includes('discoverPagesForSelection(actor)'));
+  it('selectPage validates Page against discovery session and /me/accounts list (J-6.7F11)', () => {
+    assert.ok(serviceSource.includes('parseFacebookPageDiscoverySessionToken'));
     assert.ok(serviceSource.includes('graph.listPages(userToken)'));
-    assert.ok(serviceSource.includes('pages.find((entry) => entry.id === pageId)'));
-    assert.ok(serviceSource.includes("'PAGE_NOT_AVAILABLE'"));
+    assert.ok(serviceSource.includes('assertClientPageIdInMetaDiscovery'));
+    assert.ok(serviceSource.includes('resolveSelectableRowFromDiscoverySession'));
   });
 
-  it('connected state only after server verification probe', () => {
-    assert.ok(serviceSource.includes('graph.verifyPage(page.id, page.accessToken)'));
+  it('connected health verification runs after pages_read_engagement — not during basic selection', () => {
+    assert.ok(serviceSource.includes('graph.verifyPage('));
+    assert.ok(serviceSource.includes("oauthTier === 'page_read'"));
+    assert.ok(serviceSource.includes('hasFacebookPageReadEngagement'));
     assert.ok(serviceSource.includes('verificationColumns('));
     assert.ok(serviceSource.includes('persistFacebookConnectionState'));
   });

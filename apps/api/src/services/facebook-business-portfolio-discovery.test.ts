@@ -54,9 +54,9 @@ describe('Facebook business portfolio discovery (J-6.7F5)', () => {
     assert.ok(serviceSource.includes('existing partial Facebook connection was preserved'));
   });
 
-  it('rejects arbitrary Page ids using Meta discovery allow-list (J-6.7F10)', () => {
+  it('rejects arbitrary Page ids using Meta discovery session allow-list (J-6.7F11)', () => {
     assert.ok(serviceSource.includes('assertClientPageIdInMetaDiscovery'));
-    assert.ok(serviceSource.includes('verifyPageTokenViaMe'));
+    assert.ok(serviceSource.includes('resolveSelectableRowFromDiscoverySession'));
   });
 
   it('UI exposes Grant Business Portfolio access and honest scope explanation', () => {
