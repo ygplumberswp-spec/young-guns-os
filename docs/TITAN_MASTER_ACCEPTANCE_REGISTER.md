@@ -35,20 +35,20 @@
 
 **XERO-001 audit (2026-08-06):** [TITAN_XERO_FULL_AUDIT_REPORT.md](./TITAN_XERO_FULL_AUDIT_REPORT.md) — read-only staging recount. OAuth connected; attachments provider-blocked; full chain **not proven**.
 
-**XERO-002:** **Parked** — implementation not started. Owner must approve XERO-001 audit before reopening.
+**XERO-002 (2026-08-06):** P0 finance gap implementation complete on task branch. **Live proof NOT executed.** See [TITAN_XERO_002_LIVE_PROOF_PLAN.md](./TITAN_XERO_002_LIVE_PROOF_PLAN.md).
 
 | Requirement ID | Requirement name | Current status | Blocker | Exact next action |
 |----------------|------------------|----------------|---------|-------------------|
 | XERO-001 | Evidence-first Xero connection and finance audit | **COMPLETE_LOCAL_ONLY** | — | Owner review audit report |
-| XERO-002 | Xero full connection + finance implementation | **NOT_STARTED (Parked)** | XERO-001 Owner approval | Execute P0 gaps per audit when un-parked |
+| XERO-002 | Xero full connection + finance implementation | **COMPLETE_LOCAL_ONLY** | Live proof gate | Owner approve XERO-002 LIVE PROOF |
 | XERO-003 | OAuth connection staging live-verified | **Verified complete** | — | Maintain; re-verify on reconnect |
-| XERO-004 | Attachment import | **Provider-blocked** | Xero API rejection at attachment stage | XERO-002 scope item 1 when un-parked |
-| XERO-005 | Full quote→invoice→payment→Xero chain | **NOT_STARTED** | No Owner E2E proof | Owner authenticated staging sprint |
-| XERO-006 | Yoco payment link → Xero reconciliation | **NOT_STARTED** | FIN-013 | Separate implementation batch |
-| XERO-007 | Dashboard financials verified | **Partial** | Incomplete Xero + job join | Prove sources per metric |
-| XERO-008 | Two-way write approval live-verified | **Implemented but not live-verified** | Owner execute path not proven | Staging write-path proof |
-| XERO-009 | 159 unmapped customers | **Partial** | Import matching gaps | Mapping closure in XERO-002 |
-| XERO-010 | Credit notes / tracking categories import | **Missing** | Stage not completing cleanly | XERO-002 P1 when un-parked |
+| XERO-004 | Attachment import | **Provider-blocked** | Stale token missing `accounting.attachments.read` | Owner reconnect Xero on staging |
+| XERO-005 | Full quote→invoice→payment→Xero chain | **NOT_STARTED** | No Owner E2E proof | Execute live proof plan |
+| XERO-006 | Yoco payment link → Xero reconciliation | **Partial** | Live payment not proven | Live proof step 12–15 |
+| XERO-007 | Dashboard financials verified | **Partial** | Incomplete live chain | Live proof step 18–19 |
+| XERO-008 | Two-way write approval live-verified | **Implemented but not live-verified** | Owner execute path not proven | Live proof steps 7–10 |
+| XERO-009 | 159 unmapped customers | **Partial** | Owner review + apply on staging | Run mapping dry-run on staging |
+| XERO-010 | Credit notes / tracking categories import | **Missing** | Stage not completing cleanly | XERO-002 P1 follow-up |
 
 > **ID note:** Checklist rows `XERO-001`–`XERO-005` (finance phase IDs) pre-date this audit programme. Audit programme IDs above govern XERO-001 evidence and XERO-002 implementation scope.
 

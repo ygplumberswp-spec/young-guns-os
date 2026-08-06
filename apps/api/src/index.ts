@@ -82,6 +82,8 @@ import { IntegrationApiManagementService } from './services/integration-api-mana
 import { BusinessIntegrationsService } from './services/business-integrations.service.js';
 import { XeroOAuthService } from './services/xero-oauth.service.js';
 import { XeroSyncService } from './services/xero-sync.service.js';
+import { XeroCustomerMappingService } from './services/xero-customer-mapping.service.js';
+import { XeroReconciliationService } from './services/xero-reconciliation.service.js';
 import { XeroFinancialMemoryService } from './services/xero-financial-memory.service.js';
 import { XeroWriteApprovalGate } from './services/xero-write-approval-gate.service.js';
 import { XeroMappingConflictService } from './services/xero-mapping-conflict.service.js';
@@ -617,6 +619,8 @@ const xeroSyncService = XeroSyncService.create({
   mappingConflictService: xeroMappingConflictService,
 });
 const xeroFinancialMemoryService = new XeroFinancialMemoryService(db, xeroSyncService);
+const xeroCustomerMappingService = XeroCustomerMappingService.create(db);
+const xeroReconciliationService = XeroReconciliationService.create(db);
 const xeroWriteApprovalWorkflowService = new XeroWriteApprovalWorkflowService(
   db,
   xeroWriteApprovalGate,
@@ -1909,6 +1913,8 @@ app.use(
     integrationApiManagementService,
     whatsappService,
     xeroOAuthService,
+    xeroCustomerMappingService,
+    xeroReconciliationService,
     teamService,
     appUrl: env.APP_URL,
     jwtSecret: env.JWT_SECRET,

@@ -3,7 +3,7 @@
 **Document ID:** INT register (includes INT-UNIVERSAL-001)  
 **Document type:** Permanent provider and integration source of truth — documentation only  
 **Generated (UTC):** 2026-08-06  
-**Last updated (UTC):** 2026-08-06 — XERO-001A integrate parked Xero audit evidence  
+**Last updated (UTC):** 2026-08-06 — XERO-002 P0 finance gap closure  
 **No provider calls made during register maintenance**  
 
 **Related documents:**
@@ -142,7 +142,7 @@ Facebook integration is **staging-complete for J-6.7F14** but **must not be mark
 | Facebook Agent | MKT-005 | **Implemented but inactive** — integration staging-ready; agent activation gate not passed |
 | Social Media Agent | MKT-004 | **Defined** |
 
-**XERO-002 remains parked.**
+**XERO-002 implementation complete (2026-08-06)** — connection health, scope persistence, stale-job recovery, customer mapping workflow, reconciliation model. **Live proof gated.** See [TITAN_XERO_002_LIVE_PROOF_PLAN.md](./TITAN_XERO_002_LIVE_PROOF_PLAN.md).
 
 ## Instagram Business
 
@@ -220,9 +220,9 @@ Facebook integration is **staging-complete for J-6.7F14** but **must not be mark
 
 **Historical note:** Prior reports cited ~900 contacts / 585 invoices / 511 payments / 3,095 bank tx / 0 attachments — current recount is **close on invoices/payments/bank**, **attachments still 0**, contacts **678 mapped** (not 900).
 
-**XERO-002 remains parked** — implementation work blocked until Owner reopens after XERO-001 audit review.
+**XERO-002 implementation complete (2026-08-06).** Next step: Owner-approved **XERO-002 LIVE PROOF** on staging only.
 
-**Agent impact:** FIN-006 Xero Reconciliation — Partial · FIN-014 Xero Integration — Provider-blocked until XERO-002 un-parked.
+**Agent impact:** FIN-006 Xero Reconciliation — Partial (model added) · FIN-014 Xero Integration — Partial until live proof succeeds.
 
 ---
 
@@ -241,7 +241,7 @@ Facebook integration is **staging-complete for J-6.7F14** but **must not be mark
 | Field | Value |
 |-------|-------|
 | Integration ID | `INT-YOCO-001` |
-| Status | **Not started** / payment links queued |
+| Status | **Partial** — shared payment-link module + document engine wiring; live payment Owner-gated |
 | Requirement | FIN-013, BC-013 |
 
 ---

@@ -1,6 +1,12 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { and, eq, gt, isNull } from 'drizzle-orm';
 import type { XeroConnectionSummary, XeroConnectionTestResult } from '@titan/shared';
+import {
+  buildXeroConnectionHealthSummary,
+  parseScopeString,
+  redactXeroSecrets,
+  XERO_REQUESTED_SCOPES,
+} from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
 import { integrationConnections, integrationOauthStates, securityAuditLogs } from '@titan/db';
 import type { XeroOAuthEnvConfig } from '../config.js';
@@ -56,6 +62,7 @@ type XeroTokenResponse = {
   refresh_token?: string;
   expires_in?: number;
   token_type?: string;
+  scope?: string;
 };
 
 type XeroConnectionInfo = {
@@ -125,8 +132,55 @@ export class XeroOAuthService {
       lastSyncAt: connection.lastSyncAt?.toISOString() ?? null,
       lastError: legacyCredentials
         ? 'Reconnect required. Sign in with Xero to continue using this integration.'
-        : connection.lastError,
+        : redactXeroSecrets(connection.lastError),
       connectedAt: connection.connectedAt?.toISOString() ?? null,
+      health: this.buildConnectionHealth(connection, credentials, reconnectRequired, status),
+    };
+  }
+
+  private buildConnectionHealth(
+    connection: XeroConnectionRecord,
+    credentials: ReturnType<typeof this.tryDecryptCredentials>,
+    reconnectRequired: boolean,
+    status: string,
+  ) {
+    const oauthCreds =
+      credentials && isXeroOAuthCredentials(credentials) ? credentials : null;
+    return buildXeroConnectionHealthSummary({
+      organisationName: connection.config.organisationName ?? null,
+      tenantId: connection.config.tenantId ?? null,
+      connectedAt: connection.connectedAt?.toISOString() ?? null,
+      lastSuccessfulTokenRefreshAt: connection.config.lastTokenRefreshAt ?? null,
+      tokenExpiresAt: connection.config.tokenExpiresAt ?? oauthCreds?.expiresAt ?? null,
+      lastConnectionCheckAt: connection.config.lastConnectionCheckAt ?? null,
+      hasCredentials: Boolean(connection.credentialsEncrypted),
+      connectionStatus: status,
+      reconnectRequired,
+      grantedScopes: connection.config.grantedScopes ?? null,
+      lastError: redactXeroSecrets(connection.lastError),
+    });
+  }
+
+  private mergeXeroScopeConfig(
+    existing: XeroConnectionRecord['config'],
+    input: { scope?: string | null; tokenExpiresAt?: string; touchConnectionCheck?: boolean },
+  ): XeroConnectionRecord['config'] {
+    const now = new Date().toISOString();
+    const parsedGranted = parseScopeString(input.scope);
+    const grantedScopes =
+      parsedGranted.length > 0 ? parsedGranted : (existing.grantedScopes ?? []);
+    const scopeAnalysisGranted = grantedScopes.length > 0 ? grantedScopes : null;
+
+    return {
+      ...existing,
+      requestedScopes: [...XERO_REQUESTED_SCOPES],
+      grantedScopes: scopeAnalysisGranted ?? existing.grantedScopes,
+      scopeGrantedAt:
+        parsedGranted.length > 0 ? now : (existing.scopeGrantedAt ?? undefined),
+      tokenExpiresAt: input.tokenExpiresAt ?? existing.tokenExpiresAt,
+      lastConnectionCheckAt: input.touchConnectionCheck
+        ? now
+        : (existing.lastConnectionCheckAt ?? undefined),
     };
   }
 
@@ -252,6 +306,11 @@ export class XeroOAuthService {
 
       const organisation = await this.fetchOrganisation(accessToken, selectedConnection.tenantId);
       const verifiedAt = new Date().toISOString();
+      const scopeConfig = this.mergeXeroScopeConfig(connection.config, {
+        scope: tokenPayload.scope ?? OAUTH_SCOPES,
+        tokenExpiresAt: expiresAt,
+        touchConnectionCheck: true,
+      });
 
       await this.db
         .update(integrationConnections)
@@ -265,6 +324,7 @@ export class XeroOAuthService {
             organisationId: organisation.organisationId,
             baseCurrency: organisation.baseCurrency ?? undefined,
             lastVerifiedAt: verifiedAt,
+            ...scopeConfig,
           },
           connectedAt: new Date(),
           lastError: null,
@@ -333,6 +393,9 @@ export class XeroOAuthService {
     const client = await this.createClient(companyId, connection);
     const organisation = await client.testConnection();
     const verifiedAt = new Date();
+    const scopeConfig = this.mergeXeroScopeConfig(connection.config, {
+      touchConnectionCheck: true,
+    });
 
     await this.db
       .update(integrationConnections)
@@ -340,6 +403,7 @@ export class XeroOAuthService {
         status: 'connected',
         config: {
           ...connection.config,
+          ...scopeConfig,
           organisationName: organisation.name,
           organisationId: organisation.organisationId,
           baseCurrency: organisation.baseCurrency ?? undefined,
@@ -474,10 +538,29 @@ export class XeroOAuthService {
         expiresAt,
       };
 
+      const connection = await this.db.query.integrationConnections.findFirst({
+        where: eq(integrationConnections.id, connectionId),
+      });
+      const scopeConfig = connection
+        ? this.mergeXeroScopeConfig(connection.config, {
+            scope: tokenPayload.scope,
+            tokenExpiresAt: expiresAt,
+          })
+        : {};
+
       await this.db
         .update(integrationConnections)
         .set({
           credentialsEncrypted: encryptXeroOAuthCredentials(nextCredentials, this.encryptionKey!),
+          ...(connection
+            ? {
+                config: {
+                  ...connection.config,
+                  ...scopeConfig,
+                  lastTokenRefreshAt: new Date().toISOString(),
+                },
+              }
+            : {}),
           lastError: null,
           updatedAt: new Date(),
         })

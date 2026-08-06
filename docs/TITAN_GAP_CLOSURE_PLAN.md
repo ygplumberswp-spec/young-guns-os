@@ -2,8 +2,8 @@
 
 **Audit type:** READ-ONLY planning artifact — no new features  
 **Generated (UTC):** 2026-08-05  
-**Last updated (UTC):** 2026-08-06 — XERO-001A integrate parked Xero audit evidence  
-**Base HEAD:** `1f32ed83ece1c1122a7c333aeb6b0d3c1cb3f10f`  
+**Last updated (UTC):** 2026-08-06 — XERO-002 P0 finance gap closure (implementation complete; live proof gated)  
+**Base HEAD:** `cc0abbcde96902711fc0e141590144470abc5444` → task branch `cursor/titan-xero-002-p0-finance`  
 **Branch:** `cursor/titan-v1-integration`  
 **Scope:** Unmet **accepted** requirements only — deferred items at end  
 
@@ -27,9 +27,9 @@
 
 **XERO-001 audit (2026-08-06):** [TITAN_XERO_FULL_AUDIT_REPORT.md](./TITAN_XERO_FULL_AUDIT_REPORT.md) — read-only staging recount complete. OAuth connected; read import partial; attachments provider-blocked; full chain **not proven**.
 
-**XERO-002:** **Parked** — no implementation work started. Next locked task after Owner approval of XERO-001 audit.
+**XERO-002 (2026-08-06):** Implementation complete on task branch — connection health, scope persistence, stale-job recovery, customer mapping dry-run, reconciliation model, finance UI panels. **Live proof NOT executed.** See [TITAN_XERO_002_LIVE_PROOF_PLAN.md](./TITAN_XERO_002_LIVE_PROOF_PLAN.md).
 
-**Owner approval gate:** Review [TITAN_MASTER_AGENT_REGISTER.md](./TITAN_MASTER_AGENT_REGISTER.md) (AGENT-001B restoration) before any agent activation work.
+**Owner approval gate:** Approve **XERO-002 LIVE PROOF** plan before any provider write on staging.
 
 **Universal integration gap:** Client-facing wizard must hide developer setup per [INT-UNIVERSAL-001](./TITAN_INTEGRATION_REGISTER.md).
 
@@ -41,15 +41,15 @@
 
 ### P0 — blocks Young Guns internal pilot
 
-| ID | Action | Requirements |
-|----|--------|--------------|
-| X-P0-1 | Fix attachment stage / scope diagnosis | XERO-004 (audit programme) |
-| X-P0-2 | Owner authenticated quote→invoice→payment E2E proof | XERO-005, BC-024 |
-| X-P0-3 | Close 159 unmapped customers | XERO-009 |
-| X-P0-4 | Recover stale/running import job safely | XERO-002 (implementation — parked) |
-| X-P0-5 | Live-verify write approval execute path | XERO-008 |
-| X-P0-6 | Yoco payment link implementation | XERO-006, FIN-013 |
-| X-P0-7 | Reconciliation workflow proof | XERO-007 |
+| ID | Action | Requirements | XERO-002 status |
+|----|--------|--------------|-----------------|
+| X-P0-1 | Fix attachment stage / scope diagnosis | XERO-004 | **Partial** — root cause classified; Owner reconnect required |
+| X-P0-2 | Owner authenticated quote→invoice→payment E2E proof | XERO-005, BC-024 | **Owner gate** — plan prepared, not executed |
+| X-P0-3 | Close 159 unmapped customers | XERO-009 | **Partial** — dry-run + review queue; Owner apply on staging |
+| X-P0-4 | Recover stale/running import job safely | XERO-002 | **Closed in code** — recovery APIs + UI |
+| X-P0-5 | Live-verify write approval execute path | XERO-008 | **Partial** — tests pass; live proof pending |
+| X-P0-6 | Yoco payment link implementation | XERO-006, FIN-013 | **Partial** — foundation in shared + document engine |
+| X-P0-7 | Reconciliation workflow proof | XERO-007 | **Partial** — model + API; live proof pending |
 
 ### P1 — first 30 days
 
@@ -57,11 +57,11 @@
 |----|--------|
 | X-P1-1 | Credit notes + tracking category import |
 | X-P1-2 | Configure scheduled Xero sync |
-| X-P1-3 | Persist granted scopes on connection row |
+| X-P1-3 | Persist granted scopes on connection row | **Addressed in XERO-002** |
 | X-P1-4 | Playwright authenticated Xero journeys |
 | X-P1-5 | Reduce sync log failure noise / date parsing |
 
-**Next locked task after Owner approval:** XERO-002 implementation (see audit report §Q). Do not start without Owner gate.
+**Next locked task:** **XERO-002 LIVE PROOF** (Owner gate) — see [TITAN_XERO_002_LIVE_PROOF_PLAN.md](./TITAN_XERO_002_LIVE_PROOF_PLAN.md). Do not start unrelated integrations.
 
 ---
 

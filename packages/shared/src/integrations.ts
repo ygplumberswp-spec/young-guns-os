@@ -1,3 +1,5 @@
+import type { XeroConnectionHealthSummary } from './xero-connection-health.js';
+
 export type IntegrationProvider =
   | 'cartrack'
   | 'xero'
@@ -466,6 +468,8 @@ export type XeroConnectionSummary = {
   lastSyncAt: string | null;
   lastError: string | null;
   connectedAt: string | null;
+  /** Extended connection health — scopes, token timing, reconnect guidance (XERO-002). */
+  health?: XeroConnectionHealthSummary;
 };
 
 export type XeroConnectionTestResult = {

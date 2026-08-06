@@ -21,6 +21,9 @@ import type { WhatsappService } from '../services/whatsapp.service.js';
 import { WhatsappServiceError } from '../services/whatsapp.service.js';
 import type { XeroOAuthService } from '../services/xero-oauth.service.js';
 import { XeroOAuthError } from '../services/xero-oauth.service.js';
+import type { XeroCustomerMappingService } from '../services/xero-customer-mapping.service.js';
+import { XeroCustomerMappingError } from '../services/xero-customer-mapping.service.js';
+import type { XeroReconciliationService } from '../services/xero-reconciliation.service.js';
 import type { TeamService } from '../services/team.service.js';
 import { createAuthMiddleware, type AuthenticatedRequest } from '../middleware/auth.js';
 import { requireAnyPermission } from '../middleware/rbac.js';
@@ -192,6 +195,8 @@ type IntegrationsRouterDeps = {
   integrationApiManagementService: IntegrationApiManagementService;
   whatsappService: WhatsappService;
   xeroOAuthService: XeroOAuthService;
+  xeroCustomerMappingService?: XeroCustomerMappingService;
+  xeroReconciliationService?: XeroReconciliationService;
   teamService: TeamService;
   appUrl: string;
   jwtSecret: string;
@@ -229,6 +234,8 @@ export function createIntegrationsRouter({
   integrationApiManagementService,
   whatsappService,
   xeroOAuthService,
+  xeroCustomerMappingService,
+  xeroReconciliationService,
   teamService,
   appUrl,
   jwtSecret,
@@ -756,6 +763,147 @@ export function createIntegrationsRouter({
       } catch (error) {
         handleXeroSyncError(res, error);
       }
+    },
+  );
+
+  router.get(
+    '/xero/sync/recovery-preview',
+    requireAnyPermission('integrations:read', 'integrations:manage'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      try {
+        const preview = await xeroSyncService.previewImportRecovery(companyId);
+        res.json({ data: { preview } });
+      } catch (error) {
+        handleXeroSyncError(res, error);
+      }
+    },
+  );
+
+  router.post(
+    '/xero/sync/recover-stale',
+    requireAnyPermission('integrations:manage'),
+    async (req, res) => {
+      const { companyId, userId } = getAuth(req);
+      try {
+        const result = await xeroSyncService.recoverStaleImportJob(companyId, userId);
+        res.json({ data: result });
+      } catch (error) {
+        handleXeroSyncError(res, error);
+      }
+    },
+  );
+
+  router.post(
+    '/xero/sync/clear-failed/:syncJobId',
+    requireAnyPermission('integrations:manage'),
+    async (req, res) => {
+      const { companyId, userId } = getAuth(req);
+      try {
+        const result = await xeroSyncService.clearFailedImportJobSafely(
+          companyId,
+          userId,
+          getRouteParam(req.params.syncJobId),
+        );
+        res.json({ data: result });
+      } catch (error) {
+        handleXeroSyncError(res, error);
+      }
+    },
+  );
+
+  router.get(
+    '/xero/customer-mappings/report',
+    requireAnyPermission('integrations:read', 'integrations:manage', 'crm:read'),
+    async (req, res) => {
+      if (!xeroCustomerMappingService) {
+        res.status(503).json({
+          error: { code: 'UNAVAILABLE', message: 'Customer mapping service unavailable' },
+        });
+        return;
+      }
+      const { companyId } = getAuth(req);
+      try {
+        const report = await xeroCustomerMappingService.buildMappingReport(companyId);
+        res.json({ data: { report } });
+      } catch (error) {
+        if (error instanceof XeroCustomerMappingError) {
+          res.status(400).json({ error: { code: error.code, message: error.message } });
+          return;
+        }
+        throw error;
+      }
+    },
+  );
+
+  router.get(
+    '/xero/customer-mappings/review-queue',
+    requireAnyPermission('integrations:read', 'integrations:manage', 'crm:read'),
+    async (req, res) => {
+      if (!xeroCustomerMappingService) {
+        res.status(503).json({
+          error: { code: 'UNAVAILABLE', message: 'Customer mapping service unavailable' },
+        });
+        return;
+      }
+      const { companyId } = getAuth(req);
+      try {
+        const items = await xeroCustomerMappingService.listReviewQueue(companyId);
+        res.json({ data: { items } });
+      } catch (error) {
+        if (error instanceof XeroCustomerMappingError) {
+          res.status(400).json({ error: { code: error.code, message: error.message } });
+          return;
+        }
+        throw error;
+      }
+    },
+  );
+
+  router.post(
+    '/xero/customer-mappings/apply-deterministic',
+    requireAnyPermission('integrations:manage'),
+    async (req, res) => {
+      if (!xeroCustomerMappingService) {
+        res.status(503).json({
+          error: { code: 'UNAVAILABLE', message: 'Customer mapping service unavailable' },
+        });
+        return;
+      }
+      const { companyId, userId } = getAuth(req);
+      const dryRun = req.body?.dryRun !== false;
+      try {
+        const result = await xeroCustomerMappingService.applyDeterministicMappings({
+          companyId,
+          userId,
+          dryRun,
+        });
+        res.json({ data: result });
+      } catch (error) {
+        if (error instanceof XeroCustomerMappingError) {
+          res.status(400).json({ error: { code: error.code, message: error.message } });
+          return;
+        }
+        throw error;
+      }
+    },
+  );
+
+  router.get(
+    '/xero/reconciliation/invoices',
+    requireAnyPermission('integrations:read', 'integrations:manage', 'finance:read'),
+    async (req, res) => {
+      if (!xeroReconciliationService) {
+        res.status(503).json({
+          error: { code: 'UNAVAILABLE', message: 'Reconciliation service unavailable' },
+        });
+        return;
+      }
+      const { companyId } = getAuth(req);
+      const snapshots = await xeroReconciliationService.listInvoiceReconciliationSnapshots(
+        companyId,
+      );
+      res.json({ data: { snapshots } });
     },
   );
 
@@ -1817,7 +1965,8 @@ function handleXeroSyncError(res: import('express').Response, error: unknown) {
         ? 404
         : error.code === 'NOT_CONNECTED' ||
             error.code === 'INVALID_STATE' ||
-            error.code === 'INVALID_SCOPE'
+            error.code === 'INVALID_SCOPE' ||
+            error.code === 'OWNER_ACTION_REQUIRED'
           ? 400
           : error.code === 'ENCRYPTION_NOT_CONFIGURED'
             ? 503

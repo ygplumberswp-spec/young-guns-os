@@ -291,6 +291,50 @@ export async function retryXeroSyncJob(
   return data.result;
 }
 
+export async function fetchXeroImportRecoveryPreview(accessToken: string) {
+  const data = await request<{ preview: Record<string, unknown> }>(
+    '/integrations/xero/sync/recovery-preview',
+    { accessToken },
+  );
+  return data.preview;
+}
+
+export async function recoverStaleXeroImport(accessToken: string) {
+  return request<Record<string, unknown>>('/integrations/xero/sync/recover-stale', {
+    method: 'POST',
+    accessToken,
+  });
+}
+
+export async function clearFailedXeroImport(accessToken: string, syncJobId: string) {
+  return request<{ syncJobId: string; status: string }>(
+    `/integrations/xero/sync/clear-failed/${syncJobId}`,
+    {
+      method: 'POST',
+      accessToken,
+    },
+  );
+}
+
+export async function fetchXeroCustomerMappingReport(accessToken: string) {
+  const data = await request<{ report: import('@titan/shared').XeroCustomerMappingReport }>(
+    '/integrations/xero/customer-mappings/report',
+    { accessToken },
+  );
+  return data.report;
+}
+
+export async function applyDeterministicXeroCustomerMappings(
+  accessToken: string,
+  dryRun: boolean,
+) {
+  return request<Record<string, unknown>>('/integrations/xero/customer-mappings/apply-deterministic', {
+    method: 'POST',
+    accessToken,
+    body: { dryRun },
+  });
+}
+
 export async function fetchXeroWriteApprovals(
   accessToken: string,
   status?: string,

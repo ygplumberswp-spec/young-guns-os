@@ -75,6 +75,15 @@ export type IntegrationConnectionConfig = {
   lastDeliveryStatus?: 'sent' | 'delivered' | 'failed' | null;
   lastDeliveryError?: string | null;
   domainCount?: number;
+  /** Xero — OAuth scope and token health (XERO-002). */
+  grantedScopes?: string[];
+  requestedScopes?: string[];
+  scopeGrantedAt?: string;
+  lastTokenRefreshAt?: string;
+  tokenExpiresAt?: string;
+  lastConnectionCheckAt?: string;
+  connectionHealthState?: string;
+  declinedScopes?: string[];
 };
 
 export const integrationConnections = pgTable('integration_connections', {

@@ -4322,6 +4322,149 @@ export class XeroSyncService {
 
     return rows;
   }
+
+  /** Owner-visible preview before recovering a stale Xero import job (XERO-002 X-P0-4). */
+  async previewImportRecovery(companyId: string): Promise<{
+    staleJobsAbandoned: number;
+    recoverableJobId: string | null;
+    recoverableJobStatus: string | null;
+    failedStage: string | null;
+    stageErrorCode: string | null;
+    actionDescription: string;
+    ownerActionRequired: boolean;
+    ownerActionReason: string | null;
+  }> {
+    const staleJobsAbandoned = await this.failStaleImportJobs(companyId);
+    const failedJob = await this.db.query.integrationSyncJobs.findFirst({
+      where: and(
+        eq(integrationSyncJobs.companyId, companyId),
+        eq(integrationSyncJobs.provider, 'xero'),
+        eq(integrationSyncJobs.syncScope, 'import'),
+        eq(integrationSyncJobs.status, 'failed'),
+      ),
+      orderBy: [desc(integrationSyncJobs.startedAt)],
+    });
+
+    if (!failedJob) {
+      return {
+        staleJobsAbandoned,
+        recoverableJobId: null,
+        recoverableJobStatus: null,
+        failedStage: null,
+        stageErrorCode: null,
+        actionDescription:
+          staleJobsAbandoned > 0
+            ? 'Stale jobs were marked failed. No recoverable checkpoint found — start a new sync.'
+            : 'No stale import job detected.',
+        ownerActionRequired: false,
+        ownerActionReason: null,
+      };
+    }
+
+    const state = parseImportJobState(failedJob.resultSummary as Record<string, unknown> | null);
+    const ownerActionRequired = requiresOwnerActionToRetry(state.stageErrorCode);
+
+    return {
+      staleJobsAbandoned,
+      recoverableJobId: failedJob.id,
+      recoverableJobStatus: failedJob.status,
+      failedStage: state.failedStage,
+      stageErrorCode: state.stageErrorCode ?? null,
+      actionDescription: ownerActionRequired
+        ? 'Recover will preserve the checkpoint but the attachments/accounts stage requires Owner reconnect before retry can succeed.'
+        : 'Recover will re-queue this import job from the last checkpoint without deleting history.',
+      ownerActionRequired,
+      ownerActionReason: ownerActionRequired ? state.stageError : null,
+    };
+  }
+
+  /** Recover stale/failed import job — idempotent, preserves checkpoint (XERO-002 X-P0-4). */
+  async recoverStaleImportJob(companyId: string, userId: string) {
+    const preview = await this.previewImportRecovery(companyId);
+    if (!preview.recoverableJobId) {
+      throw new XeroSyncError('NOT_FOUND', preview.actionDescription);
+    }
+    if (preview.ownerActionRequired) {
+      throw new XeroSyncError(
+        'OWNER_ACTION_REQUIRED',
+        preview.ownerActionReason ??
+          'Owner must reconnect Xero or resolve provider scope before recovery can proceed.',
+      );
+    }
+
+    const result = await this.retrySyncJob(companyId, preview.recoverableJobId);
+
+    await this.db.insert(securityAuditLogs).values({
+      companyId,
+      userId,
+      category: 'integrations',
+      action: 'xero_import_recovered',
+      entityType: 'integration_sync_job',
+      entityId: preview.recoverableJobId,
+      metadata: {
+        staleJobsAbandoned: preview.staleJobsAbandoned,
+        failedStage: preview.failedStage,
+      },
+    });
+
+    return { preview, result };
+  }
+
+  /** Safely clear a failed import job without deleting mapping history (XERO-002 X-P0-4). */
+  async clearFailedImportJobSafely(companyId: string, userId: string, syncJobId: string) {
+    const job = await this.db.query.integrationSyncJobs.findFirst({
+      where: and(
+        eq(integrationSyncJobs.id, syncJobId),
+        eq(integrationSyncJobs.companyId, companyId),
+        eq(integrationSyncJobs.provider, 'xero'),
+        eq(integrationSyncJobs.syncScope, 'import'),
+      ),
+    });
+
+    if (!job) {
+      throw new XeroSyncError('NOT_FOUND', 'Import job not found');
+    }
+
+    if (job.status === 'running' || job.status === 'pending') {
+      throw new XeroSyncError(
+        'INVALID_STATE',
+        'Cannot clear an active import job. Recover stale sync first or wait for completion.',
+      );
+    }
+
+    if (job.status !== 'failed') {
+      throw new XeroSyncError('INVALID_STATE', 'Only failed import jobs can be cleared safely');
+    }
+
+    const state = parseImportJobState(job.resultSummary as Record<string, unknown> | null);
+    const summary = {
+      ...importJobStateToSummary(state),
+      clearedSafely: true,
+      clearedAt: new Date().toISOString(),
+      clearedByUserId: userId,
+    };
+
+    await this.db
+      .update(integrationSyncJobs)
+      .set({
+        status: 'cancelled',
+        completedAt: new Date(),
+        errorMessage: 'Owner cleared failed sync safely — checkpoint retained in summary.',
+        resultSummary: summary,
+      })
+      .where(eq(integrationSyncJobs.id, syncJobId));
+
+    await this.db.insert(securityAuditLogs).values({
+      companyId,
+      userId,
+      category: 'integrations',
+      action: 'xero_import_cleared_safely',
+      entityType: 'integration_sync_job',
+      entityId: syncJobId,
+    });
+
+    return { syncJobId, status: 'cancelled' as const };
+  }
 }
 
 function emptySyncStatus(currency: string): XeroSyncStatusResponse {

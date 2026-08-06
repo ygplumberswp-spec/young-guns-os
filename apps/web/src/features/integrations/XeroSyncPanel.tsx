@@ -12,13 +12,18 @@ import { ApiClientError } from '../../lib/api-client';
 import { fetchIntegrationAutoSyncStatus } from '../../lib/integration-auto-sync-api-client';
 import { syncIntegrationConnectors } from '../../lib/integration-platform-api-client';
 import {
+  applyDeterministicXeroCustomerMappings,
+  fetchXeroCustomerMappingReport,
+  fetchXeroImportRecoveryPreview,
   fetchXeroSyncLogs,
   fetchXeroSyncStatus,
+  recoverStaleXeroImport,
   syncXeroCustomers,
   syncXeroInvoices,
   syncXeroPayments,
 } from '../../lib/integrations-api';
 import { IntegrationAutoSyncStatusPanel } from './IntegrationAutoSyncStatusPanel';
+import { XeroConnectionHealthPanel } from './XeroConnectionHealthPanel';
 import { XeroConnectionStatusCard } from './XeroConnectionStatusCard';
 
 type XeroSyncPanelProps = {
@@ -199,6 +204,9 @@ export function XeroSyncPanel({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [recoveryPreview, setRecoveryPreview] = useState<Record<string, unknown> | null>(null);
+  const [mappingSummary, setMappingSummary] = useState<string | null>(null);
+  const [recoveryBusy, setRecoveryBusy] = useState(false);
 
   const isConnected = connection.status === 'connected';
 
@@ -209,13 +217,21 @@ export function XeroSyncPanel({
   }, [connection.oauthConfigured, connection.status]);
 
   const loadStatus = useCallback(async () => {
-    const [syncStatus, logs, autoSync] = await Promise.all([
+    const [syncStatus, logs, autoSync, recovery, mappingReport] = await Promise.all([
       fetchXeroSyncStatus(accessToken),
       fetchXeroSyncLogs(accessToken),
       fetchIntegrationAutoSyncStatus(accessToken, 'xero').catch(() => null),
+      fetchXeroImportRecoveryPreview(accessToken).catch(() => null),
+      fetchXeroCustomerMappingReport(accessToken).catch(() => null),
     ]);
     setStatus(syncStatus);
     setAutoSyncStatus(autoSync);
+    setRecoveryPreview(recovery);
+    if (mappingReport) {
+      setMappingSummary(
+        `${mappingReport.confirmedLinked} linked · ${mappingReport.unmappedCustomers} unmapped · ${mappingReport.ambiguousReviewRequired} review`,
+      );
+    }
     setImportProgress(syncStatus.importJob ?? null);
     setRecentLogMessage(logs[0]?.message ?? null);
     const fromStatus = syncStatus.bankTransactions?.syncedCount ?? 0;
@@ -411,6 +427,67 @@ export function XeroSyncPanel({
         </Panel>
       ) : null}
 
+      <Panel title="Stale sync recovery">
+        <p className="page-muted">
+          If Xero shows sync running after a worker crash, recover safely from the last checkpoint.
+          This does not delete imported data or mapping history.
+        </p>
+        {recoveryPreview ? (
+          <p className="page-muted">{String(recoveryPreview.actionDescription ?? '')}</p>
+        ) : null}
+        {canManage ? (
+          <div className="integrations-form__actions panel-actions">
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={recoveryBusy}
+              onClick={() => {
+                void (async () => {
+                  setRecoveryBusy(true);
+                  setError(null);
+                  try {
+                    await recoverStaleXeroImport(accessToken);
+                    setSuccess('Stale import recovery queued from checkpoint.');
+                    await loadStatus();
+                  } catch (err) {
+                    setError(err instanceof ApiClientError ? err.message : 'Recovery failed');
+                  } finally {
+                    setRecoveryBusy(false);
+                  }
+                })();
+              }}
+            >
+              {recoveryBusy ? 'Recovering…' : 'Recover stale sync'}
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={recoveryBusy}
+              onClick={() => {
+                void (async () => {
+                  setRecoveryBusy(true);
+                  setError(null);
+                  try {
+                    const result = await applyDeterministicXeroCustomerMappings(accessToken, true);
+                    setSuccess(
+                      `Dry-run mapping: ${String(result.appliedCount ?? 0)} safe matches found.`,
+                    );
+                    await loadStatus();
+                  } catch (err) {
+                    setError(err instanceof ApiClientError ? err.message : 'Mapping dry-run failed');
+                  } finally {
+                    setRecoveryBusy(false);
+                  }
+                })();
+              }}
+            >
+              Dry-run customer mapping
+            </Button>
+          </div>
+        ) : null}
+        {mappingSummary ? <p className="page-muted">Customer mapping: {mappingSummary}</p> : null}
+      </Panel>
+
       <Panel title="Recovery Controls (Manual Sync)">
         <p className="page-muted">
           Pull contacts, quotes, invoices, payments, and bank transactions from Xero into TITAN.
@@ -562,6 +639,13 @@ export function XeroSyncPanel({
           onSyncNow={() => void handleFullReadOnlySync()}
           onDisconnect={onDisconnect ? () => void onDisconnect() : undefined}
           onCancelDisconnect={onCancelDisconnect}
+        />
+
+        <XeroConnectionHealthPanel
+          health={connection.health}
+          canManage={canManage}
+          onCheckHealth={onTestConnection ? () => void onTestConnection() : undefined}
+          checkBusy={testBusy}
         />
 
         {error ? <p className="form-error">{error}</p> : null}

@@ -17,7 +17,7 @@
 | **Binding rule** | `TITAN_BINDING_ACCEPTANCE_RULE.md` (10 criteria) |
 | **Audit sources** | `TITAN_COMPLETE_APP_AUDIT.md`, `TITAN_ACCEPTANCE_REGISTER.md`, `TITAN_GAP_BACKLOG.md`, `TITAN_AURA_AGENT_COLLABORATION_AUDIT.md`, finance J-6.x phase evidence, [TITAN_XERO_FULL_AUDIT_REPORT.md](./TITAN_XERO_FULL_AUDIT_REPORT.md) (XERO-001) |
 
-**XERO-001 (2026-08-06):** Evidence-first read-only audit completed — see [TITAN_XERO_FULL_AUDIT_REPORT.md](./TITAN_XERO_FULL_AUDIT_REPORT.md). OAuth connected on staging; read import partial; attachments provider-blocked; full chain **not proven**. Do not mark Xero complete. **XERO-002 remains parked.**
+**XERO-002 (2026-08-06):** P0 gap closure implemented — connection health, scope persistence, stale sync recovery, customer mapping, reconciliation model, finance UI. **Do not mark Xero complete.** Live proof: [TITAN_XERO_002_LIVE_PROOF_PLAN.md](./TITAN_XERO_002_LIVE_PROOF_PLAN.md).
 
 ---
 

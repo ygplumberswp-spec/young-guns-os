@@ -361,4 +361,49 @@ See appendix **Architecture map** below. Implementation is **substantial** acros
 
 ---
 
-**STOP FOR OWNER APPROVAL.**
+## R. XERO-002 implementation evidence (2026-08-06)
+
+**Task branch:** `cursor/titan-xero-002-p0-finance`  
+**Base HEAD:** `cc0abbcde96902711fc0e141590144470abc5444`  
+**Live proof plan:** [TITAN_XERO_002_LIVE_PROOF_PLAN.md](./TITAN_XERO_002_LIVE_PROOF_PLAN.md) — **not executed**
+
+### P0 closure table
+
+| ID | Previous state | XERO-002 outcome | Test evidence | Staging evidence | Remaining Owner/provider dependency | Final status |
+|----|----------------|------------------|---------------|------------------|-------------------------------------|--------------|
+| X-P0-1 | Attachments zero; scope rejection | Root cause classified `stale_token_missing_scope`; health UI shows missing `accounting.attachments.read`; reconnect path explicit | `xero-connection-health.test.ts`, `xero-attachment-scope-failure.test.ts` | Deploy pending | **Owner reconnect** to grant attachment scope | **Owner/provider blocked** |
+| X-P0-2 | Full chain not proven | Live proof plan prepared — 21 steps | Write approval workflow tests pass | Not run | **Owner live proof gate** | **Owner gate only** |
+| X-P0-3 | 159 unmapped | Dry-run mapping report + review queue + deterministic apply API; no fuzzy auto-merge | `xero-customer-mapping.test.ts` | Deploy pending | Owner review ambiguous matches; apply on staging | **Partial — code complete** |
+| X-P0-4 | Stale running import | Recovery preview, recover-stale, clear-failed APIs + UI; lease/heartbeat existing | `xero-import-recovery.test.ts` | Deploy pending | Owner may trigger recovery on staging | **Closed in code** |
+| X-P0-5 | Write path not live-verified | Approval gate + workflow unchanged; foundation verified in tests | 123+ Xero API tests incl. write approval | Not live executed | Owner execute on staging | **Partial — Owner blocked** |
+| X-P0-6 | Yoco chain missing | Shared `yoco-payment-links.ts` + document engine wiring audited; idempotent link + webhook dedup | `yoco-payment-links.test.ts` | Not live executed | Yoco credentials + live payment | **Partial — foundation exists** |
+| X-P0-7 | Reconciliation not proven | `xero-reconciliation.ts` model; invoice snapshot API; Yoco paid ≠ Xero reconciled | `xero-reconciliation.test.ts` | Deploy pending | Live payment + bank reconcile proof | **Partial — model only** |
+
+### Scope persistence (X-P1-3 addressed in XERO-002)
+
+Granted scopes persisted on OAuth callback and token refresh in `integration_connections.config` — no migration required.
+
+### Tests executed (XERO-002)
+
+| Suite | Result |
+|-------|--------|
+| `@titan/shared` | **1124 / 1124 pass** |
+| `@titan/auth` | **24 / 24 pass** |
+| `@titan/web` | **351 / 351 pass** |
+| `@titan/api` | **1198 / 1198 pass** |
+| **Total** | **2697 / 2697 pass** |
+| Typecheck + build | **Pass** |
+| Agent register validation | **307 agents — 0 missing** |
+| Playwright Xero live write | **Not run** (Owner gate) |
+| Uncontrolled Xero write | **None** |
+| Real Yoco payment | **None** |
+
+### Attachment root cause (final classification)
+
+**Primary:** `stale_token_missing_scope` — connection predates `accounting.attachments.read` persistence; token lacks granular attachment-read scope.  
+**Secondary evidence:** 2,348 attachment sync log failures with scope rejection message.  
+**Not claimed:** provider has zero attachments (unresolved until scope granted + read-only recount).
+
+---
+
+**STOP FOR OWNER APPROVAL — proceed to XERO-002 LIVE PROOF only after explicit Owner gate.**
