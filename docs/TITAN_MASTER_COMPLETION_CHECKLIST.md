@@ -33,6 +33,8 @@
 
 **AI-FIN-DOC-001 (2026-08-06):** AI Financial Capture Engine and children AP-DOC-001, EXP-REC-001, INV-PRICE-001 — **documented only**, not implemented. See [TITAN_GAP_CLOSURE_PLAN.md](./TITAN_GAP_CLOSURE_PLAN.md).
 
+**PRICEBOOK-001 (2026-08-06):** Master Pricebook and AI Estimating Engine (AI-EST-001, AI-EST-LEARN-001) — **documented only**, not implemented. Sequenced **after XERO-002 close** and **before DASH-002**. **Do not implement during active Xero proof.** See [TITAN_MASTER_PRICEBOOK_SPECIFICATION.md](./TITAN_MASTER_PRICEBOOK_SPECIFICATION.md), [TITAN_ROADMAP.md](./TITAN_ROADMAP.md).
+
 **Integrations overview (2026-08-06):** Enterprise polish on PR #10 — unified cards, enterprise status lines, fine-details finishing. **Pending Owner approval** — not complete until signed off.
 
 ---
@@ -201,6 +203,15 @@ Boolean columns use **YES** / **NO** / **—** (not applicable).
 | FIN-013 | finance | Payment links / Yoco checkout | NOT FOUND | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  | FIN-014 |  |
 | FIN-014 | pricebook | Tenant-scoped pricebook table (YGP-001) | PARTIALLY IMPLEMENTED | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | YOUNG_GUNS_APPROVED_FINANCE_PRICEBOOK temp constants | f8cc0c4 |  |  |  |
 | FIN-015 | pricebook | Dedicated pricebook catalog UI | NOT FOUND | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  | FIN-015 deferral |  |
+| PB-001 | pricebook | PRICEBOOK-001 Master Pricebook specification | **DOCUMENTED ONLY** | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_MASTER_PRICEBOOK_SPECIFICATION.md | 2026-08-06 |  | After XERO-002 | Sequenced before DASH-002 |
+| PB-001A | pricebook | Core data model, versioning, RBAC, price calculation | **DOCUMENTED ONLY** | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_PRICEBOOK_ARCHITECTURE.md | 2026-08-06 |  | PB-001 | Phase A |
+| PB-001B | pricebook | Residential service catalogue and YGP codes | **DOCUMENTED ONLY** | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_MASTER_PRICEBOOK_SPECIFICATION.md §3 | 2026-08-06 |  | PB-001A | Phase B |
+| PB-001C | pricebook | Construction point assemblies and BOQ engine | **DOCUMENTED ONLY** | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_MASTER_PRICEBOOK_SPECIFICATION.md §4 | 2026-08-06 |  | PB-001A | Phase C |
+| PB-001D | pricebook | Supplier cost integration (INV-PRICE-001) | **DOCUMENTED ONLY** | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_GAP_CLOSURE_PLAN.md | 2026-08-06 | INV-PRICE-001 | PB-001A | Phase D |
+| PB-001E | pricebook | Quote/invoice/job-card/purchasing/job-cost integration | **DOCUMENTED ONLY** | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_MASTER_PRICEBOOK_SPECIFICATION.md §10–12 | 2026-08-06 |  | PB-001C | Phase E |
+| AI-EST-001 | estimating | AI Floor Plan Estimator | **DOCUMENTED ONLY** | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_AI_ESTIMATING_ENGINE_SPECIFICATION.md | 2026-08-06 | PRICEBOOK-001 | Phases A–D |
+| AI-EST-LEARN-001 | estimating | Estimate accuracy learning | **DOCUMENTED ONLY** | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_AI_ESTIMATING_ENGINE_SPECIFICATION.md | 2026-08-06 | AI-EST-001 | Post job costing |
+| DASH-002 | dashboard | Customisable no-gap Dashboard grid | **PLANNED** | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_ROADMAP.md | 2026-08-06 | PRICEBOOK-001 | After pricebook foundation |
 | J66A-001 | finance | Phase J-6.6A: Finance RBAC hardening (cost strip, catalogue, document routes) | TESTED LOCALLY | YES | YES | NO | YES | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | finance-tenant-pricebook.test.ts; finance.service.ts sanitize | J-6.6A |  |  | Staging apply 0176–0178 |
 | J66A-002 | finance | Phase J-6.6A: Save semantics (Save vs Save Draft vs Save & New) | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | finance-document-save.test.ts | J-6.6A |  |  | Owner finance E2E |
 | J66A-003 | finance | Phase J-6.6A: Five reproducible test fixes (Cartrack TZ, doc-engine, merge heading) | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | shared 909/909; web 303/303; api 1046/1046 | J-6.6A |  |  |  |
@@ -695,9 +706,25 @@ Items **J66A-001 … J66A-005** in the register above are targeted for completio
 
 ## Next enterprise priorities (RECORD ONLY)
 
-**Do not implement during Integrations overview approval or before Owner formal sequencing.**
+**Do not implement during Integrations overview approval, during active XERO-002 proof, or before Owner formal sequencing.**
 
-After **INT-OVERVIEW-001** (Integrations overview) receives Owner approval, the next sequenced tasks are:
+### Locked sequence after XERO-002 closes
+
+See [TITAN_ROADMAP.md](./TITAN_ROADMAP.md) for authoritative order:
+
+| Order | ID | Task |
+|------:|-----|------|
+| — | **XERO-002** | **Complete Gates 5B–7 (ACTIVE)** |
+| 1 | **PRICEBOOK-001** | Master Pricebook foundation |
+| 2 | **DASH-002** | Customisable no-gap Dashboard grid |
+| 3 | **AI-FIN-DOC-001** | AI Financial Capture Engine (+ AP-DOC-001, EXP-REC-001, INV-PRICE-001) |
+| 4 | — | Full BrowserStack role and journey audit |
+| 5 | — | Remaining integration and platform roadmap |
+| 6 | **UI-THEME-001** | App-wide visual finishing |
+| 7 | — | Young Guns controlled pilot |
+| 8 | — | Production hardening and launch |
+
+After **INT-OVERVIEW-001** (Integrations overview) receives Owner approval, the completed prerequisite sequence was:
 
 | Order | ID | Task |
 |------:|-----|------|

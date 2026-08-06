@@ -2,7 +2,7 @@
 
 **Audit type:** READ-ONLY planning artifact — no new features  
 **Generated (UTC):** 2026-08-05  
-**Last updated (UTC):** 2026-08-06 — XERO-003A BANK-IMPORT-001 implemented; AI-FIN-DOC-001 recorded (not implemented)  
+**Last updated (UTC):** 2026-08-06 — PRICEBOOK-001 recorded (not implemented); XERO-002 Gate sequence remains active  
 **Base HEAD:** `cc0abbcde96902711fc0e141590144470abc5444` → task branch `cursor/titan-xero-002-p0-finance`  
 **Branch:** `cursor/titan-v1-integration`  
 **Scope:** Unmet **accepted** requirements only — deferred items at end  
@@ -116,6 +116,40 @@ Photo, PDF, spreadsheet or authorised email attachment → secure validation →
 **AI constraints:** AI may extract and recommend, but may **not** silently approve, post to Xero, mark paid, reconcile, change VAT, merge suppliers or overwrite prices.
 
 **Locked sequence unchanged:** XERO-003 → DASH-001 → XERO-002 controlled live proof → remaining roadmap.
+
+---
+
+### PRICEBOOK-001 — Master Pricebook and AI Estimating Engine (RECORD ONLY — do not implement during XERO-002)
+
+**Status:** Documented only. **Not implemented.** **Do not modify pricing, quotes, invoices, jobs or supplier records.**
+
+**Recorded (UTC):** 2026-08-06
+
+**Placement:** Next major core-platform implementation **after XERO-002 closes** and **before DASH-002**.
+
+| ID | Name | Phase |
+|----|------|-------|
+| **PRICEBOOK-001** | Master Pricebook — single source of pricing truth | Parent |
+| PRICEBOOK-001A | Core data model, versioning, RBAC, price calculation | A |
+| PRICEBOOK-001B | Residential service catalogue and Young Guns YGP codes | B |
+| PRICEBOOK-001C | Construction point assemblies and BOQ engine | C |
+| PRICEBOOK-001D | Supplier cost integration (INV-PRICE-001) | D |
+| PRICEBOOK-001E | Quote, invoice, job-card, purchasing, job-cost integration | E |
+| **AI-EST-001** | AI Floor Plan Estimator | A–D sub-phases |
+| **AI-EST-LEARN-001** | Estimate accuracy learning | Post job-costing |
+
+**Documentation:**
+
+- [TITAN_MASTER_PRICEBOOK_SPECIFICATION.md](./TITAN_MASTER_PRICEBOOK_SPECIFICATION.md)
+- [TITAN_PRICEBOOK_ARCHITECTURE.md](./TITAN_PRICEBOOK_ARCHITECTURE.md)
+- [TITAN_AI_ESTIMATING_ENGINE_SPECIFICATION.md](./TITAN_AI_ESTIMATING_ENGINE_SPECIFICATION.md)
+- [TITAN_ROADMAP.md](./TITAN_ROADMAP.md)
+
+**Cross-links:** INV-PRICE-001 · AI-FIN-DOC-001 · AP-DOC-001 · EXP-REC-001 · BANK-IMPORT-001 · DASH-002 · UI-THEME-001
+
+**Governance:** No duplicate pricing systems. Immutable price snapshots on documents. AI may suggest; Owner must approve. No silent selling-price overwrites from supplier imports.
+
+**Implementation gate:** Forbidden during active XERO-002 Gate proof sequence.
 
 ---
 
