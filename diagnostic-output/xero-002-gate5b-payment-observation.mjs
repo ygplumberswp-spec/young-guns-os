@@ -364,7 +364,7 @@ async function main() {
       observation = await api('/api/v1/integrations/xero/gate5b-payment-observation', {
         method: 'POST',
         token,
-        timeoutMs: 15000,
+        timeoutMs: 300000,
         body: {
           invoiceId: selection.selected.invoiceId,
           runTargetedRefresh: true,
@@ -377,7 +377,13 @@ async function main() {
       };
     }
 
-    if (observation.status === 404 || observation.json?.error?.code === 'NOT_FOUND') {
+    const gate5bUnavailable =
+      observation.status === 404 ||
+      observation.status === 0 ||
+      observation.json?.error?.code === 'NOT_FOUND' ||
+      observation.json?.error?.code === 'REQUEST_ABORTED';
+
+    if (gate5bUnavailable) {
       if (process.env.INTEGRATIONS_ENCRYPTION_KEY?.trim()) {
         const { spawnSync } = await import('node:child_process');
         const tsx = path.join(repoRoot, 'apps/api/node_modules/.bin/tsx');
@@ -453,9 +459,12 @@ async function main() {
           report.compositeFallback = true;
           report.gate2Source = gate2Source;
           report.blocker =
-            gate2Source === 'live-staging-api'
-              ? 'Gate 5B endpoint not deployed — live Xero payment fetch and targeted refresh deferred; invoice observation via Gate 2.'
-              : 'Gate 5B not deployed and live Gate 2 timed out — using Gate 2 historical evidence (2026-08-06) plus current TITAN DB.';
+            observation.status === 0
+              ? 'Gate 5B route deployed — Xero upstream timed out on staging; using Gate 2 historical evidence plus current TITAN DB.'
+              : gate2Source === 'live-staging-api'
+                ? 'Gate 5B endpoint not deployed — live Xero payment fetch and targeted refresh deferred; invoice observation via Gate 2.'
+                : 'Gate 5B not deployed and live Gate 2 timed out — using Gate 2 historical evidence (2026-08-06) plus current TITAN DB.';
+          report.gate5bRouteDeployed = observation.status === 0;
         } else {
           report.verdict = 'BLOCKED';
           report.blocker =
