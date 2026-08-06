@@ -78,8 +78,26 @@ Reuses existing **SSE** (`/api/v1/live-updates/stream`) via `emitBusinessEvent` 
 
 **File:** `packages/db/drizzle/0181_xero_realtime_intersync.sql`  
 **Tables:** `xero_webhook_events`, `xero_targeted_refresh_jobs`, `xero_rate_budget_state`  
-**Applied to staging:** Pending Owner/Railway deploy  
+**Applied to staging:** **YES** (XERO-003B, journal 177; verified XERO-003C)  
+**Companion migration 0182:** `0182_bank_statement_manual_import.sql` applied (journal 178)  
 **Production:** Untouched
+
+---
+
+## 8a. Staging deployment and webhook (XERO-003B / XERO-003C)
+
+| Item | Status |
+|------|--------|
+| Staging migrations 0181 + 0182 | **Applied** (`cpkuwtaipjxeipvbssvn`) |
+| Staging API deployed | **YES** — Owner Railway redeploy |
+| Staging Web deployed | **YES** — available at staging web URL |
+| Xero webhook delivery URL | `https://young-guns-os-staging.up.railway.app/api/v1/webhooks/xero` |
+| Xero Intent to receive | **PASS** (Owner-confirmed) |
+| `XERO_WEBHOOK_KEY` | **Configured privately in Railway** — never stored in Git |
+| Former exposed webhook | **Deleted and replaced** (Owner-confirmed) |
+| Synthetic bank-import preview | **PASS** (XERO-003C) |
+| Real invoice webhook event proof | **Deferred** to XERO-002 controlled live proof |
+| Production | **Untouched**
 
 ---
 
@@ -101,10 +119,11 @@ API/Web production builds: PASS (via typecheck build chain)
 
 | Item | Status |
 |------|--------|
-| Staging API deploy | **PENDING** — Railway CLI blocked |
-| Staging Web deploy | **PENDING** |
-| Staging migration | **PENDING** |
-| Xero platform webhook config | **PENDING** — requires deployed receiver + Owner |
+| Staging API deploy | **COMPLETE** (Owner Railway) |
+| Staging Web deploy | **COMPLETE** |
+| Staging migration 0181 | **COMPLETE** |
+| Staging migration 0182 | **COMPLETE** |
+| Xero platform webhook config | **COMPLETE** — key private; Intent to receive OK |
 | Production | **Untouched** |
 
 ---
@@ -127,6 +146,8 @@ API/Web production builds: PASS (via typecheck build chain)
 
 ## 12. Exact next task
 
-**DASH-001** — Owner Dashboard Business Heartbeat (after Owner review of XERO-003).
+**DASH-001** — Owner Dashboard Business Heartbeat (after Owner approval of XERO-003C).
 
-**STOP FOR OWNER REVIEW**
+Remaining controlled proof: genuine **invoice webhook event** during **XERO-002 live proof** (not required for XERO-003C sign-off).
+
+**STOP FOR OWNER APPROVAL**
