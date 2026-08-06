@@ -2,13 +2,46 @@
 
 **Audit type:** READ-ONLY requirement reconciliation  
 **Generated (UTC):** 2026-08-05  
+**Last updated (UTC):** 2026-08-06 — Master Agent Register programme  
 **Repository:** Titan-Aura-Consolidation (`ygplumberswp-spec/young-guns-os`)  
 **Worktree:** `/workspace/.worktrees/titan-recovery`  
-**Branch:** `cursor/titan-v1-integration-recovery`  
-**HEAD:** `7ad20fbcf74213fcb448e39f813ef71b3dff2554` (`7ad20fb`)  
-**Deploy branch:** `cursor/titan-v1-integration` @ `7ad20fb`  
+**Branch:** `cursor/titan-master-agent-register-998f`  
+**HEAD:** see footer — agent register commit  
+**Deploy branch:** `cursor/titan-v1-integration`  
 **Binding rule:** `TITAN_BINDING_ACCEPTANCE_RULE.md` (10 criteria)  
 **Completion bar:** Database + API + visible UI + RBAC + tenant isolation + tests + staging proof  
+
+---
+
+## Agent register programme (2026-08-06)
+
+| Artifact | Status |
+|----------|--------|
+| [TITAN_MASTER_AGENT_REGISTER.md](./TITAN_MASTER_AGENT_REGISTER.md) | **Created** — 307 unique agents |
+| [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) | **Created** |
+| [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) | **Created** |
+| [TITAN_AGENT_ACTIVATION_ROADMAP.md](./TITAN_AGENT_ACTIVATION_ROADMAP.md) | **Created** — 15 phases |
+| [TITAN_AUDIT_DEPARTMENT_AND_TOOLING_STANDARD.md](./TITAN_AUDIT_DEPARTMENT_AND_TOOLING_STANDARD.md) | **Created** |
+| [TITAN_INTEGRATION_REGISTER.md](./TITAN_INTEGRATION_REGISTER.md) | **Created** |
+
+**Agent status reconciliation (@ register creation):** 0 Verified complete · 21 Partial · 3 Provider-blocked · 283 Missing · 0 fake completions added.
+
+**Facebook (Young Guns staging):** Basic Page connection **Verified complete (staging)** — Young Guns Plumbing – Cape Town, `CONNECTED_LIMITED`. Advanced Meta capabilities Provider-blocked — **not a current development blocker**.
+
+**New acceptance rows (agent programme):**
+
+| Requirement ID | Requirement name | Current status | Blocker | Exact next action |
+|----------------|------------------|----------------|---------|-------------------|
+| AGT-001 | Permanent master agent register (307 agents, no fixed limit) | **COMPLETE_LOCAL_ONLY** | — | Owner approval of register |
+| AGT-002 | Agent capability matrix (24 required fields) | **COMPLETE_LOCAL_ONLY** | — | Populate fields per agent during activation |
+| AGT-003 | Controlled self-learning governance standard | **COMPLETE_LOCAL_ONLY** | — | Wire into agent runtime Phase 1 |
+| AGT-004 | 15-phase activation roadmap | **COMPLETE_LOCAL_ONLY** | — | Owner approve phase order |
+| AGT-005 | Permanent Audit Department framework (14 AUD agents) | **COMPLETE_LOCAL_ONLY** | — | Activate AUD agents Phase 14 |
+| AGT-006 | Integration register with truthful provider states | **COMPLETE_LOCAL_ONLY** | — | Maintain on each integration change |
+| AGT-007 | Any agent marked Verified complete | **NOT_STARTED** | No agent meets bar yet | Implement tools + tests + proof |
+| AGT-008 | Facebook advanced publishing/messaging agents | **PROVIDER-BLOCKED** | Meta App Review | Owner grant scopes when approved |
+| AGT-009 | QS plan take-off → BOQ → quote chain | **NOT_STARTED** | QS agents Missing | Phase 8 activation |
+| AGT-010 | Final Stage 2 business chain audit | **NOT_STARTED** | Stage 1 sections incomplete | Complete incremental audits first |
 
 ---
 

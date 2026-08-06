@@ -2,8 +2,25 @@
 
 **Audit type:** READ-ONLY planning artifact — no new features  
 **Generated (UTC):** 2026-08-05  
-**HEAD:** `7ad20fb`  
+**Last updated (UTC):** 2026-08-06 — Master Agent Register programme  
+**HEAD:** see agent register commit on `cursor/titan-master-agent-register-998f`  
 **Scope:** Unmet **accepted** requirements only — deferred items at end  
+
+---
+
+## Agent workforce gaps (2026-08-06)
+
+| Gap | Count | Closure path |
+|-----|------:|--------------|
+| Agents with no implementation | 283 | [TITAN_AGENT_ACTIVATION_ROADMAP.md](./TITAN_AGENT_ACTIVATION_ROADMAP.md) phases 2–15 |
+| Agents with registry/UI only (Partial) | 21 | Phase 1 tool wiring + live verification |
+| Provider-blocked agent capabilities | 3 | [TITAN_INTEGRATION_REGISTER.md](./TITAN_INTEGRATION_REGISTER.md) — Meta review |
+| Verified complete agents | 0 | None — do not fake |
+| AUD department agents | 14 Missing | Phase 14 audit framework activation |
+
+**Facebook:** Basic connection closed on staging. Do **not** treat advanced Facebook as blocker for other gap closure.
+
+**Owner approval gate:** Review [TITAN_MASTER_AGENT_REGISTER.md](./TITAN_MASTER_AGENT_REGISTER.md) before any agent activation work.
 
 ---
 
@@ -63,7 +80,7 @@
 | ID | Action | Requirements | Blocker |
 |----|--------|--------------|---------|
 | 4.1 | Xero import GO + two-way write verify queue | XERO-002, XERO-004, BC-014 | Xero OAuth + Owner write approval |
-| 4.2 | Meta FB OAuth on staging — least-privilege `pages_show_list` connect; Page-selection UX + API callback display (corrected locally 2026-08-05) | J67F-003, J67F-004 | Meta credentials on Railway; optional `META_LOGIN_CONFIG_ID` if Login for Business required |
+| 4.2 | Meta FB OAuth on staging — basic Page connection **Verified complete (staging)** Young Guns Plumbing – Cape Town `CONNECTED_LIMITED`; advanced scopes Provider-blocked (not dev blocker) | J67F-003, J67F-004, AGT-008 | Meta App Review for `pages_read_engagement`, publishing, messaging |
 | 4.3 | TikTok live OAuth after review | J67F-010 | `TIKTOK_LIVE_OAUTH_ENABLED` + provider review |
 | 4.4 | WhatsApp live send + human takeover | INT-003, BC-022 | Meta Business credentials |
 | 4.5 | Cartrack credentials + fleet map | FLT-002–FLT-004, BC-021 | Cartrack API |
@@ -99,7 +116,7 @@
 | 6.6 | Production deploy + migration | PRD-002 |
 | 6.7 | Pilot sign-off → commercial launch | PRD-003, FRZ-022 |
 | 6.8 | AURA Voice throughout TITAN | Future phases doc |
-| 6.9 | Department 21 SaaS scaling | docs/TITAN_AURA_DEPARTMENT_21_SAAS_SCALING.md |
+| 6.10 | Master agent register (307 agents) activation | AGT-001–AGT-010 | [TITAN_AGENT_ACTIVATION_ROADMAP.md](./TITAN_AGENT_ACTIVATION_ROADMAP.md) |
 
 ---
 
