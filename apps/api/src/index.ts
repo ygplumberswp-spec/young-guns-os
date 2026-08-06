@@ -1655,6 +1655,21 @@ app.use(
   }),
 );
 
+// Xero webhooks require the raw body for HMAC verification — parse before global JSON middleware.
+app.use(
+  '/api/v1/webhooks/xero',
+  express.raw({ type: 'application/json', limit: '1mb' }),
+  (req, _res, next) => {
+    const buf = req.body;
+    (req as { rawBody?: string }).rawBody = Buffer.isBuffer(buf)
+      ? buf.toString('utf8')
+      : typeof buf === 'string'
+        ? buf
+        : '';
+    next();
+  },
+);
+
 // 15mb accommodates base64-encoded job evidence uploads (documents capped at 10MB binary, ~37% base64 overhead).
 app.use(
   express.json({

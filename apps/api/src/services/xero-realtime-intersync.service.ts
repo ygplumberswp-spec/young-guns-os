@@ -13,28 +13,18 @@ import {
   type XeroWebhookEventCategory,
 } from '@titan/shared';
 import {
+  parseXeroWebhookPayload,
+  type XeroWebhookInboundEvent,
+  type XeroWebhookPayload,
+} from '../lib/xero-webhook-payload.js';
+import {
   extractXeroSignatureHeader,
   verifyXeroWebhookSignature,
 } from '../lib/xero-webhook-signing.js';
 import type { XeroRateBudgetService } from './xero-rate-budget.service.js';
 import type { XeroSyncService } from './xero-sync.service.js';
 
-export type XeroWebhookInboundEvent = {
-  resourceUrl: string;
-  resourceId: string;
-  eventDateUtc?: string;
-  eventType: string;
-  eventCategory: string;
-  tenantId: string;
-  tenantType: string;
-};
-
-export type XeroWebhookPayload = {
-  events: XeroWebhookInboundEvent[];
-  firstEventSequence?: number;
-  lastEventSequence?: number;
-  entropy?: string;
-};
+export type { XeroWebhookInboundEvent, XeroWebhookPayload };
 
 const SUPPORTED_CATEGORIES = new Set<XeroWebhookEventCategory>([
   'CONTACT',
@@ -87,19 +77,30 @@ export class XeroRealtimeIntersyncService {
     });
 
     if (!verify.ok) {
-      return { status: 401, body: { error: { code: 'INVALID_SIGNATURE', message: 'Invalid webhook signature' } } };
+      const message =
+        verify.reason === 'missing_signature'
+          ? 'Webhook signature header required'
+          : 'Invalid webhook signature';
+      return { status: 401, body: { error: { code: 'INVALID_SIGNATURE', message } } };
     }
 
-    let payload: XeroWebhookPayload;
-    try {
-      payload = JSON.parse(input.rawBody) as XeroWebhookPayload;
-    } catch {
-      return { status: 400, body: { error: { code: 'INVALID_PAYLOAD', message: 'Invalid JSON payload' } } };
+    const parsed = parseXeroWebhookPayload(input.rawBody);
+    if (!parsed.ok) {
+      const message =
+        parsed.code === 'INVALID_JSON'
+          ? 'Invalid JSON payload'
+          : 'Invalid webhook payload structure';
+      return {
+        status: 400,
+        body: { error: { code: 'INVALID_PAYLOAD', message } },
+      };
     }
 
-    const events = Array.isArray(payload.events) ? payload.events : [];
+    const payload = parsed.payload;
+    const events = payload.events;
     void this.recordAndQueueEvents(events, payload).catch((error: unknown) => {
-      console.error('[xero-webhook] async processing failed', error);
+      const message = error instanceof Error ? error.message : 'Webhook processing failed';
+      console.error('[xero-webhook] async processing failed', { message });
     });
 
     return { status: 200, body: { received: events.length } };

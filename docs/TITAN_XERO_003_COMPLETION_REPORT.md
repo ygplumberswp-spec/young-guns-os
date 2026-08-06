@@ -96,6 +96,7 @@ Reuses existing **SSE** (`/api/v1/live-updates/stream`) via `emitBusinessEvent` 
 | `XERO_WEBHOOK_KEY` | **Configured privately in Railway** — never stored in Git |
 | Former exposed webhook | **Deleted and replaced** (Owner-confirmed) |
 | Synthetic bank-import preview | **PASS** (XERO-003C) |
+| Malformed webhook payload handling | **Corrected** (XERO-003D: 500 → 400 for signed malformed input) |
 | Real invoice webhook event proof | **Deferred** to XERO-002 controlled live proof |
 | Production | **Untouched**
 

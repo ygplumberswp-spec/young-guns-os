@@ -7,16 +7,23 @@ export function createXeroWebhookRouter(deps: {
   const router = Router();
 
   router.post('/', async (req, res) => {
-    const rawBody =
-      (req as Request & { rawBody?: string }).rawBody ??
-      (typeof req.body === 'string' ? req.body : JSON.stringify(req.body ?? {}));
+    try {
+      const rawBody = (req as Request & { rawBody?: string }).rawBody ?? '';
 
-    const result = await deps.xeroRealtimeIntersyncService.handleWebhook({
-      rawBody,
-      headers: req.headers as Record<string, string | string[] | undefined>,
-    });
+      const result = await deps.xeroRealtimeIntersyncService.handleWebhook({
+        rawBody,
+        headers: req.headers as Record<string, string | string[] | undefined>,
+      });
 
-    res.status(result.status).json(result.body);
+      res.status(result.status).json(result.body);
+    } catch {
+      res.status(500).json({
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'An unexpected error occurred',
+        },
+      });
+    }
   });
 
   return router;
