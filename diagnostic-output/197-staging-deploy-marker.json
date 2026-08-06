@@ -1,0 +1,8 @@
+{
+  "label": "197-staging-deploy-marker",
+  "purpose": "Harmless Railway GitHub redeploy trigger only",
+  "targetCommit": "8c3e7b71c6ade132d90bf21faf92b6c2bc9269fe",
+  "branch": "cursor/titan-frozen-scope-completion",
+  "service": "titan-staging-api",
+  "generatedAt": "2026-08-01T12:55:00.000Z"
+}

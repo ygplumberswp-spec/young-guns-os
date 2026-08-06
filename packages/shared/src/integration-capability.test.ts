@@ -116,31 +116,22 @@ describe('deriveIntegrationCapabilityState', () => {
 
 describe('formatCapabilityStateLabel', () => {
   it('maps every capability state to its Decision 4 label', () => {
-    assert.equal(formatCapabilityStateLabel('connected_usable'), 'CONNECTED');
-    assert.equal(formatCapabilityStateLabel('configured_unverified'), 'SETUP REQUIRED');
-    assert.equal(formatCapabilityStateLabel('disconnected'), 'DISCONNECTED');
-    assert.equal(formatCapabilityStateLabel('not_configured'), 'IMPLEMENTED NOT CONNECTED');
-    assert.equal(formatCapabilityStateLabel('not_implemented'), 'NOT IMPLEMENTED');
-    assert.equal(formatCapabilityStateLabel('temporarily_unavailable'), 'TEMPORARILY UNAVAILABLE');
-    assert.equal(formatCapabilityStateLabel('failed_degraded'), 'DEGRADED');
+    assert.equal(formatCapabilityStateLabel('connected_usable'), 'Connected');
+    assert.equal(formatCapabilityStateLabel('configured_unverified'), 'Setup Required');
+    assert.equal(formatCapabilityStateLabel('disconnected'), 'Disconnected');
+    assert.equal(formatCapabilityStateLabel('not_configured'), 'Implemented Not Connected');
+    assert.equal(formatCapabilityStateLabel('not_implemented'), 'Not Implemented');
+    assert.equal(formatCapabilityStateLabel('temporarily_unavailable'), 'Temporarily Unavailable');
+    assert.equal(formatCapabilityStateLabel('failed_degraded'), 'Degraded');
   });
 });
 
 describe('HONESTY_ONLY_PROVIDERS', () => {
   it('never claims a usable capability state for synthetic providers', () => {
-    for (const provider of HONESTY_ONLY_PROVIDERS) {
-      assert.equal(provider.capabilityState, 'not_implemented');
-    }
+    assert.equal(HONESTY_ONLY_PROVIDERS.length, 0);
   });
 
-  it('includes gmail only; n8n is Automation-owned (UX-J), not honesty-only', () => {
-    const gmail = HONESTY_ONLY_PROVIDERS.find((provider) => provider.id === 'gmail');
-    assert.ok(gmail);
-    assert.equal(gmail?.deepLinkPath, null);
-    assert.equal(
-      HONESTY_ONLY_PROVIDERS.some((provider) => provider.id === 'gmail'),
-      true,
-    );
-    assert.equal(HONESTY_ONLY_PROVIDERS.length, 1);
+  it('no longer lists gmail as honesty-only (real OAuth connector); n8n is Automation-owned', () => {
+    assert.equal(HONESTY_ONLY_PROVIDERS.length, 0);
   });
 });

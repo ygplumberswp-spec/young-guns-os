@@ -24,15 +24,27 @@ export function StatCard({ label, value, hint, icon, className, ...props }: Stat
 export type PanelProps = HTMLAttributes<HTMLDivElement> & {
   title: string;
   description?: string;
+  /** Trailing control in the header — typically a "View all" link. */
+  headerAction?: ReactNode;
   children: ReactNode;
 };
 
-export function Panel({ title, description, children, className, ...props }: PanelProps) {
+export function Panel({
+  title,
+  description,
+  headerAction,
+  children,
+  className,
+  ...props
+}: PanelProps) {
   return (
     <section className={clsx('titan-panel', className)} {...props}>
       <div className="titan-panel__header">
-        <h2 className="titan-panel__title">{title}</h2>
-        {description ? <p className="titan-panel__description">{description}</p> : null}
+        <div className="titan-panel__heading">
+          <h2 className="titan-panel__title">{title}</h2>
+          {description ? <p className="titan-panel__description">{description}</p> : null}
+        </div>
+        {headerAction ? <div className="titan-panel__action">{headerAction}</div> : null}
       </div>
       <div className="titan-panel__body">{children}</div>
     </section>

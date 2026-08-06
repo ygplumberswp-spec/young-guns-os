@@ -1,0 +1,19 @@
+
+> titan-aura-v1@0.0.0 typecheck /Users/keanuventer/Downloads/Titan Aura V1
+> tsc --build && pnpm -r --if-present run typecheck
+
+Scope: 7 of 8 workspace projects
+packages/auth typecheck$ tsc -p tsconfig.json --noEmit
+packages/db typecheck$ tsc -p tsconfig.json --noEmit
+packages/shared typecheck$ tsc -p tsconfig.json --noEmit
+packages/ui typecheck$ tsc -p tsconfig.json --noEmit
+packages/auth typecheck: Done
+packages/shared typecheck: Done
+packages/ui typecheck: Done
+packages/db typecheck: Done
+packages/aura typecheck$ tsc -p tsconfig.json --noEmit
+apps/web typecheck$ tsc -p tsconfig.json --noEmit
+packages/aura typecheck: Done
+apps/web typecheck: Done
+apps/api typecheck$ tsc -p tsconfig.json --noEmit
+apps/api typecheck: Done

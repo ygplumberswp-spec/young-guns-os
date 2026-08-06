@@ -1,0 +1,34 @@
+{
+  "generatedAt": "2026-08-02T18:36:00.000Z",
+  "milestone": "M5 XERO-2W",
+  "status": "IMPLEMENTATION_COMPLETE_AWAITING_APPROVAL",
+  "migrations": "none (reused 0109 xero_write_approvals + conflict_metadata already on staging)",
+  "xeroApiWritesPerformed": [],
+  "productionUntouched": true,
+  "m7Started": false,
+  "commitPushDeploy": false,
+  "abandonedImportRequeued": false,
+  "tests": {
+    "shared_xero_two_way": "6/6 PASS",
+    "api_write_approval_gate": "3/3 PASS",
+    "api_write_approval_workflow": "5/5 PASS",
+    "api_mapping_conflict": "2/2 PASS",
+    "api_two_way_helpers": "2/2 PASS",
+    "api_build": "PASS",
+    "web_build": "PASS",
+    "shared_build": "PASS"
+  },
+  "stagingSmokeReadOnly": {
+    "api_health_ready": "PASS",
+    "write_approvals_unauth": "401 (auth gated; routes not deployed yet)",
+    "xero_write_approvals_table": "present",
+    "abandoned_job_022da52a": "still failed/stale_running_job; not requeued",
+    "active_xero_imports": 0
+  },
+  "warnings": [
+    "Staging API/web not redeployed — new write-approval routes exist only in local workspace until approved deploy",
+    "Resolved pre-existing merge conflict markers in apps/web/src/features/crm/CustomerList.tsx (kept HEAD) to unblock web build",
+    "Live Xero execute remains Owner-only and was not exercised against staging Xero org",
+    "Bulk syncInvoices still requires pre-existing approved rows; product path is request→approve→execute queue"
+  ]
+}
