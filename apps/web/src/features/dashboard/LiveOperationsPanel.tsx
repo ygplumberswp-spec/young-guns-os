@@ -8,18 +8,23 @@ import type {
   OpsSourceState,
 } from '@titan/shared';
 import {
-  CARTRACK_SLOW_SNAPSHOT_BANNER,
-  formatFleetConnectionDisplayLabel,
   formatVehicleMotionLabel,
   formatVehiclePositionFreshness,
 } from '@titan/shared';
-import { mapFleetConnectionDisplayToEnterpriseLabel } from '../integrations/enterprise-overview-status';
 import { Button, EmptyState, Panel } from '@titan/ui';
 import { GoogleMapView, type MapMarker } from '../maps/GoogleMapView';
 import { DashboardDetailsDisclosure } from './DashboardDetailsDisclosure';
 import { DashboardFreshnessFooter } from './DashboardFreshnessFooter';
 import { DashboardSourceMeta } from './DashboardSourceMeta';
 import { resolveFleetCardHonesty } from './dashboard-honesty';
+import {
+  FLEET_LIVE_UNAVAILABLE_NOTE,
+  FLEET_SHOWING_STORED_POSITIONS_NOTE,
+  FLEET_UPDATED_RECENTLY_LABEL,
+  buildFleetMapDisclosureLines,
+  fleetMapHasLiveDegradation,
+  fleetMapShowsStoredPositions,
+} from './fleet-dashboard-copy';
 import {
   createLiveOpsExtensionContext,
   renderLiveOpsFutureSections,
@@ -45,48 +50,23 @@ type LiveOperationsPanelProps = {
   futureModules?: LiveOpsFutureModules;
 };
 
-/**
- * Owner-visible map freshness — position age only, without provider diagnostics.
- */
+/** Owner-visible map freshness — position age without provider diagnostics. */
 function mapVisibleFreshnessLabel(tracking: FleetTrackingContext | null): string {
-  if (!tracking?.cartrackConnected) return 'Updated recently';
+  if (!tracking?.cartrackConnected) return FLEET_UPDATED_RECENTLY_LABEL;
   const newest = tracking.latestPositions.reduce<string | null>((latest, position) => {
     if (!latest) return position.recordedAt;
     return new Date(position.recordedAt) > new Date(latest) ? position.recordedAt : latest;
   }, null);
-  if (!newest) return 'Updated recently';
-  return formatVehiclePositionFreshness(newest);
-}
-
-/**
- * Full Cartrack provenance for the details disclosure — includes connection and sync context.
- */
-function mapFooterLabel(
-  tracking: FleetTrackingContext | null,
-  isPolling: boolean,
-): string {
-  if (!tracking) return 'Waiting for Cartrack connection state';
-  if (!tracking.cartrackConnected) return 'Cartrack not connected · no live positions';
-
-  const newest = tracking.latestPositions.reduce<string | null>((latest, position) => {
-    if (!latest) return position.recordedAt;
-    return new Date(position.recordedAt) > new Date(latest) ? position.recordedAt : latest;
-  }, null);
-
-  if (!newest) return 'No stored positions · Cartrack';
-  const age = formatVehiclePositionFreshness(newest);
-  const stale =
-    tracking.connectionDisplayState === 'stale' || tracking.connectionDisplayState === 'degraded';
-  if (stale) return `${age} · Stale position`;
-  if (isPolling) return `${age} · Refreshing from Cartrack`;
-  return `${age} · Cartrack`;
+  if (!newest) return FLEET_UPDATED_RECENTLY_LABEL;
+  const label = formatVehiclePositionFreshness(newest);
+  return label.startsWith('Updated') ? label : FLEET_UPDATED_RECENTLY_LABEL;
 }
 
 export function LiveOperationsPanel({
   jobs,
   tracking,
   lastFetchedAt = null,
-  isPolling = false,
+  isPolling: _isPolling = false,
   fleetError = null,
   opsStrip = null,
   opsStripLoading = false,
@@ -165,26 +145,26 @@ export function LiveOperationsPanel({
     return markers.slice(0, 24);
   }, [tracking?.latestPositions, jobs, jobsByTechnician]);
 
-  const hasStoredPositions = (tracking?.latestPositions.length ?? 0) > 0;
+  const hasStoredPositions = fleetMapShowsStoredPositions(tracking);
   const showMapSurface = hasStoredPositions || mapMarkers.length > 0;
+  const liveDegraded = fleetMapHasLiveDegradation({
+    tracking,
+    fleetError,
+    opsFreshness,
+  });
   const honesty = resolveFleetCardHonesty({
     hasTracking: Boolean(tracking),
     cartrackConnected: Boolean(tracking?.cartrackConnected),
     connectionDisplayState: tracking?.connectionDisplayState ?? null,
     hasStoredPositions,
-    error: fleetError ?? null,
+    error: null,
   });
-  const cachedSnapshotNote = tracking?.providerRefresh?.showingCachedSnapshot
-    ? [
-        CARTRACK_SLOW_SNAPSHOT_BANNER,
-        tracking.providerRefresh.failedEndpoint
-          ? `Failed endpoint: ${tracking.providerRefresh.failedEndpoint}.`
-          : null,
-        tracking.providerRefresh.timeoutMessage ?? null,
-      ]
-        .filter(Boolean)
-        .join(' ')
-    : null;
+  const disclosureLines = buildFleetMapDisclosureLines({
+    tracking,
+    opsSources,
+    opsFreshness,
+    hasStoredPositions,
+  });
 
   return (
     <Panel
@@ -205,23 +185,28 @@ export function LiveOperationsPanel({
         />
 
         {showMapSurface ? (
-          <div className="exec-live-ops-map">
-            <GoogleMapView
-              markers={mapMarkers}
-              cameraContextKey="live-ops"
-              height="100%"
-              allowFullscreen
-              emptyTitle="Google Maps Unavailable"
-              emptyDescription="Cartrack positions or verified job coordinates exist, but Google Maps browser key is not configured. TITAN will not invent a map."
-            />
-          </div>
+          <>
+            {hasStoredPositions && liveDegraded ? (
+              <p className="exec-live-ops-panel__calm-note">{FLEET_SHOWING_STORED_POSITIONS_NOTE}</p>
+            ) : null}
+            {liveDegraded && !hasStoredPositions ? (
+              <p className="exec-live-ops-panel__calm-note">{FLEET_LIVE_UNAVAILABLE_NOTE}</p>
+            ) : null}
+            <div className="exec-live-ops-map">
+              <GoogleMapView
+                markers={mapMarkers}
+                cameraContextKey="live-ops"
+                height="100%"
+                allowFullscreen
+                emptyTitle="Google Maps Unavailable"
+                emptyDescription="Cartrack positions or verified job coordinates exist, but Google Maps browser key is not configured. TITAN will not invent a map."
+              />
+            </div>
+          </>
         ) : (
           <EmptyState
             title="Live Map Unavailable"
-            description={
-              fleetError ??
-              'Cartrack has no stored GPS and no job has verified coordinates, so TITAN will not invent a live map.'
-            }
+            description={`${FLEET_LIVE_UNAVAILABLE_NOTE} TITAN will not invent a live map.`}
             action={
               <Link href="/integrations/cartrack">
                 <Button size="sm" variant="secondary">
@@ -236,40 +221,26 @@ export function LiveOperationsPanel({
 
         <DashboardFreshnessFooter
           updatedAt={lastFetchedAt}
-          state={honesty.state}
+          state={honesty.state === 'partial' ? 'live' : honesty.state}
           label={mapVisibleFreshnessLabel(tracking)}
         />
         <DashboardDetailsDisclosure>
-          {cachedSnapshotNote ? <p className="exec-source-meta">{cachedSnapshotNote}</p> : null}
-          {fleetError ? <p className="exec-source-meta">{fleetError}</p> : null}
-          {tracking?.lastError && !tracking.providerRefresh?.showingCachedSnapshot ? (
-            <p className="exec-source-meta">{tracking.lastError}</p>
-          ) : null}
-          <p className="exec-source-meta">{mapFooterLabel(tracking, isPolling)}</p>
-          {tracking && !tracking.livePollingAllowed ? (
-            <p className="exec-source-meta">
-              Live polling disabled — showing the last stored positions
+          {disclosureLines.map((line) => (
+            <p key={line} className="exec-source-meta">
+              {line}
             </p>
-          ) : null}
-          {tracking ? (
-            <p className="exec-source-meta">
-              {mapFleetConnectionDisplayToEnterpriseLabel(
-                formatFleetConnectionDisplayLabel(tracking.connectionDisplayState),
-              )}
-              {lastFetchedAt ? ' · TITAN refreshed just now' : ''}
-            </p>
-          ) : null}
+          ))}
           <DashboardSourceMeta
-            source={
-              tracking
-                ? `Cartrack · ${mapFleetConnectionDisplayToEnterpriseLabel(formatFleetConnectionDisplayLabel(tracking.connectionDisplayState))}`
-                : 'Cartrack'
-            }
+            source="Cartrack · Fleet tracking"
             updatedAt={lastFetchedAt}
-            state={honesty.state}
+            state={honesty.state === 'partial' ? 'live' : honesty.state}
             href="/fleet"
             linkLabel="Open fleet"
-            note={honesty.note}
+            note={
+              honesty.state === 'partial'
+                ? FLEET_SHOWING_STORED_POSITIONS_NOTE
+                : honesty.note
+            }
           />
         </DashboardDetailsDisclosure>
       </div>

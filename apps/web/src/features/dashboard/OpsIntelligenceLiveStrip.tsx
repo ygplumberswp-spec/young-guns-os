@@ -2,9 +2,12 @@ import type { OpsSnapshotFreshness, OpsLiveStrip, OpsSourceState } from '@titan/
 import {
   OPS_INSIGHTS_DEGRADED_MESSAGE,
   formatMapsEtaCapabilityLabel,
-  formatOpsSnapshotFreshnessLabel,
 } from '@titan/shared';
 import { DashboardSectionSkeleton } from './DashboardSectionSkeleton';
+import {
+  FLEET_LIVE_UNAVAILABLE_NOTE,
+  formatOwnerFleetOpsFreshnessLabel,
+} from './fleet-dashboard-copy';
 
 type OpsIntelligenceLiveStripProps = {
   strip: OpsLiveStrip | null;
@@ -39,13 +42,8 @@ function freshnessTone(freshness: OpsSnapshotFreshness): string {
  * are not ready this reports that in one line and steps aside, so the Live Fleet Map
  * keeps its vehicles instead of the whole card failing with them.
  */
-function DegradedNote({ detail }: { detail?: string | null }) {
-  return (
-    <p className="page-muted ops-intel-strip__note">
-      {OPS_INSIGHTS_DEGRADED_MESSAGE}
-      {detail ? ` ${detail}` : ''}
-    </p>
-  );
+function DegradedNote() {
+  return <p className="page-muted ops-intel-strip__note">{OPS_INSIGHTS_DEGRADED_MESSAGE}</p>;
 }
 
 export function OpsIntelligenceLiveStrip({
@@ -53,43 +51,37 @@ export function OpsIntelligenceLiveStrip({
   isLoading = false,
   error = null,
   freshness = null,
-  ageSeconds = 0,
   refreshing = false,
   dataAvailable = true,
-  sources = [],
 }: OpsIntelligenceLiveStripProps) {
   if (isLoading && !strip) {
     return <DashboardSectionSkeleton rows={2} />;
   }
   if (error && !strip) {
-    return <DegradedNote detail="TITAN will show them as soon as the refresh completes." />;
+    return <DegradedNote />;
   }
   if (!strip) return null;
   if (!dataAvailable) {
-    return <DegradedNote detail="No figures are shown until the evaluation completes." />;
+    return <DegradedNote />;
   }
 
   const { counts } = strip;
-  const degradedSources = sources.filter(
-    (source) => source.status === 'unavailable' || source.status === 'timed_out',
-  );
+  const ownerFreshness = formatOwnerFleetOpsFreshnessLabel(freshness);
+  const insightsDegraded = Boolean(freshness && freshness !== 'live');
 
   return (
     <div className="ops-intel-strip">
       <div className="ops-intel-strip__meta">
         <span className="status-pill status-pill--info">Ops intelligence</span>
-        {freshness ? (
-          <span className={`status-pill ${freshnessTone(freshness)}`}>
-            {formatOpsSnapshotFreshnessLabel(freshness, ageSeconds)}
+        {ownerFreshness ? (
+          <span className={`status-pill ${freshness ? freshnessTone(freshness) : 'status-pill--info'}`}>
+            {ownerFreshness}
           </span>
         ) : null}
         {refreshing && freshness !== 'stale' ? (
           <span className="page-muted">Refreshing</span>
         ) : null}
         <span className="page-muted">{formatMapsEtaCapabilityLabel(strip.mapsCapability)}</span>
-        <span className="page-muted">
-          {strip.cartrackConnected ? 'Cartrack connected' : 'Cartrack not connected'}
-        </span>
       </div>
       <div className="ops-intel-strip__grid">
         <StripCell label="Driving" value={String(counts.techniciansDriving)} />
@@ -106,13 +98,8 @@ export function OpsIntelligenceLiveStrip({
         <StripCell label="Completed" value={String(counts.completedJobs)} />
         <StripCell label="Emergency Queue" value={String(counts.emergencyQueue)} />
       </div>
-      {degradedSources.length > 0 ? (
-        <p className="page-muted ops-intel-strip__note">
-          {degradedSources.map((source) => `${source.label}: ${source.detail ?? source.status}`).join(' · ')}
-        </p>
-      ) : null}
-      {strip.honestyNotes[0] ? (
-        <p className="page-muted ops-intel-strip__note">{strip.honestyNotes[0]}</p>
+      {insightsDegraded ? (
+        <p className="exec-live-ops-panel__calm-note">{FLEET_LIVE_UNAVAILABLE_NOTE}</p>
       ) : null}
     </div>
   );

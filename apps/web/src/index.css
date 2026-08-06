@@ -2418,6 +2418,12 @@ a:focus-visible {
   gap: 0.85rem;
 }
 
+.exec-live-ops-panel__calm-note {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--titan-text-secondary);
+}
+
 /* One honest age line under the map, in place of a LIVE badge on every vehicle row. */
 .exec-live-ops-map__footer {
   display: flex;
