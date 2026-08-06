@@ -27,12 +27,12 @@ test('resolveRateLimitDelayMs parses HTTP-date Retry-After', () => {
   assert.ok(delay >= 25_000 && delay <= 35_000);
 });
 
-test('rate-limit read path allows one retry up to 120 seconds', () => {
+test('rate-limit read path allows one inline retry up to 30 seconds', () => {
   assert.equal(XERO_RATE_LIMIT_READ_MAX_RETRIES, 1);
   assert.equal(XERO_RATE_LIMIT_READ_MAX_DELAY_MS, 120_000);
-  const retryAfterDelay = resolveRateLimitDelayMs('45', 1);
-  assert.equal(retryAfterDelay, 45_000);
-  assert.ok(retryAfterDelay <= XERO_RATE_LIMIT_READ_MAX_DELAY_MS);
+  const retryAfterDelay = resolveRateLimitDelayMs('25', 1);
+  assert.equal(retryAfterDelay, 25_000);
+  assert.ok(retryAfterDelay <= 30_000);
 });
 
 test('XeroClient exposes single auth retry on 401', () => {
@@ -42,7 +42,7 @@ test('XeroClient exposes single auth retry on 401', () => {
   assert.doesNotMatch(clientSource, /while \(true\)/);
 });
 
-test('XeroClient bounds rate-limit retries to one controlled retry', () => {
-  assert.match(clientSource, /XERO_RATE_LIMIT_READ_MAX_RETRIES/);
-  assert.match(clientSource, /XERO_RATE_LIMIT_READ_MAX_DELAY_MS/);
+test('XeroClient fails fast when Retry-After exceeds inline wait budget', () => {
+  assert.match(clientSource, /XERO_RATE_LIMIT_RETRY_BUDGET_MS/);
+  assert.match(clientSource, /inline wait exceeds/);
 });

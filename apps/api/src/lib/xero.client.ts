@@ -709,10 +709,19 @@ export class XeroClient {
             );
           }
 
-          const delayMs = Math.min(
-            error.retryAfterMs ?? resolveRateLimitDelayMs(null, rateLimitRetries + 1),
-            XERO_RATE_LIMIT_READ_MAX_DELAY_MS,
-          );
+          const requestedDelayMs =
+            error.retryAfterMs ?? resolveRateLimitDelayMs(null, rateLimitRetries + 1);
+          const delayMs = Math.min(requestedDelayMs, XERO_RATE_LIMIT_READ_MAX_DELAY_MS);
+
+          // Honour short Retry-After inline; longer waits exceed Railway/proxy budgets — fail fast.
+          if (delayMs > XERO_RATE_LIMIT_RETRY_BUDGET_MS) {
+            throw new XeroError(
+              'RATE_LIMIT',
+              `Xero rate limit — retry after ${Math.ceil(delayMs / 1000)}s (inline wait exceeds ${XERO_RATE_LIMIT_RETRY_BUDGET_MS / 1000}s budget)`,
+              delayMs,
+            );
+          }
+
           rateLimitRetries += 1;
           await sleep(delayMs);
           continue;

@@ -103,7 +103,6 @@ async function main() {
     const report = {
       at: new Date().toISOString(),
       rateBudget: budget ?? null,
-      xeroTest: await api('/api/v1/integrations/xero/test', { method: 'POST', token }),
       gate5b: await api('/api/v1/integrations/xero/gate5b-payment-observation', {
         method: 'POST',
         token,
