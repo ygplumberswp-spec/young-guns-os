@@ -11,47 +11,47 @@ export type EnterpriseModuleLink = {
 export const ENTERPRISE_MODULE_LINKS: EnterpriseModuleLink[] = [
   {
     href: '/sales-intelligence',
-    label: 'Sales intelligence',
+    label: 'Sales Intelligence',
     summary: 'Pipeline and sales workspace.',
   },
   {
     href: '/marketing-intelligence',
-    label: 'Marketing intelligence',
+    label: 'Marketing Intelligence',
     summary: 'Campaign and marketing workspace.',
   },
   {
     href: '/dispatch-intelligence',
-    label: 'Dispatch intelligence',
+    label: 'Dispatch Intelligence',
     summary: 'Advanced dispatch insights.',
   },
   {
     href: '/fleet-intelligence',
-    label: 'Fleet intelligence',
+    label: 'Fleet Intelligence',
     summary: 'Fleet analytics workspace.',
   },
   {
     href: '/workforce-intelligence',
-    label: 'Workforce intelligence',
+    label: 'Workforce Intelligence',
     summary: 'Crew and workforce insights.',
   },
   {
     href: '/customer-experience',
-    label: 'Customer experience',
+    label: 'Customer Experience',
     summary: 'CX and portal experience tools.',
   },
   {
     href: '/service-delivery',
-    label: 'Service delivery',
+    label: 'Service Delivery',
     summary: 'Delivery operations workspace.',
   },
   {
     href: '/financial-planning',
-    label: 'Financial planning',
+    label: 'Financial Planning',
     summary: 'Planning and forecast tools.',
   },
   {
     href: '/legal-compliance',
-    label: 'Legal & compliance',
+    label: 'Legal & Compliance',
     summary: 'Compliance and legal workspace.',
   },
   {
@@ -61,62 +61,62 @@ export const ENTERPRISE_MODULE_LINKS: EnterpriseModuleLink[] = [
   },
   {
     href: '/voice-reception',
-    label: 'Voice reception',
+    label: 'Voice Reception',
     summary: 'Voice reception workspace.',
   },
   {
     href: '/it-operations',
-    label: 'IT operations',
+    label: 'IT Operations',
     summary: 'IT operations workspace.',
   },
   {
     href: '/business-evolution',
-    label: 'Business evolution',
+    label: 'Business Evolution',
     summary: 'Evolution and maturity tools.',
   },
   {
     href: '/business-continuity',
-    label: 'Business continuity',
+    label: 'Business Continuity',
     summary: 'Continuity and recovery tools.',
   },
   {
     href: '/app-builder',
-    label: 'App builder',
+    label: 'App Builder',
     summary: 'Low-code / app builder surface.',
   },
   {
     href: '/industry-packs',
-    label: 'Industry packs',
+    label: 'Industry Packs',
     summary: 'Industry pack configuration.',
   },
   {
     href: '/automation-studio',
-    label: 'Automation studio',
+    label: 'Automation Studio',
     summary: 'Enterprise automation designer.',
   },
   {
     href: '/digital-twin',
-    label: 'Digital twin',
+    label: 'Digital Twin',
     summary: 'Digital twin workspace.',
   },
   {
     href: '/knowledge',
-    label: 'Knowledge graph',
+    label: 'Knowledge Graph',
     summary: 'Knowledge graph workspace.',
   },
   {
     href: '/ai-orchestration',
-    label: 'AI orchestration',
+    label: 'AI Orchestration',
     summary: 'AI orchestration controls.',
   },
   {
     href: '/global-search',
-    label: 'Global search',
+    label: 'Global Search',
     summary: 'Cross-module search.',
   },
   {
     href: '/data-migration',
-    label: 'Data migration',
+    label: 'Data Migration',
     summary: 'Import and migration tools.',
   },
   {
@@ -126,7 +126,7 @@ export const ENTERPRISE_MODULE_LINKS: EnterpriseModuleLink[] = [
   },
   {
     href: '/launch-center',
-    label: 'Launch center',
+    label: 'Launch Center',
     summary: 'Launch readiness workspace.',
   },
   {
@@ -136,7 +136,7 @@ export const ENTERPRISE_MODULE_LINKS: EnterpriseModuleLink[] = [
   },
   {
     href: '/mobile-platform',
-    label: 'Mobile platform',
+    label: 'Mobile Platform',
     summary: 'Mobile platform hub (includes dispatcher console).',
   },
 ];

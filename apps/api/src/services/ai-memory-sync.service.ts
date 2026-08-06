@@ -5,7 +5,12 @@ import { aiMemorySyncRecords } from '@titan/db';
 import type { EnterpriseKnowledgeGraphService } from './enterprise-knowledge-graph.service.js';
 import type { MemoryService } from './memory.service.js';
 
-type StaffScope = { companyId: string; userId: string };
+type StaffScope = {
+  companyId: string;
+  userId: string;
+  roleName: string;
+  permissions: string[];
+};
 
 type AiMemorySyncDeps = {
   db: DatabaseClient;

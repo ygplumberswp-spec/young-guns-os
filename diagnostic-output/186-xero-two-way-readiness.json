@@ -1,0 +1,66 @@
+{
+  "schemaVersion": "xero-two-way-readiness-v1",
+  "generatedAt": "2026-08-01T13:45:00.000Z",
+  "stagingRef": "cpkuwtaipjxeipvbssvn",
+  "productionTouched": false,
+  "destructiveActionsTaken": false,
+  "readOnlyMode": true,
+  "twoWayGo": false,
+  "phase": "import_running",
+  "readPathPercent": 71,
+  "writePathPercent": 25,
+  "xeroImport": {
+    "jobId": "8e6aec9b-2d99-493c-85b8-75f61d7f414b",
+    "status": "running",
+    "lastSyncAt": null,
+    "customerMappings": 573,
+    "invoiceMappings": 0,
+    "paymentMappings": 0,
+    "bankTransactionLogs": 0,
+    "doNotInterrupt": true
+  },
+  "scaffolding": {
+    "bindingSpec": "TITAN_XERO_TWO_WAY_SYNC.md",
+    "gapAnalysis": "TITAN_XERO_TWO_WAY_GAP_ANALYSIS.md",
+    "verifyQueue": "TITAN_XERO_TWO_WAY_VERIFY_QUEUE.md",
+    "migration": "0109_xero_two_way_sync_scaffolding.sql",
+    "migrationApplied": false,
+    "services": [
+      "XeroWriteApprovalGate",
+      "XeroMappingConflictService",
+      "XeroTwoWayVerifyService"
+    ],
+    "hooks": {
+      "importSettledHandler": "BackgroundWorkOrchestratorService.handleXeroImportJobSettled",
+      "cvMetricsFlag": "cvMetricsRefreshJobId",
+      "twoWayVerifyFlag": "twoWayReadVerifyJobId"
+    }
+  },
+  "entityMatrixSummary": {
+    "autoRead": ["contact", "invoice", "payment", "bank_transaction"],
+    "stubRead": ["credit_note", "supplier_bill"],
+    "approvalGatedWrite": ["contact", "quote", "invoice", "credit_note"]
+  },
+  "verifyQueue": {
+    "status": "queued",
+    "blockedUntil": ["import.completed", "last_sync_at populated"],
+    "stepsTotal": 9,
+    "stepsAutomatedReadOnly": [1, 2, 4, 5, 6, 7, 8],
+    "stepsOwnerGated": [3]
+  },
+  "ownerApprovalRequiredFor": [
+    "staging_approved_invoice_to_xero_write_test",
+    "production_financial_writes"
+  ],
+  "unitTests": {
+    "shared": "packages/shared/src/xero-two-way-sync.test.ts",
+    "approvalGate": "apps/api/src/services/xero-write-approval-gate.test.ts",
+    "conflict": "apps/api/src/services/xero-mapping-conflict.test.ts",
+    "idempotency": "apps/api/src/services/xero-two-way-sync.test.ts"
+  },
+  "coordination": {
+    "cleanDataQueue": "TITAN_CLEAN_DATA_UX_QUEUE.md Phase A",
+    "cvPostImportWatcher": "cvMetricsRefreshJobId — independent from twoWayReadVerifyJobId",
+    "note": "Verification steps 1-9 run AFTER completed + last_sync_at"
+  }
+}

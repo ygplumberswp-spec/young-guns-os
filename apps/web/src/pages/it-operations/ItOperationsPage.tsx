@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'wouter';
-import { Button, EmptyState, PageHeader, Panel, StatCard } from '@titan/ui';
+import { Button, EmptyState, Panel, StatCard } from '@titan/ui';
 import type {
   EnterpriseItOperationsDashboard,
   ItoApiReliabilitySnapshotSummary,
@@ -435,7 +436,7 @@ export function ItOperationsPage() {
             </div>
           ) : (
             <EmptyState
-              title="No production readiness data"
+              title="No Production Readiness Data"
               description="Capture health signals or configure monitors to populate module health."
             />
           )}
@@ -465,7 +466,7 @@ export function ItOperationsPage() {
           {supplementary.selfHealingActions.length === 0 &&
           dashboard.recentRepairAttempts.length === 0 ? (
             <EmptyState
-              title="No self-healing actions"
+              title="No Self-Healing Actions"
               description="Safe repairs appear here after detection and approval."
             />
           ) : (
@@ -506,7 +507,7 @@ export function ItOperationsPage() {
         >
           {dashboard.recentBugDetections.length === 0 ? (
             <EmptyState
-              title="No bug detections"
+              title="No Bug Detections"
               description="Sync bug detections from operational logs and monitoring."
             />
           ) : (
@@ -532,7 +533,7 @@ export function ItOperationsPage() {
         >
           {dashboard.recentIncidents.length === 0 ? (
             <EmptyState
-              title="No incidents"
+              title="No Incidents"
               description="Incidents are created from real platform failures and monitoring alerts."
             />
           ) : (
@@ -559,7 +560,7 @@ export function ItOperationsPage() {
         >
           {dashboard.recentDeployments.length === 0 ? (
             <EmptyState
-              title="No deployments"
+              title="No Deployments"
               description="Deployment records appear when builds are promoted through the pipeline."
             />
           ) : (
@@ -605,7 +606,7 @@ export function ItOperationsPage() {
           {isSupplementaryLoading ? <p>Loading builds and tests...</p> : null}
           {supplementary.buildRecords.length === 0 && supplementary.testRuns.length === 0 ? (
             <EmptyState
-              title="No build records"
+              title="No Build Records"
               description="Build and test records appear when CI pipelines execute."
             />
           ) : (
@@ -656,7 +657,7 @@ export function ItOperationsPage() {
           {isSupplementaryLoading ? <p>Loading API reliability...</p> : null}
           {supplementary.apiSnapshots.length === 0 ? (
             <EmptyState
-              title="No API snapshots"
+              title="No API Snapshots"
               description="Capture health signals to populate API reliability metrics."
             />
           ) : (
@@ -686,7 +687,7 @@ export function ItOperationsPage() {
           {isSupplementaryLoading ? <p>Loading database health...</p> : null}
           {supplementary.databaseSnapshots.length === 0 ? (
             <EmptyState
-              title="No database snapshots"
+              title="No Database Snapshots"
               description="Database health appears after monitoring capture runs."
             />
           ) : (
@@ -716,7 +717,7 @@ export function ItOperationsPage() {
           {isSupplementaryLoading ? <p>Loading integration health...</p> : null}
           {supplementary.integrationHealth.length === 0 ? (
             <EmptyState
-              title="No integration health records"
+              title="No Integration Health Records"
               description="Integration health is captured from the Universal Connector Platform."
             />
           ) : (
@@ -744,7 +745,7 @@ export function ItOperationsPage() {
           {isSupplementaryLoading ? <p>Loading AI provider health...</p> : null}
           {supplementary.aiProviderHealth.length === 0 ? (
             <EmptyState
-              title="No AI provider health records"
+              title="No AI Provider Health Records"
               description="AI provider metrics appear when providers are configured and monitored."
             />
           ) : (
@@ -772,7 +773,7 @@ export function ItOperationsPage() {
           {isSupplementaryLoading ? <p>Loading performance snapshots...</p> : null}
           {supplementary.performanceSnapshots.length === 0 ? (
             <EmptyState
-              title="No performance snapshots"
+              title="No Performance Snapshots"
               description="Performance data is captured from real platform telemetry."
             />
           ) : (
@@ -803,7 +804,7 @@ export function ItOperationsPage() {
             <p>{dashboard.productionReadiness.summary}</p>
           ) : (
             <EmptyState
-              title="No security context"
+              title="No Security Context"
               description="Security posture integrates with the Enterprise Security platform."
             />
           )}
@@ -821,7 +822,7 @@ export function ItOperationsPage() {
           {isSupplementaryLoading ? <p>Loading backup verifications...</p> : null}
           {supplementary.backupVerifications.length === 0 ? (
             <EmptyState
-              title="No backup verifications"
+              title="No Backup Verifications"
               description="Record backup verification results after restore testing."
             />
           ) : (
@@ -870,7 +871,7 @@ export function ItOperationsPage() {
             </ul>
           ) : (
             <EmptyState
-              title="No disaster recovery data"
+              title="No Disaster Recovery Data"
               description="Configure recovery objectives in production operations."
             />
           )}
@@ -886,7 +887,7 @@ export function ItOperationsPage() {
           {supplementary.technicalDebtRecords.length === 0 &&
           supplementary.dependencyRecords.length === 0 ? (
             <EmptyState
-              title="No technical debt records"
+              title="No Technical Debt Records"
               description="Track debt items and dependency advisories for planning."
             />
           ) : (
@@ -932,7 +933,7 @@ export function ItOperationsPage() {
         >
           {dashboard.recentHealthMonitors.length === 0 ? (
             <EmptyState
-              title="No health monitors"
+              title="No Health Monitors"
               description="Configure monitors to track infrastructure, APIs, and providers."
             />
           ) : (
@@ -958,7 +959,7 @@ export function ItOperationsPage() {
         >
           {dashboard.recentAlerts.length === 0 ? (
             <EmptyState
-              title="No open alerts"
+              title="No Open Alerts"
               description="Sync alerts from live platform monitoring signals."
             />
           ) : (
@@ -986,7 +987,7 @@ export function ItOperationsPage() {
           {isSupplementaryLoading ? <p>Loading audit logs...</p> : null}
           {supplementary.auditLogs.length === 0 ? (
             <EmptyState
-              title="No audit logs"
+              title="No Audit Logs"
               description="Audit entries are recorded for every IT operations action."
             />
           ) : (

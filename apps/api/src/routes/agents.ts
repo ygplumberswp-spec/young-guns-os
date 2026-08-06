@@ -1434,7 +1434,12 @@ export function createAgentsRouter({
 
     try {
       const task = await agentRuntimeService.approveTask(
-        { companyId: auth.companyId, userId: auth.userId },
+        {
+          companyId: auth.companyId,
+          userId: auth.userId,
+          roleName: auth.roleName,
+          permissions: auth.permissions,
+        },
         getRouteParam(req.params.taskId),
       );
       res.json({ data: { task } });

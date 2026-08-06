@@ -1,0 +1,10 @@
+{
+  "label": "212-schema-vs-database-drift",
+  "generatedAt": "2026-08-03T23:36:27.401Z",
+  "tablesChecked": 1041,
+  "missingTables": [],
+  "missingColumns": [],
+  "missingTableCount": 0,
+  "missingColumnCount": 0,
+  "clean": true
+}

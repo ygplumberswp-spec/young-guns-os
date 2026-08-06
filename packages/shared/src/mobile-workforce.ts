@@ -52,6 +52,7 @@ export type MobileTimeEntrySummary = {
   id: string;
   entryType: MobileTimeEntryType;
   jobId: string | null;
+  jobNumber: string | null;
   jobTitle: string | null;
   userId: string;
   userName: string;
@@ -146,12 +147,21 @@ export type MobileRouteIntelligence = {
     longitude: number;
     recordedAt: string;
     speedKmh: number | null;
+    ignitionOn: boolean | null;
+    /**
+     * True only when this position belongs to the vehicle assigned to this
+     * technician. A readable address is resolved for their own vehicle only —
+     * technicians never get fleet-wide addresses from this surface.
+     */
+    isAssignedVehicle: boolean;
+    licensePlate: string | null;
+    address: import('./vehicle-position-address.js').VehiclePositionAddressResult;
   } | null;
   cartrackConnected: boolean;
   /** UX-I — never claim live Maps/Cartrack when provider path is absent. */
   mapsCapabilityState: import('./young-guns-ops.js').MapsEtaCapabilityState;
   mapsCapabilityLabel: string;
-  etaSource: 'none' | 'schedule_only';
+  etaSource: 'none' | 'schedule_only' | 'google_maps';
   liveTrackingAvailable: boolean;
 };
 
@@ -310,10 +320,26 @@ export type MobileWorkforceJobList = {
   completedCount: number;
 };
 
+export type MobileInventoryCatalogItem = {
+  id: string;
+  name: string;
+  sku: string | null;
+};
+
+export type MobileInventoryCatalogLocation = {
+  id: string;
+  name: string;
+  locationType: 'warehouse' | 'van' | 'other';
+  vehicleId: string | null;
+};
+
 export type MobileWorkforceInventoryCentre = {
   alerts: MobileInventoryAlert[];
   recentUsage: MobileJobInventoryUsageSummary[];
   pendingUsageCount: number;
+  /** UX-F / UX-042 — stock-linked material requests from the field. */
+  catalogItems: MobileInventoryCatalogItem[];
+  locations: MobileInventoryCatalogLocation[];
 };
 
 export type MobileWorkforceNotificationCentre = {

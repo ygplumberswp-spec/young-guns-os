@@ -1,4 +1,5 @@
-import { PageHeader, Panel } from '@titan/ui';
+import { PageHeader } from '../../components/ux';
+import { Panel } from '@titan/ui';
 import { fetchMobileInventory } from '../../lib/mobile-api-client';
 import { useAuth } from '../../lib/auth-context';
 import { useStaffCachedQuery } from '../../lib/use-scoped-cached-query';
@@ -19,7 +20,7 @@ export function MobileInventoryPage() {
   return (
     <div className="portal-page">
       <PageHeader
-        title="Inventory centre"
+        title="Inventory Centre"
         description="Low-stock alerts and recent usage submissions."
       />
 
@@ -32,14 +33,14 @@ export function MobileInventoryPage() {
           inventory.alerts.length === 0 &&
           inventory.recentUsage.length === 0
         }
-        emptyTitle="No inventory data"
+        emptyTitle="No Inventory Data"
         emptyDescription="Inventory centre is empty."
         loadingLabel="Loading inventory…"
         onRetry={() => void inventoryQuery.refetch()}
       >
         {inventory ? (
           <>
-            <Panel title="Low stock alerts">
+            <Panel title="Low Stock Alerts">
               {inventory.alerts.length === 0 ? (
                 <p className="page-muted">No low-stock alerts.</p>
               ) : (
@@ -57,7 +58,7 @@ export function MobileInventoryPage() {
               )}
             </Panel>
 
-            <Panel title="Recent usage submissions">
+            <Panel title="Recent Usage Submissions">
               {inventory.recentUsage.length === 0 ? (
                 <p className="page-muted">No inventory usage submitted yet.</p>
               ) : (

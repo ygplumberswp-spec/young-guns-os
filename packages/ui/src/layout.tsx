@@ -10,10 +10,15 @@ export type LayoutProps = HTMLAttributes<HTMLDivElement> & {
 export function AppShell({ header, sidebar, children, className, ...props }: LayoutProps) {
   return (
     <div className={clsx('titan-shell', className)} {...props}>
+      <a href="#main-content" className="skip-to-content">
+        Skip to main content
+      </a>
       {header ? <header className="titan-shell__header">{header}</header> : null}
       <div className="titan-shell__body">
         {sidebar ? <aside className="titan-shell__sidebar">{sidebar}</aside> : null}
-        <main className="titan-shell__main">{children}</main>
+        <main id="main-content" className="titan-shell__main" tabIndex={-1}>
+          {children}
+        </main>
       </div>
     </div>
   );

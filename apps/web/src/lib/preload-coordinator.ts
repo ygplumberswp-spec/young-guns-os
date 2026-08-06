@@ -82,10 +82,13 @@ export function useStaffIdlePreload(): void {
       return;
     }
 
+    // Defer idle prefetch on owner dashboard so executive summary wins the network (PERF-001).
+    const idleDelayMs = pathname === '/' ? 3_500 : 1_200;
+
     const timer = window.setTimeout(() => {
       startedRef.current = true;
       startIdleRoutePreload(context, pathname);
-    }, 1_200);
+    }, idleDelayMs);
 
     return () => window.clearTimeout(timer);
   }, [context, pathname]);

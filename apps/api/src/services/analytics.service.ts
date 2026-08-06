@@ -32,6 +32,7 @@ import {
 import type { FinanceService } from './finance.service.js';
 import type { FleetService } from './fleet.service.js';
 import type { InventoryService } from './inventory.service.js';
+import { CustomerValueClassificationService } from './customer-value-classification.service.js';
 
 export class AnalyticsError extends Error {
   constructor(
@@ -122,9 +123,11 @@ export class AnalyticsService {
       (job) => job.status === 'scheduled' || job.scheduledAt,
     ).length;
 
-    const totalCustomers = await this.db.query.customers.findMany({
-      where: eq(customers.companyId, companyId),
-    });
+    const valueMetrics = await new CustomerValueClassificationService(this.db).getValueMetrics(
+      companyId,
+    );
+    const verifiedCustomerCount = valueMetrics.totals.qualifyingCustomers;
+    const rawContactRecords = valueMetrics.totals.customerRecords;
 
     const paymentRows = await this.db.query.payments.findMany({
       where: and(
@@ -164,7 +167,8 @@ export class AnalyticsService {
         trend: buildTrend(currentJobs, range, 'createdAt'),
       },
       customerGrowth: {
-        totalCustomers: totalCustomers.length,
+        totalCustomers: verifiedCustomerCount,
+        rawContactRecords,
         newInPeriod: currentCustomers,
         previousPeriodNew: previousCustomers,
         trend: await this.buildCustomerTrend(companyId, range),
@@ -446,11 +450,16 @@ export class AnalyticsService {
 
     const outstandingCustomerIds = new Set(invoiceRows.map((row) => row.customerId));
 
+    const valueMetrics = await new CustomerValueClassificationService(this.db).getValueMetrics(
+      companyId,
+    );
+
     return {
       range: { from: range.from.toISOString(), to: range.to.toISOString() },
       newCustomers,
       repeatCustomers,
-      totalCustomers: customerRows.length,
+      totalCustomers: valueMetrics.totals.qualifyingCustomers,
+      rawContactRecords: valueMetrics.totals.customerRecords,
       activityCount: activityCountRow[0]?.count ?? 0,
       quoteConversionRatePercent:
         quotesSent > 0 ? Math.round((quotesAccepted / quotesSent) * 100) : null,

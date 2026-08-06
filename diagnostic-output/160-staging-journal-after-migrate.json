@@ -1,0 +1,14 @@
+{
+  "dumpMeta": null,
+  "journalProof": {
+    "step": "journal_after",
+    "appliedCount": 106,
+    "expectedJournalCount": 106,
+    "pending": 0,
+    "lastHashPrefix": "f2a1a3b6b914",
+    "lastCreatedAt": "1785572699469",
+    "lastExpectedTag": "0106_job_document_packs",
+    "countsMatch": true
+  },
+  "at": "2026-08-01T08:29:37.052Z"
+}

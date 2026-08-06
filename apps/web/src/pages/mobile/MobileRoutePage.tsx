@@ -1,5 +1,14 @@
-import { PageHeader, Panel, Button } from '@titan/ui';
-import { buildAddressMapsDeepLink } from '@titan/shared';
+import { PageHeader } from '../../components/ux';
+import { Panel, Button } from '@titan/ui';
+import {
+  buildAddressMapsDeepLink,
+  buildVehiclePositionNavigateUrl,
+  formatVehicleIgnitionLabel,
+  formatVehicleMotionLabel,
+  formatVehiclePositionCoordinates,
+  formatVehiclePositionFreshness,
+  resolveVehiclePositionAddressDisplay,
+} from '@titan/shared';
 import { fetchMobileRoute } from '../../lib/mobile-api-client';
 import { useAuth } from '../../lib/auth-context';
 import { useStaffCachedQuery } from '../../lib/use-scoped-cached-query';
@@ -31,14 +40,14 @@ export function MobileRoutePage() {
         error={routeQuery.error}
         hasData={route !== undefined}
         isEmpty={route !== undefined && route.route.stopCount === 0}
-        emptyTitle="No route stops"
+        emptyTitle="No Route Stops"
         emptyDescription="Assigned jobs that are not completed will appear here with site addresses when available."
         loadingLabel="Loading route…"
         onRetry={() => void routeQuery.refetch()}
       >
         {route ? (
           <>
-            <Panel title="Maps / ETA capability">
+            <Panel title="Maps / ETA Capability">
               <p>
                 <span className="status-pill status-pill--disabled">
                   {route.mapsCapabilityLabel}
@@ -54,12 +63,58 @@ export function MobileRoutePage() {
                 Live tracking:{' '}
                 {route.liveTrackingAvailable
                   ? 'Available from connected fleet provider'
-                  : 'Unavailable — Cartrack/Maps provider depth deferred; no fake coordinates'}
+                  : 'Unavailable — no assigned-vehicle GPS for this technician; fleet-wide tracking is blocked'}
               </p>
             </Panel>
 
+            {route.latestGps?.isAssignedVehicle ? (
+              <Panel
+                title="Your Vehicle Position"
+                description="Latest Cartrack position for the vehicle assigned to you."
+              >
+                {(() => {
+                  const gps = route.latestGps!;
+                  const display = resolveVehiclePositionAddressDisplay({
+                    result: gps.address,
+                    latitude: gps.latitude,
+                    longitude: gps.longitude,
+                    recordedAt: gps.recordedAt,
+                    cartrackConnected: route.cartrackConnected,
+                  });
+                  const navigateUrl = buildVehiclePositionNavigateUrl({
+                    latitude: gps.latitude,
+                    longitude: gps.longitude,
+                  });
+                  return (
+                    <>
+                      <p>
+                        <strong>{gps.licensePlate ?? route.route.assignedVehiclePlate}</strong>
+                      </p>
+                      <p>{display.line}</p>
+                      {display.note ? <p className="page-muted">{display.note}</p> : null}
+                      <p className="page-muted">
+                        {formatVehicleMotionLabel(gps.speedKmh)} ·{' '}
+                        {formatVehicleIgnitionLabel(gps.ignitionOn)}
+                      </p>
+                      <p className="page-muted">
+                        {formatVehiclePositionFreshness(gps.recordedAt)} ·{' '}
+                        {formatVehiclePositionCoordinates(gps.latitude, gps.longitude)}
+                      </p>
+                      {navigateUrl ? (
+                        <p>
+                          <a href={navigateUrl} target="_blank" rel="noreferrer">
+                            Navigate to this position
+                          </a>
+                        </p>
+                      ) : null}
+                    </>
+                  );
+                })()}
+              </Panel>
+            ) : null}
+
             {route.route.nextDestination ? (
-              <Panel title="Next destination">
+              <Panel title="Next Destination">
                 <p>
                   <strong>{route.route.nextDestination.title}</strong> —{' '}
                   {route.route.nextDestination.customerName}
@@ -93,7 +148,7 @@ export function MobileRoutePage() {
               </Panel>
             ) : null}
 
-            <Panel title="Route stops">
+            <Panel title="Route Stops">
               {route.route.stops.length === 0 ? (
                 <p className="page-muted">No active stops on your route.</p>
               ) : (
@@ -126,13 +181,13 @@ export function MobileRoutePage() {
               )}
             </Panel>
 
-            <Panel title="Fleet provider status">
+            <Panel title="Fleet Provider Status">
               <p>
                 Cartrack connection record:{' '}
                 {route.cartrackConnected ? 'configured in integrations' : 'not connected'}
               </p>
               <p className="page-muted">
-                UX-I does not activate Cartrack or invent GPS. Live provider depth is deferred.
+                Technician route shows assigned context only. Fleet-wide Cartrack tracking is office/owner only — TITAN never invents GPS.
               </p>
               <Button size="sm" variant="secondary" onClick={() => void routeQuery.refetch()}>
                 Refresh

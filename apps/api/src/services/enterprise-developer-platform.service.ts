@@ -157,7 +157,7 @@ export class EnterpriseDeveloperPlatformService {
     const spec = buildOpenApiSpec(this.deps.apiPublicUrl);
     const [row] = await this.deps.db
       .insert(developerPlatformOpenapiSpecs)
-      .values({ companyId, version: '1.0.0', title: 'TITAN Business OS API', spec })
+      .values({ companyId, version: '1.0.0', title: 'TITAN API', spec })
       .returning();
     return {
       id: row!.id,

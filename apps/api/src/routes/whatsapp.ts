@@ -117,12 +117,12 @@ function handleWhatsappError(res: import('express').Response, error: unknown) {
     const status =
       error.code === 'NOT_FOUND'
         ? 404
-        : error.code === 'NOT_CONNECTED' ||
-            error.code === 'VALIDATION_ERROR' ||
-            error.code === 'CONNECTION_FAILED'
-          ? 400
-          : error.code === 'ENCRYPTION_NOT_CONFIGURED'
-            ? 503
+        : error.code === 'FEATURE_DISABLED' || error.code === 'ENCRYPTION_NOT_CONFIGURED'
+          ? 503
+          : error.code === 'NOT_CONNECTED' ||
+              error.code === 'VALIDATION_ERROR' ||
+              error.code === 'CONNECTION_FAILED'
+            ? 400
             : 400;
 
     res.status(status).json({

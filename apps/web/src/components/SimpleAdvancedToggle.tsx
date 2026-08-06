@@ -14,7 +14,7 @@ export function SimpleAdvancedToggle({
   }
 
   return (
-    <div className="simple-advanced-toggle" role="group" aria-label="View mode">
+    <div className="simple-advanced-toggle" role="group" aria-label="View Mode">
       <button
         type="button"
         className={`simple-advanced-toggle__btn ${mode === 'simple' ? 'simple-advanced-toggle__btn--active' : ''}`}
