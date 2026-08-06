@@ -6,7 +6,7 @@ import {
   type EnterpriseConnectionStatus,
 } from './enterprise-connection-status';
 import { enterpriseConnectionActionLabel } from './EnterpriseConnectionStatusLine';
-import { resolveIntegrationOverviewDescription } from './integration-overview-copy';
+import { resolveIntegrationOverviewDescriptionSafe } from './integration-overview-copy';
 
 function resolveHubOverviewActionLabel(
   status: EnterpriseConnectionStatus,
@@ -37,12 +37,11 @@ export function HubProviderOverviewCard({
       providerKey={String(provider.provider)}
       name={provider.name}
       status={status}
-      description={resolveIntegrationOverviewDescription({
+      description={resolveIntegrationOverviewDescriptionSafe({
         providerKey: String(provider.provider),
         status,
-        fallback: provider.description,
       })}
-      actionLabel={actionLabel}
+      actionLabel={actionHref ? actionLabel : 'Unavailable'}
       actionHref={actionHref}
       actionDisabled={!actionHref}
     />

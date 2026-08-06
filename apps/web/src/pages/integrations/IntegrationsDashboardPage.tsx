@@ -49,40 +49,20 @@ const HUB_LOADING_SKELETON_COUNTS: Record<string, number> = {
 
 function IntegrationCategoryLinks() {
   return (
-    <>
-      <Panel className="integrations-category-section" title="Business Profile integrations">
-        <p className="page-muted">
-          Google Business Profile location and reputation monitoring — separate from social publishing
-          connections.
-        </p>
-        <div className="panel-actions">
-          <Link href="/social-media-integrations">
-            <Button size="sm" variant="secondary">
-              Open Business Profile integrations
-            </Button>
-          </Link>
-        </div>
-      </Panel>
-
-      <Panel className="integrations-category-section" title="Communications integrations">
-        <p className="page-muted">
-          WhatsApp Business customer messaging, email and Gmail — operational communications, not social
-          publishing.
-        </p>
-        <div className="panel-actions">
-          <Link href="/integrations/whatsapp">
-            <Button size="sm" variant="secondary">
-              Open WhatsApp Business settings
-            </Button>
-          </Link>
-          <Link href="/integrations/email">
-            <Button size="sm" variant="secondary">
-              Email integrations
-            </Button>
-          </Link>
-        </div>
-      </Panel>
-    </>
+    <footer className="integration-overview-footer">
+      <p className="integration-overview-footer__label">More connections</p>
+      <div className="integration-overview-footer__links">
+        <Link href="/social-media-integrations" className="integration-overview-footer__link">
+          Business Profile
+        </Link>
+        <Link href="/integrations/whatsapp" className="integration-overview-footer__link">
+          WhatsApp settings
+        </Link>
+        <Link href="/integrations/email" className="integration-overview-footer__link">
+          Email settings
+        </Link>
+      </div>
+    </footer>
   );
 }
 
@@ -301,17 +281,24 @@ export function IntegrationsDashboardPage() {
                 aria-busy={isSyncingConnectors}
                 onClick={() => void handleRefreshConnectors()}
               >
-                {isSyncingConnectors ? 'Syncing…' : 'Sync now (recovery)'}
+                {isSyncingConnectors ? 'Please wait…' : 'Refresh connections'}
               </Button>
             ) : null}
           </div>
         }
       />
 
-      {isSyncingConnectors ? <p className="page-muted">Syncing integrations from Xero…</p> : null}
-      {error ? <p className="form-error">{error}</p> : null}
-      {actionSuccess ? <p className="form-success">{actionSuccess}</p> : null}
+      {isSyncingConnectors ? (
+        <p className="integration-overview-banner" role="status">
+          Updating connection status…
+        </p>
+      ) : null}
+      {error ? <p className="integration-overview-banner integration-overview-banner--error">{error}</p> : null}
+      {actionSuccess ? (
+        <p className="integration-overview-banner integration-overview-banner--success">{actionSuccess}</p>
+      ) : null}
 
+      <div className="integrations-overview-shell">
       {viewMode === 'advanced' && advancedOpen && monitoring ? (
         <section className="integrations-section">
           <div className="stat-grid">
@@ -365,22 +352,22 @@ export function IntegrationsDashboardPage() {
           )}
 
           {viewMode === 'simple' && hubDashboard.stats.connectedCount === 0 ? (
-            <Panel title="Get Started">
-              <p className="page-muted">
-                Connect Xero for accounting, Business WhatsApp for customer messaging, or Cartrack for fleet
-                tracking. AURA can guide you through each setup.
+            <div className="integration-overview-section__state integration-overview-section__state--hint">
+              <p className="integration-overview-section__state-title">Get started</p>
+              <p className="integration-overview-section__state-detail">
+                Connect Xero for accounting, WhatsApp for customer messaging, or Cartrack for fleet
+                visibility. AURA can guide you through each setup.
               </p>
-              <div className="panel-actions">
-                <Link href="/aura">
-                  <Button variant="secondary">Ask AURA For Help</Button>
-                </Link>
-              </div>
-            </Panel>
+              <Link href="/aura" className="integration-overview-footer__link integration-overview-footer__link--cta">
+                Ask AURA for help
+              </Link>
+            </div>
           ) : null}
         </>
       ) : null}
 
       <SocialConnectionsSection />
+      </div>
 
       <IntegrationCategoryLinks />
 

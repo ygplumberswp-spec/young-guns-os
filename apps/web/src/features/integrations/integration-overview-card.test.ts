@@ -10,6 +10,7 @@ import {
 import {
   INTEGRATION_OVERVIEW_PROVIDER_COPY,
   resolveIntegrationOverviewDescription,
+  resolveIntegrationOverviewDescriptionSafe,
 } from './integration-overview-copy';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -45,6 +46,15 @@ test('connected xero uses business-friendly connected copy', () => {
   assert.doesNotMatch(description, /verification and future/i);
 });
 
+test('safe overview copy never uses raw backend descriptions', () => {
+  const description = resolveIntegrationOverviewDescriptionSafe({
+    providerKey: 'xero',
+    status: 'connected',
+  });
+  assert.match(description, /invoices/i);
+  assert.doesNotMatch(description, /raw backend/i);
+});
+
 test('integrations overview uses unified IntegrationOverviewCard component', () => {
   const dashboardSource = readFileSync(
     join(here, '../../pages/integrations/IntegrationsDashboardPage.tsx'),
@@ -61,7 +71,12 @@ test('integrations overview uses unified IntegrationOverviewCard component', () 
   assert.match(cardSource, /IntegrationProviderMark/);
   assert.match(cardSource, /integration-overview-card/);
   assert.match(cssSource, /\.integration-overview-grid/);
+  assert.match(cssSource, /\.integrations-overview-shell/);
+  assert.match(cssSource, /\.integration-overview-footer/);
+  assert.match(cssSource, /\.integration-overview-banner/);
   assert.match(cssSource, /@media \(max-width: 640px\)/);
+  assert.match(cssSource, /@media \(min-width: 641px\) and \(max-width: 1024px\)/);
+  assert.match(dashboardSource, /Refresh connections/);
   assert.doesNotMatch(dashboardSource, /SimpleProviderRow/);
 });
 

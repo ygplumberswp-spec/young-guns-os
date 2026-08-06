@@ -25,8 +25,11 @@ export function IntegrationOverviewSection({
   const showEmpty = !loading && !error && emptyTitle && childCount === 0;
 
   return (
-    <section className="integrations-section integration-overview-section">
-      <h2 className="integrations-section__title integration-overview-section__title">{title}</h2>
+    <section
+      className="integrations-section integration-overview-section"
+      aria-busy={loading || undefined}
+    >
+      <h2 className="integration-overview-section__title">{title}</h2>
       {error ? (
         <div className="integration-overview-section__state integration-overview-section__state--error" role="alert">
           <p className="integration-overview-section__state-title">Unable to load integrations</p>

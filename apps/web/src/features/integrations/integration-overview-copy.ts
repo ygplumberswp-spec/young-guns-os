@@ -96,3 +96,14 @@ export function resolveIntegrationOverviewDescription(input: {
 
   return input.fallback?.replace(/\.$/, '') ?? 'Connect this service to extend TITAN for your business.';
 }
+
+/** Never surface raw registry/backend descriptions on the overview. */
+export function resolveIntegrationOverviewDescriptionSafe(input: {
+  providerKey: string;
+  status: EnterpriseConnectionStatus;
+}): string {
+  return resolveIntegrationOverviewDescription({
+    providerKey: input.providerKey,
+    status: input.status,
+  });
+}

@@ -6,7 +6,7 @@ import {
   socialEnterpriseActionUsesConnectFlow,
 } from './enterprise-connection-status';
 import { enterpriseConnectionActionLabel } from './EnterpriseConnectionStatusLine';
-import { resolveIntegrationOverviewDescription } from './integration-overview-copy';
+import { resolveIntegrationOverviewDescriptionSafe } from './integration-overview-copy';
 
 type SocialProviderOverviewCardProps = {
   card: SocialConnectionProviderCard;
@@ -31,7 +31,7 @@ export function SocialProviderOverviewCard({
       providerKey={card.provider}
       name={card.label}
       status={status}
-      description={resolveIntegrationOverviewDescription({
+      description={resolveIntegrationOverviewDescriptionSafe({
         providerKey: card.provider,
         status,
       })}

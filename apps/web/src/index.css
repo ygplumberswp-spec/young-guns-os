@@ -8453,6 +8453,84 @@ a:focus-visible {
   color: var(--titan-text);
 }
 
+/* Integrations overview — enterprise connection cards */
+.integrations-overview-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+.integration-overview-section.integrations-section {
+  gap: 0;
+}
+
+.integration-overview-banner {
+  margin: 0;
+  padding: 0.625rem 0.875rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: var(--titan-muted, #94a3b8);
+  background: rgba(148, 163, 184, 0.08);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.integration-overview-banner--error {
+  color: #fecaca;
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.28);
+}
+
+.integration-overview-banner--success {
+  color: #bbf7d0;
+  background: rgba(34, 197, 94, 0.08);
+  border-color: rgba(34, 197, 94, 0.28);
+}
+
+.integration-overview-footer {
+  margin-top: 0.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--titan-border);
+}
+
+.integration-overview-footer__label {
+  margin: 0 0 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--titan-muted, #94a3b8);
+}
+
+.integration-overview-footer__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.625rem 1.25rem;
+}
+
+.integration-overview-footer__link {
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--titan-accent, #38bdf8);
+  text-decoration: none;
+  border-radius: 0.25rem;
+}
+
+.integration-overview-footer__link:hover {
+  text-decoration: underline;
+}
+
+.integration-overview-footer__link:focus-visible {
+  outline: 2px solid rgba(56, 189, 248, 0.65);
+  outline-offset: 2px;
+}
+
+.integration-overview-footer__link--cta {
+  display: inline-block;
+  margin-top: 0.75rem;
+}
+
 .integration-overview-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr));
@@ -8460,13 +8538,18 @@ a:focus-visible {
   align-items: stretch;
 }
 
+.integration-overview-grid > .integration-overview-card {
+  height: 100%;
+}
+
 .integration-overview-section__title {
+  margin: 0 0 0.875rem;
   font-size: 0.8125rem;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--titan-muted, #94a3b8);
-  margin-bottom: 0.875rem;
+  line-height: 1.3;
 }
 
 .integration-overview-section__state {
@@ -8483,6 +8566,12 @@ a:focus-visible {
 
 .integration-overview-section__state--empty {
   border-style: dashed;
+}
+
+.integration-overview-section__state--hint {
+  border-style: solid;
+  border-color: rgba(148, 163, 184, 0.22);
+  background: rgba(148, 163, 184, 0.04);
 }
 
 .integration-overview-section__state-title {
@@ -8520,12 +8609,12 @@ a:focus-visible {
     transform 0.18s ease;
 }
 
-.integration-overview-card:hover {
+.integration-overview-card:hover:not(.integration-overview-card--loading) {
   border-color: rgba(148, 163, 184, 0.35);
   box-shadow: 0 4px 14px rgba(15, 23, 42, 0.12);
 }
 
-.integration-overview-card:focus-within {
+.integration-overview-card:focus-within:not(.integration-overview-card--loading) {
   border-color: rgba(56, 189, 248, 0.45);
   box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.12);
 }
@@ -8649,8 +8738,9 @@ a:focus-visible {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
-  min-height: 4.5rem;
+  gap: 0.3125rem;
+  min-height: 4.75rem;
+  justify-content: center;
 }
 
 .integration-overview-card__name {
@@ -8660,10 +8750,16 @@ a:focus-visible {
   line-height: 1.3;
   color: var(--titan-text, #f8fafc);
   letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+}
+
+.integration-overview-card__status {
+  margin: 0;
+  min-height: 1.0625rem;
 }
 
 .integration-overview-card__description {
-  margin: 0.125rem 0 0;
+  margin: 0.1875rem 0 0;
   font-size: 0.875rem;
   line-height: 1.45;
   color: var(--titan-muted, #94a3b8);
@@ -8671,7 +8767,7 @@ a:focus-visible {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  min-height: 2.6rem;
+  min-height: 2.575rem;
 }
 
 .integration-overview-card__action {
@@ -8693,8 +8789,12 @@ a:focus-visible {
 
 .integration-overview-card__button {
   min-width: 6.75rem;
+  width: 6.75rem;
   min-height: 2.25rem;
+  height: 2.25rem;
+  padding-inline: 0.875rem;
   justify-content: center;
+  white-space: nowrap;
 }
 
 .integration-enterprise-status {
@@ -8741,6 +8841,12 @@ a:focus-visible {
 
 .integration-overview-card--loading {
   pointer-events: none;
+  cursor: default;
+}
+
+.integration-overview-card--loading:hover {
+  border-color: var(--titan-border);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
 }
 
 .integration-overview-card__mark--skeleton,
@@ -8796,7 +8902,27 @@ a:focus-visible {
   }
 }
 
+@media (min-width: 641px) and (max-width: 1024px) {
+  .integration-overview-grid {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
+    gap: 0.8125rem;
+  }
+
+  .integration-overview-card {
+    padding: 1.0625rem 1.125rem;
+    gap: 0 0.875rem;
+  }
+}
+
 @media (max-width: 640px) {
+  .integrations-overview-shell {
+    gap: 1.5rem;
+  }
+
+  .integration-overview-grid {
+    gap: 0.75rem;
+  }
+
   .integration-overview-card {
     grid-template-columns: auto 1fr;
     grid-template-areas:
@@ -8805,6 +8931,15 @@ a:focus-visible {
     gap: 0.75rem 0.875rem;
     min-height: 0;
     padding: 1rem;
+  }
+
+  .integration-overview-card__body {
+    min-height: 0;
+    justify-content: flex-start;
+  }
+
+  .integration-overview-card__description {
+    min-height: 0;
   }
 
   .integration-overview-card__action {
@@ -8818,6 +8953,12 @@ a:focus-visible {
 
   .integration-overview-card__button {
     min-width: 0;
+    width: 100%;
+  }
+
+  .integration-overview-footer__links {
+    flex-direction: column;
+    gap: 0.5rem;
   }
 }
 

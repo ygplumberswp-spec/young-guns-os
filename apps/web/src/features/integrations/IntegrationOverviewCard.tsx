@@ -1,6 +1,9 @@
 import { Link } from 'wouter';
 import { Button } from '@titan/ui';
-import { EnterpriseConnectionStatusLine, enterpriseConnectionActionLabel } from './EnterpriseConnectionStatusLine';
+import {
+  EnterpriseConnectionStatusLine,
+  enterpriseConnectionActionLabel,
+} from './EnterpriseConnectionStatusLine';
 import type { EnterpriseConnectionStatus } from './enterprise-connection-status';
 import { IntegrationProviderMark } from './IntegrationProviderMark';
 
@@ -38,9 +41,10 @@ export function IntegrationOverviewCard({
       className="integration-overview-card__button"
       disabled={disabled}
       aria-busy={actionBusy}
+      aria-disabled={disabled}
       onClick={onAction}
     >
-      {actionBusy ? 'Working…' : label}
+      {actionBusy ? 'Please wait…' : label}
     </Button>
   );
 
@@ -53,12 +57,16 @@ export function IntegrationOverviewCard({
       <IntegrationProviderMark providerKey={providerKey} label={name} />
       <div className="integration-overview-card__body">
         <h3 className="integration-overview-card__name">{name}</h3>
-        <EnterpriseConnectionStatusLine status={status} />
+        <EnterpriseConnectionStatusLine status={status} className="integration-overview-card__status" />
         <p className="integration-overview-card__description">{description}</p>
       </div>
       <div className="integration-overview-card__action">
         {showLink ? (
-          <Link href={actionHref!} className="integration-overview-card__action-link">
+          <Link
+            href={actionHref!}
+            className="integration-overview-card__action-link"
+            aria-label={`${label} ${name}`}
+          >
             {actionButton}
           </Link>
         ) : (
