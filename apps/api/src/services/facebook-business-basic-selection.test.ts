@@ -17,16 +17,25 @@ const apiClientSource = readFileSync(
 );
 const instagramSource = readFileSync(join(here, 'social-connection.service.ts'), 'utf8');
 
-describe('Facebook basic Page selection without pages_read_engagement (J-6.7F11)', () => {
-  it('selectPage does not call Page-object or Page-token /me verification during basic selection', () => {
+describe('Facebook basic Page selection without pages_read_engagement (J-6.7F11 / J-6.7F12)', () => {
+  it('selectPage does not call verifyPageTokenViaMe or direct lookup during selection', () => {
     const selectBlock = serviceSource.slice(
       serviceSource.indexOf('async selectPage('),
       serviceSource.indexOf('private isDiscoverySessionConsumed'),
     );
     assert.equal(selectBlock.includes('verifyPageTokenViaMe'), false);
-    assert.equal(selectBlock.includes('verifyPage('), false);
     assert.equal(selectBlock.includes('lookupPageDirect'), false);
     assert.equal(selectBlock.includes('assertFacebookPageIdentityAgreement'), false);
+  });
+
+  it('selectPage verifies Page details only after commit when pages_read_engagement is granted (J-6.7F12)', () => {
+    const selectBlock = serviceSource.slice(
+      serviceSource.indexOf('async selectPage('),
+      serviceSource.indexOf('private isDiscoverySessionConsumed'),
+    );
+    assert.ok(selectBlock.includes('hasFacebookPageReadEngagement'));
+    assert.ok(selectBlock.includes('graph.verifyPage(page.id, page.accessToken)'));
+    assert.ok(selectBlock.includes('pageDetailsVerificationPending: !canVerifyPageDetails'));
   });
 
   it('selectPage requires encrypted discovery session token and resolves server-side row', () => {
@@ -39,12 +48,12 @@ describe('Facebook basic Page selection without pages_read_engagement (J-6.7F11)
     assert.ok(pageSource.includes('pageDiscovery?.discoverySessionToken'));
   });
 
-  it('basic selection stores provider row atomically and defers Page-details verification', () => {
+  it('basic selection stores provider row atomically and defers verification without read permission', () => {
     const selectBlock = serviceSource.slice(
       serviceSource.indexOf('async selectPage('),
       serviceSource.indexOf('private isDiscoverySessionConsumed'),
     );
-    assert.ok(selectBlock.includes('pageDetailsVerificationPending: true'));
+    assert.ok(selectBlock.includes('pageDetailsVerificationPending: !canVerifyPageDetails'));
     assert.ok(selectBlock.includes('FACEBOOK_PAGE_DETAILS_VERIFICATION_PENDING_MESSAGE'));
     assert.ok(selectBlock.includes('await this.db.transaction'));
     assert.ok(selectBlock.includes('providerVerifiedPageId: page.id'));

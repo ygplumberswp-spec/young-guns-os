@@ -80,6 +80,17 @@ function stateClass(state: FacebookConnectionView['state']): string {
   return state === 'connected' ? 'titan-panel--success' : 'titan-panel--warning';
 }
 
+/** Clears Meta OAuth return query params so post-selection effects do not reload discovery. */
+function clearFacebookOAuthReturnParams() {
+  const params = new URLSearchParams(window.location.search);
+  if (!params.has('facebook') && !params.has('reason')) return;
+  params.delete('facebook');
+  params.delete('reason');
+  const query = params.toString();
+  const nextUrl = `${window.location.pathname}${query ? `?${query}` : ''}${window.location.hash}`;
+  window.history.replaceState(null, '', nextUrl);
+}
+
 export function FacebookBusinessPage() {
   const { accessToken, user } = useAuth();
   const [tab, setTab] = useState<Tab>('connection');
@@ -101,6 +112,7 @@ export function FacebookBusinessPage() {
   const [pageSelectionError, setPageSelectionError] = useState<string | null>(null);
   const pagesLoadInFlight = useRef(false);
   const pageSelectInFlight = useRef(false);
+  const oauthPagesAutoLoadDone = useRef(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -307,11 +319,14 @@ export function FacebookBusinessPage() {
       accessToken &&
       canManage &&
       !pageDiscovery &&
-      !pagesLoadInFlight.current
+      !pagesLoadInFlight.current &&
+      !oauthPagesAutoLoadDone.current &&
+      !connection?.pageId
     ) {
+      oauthPagesAutoLoadDone.current = true;
       void handleLoadPages();
     }
-  }, [accessToken, canManage, pageDiscovery]);
+  }, [accessToken, canManage, pageDiscovery, connection?.pageId]);
 
   async function handleSelectPage(pageId: string) {
     if (!accessToken || !canManage) {
@@ -329,13 +344,12 @@ export function FacebookBusinessPage() {
 
     const discoverySessionToken = pageDiscovery?.discoverySessionToken ?? null;
     if (!discoverySessionToken) {
-      setPageSelectionError(
-        'Page discovery has expired or was not loaded from Meta. Reload Pages and try again.',
-      );
+      setPageSelectionError('Page selection expired. Choose Page again.');
       return;
     }
 
     if (pageSelectInFlight.current) {
+      setPageSelectionError('Page selection is already in progress. Please wait.');
       return;
     }
 
@@ -348,6 +362,8 @@ export function FacebookBusinessPage() {
 
     try {
       const next = await selectFacebookPage(accessToken, normalizedPageId, discoverySessionToken);
+      clearFacebookOAuthReturnParams();
+      oauthPagesAutoLoadDone.current = true;
       setConnection(next);
       setPageDiscovery(null);
       setPageSelectionError(null);
@@ -360,7 +376,11 @@ export function FacebookBusinessPage() {
       } else {
         setSuccess(`Page selected — ${next.stateLabel}. ${next.detail}`);
       }
-      await load();
+      try {
+        await load();
+      } catch {
+        // Selection succeeded; a secondary refresh failure must not hide success.
+      }
     } catch (err) {
       setPageSelectionError(
         err instanceof FacebookBusinessApiClientError
@@ -581,6 +601,13 @@ export function FacebookBusinessPage() {
       {success ? (
         <Panel title="Done" className="titan-panel--success">
           {success}
+        </Panel>
+      ) : null}
+      {pageSelectionError ? (
+        <Panel title="Page selection failed" className="titan-panel--danger">
+          <p className="form-error" role="alert">
+            {pageSelectionError}
+          </p>
         </Panel>
       ) : null}
 
@@ -887,6 +914,8 @@ function ConnectionTab({
       (connection.state === 'partial' &&
         connection.hasStoredCredentials &&
         !connection.grantedPermissions.includes('business_management')));
+  const showPageDiscovery =
+    Boolean(pageDiscovery) && (pageSelectionMismatch || !connection.pageId);
 
   return (
     <div className="space-y-4">
@@ -1096,7 +1125,7 @@ function ConnectionTab({
             </div>
           ) : null}
 
-          {(pageSelectionMismatch || !isConnectedLimited) && pageDiscovery ? (
+          {showPageDiscovery && pageDiscovery ? (
             <div className="space-y-3">
               <p className="page-muted">
                 {FACEBOOK_PAGE_DISCOVERY_STATUS_LABELS[pageDiscovery.status]}: {pageDiscovery.detail}

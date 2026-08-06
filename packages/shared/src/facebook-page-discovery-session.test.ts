@@ -59,7 +59,7 @@ describe('facebook page discovery session (J-6.7F11)', () => {
       now: NOW,
     });
     assert.equal(result.ok, false);
-    if (!result.ok) assert.match(result.reason, /expired/i);
+    if (!result.ok) assert.equal(result.reason, 'Page selection expired. Choose Page again.');
   });
 
   it('resolves selectable row without Page-object verification', () => {

@@ -60,7 +60,7 @@ export function assertDiscoverySessionBinding(input: {
     return { ok: false, reason: 'That Page discovery session belongs to a different user.' };
   }
   if (new Date(input.payload.expiresAt).getTime() <= now.getTime()) {
-    return { ok: false, reason: 'That Page discovery session has expired. Reload Pages from Meta and try again.' };
+    return { ok: false, reason: 'Page selection expired. Choose Page again.' };
   }
   if (input.payload.tokenValid === false) {
     return { ok: false, reason: 'The Facebook user token is no longer valid. Reconnect Facebook and try again.' };

@@ -1347,7 +1347,7 @@ export class FacebookBusinessService {
     } catch {
       throw new FacebookBusinessError(
         'INVALID_STATE',
-        'That Page discovery session is invalid. Reload Pages from Meta and try again.',
+        'Page selection expired. Choose Page again.',
       );
     }
 
@@ -1361,10 +1361,14 @@ export class FacebookBusinessService {
     }
 
     const priorMetadata = row.metadata as Record<string, unknown> | null;
+    const normalizedPageId = pageId.trim();
     if (this.isDiscoverySessionConsumed(priorMetadata, sessionPayload.sessionId)) {
+      if (row.pageId === normalizedPageId && normalizedPageId) {
+        return this.getConnection(actor);
+      }
       throw new FacebookBusinessError(
         'INVALID_STATE',
-        'That Page discovery session was already used. Reload Pages from Meta and try again.',
+        'Page selection expired. Choose Page again.',
       );
     }
 
@@ -1421,6 +1425,7 @@ export class FacebookBusinessService {
       priorMetadata,
     );
     const pageSelectedAt = new Date().toISOString();
+    const canVerifyPageDetails = hasFacebookPageReadEngagement(row.grantedPermissions ?? []);
     const consumedDiscoverySessionIds = this.markDiscoverySessionConsumed(
       priorMetadata,
       sessionPayload.sessionId,
@@ -1429,7 +1434,7 @@ export class FacebookBusinessService {
       ...(verificationUpdate.metadata ?? priorMetadata ?? {}),
       pageSelectedAt,
       pageIdentityVerified: false,
-      pageDetailsVerificationPending: true,
+      pageDetailsVerificationPending: !canVerifyPageDetails,
       providerVerifiedPageId: page.id,
       providerVerifiedPageName: page.name,
       providerVerifiedFromDiscoverySession: sanitizeFacebookPageDiscoverySession(sessionPayload),
@@ -1492,6 +1497,28 @@ export class FacebookBusinessService {
         );
       }
     });
+
+    if (canVerifyPageDetails) {
+      const graph = this.graphClientFactory(config);
+      const verification = await this.probe(() =>
+        graph.verifyPage(page.id, page.accessToken),
+      );
+      await this.db
+        .update(fbConnections)
+        .set({
+          ...this.verificationColumns(verification.outcome, nextMetadata),
+          pageName: verification.value?.name ?? page.name,
+          pageUrl: verification.value?.link ?? null,
+          pageCategory: verification.value?.category ?? page.category,
+          metadata: {
+            ...nextMetadata,
+            pageDetailsVerificationPending: !verification.outcome.ok,
+            pageIdentityVerified: verification.outcome.ok,
+          },
+          updatedAt: new Date(),
+        })
+        .where(eq(fbConnections.id, row.id));
+    }
 
     const refreshed = await this.loadConnection(actor.companyId);
     const state = await this.resolveState(refreshed);

@@ -69,7 +69,7 @@ describe('Facebook Page selection path (J-6.7F9 / J-6.7F10 / J-6.7F11)', () => {
     assert.ok(serviceSource.includes('buildReconnectWizardAuthorizeUrl'));
   });
 
-  it('basic selection uses server discovery session — no browser Page tokens (J-6.7F11)', () => {
+  it('basic selection uses server discovery session — verify runs after commit when read granted (J-6.7F12)', () => {
     assert.ok(pageSource.includes('pageDiscovery?.discoverySessionToken'));
     assert.ok(apiClientSource.includes('discoverySessionToken'));
     assert.ok(routeSource.includes('discoverySessionToken'));
@@ -78,7 +78,8 @@ describe('Facebook Page selection path (J-6.7F9 / J-6.7F10 / J-6.7F11)', () => {
       serviceSource.indexOf('private isDiscoverySessionConsumed'),
     );
     assert.equal(selectBlock.includes('verifyPageTokenViaMe'), false);
-    assert.equal(selectBlock.includes('verifyPage('), false);
+    assert.ok(selectBlock.includes('hasFacebookPageReadEngagement'));
+    assert.ok(selectBlock.includes('graph.verifyPage(page.id, page.accessToken)'));
   });
 
   it('API client posts authenticated pageId and discoverySessionToken only', () => {
@@ -103,12 +104,25 @@ describe('Facebook Page selection path (J-6.7F9 / J-6.7F10 / J-6.7F11)', () => {
     assert.ok(serviceSource.includes('encryptFacebookCredentials'));
   });
 
-  it('success path refreshes connection and clears discovery panel', () => {
+  it('success path refreshes connection, clears discovery panel, and clears OAuth return params', () => {
     assert.ok(pageSource.includes('setConnection(next)'));
     assert.ok(pageSource.includes('setPageDiscovery(null)'));
+    assert.ok(pageSource.includes('clearFacebookOAuthReturnParams()'));
+    assert.ok(pageSource.includes('oauthPagesAutoLoadDone.current = true'));
     assert.ok(pageSource.includes('await load()'));
     assert.ok(pageSource.includes("next.state === 'connected_limited'"));
     assert.ok(pageSource.includes('Grant Page read access when you are ready'));
+    assert.ok(pageSource.includes('showPageDiscovery'));
+  });
+
+  it('OAuth auto-load does not rerun after page is already selected (J-6.7F12)', () => {
+    assert.ok(pageSource.includes('oauthPagesAutoLoadDone'));
+    assert.ok(pageSource.includes('!connection?.pageId'));
+  });
+
+  it('page-level alert surfaces selection errors outside discovery panel (J-6.7F12)', () => {
+    assert.ok(pageSource.includes('Page selection failed'));
+    assert.ok(pageSource.includes('pageSelectionError ?'));
   });
 
   it('failure path preserves credentials and shows sanitized error', () => {

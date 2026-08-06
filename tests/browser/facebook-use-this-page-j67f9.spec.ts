@@ -54,7 +54,17 @@ test.describe('Facebook Use this Page selection regression (J-6.7F9)', () => {
     await expect(page.getByRole('alert')).toHaveText('Could not select that Page.');
   });
 
-  test('atomic selectPage transaction remains on API service', async () => {
+  test('OAuth return params are cleared after selection to prevent silent rediscovery (J-6.7F12)', async () => {
+    const pageSource = readFileSync(
+      join(repoRoot, 'apps/web/src/pages/facebook-business/FacebookBusinessPage.tsx'),
+      'utf8',
+    );
+    expect(pageSource).toMatch(/clearFacebookOAuthReturnParams/);
+    expect(pageSource).toMatch(/oauthPagesAutoLoadDone/);
+    expect(pageSource).toMatch(/showPageDiscovery/);
+  });
+
+  test('selectPage idempotency and post-commit verification remain on API service', async () => {
     const serviceSource = readFileSync(
       join(repoRoot, 'apps/api/src/services/facebook-business.service.ts'),
       'utf8',
@@ -63,6 +73,8 @@ test.describe('Facebook Use this Page selection regression (J-6.7F9)', () => {
     expect(serviceSource).toMatch(/resolveSelectableRowFromDiscoverySession/);
     expect(serviceSource).toMatch(/assertProviderPageRowMatchesSelection/);
     expect(serviceSource).toMatch(/await this\.db\.transaction/);
-    expect(serviceSource).toMatch(/startReconnectWizardOAuth/);
+    expect(serviceSource).toMatch(/Page selection expired\. Choose Page again\./);
+    expect(serviceSource).toMatch(/row\.pageId === normalizedPageId/);
+    expect(serviceSource).toMatch(/graph\.verifyPage\(page\.id, page\.accessToken\)/);
   });
 });
