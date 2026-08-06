@@ -29,6 +29,7 @@ import type { XeroGate2ReadonlyProofService } from '../services/xero-gate2-reado
 import { XeroGate2ReadonlyProofError } from '../services/xero-gate2-readonly-proof.service.js';
 import type { XeroGate5bPaymentObservationService } from '../services/xero-gate5b-payment-observation.service.js';
 import { XeroGate5bPaymentObservationError } from '../services/xero-gate5b-payment-observation.service.js';
+import { XeroError } from '../lib/xero.client.js';
 import type { XeroGate3ControlledQuoteService } from '../services/xero-gate3-controlled-quote.service.js';
 import { XeroGate3ControlledQuoteError } from '../services/xero-gate3-controlled-quote.service.js';
 import type { XeroGate4ControlledInvoiceService } from '../services/xero-gate4-controlled-invoice.service.js';
@@ -2219,6 +2220,28 @@ function handleXeroOAuthError(res: import('express').Response, error: unknown) {
   if (error instanceof BusinessIntegrationsError) {
     handleBusinessIntegrationsError(res, error);
     return;
+  }
+
+  if (error instanceof XeroError) {
+    if (error.code === 'RATE_LIMIT' || error.code === 'TIMEOUT') {
+      res.status(503).json({
+        error: {
+          code: 'PROVIDER_UNAVAILABLE',
+          message: error.message,
+        },
+      });
+      return;
+    }
+
+    if (error.code === 'AUTH_FAILED') {
+      res.status(503).json({
+        error: {
+          code: 'PROVIDER_AUTH_FAILED',
+          message: error.message,
+        },
+      });
+      return;
+    }
   }
 
   throw error;

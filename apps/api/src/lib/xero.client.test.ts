@@ -21,9 +21,15 @@ test('provider read timeout default is 20 seconds', () => {
   assert.equal(XERO_REQUEST_TIMEOUT_MS, 20_000);
 });
 
-test('rate-limit read path allows one retry up to 60 seconds', () => {
+test('resolveRateLimitDelayMs parses HTTP-date Retry-After', () => {
+  const future = new Date(Date.now() + 30_000).toUTCString();
+  const delay = resolveRateLimitDelayMs(future, 1);
+  assert.ok(delay >= 25_000 && delay <= 35_000);
+});
+
+test('rate-limit read path allows one retry up to 120 seconds', () => {
   assert.equal(XERO_RATE_LIMIT_READ_MAX_RETRIES, 1);
-  assert.equal(XERO_RATE_LIMIT_READ_MAX_DELAY_MS, 60_000);
+  assert.equal(XERO_RATE_LIMIT_READ_MAX_DELAY_MS, 120_000);
   const retryAfterDelay = resolveRateLimitDelayMs('45', 1);
   assert.equal(retryAfterDelay, 45_000);
   assert.ok(retryAfterDelay <= XERO_RATE_LIMIT_READ_MAX_DELAY_MS);

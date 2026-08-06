@@ -154,9 +154,9 @@ const API_BASE_URL = 'https://api.xero.com/api.xro/2.0';
 export const XERO_REQUEST_TIMEOUT_MS = 20_000;
 export const XERO_PAGE_SIZE = 100;
 export const XERO_RATE_LIMIT_MAX_RETRIES = 5;
-/** At most one rate-limit retry per provider request; delay honours Retry-After up to 60s. */
+/** At most one rate-limit retry per provider request; delay honours Retry-After up to 120s. */
 export const XERO_RATE_LIMIT_READ_MAX_RETRIES = 1;
-export const XERO_RATE_LIMIT_READ_MAX_DELAY_MS = 60_000;
+export const XERO_RATE_LIMIT_READ_MAX_DELAY_MS = 120_000;
 export const XERO_RATE_LIMIT_RETRY_BUDGET_MS = 30_000;
 export const XERO_RATE_LIMIT_BASE_DELAY_MS = 2_000;
 /**
@@ -177,10 +177,18 @@ export function resolveRateLimitDelayMs(
   retryAfterHeader: string | null | undefined,
   attempt: number,
 ): number {
-  const parsed = Number.parseInt((retryAfterHeader ?? '').trim(), 10);
+  const trimmed = (retryAfterHeader ?? '').trim();
 
-  if (Number.isFinite(parsed) && parsed > 0) {
-    return Math.min(parsed * 1_000, 5 * 60_000);
+  if (trimmed) {
+    const parsedSeconds = Number.parseInt(trimmed, 10);
+    if (Number.isFinite(parsedSeconds) && parsedSeconds > 0) {
+      return Math.min(parsedSeconds * 1_000, 5 * 60_000);
+    }
+
+    const retryAt = Date.parse(trimmed);
+    if (Number.isFinite(retryAt)) {
+      return Math.min(Math.max(retryAt - Date.now(), 0), 5 * 60_000);
+    }
   }
 
   return XERO_RATE_LIMIT_BASE_DELAY_MS * 2 ** Math.max(0, attempt - 1);

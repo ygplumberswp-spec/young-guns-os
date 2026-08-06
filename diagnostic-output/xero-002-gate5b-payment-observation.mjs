@@ -355,16 +355,27 @@ async function main() {
     const { token, source } = await ensureGate5bOwnerToken(sql);
     report.authSource = source;
 
-    const orgTest = await api('/api/v1/integrations/xero/test', { method: 'POST', token, timeoutMs: 15000 });
-    report.precheck.orgTestOk =
-      orgTest.status === 200 && orgTest.json?.data?.result?.organisationName === 'Young Guns Plumbing';
+    const liveOnly = process.env.GATE5B_LIVE_ONLY === '1';
+
+    if (!liveOnly) {
+      const orgTest = await api('/api/v1/integrations/xero/test', {
+        method: 'POST',
+        token,
+        timeoutMs: 15000,
+      });
+      report.precheck.orgTestOk =
+        orgTest.status === 200 && orgTest.json?.data?.result?.organisationName === 'Young Guns Plumbing';
+    } else {
+      report.precheck.orgTestOk = null;
+      report.precheck.orgTestSkipped = 'GATE5B_LIVE_ONLY';
+    }
 
     let observation;
     try {
       observation = await api('/api/v1/integrations/xero/gate5b-payment-observation', {
         method: 'POST',
         token,
-        timeoutMs: 120_000,
+        timeoutMs: liveOnly ? 180_000 : 120_000,
         body: {
           invoiceId: selection.selected.invoiceId,
           runTargetedRefresh: true,
@@ -383,7 +394,6 @@ async function main() {
       observation.json?.error?.code === 'NOT_FOUND' ||
       observation.json?.error?.code === 'REQUEST_ABORTED';
 
-    const liveOnly = process.env.GATE5B_LIVE_ONLY === '1';
     if (gate5bUnavailable && liveOnly) {
       report.verdict = observation.status === 0 ? 'FAIL' : 'BLOCKED';
       report.blocker =
