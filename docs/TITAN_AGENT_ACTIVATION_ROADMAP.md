@@ -1,233 +1,250 @@
 # TITAN Agent Activation Roadmap
 
-**Document type:** Permanent activation plan — documentation only (no activation performed)  
+**Document ID:** AGENT-004  
+**Document type:** Permanent activation plan — documentation only (no activation performed by this document)  
 **Generated (UTC):** 2026-08-06  
-**Register:** 307 agents — [TITAN_MASTER_AGENT_REGISTER.md](./TITAN_MASTER_AGENT_REGISTER.md)  
-**Current state:** 0 Verified complete; 21 Partial; 3 Provider-blocked; 283 Missing  
+**Register:** [TITAN_MASTER_AGENT_REGISTER.md](./TITAN_MASTER_AGENT_REGISTER.md) (191 minimum roles; extensible)  
+**Governance:** [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md)  
+**Capability matrix:** [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md)  
 
 ---
 
 ## Rules
 
-- **No agent is activated by this document.** Activation requires tools, RBAC, tests, and Owner approval per phase gate.
-- Phases are sequential gates; parallel work within a phase is allowed when dependencies are met.
-- Facebook advanced capabilities are **not** a current development blocker (basic connection complete on staging).
+- **No agent is activated by this document alone.** Activation requires tools, RBAC, tests, audit wiring, and Owner approval per phase gate.
+- Phases are sequential gates; parallel preparation within a phase is allowed when dependencies are met.
+- **Do not invent milestone numbers** beyond Phase A–F defined here.
+- Facebook advanced capabilities and webhook live proof remain **pending Owner deploy** — not a blocker for Phase A–B documentation and read-only agents.
+- **XERO-002 remains parked** — Xero execution agents stay **Planned** until Owner reopens.
 
 ---
 
-## Phase 1 — Agent registry, tools, permissions, approvals and audit foundation
+## Young Guns Plumbing priorities
 
-| Deliverable | Agents / artifacts |
-|-------------|-------------------|
-| Master register (this programme) | All 307 IDs documented |
-| Capability matrix + governance standard | Field templates locked |
-| Tool registry wiring audit | Map `AGENT_REGISTRY` suggestedToolKeys → executable handlers |
-| RBAC matrix per agent class | Owner/Admin/Office/Technician boundaries |
-| Approval workflow schema | Draft → approve → execute pattern |
-| Audit event schema | Learning + action audit |
-| Acceptance register linkage | Agent rows ↔ requirement IDs |
+Activation order reflects real operational value:
 
-**Exit gate:** Owner approves register + governance; no fake statuses.
+1. Finance and Xero truth  
+2. Cashflow and profitability  
+3. Leads and follow-up  
+4. Scheduling and dispatch  
+5. Job completion  
+6. Customer communications  
+7. Recurring maintenance  
+8. Fleet and job timing  
+9. Documents and compliance  
+10. Inventory, warehouse and tools  
+11. Marketing with Owner approval  
+12. Audit and system health  
 
 ---
 
-## Phase 2 — Executive and Owner briefing agents
+## Phase A — Foundation and governance
+
+| Item | Deliverable |
+|------|-------------|
+| Register | AGENT-001 master register approved by Owner |
+| Matrix | AGENT-002 capability matrix maintained |
+| Governance | AGENT-003 learning standard adopted |
+| Integration standard | INT-UNIVERSAL-001 in integration register |
+| Tool registry audit | Map agent tools → executable handlers |
+| RBAC per agent class | Owner / Admin / Office / Technician boundaries |
+| Audit schema | Agent action + approval + learning version events |
+
+**Entry criteria:** Documentation complete; no false **Active** statuses.
+
+**Required integrations:** None for client execution.
+
+**Required RBAC:** Existing TITAN role matrix documented.
+
+**Required audit proof:** Acceptance register rows AGENT-001–004, INT-UNIVERSAL-001.
+
+**Required test coverage:** RBAC and tenant-isolation suites remain green.
+
+**Owner approval point:** Owner approves register and governance standard.
+
+**Rollback criteria:** Pause LRN activations; revert to prior register version in git.
+
+**Exit criteria:** Owner sign-off on Phase A; AUD-001..014 remain **Defined** but framework approved.
+
+---
+
+## Phase B — Read-only insight agents
 
 | Priority agents | Register IDs |
-|-----------------|--------------|
-| AURA Central Intelligence | AURA-001 |
-| Executive Command | EXEC-007 |
-| Daily Owner Briefing | EXEC-008 |
-| Business Strategist | EXEC-010 |
-| Risk and Opportunity | EXEC-016 |
+|---------------|--------------|
+| AURA coordinator | AURA-001 |
+| Executive / business health | EXEC-001, EXEC-007, EXEC-008, EXEC-009 |
+| Financial read models | FIN-004, FIN-006, FIN-009 |
+| Ops visibility | OPS-001, OPS-005, OPS-006 |
+| CRM pipeline read | SAL-002, SAL-003 |
+| System health | SWD-015, AUD-013 |
 
-**Exit gate:** Owner receives daily briefing from live tenant data with approval-gated actions only.
+**Entry criteria:** Phase A exit; staging API reachable.
+
+**Required integrations:** Connected read-only where applicable (Xero read, Cartrack read).
+
+**Required RBAC:** Owner + Admin read paths verified.
+
+**Required audit proof:** Read actions logged.
+
+**Required test coverage:** Agent read tool unit tests; tenant isolation.
+
+**Owner approval point:** Enable **Shadow mode** for listed agents.
+
+**Rollback criteria:** Set agents to **Paused**; disable tool keys.
+
+**Exit criteria:** Owner receives accurate read-only briefings from live tenant data.
 
 ---
 
-## Phase 3 — Finance and accounting
+## Phase C — Draft and recommendation agents
 
 | Priority agents | Register IDs |
-|-----------------|--------------|
-| Financial Controller | FIN-004 |
-| Xero Reconciliation | FIN-006 |
-| Cash-Flow | FIN-007 |
-| Job Costing and Margin | FIN-013 |
-| Invoice Follow-Up | FIN-010 |
+|---------------|--------------|
+| Quote / proposal drafts | SAL-007, PLM-011, PLM-014 |
+| Marketing content drafts | MKT-011, MKT-005 (Facebook — draft only) |
+| Schedule recommendations | OPS-003, OPS-002 |
+| Cashflow recommendations | FIN-006, FIN-009 |
+| Customer reply drafts | COM-001, COM-002 |
 
-**Exit gate:** Quote → invoice → Xero chain assisted (not replacing human sign-off).
+**Entry criteria:** Phase B exit; Draft → Approve → Execute pattern wired.
+
+**Required integrations:** Facebook Connected (staging); WhatsApp Partial read.
+
+**Required RBAC:** Office Staff draft; Owner approve.
+
+**Required audit proof:** Draft ID + approver ID on every outbound path.
+
+**Required test coverage:** Draft-only tests; no Execute without approval mock.
+
+**Owner approval point:** Promote agents from Shadow to Supervised.
+
+**Rollback criteria:** Revert to Shadow; purge pending drafts if policy requires.
+
+**Exit criteria:** Owner approves quality of drafts in supervised review UI.
 
 ---
 
-## Phase 4 — Operations and dispatch
+## Phase D — Supervised operational agents
 
 | Priority agents | Register IDs |
-|-----------------|--------------|
-| Operations Manager | OPS-001 |
-| Dispatch Coordinator | OPS-002 |
-| Scheduling | OPS-003 |
-| Field Execution | OPS-010 |
-| Job Completion | OPS-012 |
+|---------------|--------------|
+| Dispatch and scheduling execute | OPS-002, OPS-003, OPS-004 |
+| Job completion chain | OPS-016, OPS-017 |
+| AR follow-up (no legal threat) | FIN-016, SAL-008 |
+| WhatsApp supervised replies | COM-002, COM-006 |
+| Inventory PO draft-to-approved | INV-006, INV-005 |
+| Recurring maintenance | OPS-012, OPS-013 |
+
+**Entry criteria:** Phase C exit; integration Connected states truthful.
+
+**Required integrations:** Xero read (execute remains gated); Cartrack; Calendar; Maps.
+
+**Required RBAC:** Per capability matrix Execute rows.
+
+**Required audit proof:** Execute receipts stored; rollback tested on one workflow.
+
+**Required test coverage:** End-to-end supervised Execute tests on staging.
+
+**Owner approval point:** Owner enables **Supervised** per agent.
+
+**Rollback criteria:** Kill switch → **Paused**; manual completion of in-flight jobs.
+
+**Exit criteria:** One full operational day supervised without unauthorised Execute.
 
 ---
 
-## Phase 5 — Communications and receptionist
+## Phase E — Controlled execution agents
 
 | Priority agents | Register IDs |
-|-----------------|--------------|
-| AI Phone Receptionist | COM-001 |
-| WhatsApp Business | COM-004 |
-| Unified Communications | COM-008 |
-| Escalation Routing | COM-016 |
+|---------------|--------------|
+| Owner-approved Facebook publish | MKT-005 |
+| Approved invoice push (Xero) | FIN-014 — **blocked until XERO-002 reopened** |
+| Yoco reconciliation assist | FIN-015 |
+| Review requests post-job | COM-011 |
+| AUD continuous reconciliation | AUD-014 |
 
-**Note:** Facebook Messenger (COM-007) remains Provider-blocked until Meta grants messaging scopes.
+**Entry criteria:** Phase D exit; Provider integrations **Connected** with evidence.
 
----
+**Required integrations:** Facebook publish + webhook proof; Xero when un-parked; Yoco.
 
-## Phase 6 — Sales and customer experience
+**Required RBAC:** Owner L2 approval on all Execute.
 
-| Priority agents | Register IDs |
-|-----------------|--------------|
-| Lead Qualification | CRM-003 |
-| Sales Follow-Up | CRM-004 |
-| Customer Success | CRM-010 |
-| Review and Referral | CRM-018 |
+**Required audit proof:** Provider receipt + approval record immutable.
 
----
+**Required test coverage:** Execute integration tests; regression suite.
 
-## Phase 7 — Marketing, trend and creative production
+**Owner approval point:** Per-agent **Active** promotion.
 
-| Priority agents | Register IDs |
-|-----------------|--------------|
-| Marketing Director | MKT-001 |
-| Content Approval Coordinator | MKT-020 |
-| Creative Director | CRE-001 |
-| Brand Consistency Reviewer | CRE-011 |
-| Video Quality Controller | VID-017 |
+**Rollback criteria:** Pause agent; provider disconnect if required; financial reversal manual.
 
-**Note:** Publishing and Scheduling (MKT-021) Provider-blocked until Meta App Review.
+**Exit criteria:** Owner confirms value outweighs risk for each Active agent.
 
 ---
 
-## Phase 8 — QS, estimating and commercial intelligence
+## Phase F — Multi-industry and SaaS expansion
 
-| Workflow | Agents |
-|----------|--------|
-| Full estimating chain | QS-001 through QS-012 |
-| Supplier pricing | QS-013, INV-005 |
-| Quote quality | QS-012 |
+| Scope | Description |
+|-------|-------------|
+| Industry packs | Additional PLM/SWD agents per vertical |
+| SaaS tenants | Tenant-isolated agent packs; no cross-tenant learning |
+| Partner integrations | New providers via INT-UNIVERSAL-001 wizard only |
+| Research expansion | RSH agents for new markets |
 
-**Locked workflow:** Upload plan → scale → measure → BOQ → price → margin → options → QA → Owner approval.
+**Entry criteria:** Phase E stable on Young Guns for 30 days (Owner-defined).
 
----
+**Required integrations:** Platform-managed provider onboarding.
 
-## Phase 9 — HR, legal, safety and compliance
+**Required RBAC:** Multi-tenant isolation proofs.
 
-| Priority agents | Register IDs |
-|-----------------|--------------|
-| HR Manager | HR-001 |
-| SOP Agent | HR-017 |
-| Legal Counsel | LEG-001 |
-| POPIA and Privacy Officer | LEG-005 |
-| Health and Safety Officer | LEG-008 |
+**Required audit proof:** Cross-tenant denial matrix green.
 
----
+**Required test coverage:** Tenant pack regression suite.
 
-## Phase 10 — Inventory, procurement, fleet and Maps
+**Owner approval point:** Owner approves SaaS agent catalogue append.
 
-| Priority agents | Register IDs |
-|-----------------|--------------|
-| Procurement | INV-004 |
-| Fleet Manager | FLT-001 |
-| Google Maps and Routing | FLT-002 |
-| Cartrack Telemetry | FLT-003 (Owner credentials) |
+**Rollback criteria:** Disable tenant pack; retain register IDs as **Paused**.
+
+**Exit criteria:** Second tenant pilot with supervised agents only.
 
 ---
 
-## Phase 11 — Software, IT, product, QA and self-healing
+## Phase gate template (all phases)
 
-| Priority agents | Register IDs |
-|-----------------|--------------|
-| Release Manager | SW-022 |
-| System Health and Self-Healing | SW-024 |
-| Automated Testing | SW-020 |
-| Accessibility Testing | SW-019 |
-| Prompt and Agent Engineer | SW-014 |
-
-**Code-change path:** branch → test → preview → Owner → staging → production approval.
-
----
-
-## Phase 12 — Data and analytics
-
-| Priority agents | Register IDs |
-|-----------------|--------------|
-| Business Intelligence | DAT-010 |
-| Report Automation | DAT-009 |
-| KPI Design | DAT-008 |
-| Data Quality | DAT-003 |
+| Field | Required content |
+|-------|------------------|
+| Entry criteria | Prior phase exit + dependencies |
+| Required integrations | Truthful Connected states from integration register |
+| Required RBAC | Role matrix rows affected |
+| Required audit proof | Event types and sample records |
+| Required test coverage | Suites and pass threshold |
+| Owner approval point | Named Owner action |
+| Rollback criteria | Pause/kill/revert procedure |
+| Exit criteria | Measurable outcome |
 
 ---
 
-## Phase 13 — SaaS, onboarding and expansion
+## Current state (@ 2026-08-06)
 
-| Priority agents | Register IDs |
-|-----------------|--------------|
-| Tenant Onboarding | SaaS-001 |
-| Platform Usage and Health | SaaS-004 |
-| SaaS Customer Success | SaaS-003 |
+| Phase | Status |
+|-------|--------|
+| Phase A | **Documentation complete — pending Owner approval** |
+| Phase B–F | **Not started** |
 
----
-
-## Phase 14 — Permanent Audit Department
-
-| Priority agents | Register IDs |
-|-----------------|--------------|
-| Chief Audit | AUD-001 |
-| Browser and User-Journey Auditor | AUD-003 |
-| Tenant-Isolation Auditor | AUD-005 |
-| Acceptance Register Reconciliation | AUD-014 |
-
-See [TITAN_AUDIT_DEPARTMENT_AND_TOOLING_STANDARD.md](./TITAN_AUDIT_DEPARTMENT_AND_TOOLING_STANDARD.md).
+| Agent status (register) | Count |
+|-------------------------|------:|
+| Supervised | 1 (AURA-001) |
+| Implemented but inactive | 1 (MKT-005 Facebook) |
+| Build-ready | 2 |
+| Defined / Planned | remainder |
+| **Active** | **0** |
 
 ---
 
-## Phase 15 — Full cross-agent orchestration and final acceptance
+## Cross-links
 
-| Deliverable | Detail |
-|-------------|--------|
-| AURA orchestration | Route tasks to specialist agents with context boundaries |
-| Final business chain audit | Lead → … → Reporting (Stage 2 audit) |
-| Owner sign-off | V1 workforce acceptance |
+- [TITAN_MASTER_ACCEPTANCE_REGISTER.md](./TITAN_MASTER_ACCEPTANCE_REGISTER.md) — AGENT-001–004 acceptance rows  
+- [TITAN_GAP_CLOSURE_PLAN.md](./TITAN_GAP_CLOSURE_PLAN.md) — workforce gap closure  
+- [TITAN_INTEGRATION_REGISTER.md](./TITAN_INTEGRATION_REGISTER.md) — provider truth  
 
-**Final business chain:**
-
-```
-Lead → Customer → Property → Booking → Job → Dispatch → Technician → Vehicle
-  → Materials → Variation → Quote → Approval → Invoice → Yoco/Payment → Xero
-  → Profit → Follow-Up → Marketing → Reporting
-```
-
----
-
-## Two-stage audit policy (activation companion)
-
-### Stage 1 — After each major section
-
-1. Targeted tests  
-2. Browser journey  
-3. Fix critical failures  
-4. Update acceptance register  
-5. Mark only proven items complete  
-6. Then continue  
-
-### Stage 2 — After complete locked list
-
-Audit every module, role, button, form, route, provider, agent, desktop/mobile/tablet layout, security boundary, backup and rollback process.
-
----
-
-## Related documents
-
-- [TITAN_GAP_CLOSURE_PLAN.md](./TITAN_GAP_CLOSURE_PLAN.md)
-- [TITAN_MASTER_ACCEPTANCE_REGISTER.md](./TITAN_MASTER_ACCEPTANCE_REGISTER.md)
+**Document control:** AGENT-004 · No activation performed without Owner gate.

@@ -12,7 +12,8 @@
 | **Deploy branch** | `cursor/titan-v1-integration` |
 | **Staging Supabase ref** | `cpkuwtaipjxeipvbssvn` |
 | **Production ref (forbidden)** | `rshuiaghmtrvvilhqpwm` |
-| **Updated (UTC)** | 2026-08-04 |
+| **Updated (UTC)** | 2026-08-06 |
+| **Agent register** | [TITAN_MASTER_AGENT_REGISTER.md](./TITAN_MASTER_AGENT_REGISTER.md) (AGENT-001) |
 | **Binding rule** | `TITAN_BINDING_ACCEPTANCE_RULE.md` (10 criteria) |
 | **Audit sources** | `TITAN_COMPLETE_APP_AUDIT.md`, `TITAN_ACCEPTANCE_REGISTER.md`, `TITAN_GAP_BACKLOG.md`, `TITAN_AURA_AGENT_COLLABORATION_AUDIT.md`, finance J-6.x phase evidence |
 
@@ -29,6 +30,20 @@ Consolidated Claude + Gemini pass at **`f8cc0c4`**:
 | **Production ready ~12%** | Meets all 10 binding criteria with Owner sign-off | Pilot-critical chains partially proven; production forbidden until staging GO |
 
 Prior register estimate (**~27% verified live** on 116-row traceability) remains valid for **strict binding-rule verified complete** classification. The 72/48/12 split reflects **breadth of built code** vs **local verification depth** vs **production gates**.
+
+---
+
+## AI workforce documentation (AGENT-001 — 2026-08-06)
+
+| Document | ID | Checklist status |
+|----------|-----|------------------|
+| [TITAN_MASTER_AGENT_REGISTER.md](./TITAN_MASTER_AGENT_REGISTER.md) | AGENT-001 | **DOCUMENTED** — 191 minimum roles; extensible; 0 Active |
+| [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) | AGENT-002 | **DOCUMENTED** |
+| [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) | AGENT-003 | **DOCUMENTED** |
+| [TITAN_AGENT_ACTIVATION_ROADMAP.md](./TITAN_AGENT_ACTIVATION_ROADMAP.md) | AGENT-004 | **DOCUMENTED** — Phase A pending Owner approval |
+| Universal Integration Standard | INT-UNIVERSAL-001 | **DOCUMENTED** in integration register |
+
+**Note:** Documentation complete ≠ agent implementation complete. No agent marked **Active** without activation gate evidence.
 
 ---
 

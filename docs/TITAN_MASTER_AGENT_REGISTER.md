@@ -1,20 +1,33 @@
 # TITAN Master Agent Register
 
-**Document type:** Permanent source of truth — documentation and reconciliation only  
+**Document ID:** AGENT-001  
+**Document type:** Permanent master register — AI workforce source of truth  
 **Generated (UTC):** 2026-08-06  
 **Repository:** young-guns-os (Titan-Aura-Consolidation)  
-**Branch:** cursor/titan-master-agent-register-998f  
-**Binding documents:** This register supersedes informal agent counts (77/100/150). There is **no fixed agent limit**.
+**Branch:** `cursor/titan-agent-register-001`  
+**Base HEAD:** `23debd9cfa90a05ab31f051b76d3e7a86708b14f`  
+
+**Related documents:**
+
+- [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) (AGENT-002)
+- [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) (AGENT-003)
+- [TITAN_AGENT_ACTIVATION_ROADMAP.md](./TITAN_AGENT_ACTIVATION_ROADMAP.md) (AGENT-004)
+- [TITAN_INTEGRATION_REGISTER.md](./TITAN_INTEGRATION_REGISTER.md) (INT-UNIVERSAL-001)
+- [TITAN_MASTER_ACCEPTANCE_REGISTER.md](./TITAN_MASTER_ACCEPTANCE_REGISTER.md)
 
 ---
 
-## Locked quality standard
+## Register principles (locked)
 
-> **TITAN must contain the world's best practical business agents for their defined responsibilities.**
-
-A decorative card, nav entry, or prompt with no executable tools does **not** count as an implemented agent.
-
-Every operational agent must define all fields in [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md).
+1. **AURA is the Owner-facing executive coordinator.** AURA routes context, assembles specialist work, and enforces approval gates. AURA is not a substitute for domain specialists.
+2. **Specialist agents work underneath AURA.** Each agent maps to a real business function with bounded tools and data access.
+3. **Agents are functional roles, not decorative cards.** A nav entry or prompt without executable, tested tools is **Defined** at best — never **Active**.
+4. **One role may use several tools, workflows, and models.** Tooling is grouped by business responsibility.
+5. **One automation is not automatically a separate agent.** Automations inherit the supervising agent's governance.
+6. **New agents may be added when justified by an actual business function.** Append to this register with a new stable ID; do not renumber existing IDs.
+7. **There is no arbitrary numerical agent cap.** TITAN may grow beyond 150+ specialists as product and tenant needs require. This register is **extensible**, not a fixed maximum.
+8. **Agents are tenant-isolated.** No cross-tenant reads, writes, learning, or inference.
+9. **Agents cannot silently take high-risk actions.** Draft → Approve → Execute is mandatory for external effects.
 
 ---
 
@@ -22,13 +35,11 @@ Every operational agent must define all fields in [TITAN_AGENT_CAPABILITY_MATRIX
 
 ```
 Owner
-  └── AURA (central intelligence & user interface)
-        └── Executive Board (EXEC-* C-suite and command agents)
-              └── Department Leaders (directors / managers per department)
-                    └── Specialist Agents (domain experts with tools)
+  └── AURA-001 (central interface & coordinator)
+        └── Executive leadership agents (EXEC-*)
+              └── Department specialist agents
+                    └── Audit department (AUD-*, independent)
 ```
-
-AURA orchestrates routing, context assembly, approval gates, and audit — it is not a substitute for specialist agents.
 
 ---
 
@@ -36,505 +47,5674 @@ AURA orchestrates routing, context assembly, approval gates, and audit — it is
 
 | Status | Meaning |
 |--------|---------|
-| **Verified complete** | Tools, RBAC, tenant isolation, tests, and live or Owner-verified proof |
-| **Implemented but not live-verified** | Executable backend/tools + automated tests; staging Owner proof pending |
-| **Partial** | Registry entry, UI shell, or read-only tools — not a full operational agent |
-| **Provider-blocked** | Design approved; external provider permission or review required |
-| **Owner-action required** | Blocked on Owner credential, policy, or sign-off |
-| **Missing** | Approved in scope; no meaningful implementation |
-| **Deferred by Owner** | Explicitly deferred — remains in register |
-| **Not applicable** | Out of scope for this tenant or product line |
+| **Defined** | Role documented in this register; no executable agent loop |
+| **Planned** | Approved for build; dependencies identified |
+| **Build-ready** | Design + RBAC + integration prerequisites met; implementation queued |
+| **Implemented but inactive** | Code/tools exist; not activated for autonomous or supervised operation |
+| **Shadow mode** | Observes and drafts only; no execution path enabled |
+| **Supervised** | Executes only with explicit human approval per action |
+| **Active** | Operates within approved policy with monitoring (Owner activation required) |
+| **Paused** | Temporarily disabled; state preserved |
+| **Retired** | Removed from activation; historical audit retained |
 
-**Reconciliation rule:** Do not mark **Verified complete** because a name, schema, or UI card exists.
+**Truth rule:** Documentation alone never implies **Active**. Prior informal statuses (e.g. "Verified complete", "Partial") are superseded by this vocabulary.
 
 ---
 
-## Summary (@ register creation)
+## Register summary
 
 | Metric | Count |
 |--------|------:|
-| **Total unique agents in permanent register** | **307** |
-| Partial (registry/UI foundation only) | 21 |
-| Provider-blocked | 3 |
-| Missing | 283 |
-| Verified complete | 0 |
-| Implemented but not live-verified | 0 |
+| **Departments (A–M + AURA)** | 14 |
+| **Registered agent roles (minimum set)** | 191 |
+| **Active (autonomous operational)** | 0 |
+| **Supervised** | 1 (AURA-001) |
+| **Implemented but inactive** | 1 (Facebook Agent) |
+| **Build-ready** | 2 |
+| **Defined / Planned** | remainder |
 
-### Department totals
-
-| Dept code | Department | Agents |
-|-----------|------------|-------:|
-| AURA | Central Intelligence | 1 |
-| EXEC | Executive & Professional | 20 |
-| FIN | Finance & Accounting | 19 |
-| QS | QS, Estimating & Commercial | 17 |
-| OPS | Operations & Field Service | 17 |
-| CRM | Sales, CRM & Customer Experience | 22 |
-| COM | Communications & Reception | 16 |
-| MKT | Marketing, Trends & Strategy | 31 |
-| CRE | Creative Production | 14 |
-| VID | Video & Audio Production | 20 |
-| HR | HR, Training & Administration | 20 |
-| LEG | Legal, Safety, Risk & Compliance | 16 |
-| SW | Software, IT & Product | 26 |
-| DAT | Data & Analytics | 10 |
-| INV | Inventory, Procurement & Assets | 17 |
-| FLT | Fleet, Maps & Driver Safety | 13 |
-| SaaS | SaaS, Partnerships & Expansion | 14 |
-| AUD | Permanent Audit Department | 14 |
+> **Extensibility:** Additional agents (e.g. industry packs, SaaS tenants) are added by appending new stable IDs. The register does **not** impose a maximum workforce size.
 
 ---
 
-## Duplicate resolution: historical 77-agent list vs permanent register
+## Central intelligence
 
-The Owner's historical **77-agent V1 list** (`docs/TITAN_AI_AGENT_ARCHITECTURE.md`, `TITAN_AURA_V1_FINAL_ACCEPTANCE_CHECKLIST.md`) remains **recorded heritage**, not the ceiling.
-
-| Decision | Detail |
-|----------|--------|
-| **Superset policy** | This register (307 agents) is the **permanent superset**. No agent from Owner discussions is removed. |
-| **77 → register mapping** | Each of the 77 maps to one or more register IDs (e.g. Finance Manager AI → FIN-004; AURA Orchestrator → AURA-001). |
-| **48 code registry keys** | `AGENT_REGISTRY` in `packages/shared/src/agents.ts` defines **48** foundation keys — mapped to **21** register rows as **Partial** only. |
-| **No merge without Owner approval** | Specialist splits (e.g. QS take-off vs BOQ) stay separate rows. |
-| **Facebook / social** | Connection infrastructure is recorded in [TITAN_INTEGRATION_REGISTER.md](./TITAN_INTEGRATION_REGISTER.md), not as agent completion. |
-
----
-
-## Facebook integration result (Young Guns staging — recorded 2026-08-06)
+#### AURA-001 — AURA (Central Executive Coordinator)
 
 | Field | Value |
 |-------|-------|
-| Basic Page connection | **Complete on staging** |
-| Page | Young Guns Plumbing – Cape Town |
-| State | `CONNECTED_LIMITED` |
-| `pages_show_list` | Granted |
-| `business_management` | Granted |
-| `public_profile` | Granted |
-| `pages_read_engagement` | Provider-blocked — Meta App Review pending |
-| Publishing, comments, messaging, leads, insights | Provider-blocked |
-| Sync | Inactive until required permissions granted |
-| Development blocker? | **No** — advanced Facebook capabilities are not a current development blocker |
+| **Stable Agent ID** | `AURA-001` |
+| **Agent name** | AURA (Central Executive Coordinator) |
+| **Department** | Central Intelligence (`AURA`) |
+| **Role type** | Specialist |
+| **Mission** | Support aura (central executive coordinator) responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | Owner; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Supervised** |
+| **Activation phase** | Phase B |
+| **Notes** | AURA chat, agent registry, routing — Owner-facing coordinator active in supervised mode |
+
+## A. Executive leadership
+
+**Department code:** `EXEC` · **Agents:** 11
+| Agent ID | Agent name | Status | Activation phase |
+|----------|------------|--------|------------------|
+| `EXEC-001` | Chief Executive Agent | Defined | Phase A |
+| `EXEC-002` | Chief Operating Agent | Defined | Phase A |
+| `EXEC-003` | Chief Financial Agent | Defined | Phase A |
+| `EXEC-004` | Chief Technology Agent | Defined | Phase A |
+| `EXEC-005` | Chief Product Agent | Defined | Phase A |
+| `EXEC-006` | Chief Data Agent | Defined | Phase A |
+| `EXEC-007` | Executive Strategy Agent | Defined | Phase A |
+| `EXEC-008` | Business Coach Agent | Defined | Phase A |
+| `EXEC-009` | Business Analyst Agent | Defined | Phase A |
+| `EXEC-010` | Growth Strategy Agent | Defined | Phase A |
+| `EXEC-011` | Risk and Decision Support Agent | Defined | Phase A |
+### Agent profiles
+#### EXEC-001 — Chief Executive Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `EXEC-001` |
+| **Agent name** | Chief Executive Agent |
+| **Department** | A. Executive leadership (`EXEC`) |
+| **Role type** | Specialist |
+| **Mission** | Support chief executive responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | AURA-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### EXEC-002 — Chief Operating Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `EXEC-002` |
+| **Agent name** | Chief Operating Agent |
+| **Department** | A. Executive leadership (`EXEC`) |
+| **Role type** | Specialist |
+| **Mission** | Support chief operating responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | AURA-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### EXEC-003 — Chief Financial Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `EXEC-003` |
+| **Agent name** | Chief Financial Agent |
+| **Department** | A. Executive leadership (`EXEC`) |
+| **Role type** | Specialist |
+| **Mission** | Support chief financial responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | AURA-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### EXEC-004 — Chief Technology Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `EXEC-004` |
+| **Agent name** | Chief Technology Agent |
+| **Department** | A. Executive leadership (`EXEC`) |
+| **Role type** | Specialist |
+| **Mission** | Support chief technology responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | AURA-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### EXEC-005 — Chief Product Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `EXEC-005` |
+| **Agent name** | Chief Product Agent |
+| **Department** | A. Executive leadership (`EXEC`) |
+| **Role type** | Specialist |
+| **Mission** | Support chief product responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | AURA-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### EXEC-006 — Chief Data Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `EXEC-006` |
+| **Agent name** | Chief Data Agent |
+| **Department** | A. Executive leadership (`EXEC`) |
+| **Role type** | Specialist |
+| **Mission** | Support chief data responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | AURA-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### EXEC-007 — Executive Strategy Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `EXEC-007` |
+| **Agent name** | Executive Strategy Agent |
+| **Department** | A. Executive leadership (`EXEC`) |
+| **Role type** | Specialist |
+| **Mission** | Support executive strategy responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | AURA-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### EXEC-008 — Business Coach Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `EXEC-008` |
+| **Agent name** | Business Coach Agent |
+| **Department** | A. Executive leadership (`EXEC`) |
+| **Role type** | Specialist |
+| **Mission** | Support business coach responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | AURA-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### EXEC-009 — Business Analyst Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `EXEC-009` |
+| **Agent name** | Business Analyst Agent |
+| **Department** | A. Executive leadership (`EXEC`) |
+| **Role type** | Specialist |
+| **Mission** | Support business analyst responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | AURA-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### EXEC-010 — Growth Strategy Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `EXEC-010` |
+| **Agent name** | Growth Strategy Agent |
+| **Department** | A. Executive leadership (`EXEC`) |
+| **Role type** | Specialist |
+| **Mission** | Support growth strategy responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | AURA-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### EXEC-011 — Risk and Decision Support Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `EXEC-011` |
+| **Agent name** | Risk and Decision Support Agent |
+| **Department** | A. Executive leadership (`EXEC`) |
+| **Role type** | Specialist |
+| **Mission** | Support risk and decision support responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | AURA-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+
+## B. Finance and accounting
+
+**Department code:** `FIN` · **Agents:** 17
+| Agent ID | Agent name | Status | Activation phase |
+|----------|------------|--------|------------------|
+| `FIN-001` | Chartered Accountant-level Finance Agent | Defined | Phase A |
+| `FIN-002` | Financial Controller Agent | Defined | Phase A |
+| `FIN-003` | Management Accountant Agent | Defined | Phase A |
+| `FIN-004` | Bookkeeper Agent | Defined | Phase A |
+| `FIN-005` | Accounts Receivable Agent | Defined | Phase A |
+| `FIN-006` | Accounts Payable Agent | Defined | Phase A |
+| `FIN-007` | Cashflow Forecasting Agent | Defined | Phase A |
+| `FIN-008` | Budgeting Agent | Defined | Phase A |
+| `FIN-009` | Profitability Agent | Defined | Phase A |
+| `FIN-010` | Pricing and Margin Protection Agent | Defined | Phase A |
+| `FIN-011` | Tax/VAT Support Agent | Defined | Phase A |
+| `FIN-012` | Payroll Agent | Defined | Phase A |
+| `FIN-013` | Bank Reconciliation Agent | Defined | Phase A |
+| `FIN-014` | Xero Integration Agent | Planned | Phase D |
+| `FIN-015` | Yoco Reconciliation Agent | Defined | Phase A |
+| `FIN-016` | Debt Collection and Follow-up Agent | Defined | Phase A |
+| `FIN-017` | Financial Audit Agent | Defined | Phase A |
+### Agent profiles
+#### FIN-001 — Chartered Accountant-level Finance Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `FIN-001` |
+| **Agent name** | Chartered Accountant-level Finance Agent |
+| **Department** | B. Finance and accounting (`FIN`) |
+| **Role type** | Specialist |
+| **Mission** | Support chartered accountant-level finance responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | AURA-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### FIN-002 — Financial Controller Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `FIN-002` |
+| **Agent name** | Financial Controller Agent |
+| **Department** | B. Finance and accounting (`FIN`) |
+| **Role type** | Specialist |
+| **Mission** | Support financial controller responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | AURA-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### FIN-003 — Management Accountant Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `FIN-003` |
+| **Agent name** | Management Accountant Agent |
+| **Department** | B. Finance and accounting (`FIN`) |
+| **Role type** | Specialist |
+| **Mission** | Support management accountant responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | AURA-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### FIN-004 — Bookkeeper Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `FIN-004` |
+| **Agent name** | Bookkeeper Agent |
+| **Department** | B. Finance and accounting (`FIN`) |
+| **Role type** | Specialist |
+| **Mission** | Support bookkeeper responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | AURA-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### FIN-005 — Accounts Receivable Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `FIN-005` |
+| **Agent name** | Accounts Receivable Agent |
+| **Department** | B. Finance and accounting (`FIN`) |
+| **Role type** | Specialist |
+| **Mission** | Support accounts receivable responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | AURA-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### FIN-006 — Accounts Payable Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `FIN-006` |
+| **Agent name** | Accounts Payable Agent |
+| **Department** | B. Finance and accounting (`FIN`) |
+| **Role type** | Specialist |
+| **Mission** | Support accounts payable responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | AURA-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### FIN-007 — Cashflow Forecasting Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `FIN-007` |
+| **Agent name** | Cashflow Forecasting Agent |
+| **Department** | B. Finance and accounting (`FIN`) |
+| **Role type** | Specialist |
+| **Mission** | Support cashflow forecasting responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | AURA-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### FIN-008 — Budgeting Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `FIN-008` |
+| **Agent name** | Budgeting Agent |
+| **Department** | B. Finance and accounting (`FIN`) |
+| **Role type** | Specialist |
+| **Mission** | Support budgeting responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | AURA-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### FIN-009 — Profitability Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `FIN-009` |
+| **Agent name** | Profitability Agent |
+| **Department** | B. Finance and accounting (`FIN`) |
+| **Role type** | Specialist |
+| **Mission** | Support profitability responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | AURA-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### FIN-010 — Pricing and Margin Protection Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `FIN-010` |
+| **Agent name** | Pricing and Margin Protection Agent |
+| **Department** | B. Finance and accounting (`FIN`) |
+| **Role type** | Specialist |
+| **Mission** | Support pricing and margin protection responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | AURA-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | High |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### FIN-011 — Tax/VAT Support Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `FIN-011` |
+| **Agent name** | Tax/VAT Support Agent |
+| **Department** | B. Finance and accounting (`FIN`) |
+| **Role type** | Specialist |
+| **Mission** | Support tax/vat support responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | AURA-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | High |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### FIN-012 — Payroll Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `FIN-012` |
+| **Agent name** | Payroll Agent |
+| **Department** | B. Finance and accounting (`FIN`) |
+| **Role type** | Specialist |
+| **Mission** | Support payroll responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | AURA-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | High |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### FIN-013 — Bank Reconciliation Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `FIN-013` |
+| **Agent name** | Bank Reconciliation Agent |
+| **Department** | B. Finance and accounting (`FIN`) |
+| **Role type** | Specialist |
+| **Mission** | Support bank reconciliation responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | AURA-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### FIN-014 — Xero Integration Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `FIN-014` |
+| **Agent name** | Xero Integration Agent |
+| **Department** | B. Finance and accounting (`FIN`) |
+| **Role type** | Specialist |
+| **Mission** | Support xero integration responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | AURA-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | High |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Planned** |
+| **Activation phase** | Phase D |
+| **Notes** | Xero integration scaffold; XERO-002 parked — not started |
+#### FIN-015 — Yoco Reconciliation Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `FIN-015` |
+| **Agent name** | Yoco Reconciliation Agent |
+| **Department** | B. Finance and accounting (`FIN`) |
+| **Role type** | Specialist |
+| **Mission** | Support yoco reconciliation responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | AURA-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | High |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### FIN-016 — Debt Collection and Follow-up Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `FIN-016` |
+| **Agent name** | Debt Collection and Follow-up Agent |
+| **Department** | B. Finance and accounting (`FIN`) |
+| **Role type** | Specialist |
+| **Mission** | Support debt collection and follow-up responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | AURA-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | High |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### FIN-017 — Financial Audit Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `FIN-017` |
+| **Agent name** | Financial Audit Agent |
+| **Department** | B. Finance and accounting (`FIN`) |
+| **Role type** | Specialist |
+| **Mission** | Support financial audit responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | AURA-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | High |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+
+## C. Sales and business development
+
+**Department code:** `SAL` · **Agents:** 15
+| Agent ID | Agent name | Status | Activation phase |
+|----------|------------|--------|------------------|
+| `SAL-001` | Sales Director Agent | Defined | Phase A |
+| `SAL-002` | Lead Qualification Agent | Defined | Phase A |
+| `SAL-003` | Sales Follow-up Agent | Defined | Phase A |
+| `SAL-004` | Non-pushy Lead Hunting Agent | Defined | Phase A |
+| `SAL-005` | Objection Handling Agent | Defined | Phase A |
+| `SAL-006` | Negotiation Support Agent | Defined | Phase A |
+| `SAL-007` | Proposal Agent | Defined | Phase A |
+| `SAL-008` | Quote Follow-up Agent | Defined | Phase A |
+| `SAL-009` | Customer Retention Agent | Defined | Phase A |
+| `SAL-010` | Service Agreement Agent | Defined | Phase A |
+| `SAL-011` | Business Development Agent | Defined | Phase A |
+| `SAL-012` | Commercial Tender Agent | Defined | Phase A |
+| `SAL-013` | Partnership Agent | Defined | Phase A |
+| `SAL-014` | Competitor Research Agent | Defined | Phase A |
+| `SAL-015` | Market Opportunity Agent | Defined | Phase A |
+### Agent profiles
+#### SAL-001 — Sales Director Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `SAL-001` |
+| **Agent name** | Sales Director Agent |
+| **Department** | C. Sales and business development (`SAL`) |
+| **Role type** | Specialist |
+| **Mission** | Support sales director responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### SAL-002 — Lead Qualification Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `SAL-002` |
+| **Agent name** | Lead Qualification Agent |
+| **Department** | C. Sales and business development (`SAL`) |
+| **Role type** | Specialist |
+| **Mission** | Support lead qualification responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### SAL-003 — Sales Follow-up Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `SAL-003` |
+| **Agent name** | Sales Follow-up Agent |
+| **Department** | C. Sales and business development (`SAL`) |
+| **Role type** | Specialist |
+| **Mission** | Support sales follow-up responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### SAL-004 — Non-pushy Lead Hunting Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `SAL-004` |
+| **Agent name** | Non-pushy Lead Hunting Agent |
+| **Department** | C. Sales and business development (`SAL`) |
+| **Role type** | Specialist |
+| **Mission** | Support non-pushy lead hunting responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### SAL-005 — Objection Handling Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `SAL-005` |
+| **Agent name** | Objection Handling Agent |
+| **Department** | C. Sales and business development (`SAL`) |
+| **Role type** | Specialist |
+| **Mission** | Support objection handling responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### SAL-006 — Negotiation Support Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `SAL-006` |
+| **Agent name** | Negotiation Support Agent |
+| **Department** | C. Sales and business development (`SAL`) |
+| **Role type** | Specialist |
+| **Mission** | Support negotiation support responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### SAL-007 — Proposal Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `SAL-007` |
+| **Agent name** | Proposal Agent |
+| **Department** | C. Sales and business development (`SAL`) |
+| **Role type** | Specialist |
+| **Mission** | Support proposal responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### SAL-008 — Quote Follow-up Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `SAL-008` |
+| **Agent name** | Quote Follow-up Agent |
+| **Department** | C. Sales and business development (`SAL`) |
+| **Role type** | Specialist |
+| **Mission** | Support quote follow-up responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### SAL-009 — Customer Retention Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `SAL-009` |
+| **Agent name** | Customer Retention Agent |
+| **Department** | C. Sales and business development (`SAL`) |
+| **Role type** | Specialist |
+| **Mission** | Support customer retention responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### SAL-010 — Service Agreement Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `SAL-010` |
+| **Agent name** | Service Agreement Agent |
+| **Department** | C. Sales and business development (`SAL`) |
+| **Role type** | Specialist |
+| **Mission** | Support service agreement responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### SAL-011 — Business Development Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `SAL-011` |
+| **Agent name** | Business Development Agent |
+| **Department** | C. Sales and business development (`SAL`) |
+| **Role type** | Specialist |
+| **Mission** | Support business development responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### SAL-012 — Commercial Tender Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `SAL-012` |
+| **Agent name** | Commercial Tender Agent |
+| **Department** | C. Sales and business development (`SAL`) |
+| **Role type** | Specialist |
+| **Mission** | Support commercial tender responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### SAL-013 — Partnership Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `SAL-013` |
+| **Agent name** | Partnership Agent |
+| **Department** | C. Sales and business development (`SAL`) |
+| **Role type** | Specialist |
+| **Mission** | Support partnership responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### SAL-014 — Competitor Research Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `SAL-014` |
+| **Agent name** | Competitor Research Agent |
+| **Department** | C. Sales and business development (`SAL`) |
+| **Role type** | Specialist |
+| **Mission** | Support competitor research responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### SAL-015 — Market Opportunity Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `SAL-015` |
+| **Agent name** | Market Opportunity Agent |
+| **Department** | C. Sales and business development (`SAL`) |
+| **Role type** | Specialist |
+| **Mission** | Support market opportunity responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+
+## D. Marketing and brand
+
+**Department code:** `MKT` · **Agents:** 22
+| Agent ID | Agent name | Status | Activation phase |
+|----------|------------|--------|------------------|
+| `MKT-001` | Chief Marketing Agent | Defined | Phase A |
+| `MKT-002` | Marketing Strategy Agent | Defined | Phase A |
+| `MKT-003` | Campaign Planning Agent | Defined | Phase A |
+| `MKT-004` | Social Media Agent | Defined | Phase A |
+| `MKT-005` | Facebook Agent | Implemented but inactive | Phase C |
+| `MKT-006` | Instagram Agent | Defined | Phase A |
+| `MKT-007` | TikTok Agent | Defined | Phase A |
+| `MKT-008` | LinkedIn Agent | Defined | Phase A |
+| `MKT-009` | YouTube Agent | Defined | Phase A |
+| `MKT-010` | Google Business Profile Agent | Defined | Phase A |
+| `MKT-011` | Content Writing Agent | Defined | Phase A |
+| `MKT-012` | Graphic Design Agent | Defined | Phase A |
+| `MKT-013` | Video Production Agent | Defined | Phase A |
+| `MKT-014` | Video Quality-Control Agent | Defined | Phase A |
+| `MKT-015` | Brand Compliance Agent | Defined | Phase A |
+| `MKT-016` | Reputation and Reviews Agent | Defined | Phase A |
+| `MKT-017` | SEO Agent | Defined | Phase A |
+| `MKT-018` | Website Content Agent | Defined | Phase A |
+| `MKT-019` | Email Marketing Agent | Defined | Phase A |
+| `MKT-020` | Trend Hunter Agent | Defined | Phase A |
+| `MKT-021` | Marketing Analytics Agent | Defined | Phase A |
+| `MKT-022` | Media Library Agent | Defined | Phase A |
+### Agent profiles
+#### MKT-001 — Chief Marketing Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `MKT-001` |
+| **Agent name** | Chief Marketing Agent |
+| **Department** | D. Marketing and brand (`MKT`) |
+| **Role type** | Specialist |
+| **Mission** | Support chief marketing responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### MKT-002 — Marketing Strategy Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `MKT-002` |
+| **Agent name** | Marketing Strategy Agent |
+| **Department** | D. Marketing and brand (`MKT`) |
+| **Role type** | Specialist |
+| **Mission** | Support marketing strategy responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### MKT-003 — Campaign Planning Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `MKT-003` |
+| **Agent name** | Campaign Planning Agent |
+| **Department** | D. Marketing and brand (`MKT`) |
+| **Role type** | Specialist |
+| **Mission** | Support campaign planning responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### MKT-004 — Social Media Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `MKT-004` |
+| **Agent name** | Social Media Agent |
+| **Department** | D. Marketing and brand (`MKT`) |
+| **Role type** | Specialist |
+| **Mission** | Support social media responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### MKT-005 — Facebook Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `MKT-005` |
+| **Agent name** | Facebook Agent |
+| **Department** | D. Marketing and brand (`MKT`) |
+| **Role type** | Specialist |
+| **Mission** | Support facebook responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Medium |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Implemented but inactive** |
+| **Activation phase** | Phase C |
+| **Notes** | Facebook Business module exists; webhook subscription pending Owner deploy proof |
+#### MKT-006 — Instagram Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `MKT-006` |
+| **Agent name** | Instagram Agent |
+| **Department** | D. Marketing and brand (`MKT`) |
+| **Role type** | Specialist |
+| **Mission** | Support instagram responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Medium |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### MKT-007 — TikTok Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `MKT-007` |
+| **Agent name** | TikTok Agent |
+| **Department** | D. Marketing and brand (`MKT`) |
+| **Role type** | Specialist |
+| **Mission** | Support tiktok responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### MKT-008 — LinkedIn Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `MKT-008` |
+| **Agent name** | LinkedIn Agent |
+| **Department** | D. Marketing and brand (`MKT`) |
+| **Role type** | Specialist |
+| **Mission** | Support linkedin responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### MKT-009 — YouTube Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `MKT-009` |
+| **Agent name** | YouTube Agent |
+| **Department** | D. Marketing and brand (`MKT`) |
+| **Role type** | Specialist |
+| **Mission** | Support youtube responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### MKT-010 — Google Business Profile Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `MKT-010` |
+| **Agent name** | Google Business Profile Agent |
+| **Department** | D. Marketing and brand (`MKT`) |
+| **Role type** | Specialist |
+| **Mission** | Support google business profile responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### MKT-011 — Content Writing Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `MKT-011` |
+| **Agent name** | Content Writing Agent |
+| **Department** | D. Marketing and brand (`MKT`) |
+| **Role type** | Specialist |
+| **Mission** | Support content writing responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### MKT-012 — Graphic Design Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `MKT-012` |
+| **Agent name** | Graphic Design Agent |
+| **Department** | D. Marketing and brand (`MKT`) |
+| **Role type** | Specialist |
+| **Mission** | Support graphic design responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### MKT-013 — Video Production Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `MKT-013` |
+| **Agent name** | Video Production Agent |
+| **Department** | D. Marketing and brand (`MKT`) |
+| **Role type** | Specialist |
+| **Mission** | Support video production responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### MKT-014 — Video Quality-Control Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `MKT-014` |
+| **Agent name** | Video Quality-Control Agent |
+| **Department** | D. Marketing and brand (`MKT`) |
+| **Role type** | Specialist |
+| **Mission** | Support video quality-control responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### MKT-015 — Brand Compliance Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `MKT-015` |
+| **Agent name** | Brand Compliance Agent |
+| **Department** | D. Marketing and brand (`MKT`) |
+| **Role type** | Specialist |
+| **Mission** | Support brand compliance responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### MKT-016 — Reputation and Reviews Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `MKT-016` |
+| **Agent name** | Reputation and Reviews Agent |
+| **Department** | D. Marketing and brand (`MKT`) |
+| **Role type** | Specialist |
+| **Mission** | Support reputation and reviews responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### MKT-017 — SEO Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `MKT-017` |
+| **Agent name** | SEO Agent |
+| **Department** | D. Marketing and brand (`MKT`) |
+| **Role type** | Specialist |
+| **Mission** | Support seo responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### MKT-018 — Website Content Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `MKT-018` |
+| **Agent name** | Website Content Agent |
+| **Department** | D. Marketing and brand (`MKT`) |
+| **Role type** | Specialist |
+| **Mission** | Support website content responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### MKT-019 — Email Marketing Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `MKT-019` |
+| **Agent name** | Email Marketing Agent |
+| **Department** | D. Marketing and brand (`MKT`) |
+| **Role type** | Specialist |
+| **Mission** | Support email marketing responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Medium |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### MKT-020 — Trend Hunter Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `MKT-020` |
+| **Agent name** | Trend Hunter Agent |
+| **Department** | D. Marketing and brand (`MKT`) |
+| **Role type** | Specialist |
+| **Mission** | Support trend hunter responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### MKT-021 — Marketing Analytics Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `MKT-021` |
+| **Agent name** | Marketing Analytics Agent |
+| **Department** | D. Marketing and brand (`MKT`) |
+| **Role type** | Specialist |
+| **Mission** | Support marketing analytics responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### MKT-022 — Media Library Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `MKT-022` |
+| **Agent name** | Media Library Agent |
+| **Department** | D. Marketing and brand (`MKT`) |
+| **Role type** | Specialist |
+| **Mission** | Support media library responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+
+## E. Operations and service delivery
+
+**Department code:** `OPS` · **Agents:** 17
+| Agent ID | Agent name | Status | Activation phase |
+|----------|------------|--------|------------------|
+| `OPS-001` | Operations Manager Agent | Defined | Phase A |
+| `OPS-002` | Dispatch Agent | Defined | Phase A |
+| `OPS-003` | Scheduling Agent | Defined | Phase A |
+| `OPS-004` | Job Coordinator Agent | Defined | Phase A |
+| `OPS-005` | Technician Support Agent | Defined | Phase A |
+| `OPS-006` | Job Progress Agent | Defined | Phase A |
+| `OPS-007` | Job Timer Agent | Defined | Phase A |
+| `OPS-008` | Route Optimisation Agent | Defined | Phase A |
+| `OPS-009` | Google Maps Agent | Defined | Phase A |
+| `OPS-010` | Fleet Coordination Agent | Defined | Phase A |
+| `OPS-011` | Emergency Response Agent | Defined | Phase A |
+| `OPS-012` | Recurring Maintenance Agent | Defined | Phase A |
+| `OPS-013` | Service Agreement Operations Agent | Defined | Phase A |
+| `OPS-014` | Quality Control Agent | Defined | Phase A |
+| `OPS-015` | Customer ETA Agent | Defined | Phase A |
+| `OPS-016` | Job Completion Agent | Defined | Phase A |
+| `OPS-017` | Follow-up and Callback Agent | Defined | Phase A |
+### Agent profiles
+#### OPS-001 — Operations Manager Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `OPS-001` |
+| **Agent name** | Operations Manager Agent |
+| **Department** | E. Operations and service delivery (`OPS`) |
+| **Role type** | Specialist |
+| **Mission** | Support operations manager responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-002; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### OPS-002 — Dispatch Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `OPS-002` |
+| **Agent name** | Dispatch Agent |
+| **Department** | E. Operations and service delivery (`OPS`) |
+| **Role type** | Specialist |
+| **Mission** | Support dispatch responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-002; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Medium |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### OPS-003 — Scheduling Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `OPS-003` |
+| **Agent name** | Scheduling Agent |
+| **Department** | E. Operations and service delivery (`OPS`) |
+| **Role type** | Specialist |
+| **Mission** | Support scheduling responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-002; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### OPS-004 — Job Coordinator Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `OPS-004` |
+| **Agent name** | Job Coordinator Agent |
+| **Department** | E. Operations and service delivery (`OPS`) |
+| **Role type** | Specialist |
+| **Mission** | Support job coordinator responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-002; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### OPS-005 — Technician Support Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `OPS-005` |
+| **Agent name** | Technician Support Agent |
+| **Department** | E. Operations and service delivery (`OPS`) |
+| **Role type** | Specialist |
+| **Mission** | Support technician support responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-002; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### OPS-006 — Job Progress Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `OPS-006` |
+| **Agent name** | Job Progress Agent |
+| **Department** | E. Operations and service delivery (`OPS`) |
+| **Role type** | Specialist |
+| **Mission** | Support job progress responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-002; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### OPS-007 — Job Timer Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `OPS-007` |
+| **Agent name** | Job Timer Agent |
+| **Department** | E. Operations and service delivery (`OPS`) |
+| **Role type** | Specialist |
+| **Mission** | Support job timer responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-002; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### OPS-008 — Route Optimisation Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `OPS-008` |
+| **Agent name** | Route Optimisation Agent |
+| **Department** | E. Operations and service delivery (`OPS`) |
+| **Role type** | Specialist |
+| **Mission** | Support route optimisation responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-002; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### OPS-009 — Google Maps Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `OPS-009` |
+| **Agent name** | Google Maps Agent |
+| **Department** | E. Operations and service delivery (`OPS`) |
+| **Role type** | Specialist |
+| **Mission** | Support google maps responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-002; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### OPS-010 — Fleet Coordination Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `OPS-010` |
+| **Agent name** | Fleet Coordination Agent |
+| **Department** | E. Operations and service delivery (`OPS`) |
+| **Role type** | Specialist |
+| **Mission** | Support fleet coordination responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-002; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### OPS-011 — Emergency Response Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `OPS-011` |
+| **Agent name** | Emergency Response Agent |
+| **Department** | E. Operations and service delivery (`OPS`) |
+| **Role type** | Specialist |
+| **Mission** | Support emergency response responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-002; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Medium |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### OPS-012 — Recurring Maintenance Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `OPS-012` |
+| **Agent name** | Recurring Maintenance Agent |
+| **Department** | E. Operations and service delivery (`OPS`) |
+| **Role type** | Specialist |
+| **Mission** | Support recurring maintenance responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-002; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### OPS-013 — Service Agreement Operations Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `OPS-013` |
+| **Agent name** | Service Agreement Operations Agent |
+| **Department** | E. Operations and service delivery (`OPS`) |
+| **Role type** | Specialist |
+| **Mission** | Support service agreement operations responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-002; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### OPS-014 — Quality Control Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `OPS-014` |
+| **Agent name** | Quality Control Agent |
+| **Department** | E. Operations and service delivery (`OPS`) |
+| **Role type** | Specialist |
+| **Mission** | Support quality control responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-002; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### OPS-015 — Customer ETA Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `OPS-015` |
+| **Agent name** | Customer ETA Agent |
+| **Department** | E. Operations and service delivery (`OPS`) |
+| **Role type** | Specialist |
+| **Mission** | Support customer eta responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-002; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### OPS-016 — Job Completion Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `OPS-016` |
+| **Agent name** | Job Completion Agent |
+| **Department** | E. Operations and service delivery (`OPS`) |
+| **Role type** | Specialist |
+| **Mission** | Support job completion responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-002; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### OPS-017 — Follow-up and Callback Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `OPS-017` |
+| **Agent name** | Follow-up and Callback Agent |
+| **Department** | E. Operations and service delivery (`OPS`) |
+| **Role type** | Specialist |
+| **Mission** | Support follow-up and callback responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-002; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+
+## F. Plumbing and industry specialists
+
+**Department code:** `PLM` · **Agents:** 16
+| Agent ID | Agent name | Status | Activation phase |
+|----------|------------|--------|------------------|
+| `PLM-001` | Plumbing Technical Advisor Agent | Defined | Phase A |
+| `PLM-002` | SANS Compliance Agent | Defined | Phase A |
+| `PLM-003` | Certificate of Compliance Agent | Defined | Phase A |
+| `PLM-004` | Geyser Compliance Agent | Defined | Phase A |
+| `PLM-005` | Drainage Diagnostic Agent | Defined | Phase A |
+| `PLM-006` | CCTV Inspection Agent | Defined | Phase A |
+| `PLM-007` | Leak Detection Agent | Defined | Phase A |
+| `PLM-008` | Bathroom Renovation Agent | Defined | Phase A |
+| `PLM-009` | Construction Plumbing Agent | Defined | Phase A |
+| `PLM-010` | Maintenance Planner Agent | Defined | Phase A |
+| `PLM-011` | Estimator Agent | Defined | Phase A |
+| `PLM-012` | Quantity Surveyor Agent | Defined | Phase A |
+| `PLM-013` | Floor-plan Takeoff Agent | Defined | Phase A |
+| `PLM-014` | Bill of Quantities Agent | Defined | Phase A |
+| `PLM-015` | Scope-of-work Agent | Defined | Phase A |
+| `PLM-016` | Materials Specification Agent | Defined | Phase A |
+### Agent profiles
+#### PLM-001 — Plumbing Technical Advisor Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `PLM-001` |
+| **Agent name** | Plumbing Technical Advisor Agent |
+| **Department** | F. Plumbing and industry specialists (`PLM`) |
+| **Role type** | Specialist |
+| **Mission** | Support plumbing technical advisor responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-002; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### PLM-002 — SANS Compliance Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `PLM-002` |
+| **Agent name** | SANS Compliance Agent |
+| **Department** | F. Plumbing and industry specialists (`PLM`) |
+| **Role type** | Specialist |
+| **Mission** | Support sans compliance responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-002; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### PLM-003 — Certificate of Compliance Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `PLM-003` |
+| **Agent name** | Certificate of Compliance Agent |
+| **Department** | F. Plumbing and industry specialists (`PLM`) |
+| **Role type** | Specialist |
+| **Mission** | Support certificate of compliance responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-002; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### PLM-004 — Geyser Compliance Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `PLM-004` |
+| **Agent name** | Geyser Compliance Agent |
+| **Department** | F. Plumbing and industry specialists (`PLM`) |
+| **Role type** | Specialist |
+| **Mission** | Support geyser compliance responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-002; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### PLM-005 — Drainage Diagnostic Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `PLM-005` |
+| **Agent name** | Drainage Diagnostic Agent |
+| **Department** | F. Plumbing and industry specialists (`PLM`) |
+| **Role type** | Specialist |
+| **Mission** | Support drainage diagnostic responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-002; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### PLM-006 — CCTV Inspection Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `PLM-006` |
+| **Agent name** | CCTV Inspection Agent |
+| **Department** | F. Plumbing and industry specialists (`PLM`) |
+| **Role type** | Specialist |
+| **Mission** | Support cctv inspection responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-002; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### PLM-007 — Leak Detection Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `PLM-007` |
+| **Agent name** | Leak Detection Agent |
+| **Department** | F. Plumbing and industry specialists (`PLM`) |
+| **Role type** | Specialist |
+| **Mission** | Support leak detection responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-002; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### PLM-008 — Bathroom Renovation Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `PLM-008` |
+| **Agent name** | Bathroom Renovation Agent |
+| **Department** | F. Plumbing and industry specialists (`PLM`) |
+| **Role type** | Specialist |
+| **Mission** | Support bathroom renovation responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-002; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### PLM-009 — Construction Plumbing Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `PLM-009` |
+| **Agent name** | Construction Plumbing Agent |
+| **Department** | F. Plumbing and industry specialists (`PLM`) |
+| **Role type** | Specialist |
+| **Mission** | Support construction plumbing responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-002; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### PLM-010 — Maintenance Planner Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `PLM-010` |
+| **Agent name** | Maintenance Planner Agent |
+| **Department** | F. Plumbing and industry specialists (`PLM`) |
+| **Role type** | Specialist |
+| **Mission** | Support maintenance planner responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-002; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### PLM-011 — Estimator Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `PLM-011` |
+| **Agent name** | Estimator Agent |
+| **Department** | F. Plumbing and industry specialists (`PLM`) |
+| **Role type** | Specialist |
+| **Mission** | Support estimator responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-002; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### PLM-012 — Quantity Surveyor Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `PLM-012` |
+| **Agent name** | Quantity Surveyor Agent |
+| **Department** | F. Plumbing and industry specialists (`PLM`) |
+| **Role type** | Specialist |
+| **Mission** | Support quantity surveyor responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-002; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### PLM-013 — Floor-plan Takeoff Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `PLM-013` |
+| **Agent name** | Floor-plan Takeoff Agent |
+| **Department** | F. Plumbing and industry specialists (`PLM`) |
+| **Role type** | Specialist |
+| **Mission** | Support floor-plan takeoff responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-002; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### PLM-014 — Bill of Quantities Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `PLM-014` |
+| **Agent name** | Bill of Quantities Agent |
+| **Department** | F. Plumbing and industry specialists (`PLM`) |
+| **Role type** | Specialist |
+| **Mission** | Support bill of quantities responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-002; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### PLM-015 — Scope-of-work Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `PLM-015` |
+| **Agent name** | Scope-of-work Agent |
+| **Department** | F. Plumbing and industry specialists (`PLM`) |
+| **Role type** | Specialist |
+| **Mission** | Support scope-of-work responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-002; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### PLM-016 — Materials Specification Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `PLM-016` |
+| **Agent name** | Materials Specification Agent |
+| **Department** | F. Plumbing and industry specialists (`PLM`) |
+| **Role type** | Specialist |
+| **Mission** | Support materials specification responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-002; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+
+## G. Inventory, procurement and suppliers
+
+**Department code:** `INV` · **Agents:** 11
+| Agent ID | Agent name | Status | Activation phase |
+|----------|------------|--------|------------------|
+| `INV-001` | Inventory Controller Agent | Defined | Phase A |
+| `INV-002` | Warehouse Agent | Defined | Phase A |
+| `INV-003` | Tool Tracking Agent | Defined | Phase A |
+| `INV-004` | Procurement Agent | Defined | Phase A |
+| `INV-005` | Supplier Management Agent | Defined | Phase A |
+| `INV-006` | Purchase Order Agent | Defined | Phase A |
+| `INV-007` | Supplier Price Hunting Agent | Defined | Phase A |
+| `INV-008` | Market Price Analyst Agent | Defined | Phase A |
+| `INV-009` | Material Availability Agent | Defined | Phase A |
+| `INV-010` | Supplier Performance Agent | Defined | Phase A |
+| `INV-011` | Stock Usage Audit Agent | Defined | Phase A |
+### Agent profiles
+#### INV-001 — Inventory Controller Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `INV-001` |
+| **Agent name** | Inventory Controller Agent |
+| **Department** | G. Inventory, procurement and suppliers (`INV`) |
+| **Role type** | Specialist |
+| **Mission** | Support inventory controller responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-002; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### INV-002 — Warehouse Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `INV-002` |
+| **Agent name** | Warehouse Agent |
+| **Department** | G. Inventory, procurement and suppliers (`INV`) |
+| **Role type** | Specialist |
+| **Mission** | Support warehouse responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-002; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### INV-003 — Tool Tracking Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `INV-003` |
+| **Agent name** | Tool Tracking Agent |
+| **Department** | G. Inventory, procurement and suppliers (`INV`) |
+| **Role type** | Specialist |
+| **Mission** | Support tool tracking responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-002; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### INV-004 — Procurement Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `INV-004` |
+| **Agent name** | Procurement Agent |
+| **Department** | G. Inventory, procurement and suppliers (`INV`) |
+| **Role type** | Specialist |
+| **Mission** | Support procurement responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-002; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### INV-005 — Supplier Management Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `INV-005` |
+| **Agent name** | Supplier Management Agent |
+| **Department** | G. Inventory, procurement and suppliers (`INV`) |
+| **Role type** | Specialist |
+| **Mission** | Support supplier management responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-002; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### INV-006 — Purchase Order Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `INV-006` |
+| **Agent name** | Purchase Order Agent |
+| **Department** | G. Inventory, procurement and suppliers (`INV`) |
+| **Role type** | Specialist |
+| **Mission** | Support purchase order responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-002; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### INV-007 — Supplier Price Hunting Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `INV-007` |
+| **Agent name** | Supplier Price Hunting Agent |
+| **Department** | G. Inventory, procurement and suppliers (`INV`) |
+| **Role type** | Specialist |
+| **Mission** | Support supplier price hunting responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-002; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### INV-008 — Market Price Analyst Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `INV-008` |
+| **Agent name** | Market Price Analyst Agent |
+| **Department** | G. Inventory, procurement and suppliers (`INV`) |
+| **Role type** | Specialist |
+| **Mission** | Support market price analyst responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-002; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### INV-009 — Material Availability Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `INV-009` |
+| **Agent name** | Material Availability Agent |
+| **Department** | G. Inventory, procurement and suppliers (`INV`) |
+| **Role type** | Specialist |
+| **Mission** | Support material availability responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-002; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### INV-010 — Supplier Performance Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `INV-010` |
+| **Agent name** | Supplier Performance Agent |
+| **Department** | G. Inventory, procurement and suppliers (`INV`) |
+| **Role type** | Specialist |
+| **Mission** | Support supplier performance responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-002; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### INV-011 — Stock Usage Audit Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `INV-011` |
+| **Agent name** | Stock Usage Audit Agent |
+| **Department** | G. Inventory, procurement and suppliers (`INV`) |
+| **Role type** | Specialist |
+| **Mission** | Support stock usage audit responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-002; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+
+## H. Customer service and communications
+
+**Department code:** `COM` · **Agents:** 13
+| Agent ID | Agent name | Status | Activation phase |
+|----------|------------|--------|------------------|
+| `COM-001` | Customer Support Agent | Defined | Phase A |
+| `COM-002` | WhatsApp Agent | Build-ready | Phase D |
+| `COM-003` | Email Agent | Defined | Phase A |
+| `COM-004` | Gmail Organisation Agent | Defined | Phase A |
+| `COM-005` | SMS Agent | Defined | Phase A |
+| `COM-006` | AI Receptionist Agent | Build-ready | Phase D |
+| `COM-007` | Calling Agent | Defined | Phase A |
+| `COM-008` | Booking Agent | Defined | Phase A |
+| `COM-009` | Complaint Resolution Agent | Defined | Phase A |
+| `COM-010` | Customer Satisfaction Agent | Defined | Phase A |
+| `COM-011` | Review Request Agent | Defined | Phase A |
+| `COM-012` | Client Portal Support Agent | Defined | Phase A |
+| `COM-013` | Unified Communications Agent | Defined | Phase A |
+### Agent profiles
+#### COM-001 — Customer Support Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `COM-001` |
+| **Agent name** | Customer Support Agent |
+| **Department** | H. Customer service and communications (`COM`) |
+| **Role type** | Specialist |
+| **Mission** | Support customer support responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-002; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### COM-002 — WhatsApp Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `COM-002` |
+| **Agent name** | WhatsApp Agent |
+| **Department** | H. Customer service and communications (`COM`) |
+| **Role type** | Specialist |
+| **Mission** | Support whatsapp responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-002; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Medium |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Build-ready** |
+| **Activation phase** | Phase D |
+| **Notes** | WhatsApp module partial; webhook infrastructure exists |
+#### COM-003 — Email Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `COM-003` |
+| **Agent name** | Email Agent |
+| **Department** | H. Customer service and communications (`COM`) |
+| **Role type** | Specialist |
+| **Mission** | Support email responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-002; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Medium |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### COM-004 — Gmail Organisation Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `COM-004` |
+| **Agent name** | Gmail Organisation Agent |
+| **Department** | H. Customer service and communications (`COM`) |
+| **Role type** | Specialist |
+| **Mission** | Support gmail organisation responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-002; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### COM-005 — SMS Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `COM-005` |
+| **Agent name** | SMS Agent |
+| **Department** | H. Customer service and communications (`COM`) |
+| **Role type** | Specialist |
+| **Mission** | Support sms responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-002; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Medium |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### COM-006 — AI Receptionist Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `COM-006` |
+| **Agent name** | AI Receptionist Agent |
+| **Department** | H. Customer service and communications (`COM`) |
+| **Role type** | Specialist |
+| **Mission** | Support ai receptionist responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-002; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Build-ready** |
+| **Activation phase** | Phase D |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### COM-007 — Calling Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `COM-007` |
+| **Agent name** | Calling Agent |
+| **Department** | H. Customer service and communications (`COM`) |
+| **Role type** | Specialist |
+| **Mission** | Support calling responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-002; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Medium |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### COM-008 — Booking Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `COM-008` |
+| **Agent name** | Booking Agent |
+| **Department** | H. Customer service and communications (`COM`) |
+| **Role type** | Specialist |
+| **Mission** | Support booking responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-002; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### COM-009 — Complaint Resolution Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `COM-009` |
+| **Agent name** | Complaint Resolution Agent |
+| **Department** | H. Customer service and communications (`COM`) |
+| **Role type** | Specialist |
+| **Mission** | Support complaint resolution responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-002; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### COM-010 — Customer Satisfaction Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `COM-010` |
+| **Agent name** | Customer Satisfaction Agent |
+| **Department** | H. Customer service and communications (`COM`) |
+| **Role type** | Specialist |
+| **Mission** | Support customer satisfaction responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-002; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### COM-011 — Review Request Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `COM-011` |
+| **Agent name** | Review Request Agent |
+| **Department** | H. Customer service and communications (`COM`) |
+| **Role type** | Specialist |
+| **Mission** | Support review request responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-002; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### COM-012 — Client Portal Support Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `COM-012` |
+| **Agent name** | Client Portal Support Agent |
+| **Department** | H. Customer service and communications (`COM`) |
+| **Role type** | Specialist |
+| **Mission** | Support client portal support responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-002; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### COM-013 — Unified Communications Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `COM-013` |
+| **Agent name** | Unified Communications Agent |
+| **Department** | H. Customer service and communications (`COM`) |
+| **Role type** | Specialist |
+| **Mission** | Support unified communications responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-002; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+
+## I. People, HR, legal and compliance
+
+**Department code:** `HRL` · **Agents:** 16
+| Agent ID | Agent name | Status | Activation phase |
+|----------|------------|--------|------------------|
+| `HRL-001` | HR Manager Agent | Defined | Phase A |
+| `HRL-002` | Recruitment Agent | Defined | Phase A |
+| `HRL-003` | Candidate Screening Agent | Defined | Phase A |
+| `HRL-004` | Onboarding Agent | Defined | Phase A |
+| `HRL-005` | Training Agent | Defined | Phase A |
+| `HRL-006` | Timesheet Agent | Defined | Phase A |
+| `HRL-007` | Overtime Agent | Defined | Phase A |
+| `HRL-008` | Performance Management Agent | Defined | Phase A |
+| `HRL-009` | Staff Scheduling Agent | Defined | Phase A |
+| `HRL-010` | Labour Compliance Agent | Defined | Phase A |
+| `HRL-011` | Legal Support Agent | Defined | Phase A |
+| `HRL-012` | Contract Agent | Defined | Phase A |
+| `HRL-013` | POPIA and Privacy Agent | Defined | Phase A |
+| `HRL-014` | Health and Safety Agent | Defined | Phase A |
+| `HRL-015` | Policy Agent | Defined | Phase A |
+| `HRL-016` | Disciplinary Process Support Agent | Defined | Phase A |
+### Agent profiles
+#### HRL-001 — HR Manager Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `HRL-001` |
+| **Agent name** | HR Manager Agent |
+| **Department** | I. People, HR, legal and compliance (`HRL`) |
+| **Role type** | Specialist |
+| **Mission** | Support hr manager responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### HRL-002 — Recruitment Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `HRL-002` |
+| **Agent name** | Recruitment Agent |
+| **Department** | I. People, HR, legal and compliance (`HRL`) |
+| **Role type** | Specialist |
+| **Mission** | Support recruitment responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### HRL-003 — Candidate Screening Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `HRL-003` |
+| **Agent name** | Candidate Screening Agent |
+| **Department** | I. People, HR, legal and compliance (`HRL`) |
+| **Role type** | Specialist |
+| **Mission** | Support candidate screening responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### HRL-004 — Onboarding Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `HRL-004` |
+| **Agent name** | Onboarding Agent |
+| **Department** | I. People, HR, legal and compliance (`HRL`) |
+| **Role type** | Specialist |
+| **Mission** | Support onboarding responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### HRL-005 — Training Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `HRL-005` |
+| **Agent name** | Training Agent |
+| **Department** | I. People, HR, legal and compliance (`HRL`) |
+| **Role type** | Specialist |
+| **Mission** | Support training responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### HRL-006 — Timesheet Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `HRL-006` |
+| **Agent name** | Timesheet Agent |
+| **Department** | I. People, HR, legal and compliance (`HRL`) |
+| **Role type** | Specialist |
+| **Mission** | Support timesheet responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### HRL-007 — Overtime Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `HRL-007` |
+| **Agent name** | Overtime Agent |
+| **Department** | I. People, HR, legal and compliance (`HRL`) |
+| **Role type** | Specialist |
+| **Mission** | Support overtime responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### HRL-008 — Performance Management Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `HRL-008` |
+| **Agent name** | Performance Management Agent |
+| **Department** | I. People, HR, legal and compliance (`HRL`) |
+| **Role type** | Specialist |
+| **Mission** | Support performance management responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### HRL-009 — Staff Scheduling Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `HRL-009` |
+| **Agent name** | Staff Scheduling Agent |
+| **Department** | I. People, HR, legal and compliance (`HRL`) |
+| **Role type** | Specialist |
+| **Mission** | Support staff scheduling responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### HRL-010 — Labour Compliance Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `HRL-010` |
+| **Agent name** | Labour Compliance Agent |
+| **Department** | I. People, HR, legal and compliance (`HRL`) |
+| **Role type** | Specialist |
+| **Mission** | Support labour compliance responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### HRL-011 — Legal Support Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `HRL-011` |
+| **Agent name** | Legal Support Agent |
+| **Department** | I. People, HR, legal and compliance (`HRL`) |
+| **Role type** | Specialist |
+| **Mission** | Support legal support responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | High |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### HRL-012 — Contract Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `HRL-012` |
+| **Agent name** | Contract Agent |
+| **Department** | I. People, HR, legal and compliance (`HRL`) |
+| **Role type** | Specialist |
+| **Mission** | Support contract responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | High |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### HRL-013 — POPIA and Privacy Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `HRL-013` |
+| **Agent name** | POPIA and Privacy Agent |
+| **Department** | I. People, HR, legal and compliance (`HRL`) |
+| **Role type** | Specialist |
+| **Mission** | Support popia and privacy responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | High |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### HRL-014 — Health and Safety Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `HRL-014` |
+| **Agent name** | Health and Safety Agent |
+| **Department** | I. People, HR, legal and compliance (`HRL`) |
+| **Role type** | Specialist |
+| **Mission** | Support health and safety responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### HRL-015 — Policy Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `HRL-015` |
+| **Agent name** | Policy Agent |
+| **Department** | I. People, HR, legal and compliance (`HRL`) |
+| **Role type** | Specialist |
+| **Mission** | Support policy responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### HRL-016 — Disciplinary Process Support Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `HRL-016` |
+| **Agent name** | Disciplinary Process Support Agent |
+| **Department** | I. People, HR, legal and compliance (`HRL`) |
+| **Role type** | Specialist |
+| **Mission** | Support disciplinary process support responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | High |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+
+## J. Product, software, data and infrastructure
+
+**Department code:** `SWD` · **Agents:** 20
+| Agent ID | Agent name | Status | Activation phase |
+|----------|------------|--------|------------------|
+| `SWD-001` | Product Manager Agent | Defined | Phase A |
+| `SWD-002` | Project Manager Agent | Defined | Phase A |
+| `SWD-003` | Software Architecture Agent | Defined | Phase A |
+| `SWD-004` | Backend Development Agent | Defined | Phase A |
+| `SWD-005` | Frontend Development Agent | Defined | Phase A |
+| `SWD-006` | Mobile Development Agent | Defined | Phase A |
+| `SWD-007` | Database Agent | Defined | Phase A |
+| `SWD-008` | Integration Agent | Defined | Phase A |
+| `SWD-009` | API Agent | Defined | Phase A |
+| `SWD-010` | DevOps Agent | Defined | Phase A |
+| `SWD-011` | Release Agent | Defined | Phase A |
+| `SWD-012` | QA Agent | Defined | Phase A |
+| `SWD-013` | Security Agent | Defined | Phase A |
+| `SWD-014` | Incident Response Agent | Defined | Phase A |
+| `SWD-015` | System Health Agent | Defined | Phase A |
+| `SWD-016` | Performance Agent | Defined | Phase A |
+| `SWD-017` | Data Quality Agent | Defined | Phase A |
+| `SWD-018` | Data Migration Agent | Defined | Phase A |
+| `SWD-019` | Documentation Agent | Defined | Phase A |
+| `SWD-020` | Technical Support Agent | Defined | Phase A |
+### Agent profiles
+#### SWD-001 — Product Manager Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `SWD-001` |
+| **Agent name** | Product Manager Agent |
+| **Department** | J. Product, software, data and infrastructure (`SWD`) |
+| **Role type** | Specialist |
+| **Mission** | Support product manager responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-004; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### SWD-002 — Project Manager Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `SWD-002` |
+| **Agent name** | Project Manager Agent |
+| **Department** | J. Product, software, data and infrastructure (`SWD`) |
+| **Role type** | Specialist |
+| **Mission** | Support project manager responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-004; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### SWD-003 — Software Architecture Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `SWD-003` |
+| **Agent name** | Software Architecture Agent |
+| **Department** | J. Product, software, data and infrastructure (`SWD`) |
+| **Role type** | Specialist |
+| **Mission** | Support software architecture responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-004; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### SWD-004 — Backend Development Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `SWD-004` |
+| **Agent name** | Backend Development Agent |
+| **Department** | J. Product, software, data and infrastructure (`SWD`) |
+| **Role type** | Specialist |
+| **Mission** | Support backend development responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-004; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### SWD-005 — Frontend Development Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `SWD-005` |
+| **Agent name** | Frontend Development Agent |
+| **Department** | J. Product, software, data and infrastructure (`SWD`) |
+| **Role type** | Specialist |
+| **Mission** | Support frontend development responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-004; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### SWD-006 — Mobile Development Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `SWD-006` |
+| **Agent name** | Mobile Development Agent |
+| **Department** | J. Product, software, data and infrastructure (`SWD`) |
+| **Role type** | Specialist |
+| **Mission** | Support mobile development responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-004; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### SWD-007 — Database Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `SWD-007` |
+| **Agent name** | Database Agent |
+| **Department** | J. Product, software, data and infrastructure (`SWD`) |
+| **Role type** | Specialist |
+| **Mission** | Support database responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-004; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### SWD-008 — Integration Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `SWD-008` |
+| **Agent name** | Integration Agent |
+| **Department** | J. Product, software, data and infrastructure (`SWD`) |
+| **Role type** | Specialist |
+| **Mission** | Support integration responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-004; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Medium |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### SWD-009 — API Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `SWD-009` |
+| **Agent name** | API Agent |
+| **Department** | J. Product, software, data and infrastructure (`SWD`) |
+| **Role type** | Specialist |
+| **Mission** | Support api responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-004; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Medium |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### SWD-010 — DevOps Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `SWD-010` |
+| **Agent name** | DevOps Agent |
+| **Department** | J. Product, software, data and infrastructure (`SWD`) |
+| **Role type** | Specialist |
+| **Mission** | Support devops responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-004; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Medium |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### SWD-011 — Release Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `SWD-011` |
+| **Agent name** | Release Agent |
+| **Department** | J. Product, software, data and infrastructure (`SWD`) |
+| **Role type** | Specialist |
+| **Mission** | Support release responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-004; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Medium |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### SWD-012 — QA Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `SWD-012` |
+| **Agent name** | QA Agent |
+| **Department** | J. Product, software, data and infrastructure (`SWD`) |
+| **Role type** | Specialist |
+| **Mission** | Support qa responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-004; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### SWD-013 — Security Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `SWD-013` |
+| **Agent name** | Security Agent |
+| **Department** | J. Product, software, data and infrastructure (`SWD`) |
+| **Role type** | Specialist |
+| **Mission** | Support security responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-004; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | High |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### SWD-014 — Incident Response Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `SWD-014` |
+| **Agent name** | Incident Response Agent |
+| **Department** | J. Product, software, data and infrastructure (`SWD`) |
+| **Role type** | Specialist |
+| **Mission** | Support incident response responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-004; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### SWD-015 — System Health Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `SWD-015` |
+| **Agent name** | System Health Agent |
+| **Department** | J. Product, software, data and infrastructure (`SWD`) |
+| **Role type** | Specialist |
+| **Mission** | Support system health responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-004; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### SWD-016 — Performance Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `SWD-016` |
+| **Agent name** | Performance Agent |
+| **Department** | J. Product, software, data and infrastructure (`SWD`) |
+| **Role type** | Specialist |
+| **Mission** | Support performance responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-004; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### SWD-017 — Data Quality Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `SWD-017` |
+| **Agent name** | Data Quality Agent |
+| **Department** | J. Product, software, data and infrastructure (`SWD`) |
+| **Role type** | Specialist |
+| **Mission** | Support data quality responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-004; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### SWD-018 — Data Migration Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `SWD-018` |
+| **Agent name** | Data Migration Agent |
+| **Department** | J. Product, software, data and infrastructure (`SWD`) |
+| **Role type** | Specialist |
+| **Mission** | Support data migration responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-004; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Medium |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### SWD-019 — Documentation Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `SWD-019` |
+| **Agent name** | Documentation Agent |
+| **Department** | J. Product, software, data and infrastructure (`SWD`) |
+| **Role type** | Specialist |
+| **Mission** | Support documentation responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-004; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### SWD-020 — Technical Support Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `SWD-020` |
+| **Agent name** | Technical Support Agent |
+| **Department** | J. Product, software, data and infrastructure (`SWD`) |
+| **Role type** | Specialist |
+| **Mission** | Support technical support responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-004; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+
+## K. Permanent TITAN Audit Department
+
+**Department code:** `AUD` · **Agents:** 14
+| Agent ID | Agent name | Status | Activation phase |
+|----------|------------|--------|------------------|
+| `AUD-001` | Chief Audit Agent | Defined | Phase A |
+| `AUD-002` | Application Auditor | Defined | Phase A |
+| `AUD-003` | Browser and User-Journey Auditor | Defined | Phase A |
+| `AUD-004` | Role and Permission Auditor | Defined | Phase A |
+| `AUD-005` | Tenant-Isolation Auditor | Defined | Phase A |
+| `AUD-006` | Financial Data Auditor | Defined | Phase A |
+| `AUD-007` | Integration Auditor | Defined | Phase A |
+| `AUD-008` | Mobile and Responsive Auditor | Defined | Phase A |
+| `AUD-009` | Accessibility Auditor | Defined | Phase A |
+| `AUD-010` | Security and Privacy Auditor | Defined | Phase A |
+| `AUD-011` | Data Quality Auditor | Defined | Phase A |
+| `AUD-012` | Document and Compliance Auditor | Defined | Phase A |
+| `AUD-013` | Performance and Reliability Auditor | Defined | Phase A |
+| `AUD-014` | Acceptance Register Reconciliation Agent | Defined | Phase A |
+### Agent profiles
+#### AUD-001 — Chief Audit Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `AUD-001` |
+| **Agent name** | Chief Audit Agent |
+| **Department** | K. Permanent TITAN Audit Department (`AUD`) |
+| **Role type** | Specialist |
+| **Mission** | Support chief audit responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### AUD-002 — Application Auditor
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `AUD-002` |
+| **Agent name** | Application Auditor |
+| **Department** | K. Permanent TITAN Audit Department (`AUD`) |
+| **Role type** | Specialist |
+| **Mission** | Support application auditor responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### AUD-003 — Browser and User-Journey Auditor
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `AUD-003` |
+| **Agent name** | Browser and User-Journey Auditor |
+| **Department** | K. Permanent TITAN Audit Department (`AUD`) |
+| **Role type** | Specialist |
+| **Mission** | Support browser and user-journey auditor responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### AUD-004 — Role and Permission Auditor
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `AUD-004` |
+| **Agent name** | Role and Permission Auditor |
+| **Department** | K. Permanent TITAN Audit Department (`AUD`) |
+| **Role type** | Specialist |
+| **Mission** | Support role and permission auditor responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### AUD-005 — Tenant-Isolation Auditor
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `AUD-005` |
+| **Agent name** | Tenant-Isolation Auditor |
+| **Department** | K. Permanent TITAN Audit Department (`AUD`) |
+| **Role type** | Specialist |
+| **Mission** | Support tenant-isolation auditor responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### AUD-006 — Financial Data Auditor
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `AUD-006` |
+| **Agent name** | Financial Data Auditor |
+| **Department** | K. Permanent TITAN Audit Department (`AUD`) |
+| **Role type** | Specialist |
+| **Mission** | Support financial data auditor responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### AUD-007 — Integration Auditor
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `AUD-007` |
+| **Agent name** | Integration Auditor |
+| **Department** | K. Permanent TITAN Audit Department (`AUD`) |
+| **Role type** | Specialist |
+| **Mission** | Support integration auditor responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Medium |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### AUD-008 — Mobile and Responsive Auditor
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `AUD-008` |
+| **Agent name** | Mobile and Responsive Auditor |
+| **Department** | K. Permanent TITAN Audit Department (`AUD`) |
+| **Role type** | Specialist |
+| **Mission** | Support mobile and responsive auditor responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### AUD-009 — Accessibility Auditor
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `AUD-009` |
+| **Agent name** | Accessibility Auditor |
+| **Department** | K. Permanent TITAN Audit Department (`AUD`) |
+| **Role type** | Specialist |
+| **Mission** | Support accessibility auditor responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### AUD-010 — Security and Privacy Auditor
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `AUD-010` |
+| **Agent name** | Security and Privacy Auditor |
+| **Department** | K. Permanent TITAN Audit Department (`AUD`) |
+| **Role type** | Specialist |
+| **Mission** | Support security and privacy auditor responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | High |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### AUD-011 — Data Quality Auditor
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `AUD-011` |
+| **Agent name** | Data Quality Auditor |
+| **Department** | K. Permanent TITAN Audit Department (`AUD`) |
+| **Role type** | Specialist |
+| **Mission** | Support data quality auditor responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### AUD-012 — Document and Compliance Auditor
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `AUD-012` |
+| **Agent name** | Document and Compliance Auditor |
+| **Department** | K. Permanent TITAN Audit Department (`AUD`) |
+| **Role type** | Specialist |
+| **Mission** | Support document and compliance auditor responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### AUD-013 — Performance and Reliability Auditor
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `AUD-013` |
+| **Agent name** | Performance and Reliability Auditor |
+| **Department** | K. Permanent TITAN Audit Department (`AUD`) |
+| **Role type** | Specialist |
+| **Mission** | Support performance and reliability auditor responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### AUD-014 — Acceptance Register Reconciliation Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `AUD-014` |
+| **Agent name** | Acceptance Register Reconciliation Agent |
+| **Department** | K. Permanent TITAN Audit Department (`AUD`) |
+| **Role type** | Specialist |
+| **Mission** | Support acceptance register reconciliation responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+
+## L. Research and intelligence
+
+**Department code:** `RSH` · **Agents:** 10
+| Agent ID | Agent name | Status | Activation phase |
+|----------|------------|--------|------------------|
+| `RSH-001` | Market Research Agent | Defined | Phase A |
+| `RSH-002` | Competitor Intelligence Agent | Defined | Phase A |
+| `RSH-003` | Industry Trend Agent | Defined | Phase A |
+| `RSH-004` | Technology Research Agent | Defined | Phase A |
+| `RSH-005` | Supplier Intelligence Agent | Defined | Phase A |
+| `RSH-006` | Regulatory Research Agent | Defined | Phase A |
+| `RSH-007` | Customer Behaviour Agent | Defined | Phase A |
+| `RSH-008` | Location and Expansion Agent | Defined | Phase A |
+| `RSH-009` | SaaS Opportunity Agent | Defined | Phase A |
+| `RSH-010` | Multi-industry Research Agent | Defined | Phase A |
+### Agent profiles
+#### RSH-001 — Market Research Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `RSH-001` |
+| **Agent name** | Market Research Agent |
+| **Department** | L. Research and intelligence (`RSH`) |
+| **Role type** | Specialist |
+| **Mission** | Support market research responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-006; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### RSH-002 — Competitor Intelligence Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `RSH-002` |
+| **Agent name** | Competitor Intelligence Agent |
+| **Department** | L. Research and intelligence (`RSH`) |
+| **Role type** | Specialist |
+| **Mission** | Support competitor intelligence responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-006; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### RSH-003 — Industry Trend Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `RSH-003` |
+| **Agent name** | Industry Trend Agent |
+| **Department** | L. Research and intelligence (`RSH`) |
+| **Role type** | Specialist |
+| **Mission** | Support industry trend responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-006; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### RSH-004 — Technology Research Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `RSH-004` |
+| **Agent name** | Technology Research Agent |
+| **Department** | L. Research and intelligence (`RSH`) |
+| **Role type** | Specialist |
+| **Mission** | Support technology research responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-006; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### RSH-005 — Supplier Intelligence Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `RSH-005` |
+| **Agent name** | Supplier Intelligence Agent |
+| **Department** | L. Research and intelligence (`RSH`) |
+| **Role type** | Specialist |
+| **Mission** | Support supplier intelligence responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-006; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### RSH-006 — Regulatory Research Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `RSH-006` |
+| **Agent name** | Regulatory Research Agent |
+| **Department** | L. Research and intelligence (`RSH`) |
+| **Role type** | Specialist |
+| **Mission** | Support regulatory research responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-006; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### RSH-007 — Customer Behaviour Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `RSH-007` |
+| **Agent name** | Customer Behaviour Agent |
+| **Department** | L. Research and intelligence (`RSH`) |
+| **Role type** | Specialist |
+| **Mission** | Support customer behaviour responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-006; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### RSH-008 — Location and Expansion Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `RSH-008` |
+| **Agent name** | Location and Expansion Agent |
+| **Department** | L. Research and intelligence (`RSH`) |
+| **Role type** | Specialist |
+| **Mission** | Support location and expansion responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-006; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### RSH-009 — SaaS Opportunity Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `RSH-009` |
+| **Agent name** | SaaS Opportunity Agent |
+| **Department** | L. Research and intelligence (`RSH`) |
+| **Role type** | Specialist |
+| **Mission** | Support saas opportunity responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-006; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### RSH-010 — Multi-industry Research Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `RSH-010` |
+| **Agent name** | Multi-industry Research Agent |
+| **Department** | L. Research and intelligence (`RSH`) |
+| **Role type** | Specialist |
+| **Mission** | Support multi-industry research responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | EXEC-006; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+
+## M. Controlled learning and improvement
+
+**Department code:** `LRN` · **Agents:** 8
+| Agent ID | Agent name | Status | Activation phase |
+|----------|------------|--------|------------------|
+| `LRN-001` | Agent Performance Evaluator | Defined | Phase A |
+| `LRN-002` | Prompt and Instruction Optimisation Agent | Defined | Phase A |
+| `LRN-003` | Workflow Improvement Agent | Defined | Phase A |
+| `LRN-004` | Knowledge Curator Agent | Defined | Phase A |
+| `LRN-005` | Model Evaluation Agent | Defined | Phase A |
+| `LRN-006` | Controlled Experiment Agent | Defined | Phase A |
+| `LRN-007` | Regression Detection Agent | Defined | Phase A |
+| `LRN-008` | Rollback Coordinator Agent | Defined | Phase A |
+### Agent profiles
+#### LRN-001 — Agent Performance Evaluator
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `LRN-001` |
+| **Agent name** | Agent Performance Evaluator |
+| **Department** | M. Controlled learning and improvement (`LRN`) |
+| **Role type** | Specialist |
+| **Mission** | Support agent performance evaluator responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | AURA-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### LRN-002 — Prompt and Instruction Optimisation Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `LRN-002` |
+| **Agent name** | Prompt and Instruction Optimisation Agent |
+| **Department** | M. Controlled learning and improvement (`LRN`) |
+| **Role type** | Specialist |
+| **Mission** | Support prompt and instruction optimisation responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | AURA-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### LRN-003 — Workflow Improvement Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `LRN-003` |
+| **Agent name** | Workflow Improvement Agent |
+| **Department** | M. Controlled learning and improvement (`LRN`) |
+| **Role type** | Specialist |
+| **Mission** | Support workflow improvement responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | AURA-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### LRN-004 — Knowledge Curator Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `LRN-004` |
+| **Agent name** | Knowledge Curator Agent |
+| **Department** | M. Controlled learning and improvement (`LRN`) |
+| **Role type** | Specialist |
+| **Mission** | Support knowledge curator responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | AURA-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### LRN-005 — Model Evaluation Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `LRN-005` |
+| **Agent name** | Model Evaluation Agent |
+| **Department** | M. Controlled learning and improvement (`LRN`) |
+| **Role type** | Specialist |
+| **Mission** | Support model evaluation responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | AURA-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### LRN-006 — Controlled Experiment Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `LRN-006` |
+| **Agent name** | Controlled Experiment Agent |
+| **Department** | M. Controlled learning and improvement (`LRN`) |
+| **Role type** | Specialist |
+| **Mission** | Support controlled experiment responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | AURA-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### LRN-007 — Regression Detection Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `LRN-007` |
+| **Agent name** | Regression Detection Agent |
+| **Department** | M. Controlled learning and improvement (`LRN`) |
+| **Role type** | Specialist |
+| **Mission** | Support regression detection responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | AURA-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
+#### LRN-008 — Rollback Coordinator Agent
+
+| Field | Value |
+|-------|-------|
+| **Stable Agent ID** | `LRN-008` |
+| **Agent name** | Rollback Coordinator Agent |
+| **Department** | M. Controlled learning and improvement (`LRN`) |
+| **Role type** | Specialist |
+| **Mission** | Support rollback coordinator responsibilities for the tenant with draft-first, approval-gated outputs. |
+| **Owner or supervising agent** | AURA-001; AURA-001 coordinates |
+| **Primary inputs** | Tenant-scoped operational data, policies, integration read models |
+| **Primary outputs** | Drafts, recommendations, monitored alerts — execution only via approval gates |
+| **Required modules** | See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) |
+| **Required integrations** | Per capability matrix; none mandatory until activation phase |
+| **Permitted tools** | Read and draft tools only until phase gate permits execute |
+| **Data it may read** | Tenant `companyId`-scoped tables permitted by RBAC |
+| **Data it may write** | Draft records, agent audit events — no silent production writes |
+| **Forbidden data/actions** | Cross-tenant data; secrets; silent external sends; unapproved financial/legal changes |
+| **Tenant-isolation requirements** | Mandatory single-tenant scope; no cross-tenant inference |
+| **Required approval gates** | Draft → Approve → Execute for all external or financial effects |
+| **Human escalation conditions** | High-risk, ambiguous, or policy-bound requests → Owner or qualified human |
+| **Learning allowance** | Controlled per [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) |
+| **Risk rating** | Low |
+| **Audit evidence required** | Agent action log, approval record, integration receipt where applicable |
+| **Dependencies** | Phase gate, RBAC, relevant integration Connected state |
+| **Current implementation status** | **Defined** |
+| **Activation phase** | Phase A |
+| **Notes** | Specialist role registered; no autonomous execution without activation gate. |
 
 ---
 
-## QS estimating workflow (locked requirement)
+## Register maintenance
 
-```
-Upload plan → identify scale → measure quantities → generate take-off → create BOQ
-  → obtain supplier prices → calculate labour and overhead → apply margin and VAT
-  → compare market position → produce quote options → quality review → Owner approval
-```
+- **Append-only IDs:** Never reuse a retired Agent ID.
+- **Status changes:** Require evidence link (commit, test, staging proof) in acceptance register.
+- **Contradictions:** Reconcile wording with historical evidence; do not delete audit history.
 
-**Never invent measurements from unreadable plans.**
-
----
-
-## Finance and legal sign-off (locked)
-
-AI may analyse, prepare, reconcile and advise. Formal statutory or regulated sign-off must be completed by a properly qualified human where required.
-
----
-
-## Full agent register
-
-See [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md) for the full capability field template.
-
-### Central Intelligence (1 agents)
-
-| Agent ID | Professional role | Implementation status | Code registry key | Evidence pointer |
-|----------|-------------------|----------------------|-------------------|------------------|
-| AURA-001 | AURA Central Intelligence | **Partial** | decision_intelligence | `packages/shared/src/agents.ts` → `decision_intelligence` |
-
-### Executive & Professional (20 agents)
-
-| Agent ID | Professional role | Implementation status | Code registry key | Evidence pointer |
-|----------|-------------------|----------------------|-------------------|------------------|
-| EXEC-001 | Chief Executive Officer Agent | **Missing** | — | No executable agent implementation |
-| EXEC-002 | Chief Operating Officer Agent | **Missing** | — | No executable agent implementation |
-| EXEC-003 | Chief Financial Officer Agent | **Missing** | — | No executable agent implementation |
-| EXEC-004 | Chief Technology Officer Agent | **Missing** | — | No executable agent implementation |
-| EXEC-005 | Chief Product Officer Agent | **Missing** | — | No executable agent implementation |
-| EXEC-006 | Chief Data Officer Agent | **Missing** | — | No executable agent implementation |
-| EXEC-007 | Executive Command Agent | **Partial** | executive | `packages/shared/src/agents.ts` → `executive` |
-| EXEC-008 | Daily Owner Briefing Agent | **Missing** | — | No executable agent implementation |
-| EXEC-009 | Business Coach Agent | **Missing** | — | No executable agent implementation |
-| EXEC-010 | Business Strategist Agent | **Missing** | — | No executable agent implementation |
-| EXEC-011 | Business Analyst Agent | **Missing** | — | No executable agent implementation |
-| EXEC-012 | Business Development Specialist | **Missing** | — | No executable agent implementation |
-| EXEC-013 | Market Research Agent | **Missing** | — | No executable agent implementation |
-| EXEC-014 | Competitor Intelligence Agent | **Missing** | — | No executable agent implementation |
-| EXEC-015 | Profit Improvement Agent | **Missing** | — | No executable agent implementation |
-| EXEC-016 | Risk and Opportunity Agent | **Missing** | — | No executable agent implementation |
-| EXEC-017 | Programme Manager Agent | **Missing** | — | No executable agent implementation |
-| EXEC-018 | Senior Project Manager Agent | **Missing** | — | No executable agent implementation |
-| EXEC-019 | Executive Assistant Agent | **Missing** | — | No executable agent implementation |
-| EXEC-020 | Administrative Manager Agent | **Missing** | — | No executable agent implementation |
-
-### Finance & Accounting (19 agents)
-
-| Agent ID | Professional role | Implementation status | Code registry key | Evidence pointer |
-|----------|-------------------|----------------------|-------------------|------------------|
-| FIN-001 | Chartered Accountant-Level Finance Agent | **Missing** | — | No executable agent implementation |
-| FIN-002 | Management Accountant Agent | **Missing** | — | No executable agent implementation |
-| FIN-003 | Bookkeeper Agent | **Missing** | — | No executable agent implementation |
-| FIN-004 | Financial Controller Agent | **Partial** | finance | `packages/shared/src/agents.ts` → `finance` |
-| FIN-005 | Tax and Compliance Preparation Agent | **Missing** | — | No executable agent implementation |
-| FIN-006 | Xero Reconciliation Agent | **Partial** | finance | `packages/shared/src/agents.ts` → `finance` |
-| FIN-007 | Cash-Flow Agent | **Missing** | — | No executable agent implementation |
-| FIN-008 | Financial Forecasting Agent | **Missing** | — | No executable agent implementation |
-| FIN-009 | Budgeting Agent | **Missing** | — | No executable agent implementation |
-| FIN-010 | Invoice Follow-Up Agent | **Missing** | — | No executable agent implementation |
-| FIN-011 | Debtors and Collections Agent | **Missing** | — | No executable agent implementation |
-| FIN-012 | Credit Risk Agent | **Missing** | — | No executable agent implementation |
-| FIN-013 | Job Costing and Margin Agent | **Missing** | — | No executable agent implementation |
-| FIN-014 | Payroll Agent | **Missing** | — | No executable agent implementation |
-| FIN-015 | Fraud and Financial Anomaly Agent | **Missing** | — | No executable agent implementation |
-| FIN-016 | Project Profitability Controller | **Missing** | — | No executable agent implementation |
-| FIN-017 | Pricing Director Agent | **Missing** | — | No executable agent implementation |
-| FIN-018 | Pricebook Intelligence Agent | **Missing** | — | No executable agent implementation |
-| FIN-019 | Contract Pricing Agent | **Missing** | — | No executable agent implementation |
-
-### QS, Estimating & Commercial Intelligence (17 agents)
-
-| Agent ID | Professional role | Implementation status | Code registry key | Evidence pointer |
-|----------|-------------------|----------------------|-------------------|------------------|
-| QS-001 | Quantity Surveyor Agent | **Missing** | — | No executable agent implementation |
-| QS-002 | Floor Plan Take-Off Agent | **Missing** | — | No executable agent implementation |
-| QS-003 | Plumbing Estimator Agent | **Missing** | — | No executable agent implementation |
-| QS-004 | General Trade Estimator Agent | **Missing** | — | No executable agent implementation |
-| QS-005 | BOQ Generation Agent | **Missing** | — | No executable agent implementation |
-| QS-006 | Tender and Commercial Quote Agent | **Missing** | — | No executable agent implementation |
-| QS-007 | Tender Compliance Agent | **Missing** | — | No executable agent implementation |
-| QS-008 | Cost Engineering Agent | **Missing** | — | No executable agent implementation |
-| QS-009 | Variation and Claims Agent | **Missing** | — | No executable agent implementation |
-| QS-010 | Site Survey Agent | **Missing** | — | No executable agent implementation |
-| QS-011 | Project Cost Controller | **Missing** | — | No executable agent implementation |
-| QS-012 | Quote Quality Controller | **Missing** | — | No executable agent implementation |
-| QS-013 | Supplier Price-Hunting Agent | **Missing** | — | No executable agent implementation |
-| QS-014 | Market Pricing Analyst | **Missing** | — | No executable agent implementation |
-| QS-015 | Competitor Pricing Research Agent | **Missing** | — | No executable agent implementation |
-| QS-016 | Procurement Cost Analyst | **Missing** | — | No executable agent implementation |
-| QS-017 | Insurance Estimate Agent | **Missing** | — | No executable agent implementation |
-
-### Operations & Field Service (17 agents)
-
-| Agent ID | Professional role | Implementation status | Code registry key | Evidence pointer |
-|----------|-------------------|----------------------|-------------------|------------------|
-| OPS-001 | Operations Manager Agent | **Partial** | operations | `packages/shared/src/agents.ts` → `operations` |
-| OPS-002 | Dispatch Coordinator Agent | **Partial** | operations | `packages/shared/src/agents.ts` → `operations` |
-| OPS-003 | Scheduling Agent | **Missing** | — | No executable agent implementation |
-| OPS-004 | Emergency Triage Agent | **Missing** | — | No executable agent implementation |
-| OPS-005 | Capacity Planning Agent | **Missing** | — | No executable agent implementation |
-| OPS-006 | Job Progress Agent | **Missing** | — | No executable agent implementation |
-| OPS-007 | Service Delivery Quality Agent | **Missing** | — | No executable agent implementation |
-| OPS-008 | Recurring Maintenance Agent | **Missing** | — | No executable agent implementation |
-| OPS-009 | Technician ETA Agent | **Missing** | — | No executable agent implementation |
-| OPS-010 | Field Execution Agent | **Missing** | — | No executable agent implementation |
-| OPS-011 | Variation Management Agent | **Missing** | — | No executable agent implementation |
-| OPS-012 | Job Completion Agent | **Missing** | — | No executable agent implementation |
-| OPS-013 | Preventive Maintenance Agent | **Missing** | — | No executable agent implementation |
-| OPS-014 | Equipment Lifecycle Agent | **Missing** | — | No executable agent implementation |
-| OPS-015 | Site Progress Verification Agent | **Missing** | — | No executable agent implementation |
-| OPS-016 | Snag List and Handover Agent | **Missing** | — | No executable agent implementation |
-| OPS-017 | Subcontractor Management Agent | **Missing** | — | No executable agent implementation |
-
-### Sales, CRM & Customer Experience (22 agents)
-
-| Agent ID | Professional role | Implementation status | Code registry key | Evidence pointer |
-|----------|-------------------|----------------------|-------------------|------------------|
-| CRM-001 | Sales Director Agent | **Missing** | — | No executable agent implementation |
-| CRM-002 | Sales Specialist Agent | **Missing** | — | No executable agent implementation |
-| CRM-003 | Lead Qualification Agent | **Partial** | lead_generation | `packages/shared/src/agents.ts` → `lead_generation` |
-| CRM-004 | Sales Follow-Up Agent | **Missing** | — | No executable agent implementation |
-| CRM-005 | Quote Follow-Up Agent | **Missing** | — | No executable agent implementation |
-| CRM-006 | Objection Handling Agent | **Missing** | — | No executable agent implementation |
-| CRM-007 | Commercial Negotiation Agent | **Missing** | — | No executable agent implementation |
-| CRM-008 | Customer Support Manager | **Partial** | customer_support | `packages/shared/src/agents.ts` → `customer_support` |
-| CRM-009 | Customer Service Agent | **Partial** | sales | `packages/shared/src/agents.ts` → `sales` |
-| CRM-010 | Customer Success Agent | **Partial** | customer_experience | `packages/shared/src/agents.ts` → `customer_experience` |
-| CRM-011 | Customer Experience Director | **Missing** | — | No executable agent implementation |
-| CRM-012 | Customer Journey Designer | **Missing** | — | No executable agent implementation |
-| CRM-013 | Complaint Resolution Agent | **Missing** | — | No executable agent implementation |
-| CRM-014 | Service Recovery Agent | **Missing** | — | No executable agent implementation |
-| CRM-015 | Customer Escalation Agent | **Missing** | — | No executable agent implementation |
-| CRM-016 | Customer Retention Agent | **Missing** | — | No executable agent implementation |
-| CRM-017 | Customer Churn Prediction Agent | **Missing** | — | No executable agent implementation |
-| CRM-018 | Review and Referral Agent | **Missing** | — | No executable agent implementation |
-| CRM-019 | Loyalty Programme Agent | **Missing** | — | No executable agent implementation |
-| CRM-020 | Membership/HomeShield Agent | **Missing** | — | No executable agent implementation |
-| CRM-021 | VIP Customer Agent | **Missing** | — | No executable agent implementation |
-| CRM-022 | Reputation Crisis Manager | **Missing** | — | No executable agent implementation |
-
-### Communications & Reception (16 agents)
-
-| Agent ID | Professional role | Implementation status | Code registry key | Evidence pointer |
-|----------|-------------------|----------------------|-------------------|------------------|
-| COM-001 | AI Phone Receptionist | **Partial** | voice_receptionist | `packages/shared/src/agents.ts` → `voice_receptionist` |
-| COM-002 | Receptionist Training Agent | **Missing** | — | No executable agent implementation |
-| COM-003 | Call Quality Reviewer | **Missing** | — | No executable agent implementation |
-| COM-004 | WhatsApp Business Agent | **Partial** | communications | `packages/shared/src/agents.ts` → `communications` |
-| COM-005 | SMS Agent | **Missing** | — | No executable agent implementation |
-| COM-006 | Email Inbox Agent | **Missing** | — | No executable agent implementation |
-| COM-007 | Facebook Messenger Agent | **Provider-blocked** | — | No executable agent implementation |
-| COM-008 | Unified Communications Agent | **Missing** | — | No executable agent implementation |
-| COM-009 | Conversation Compliance Agent | **Missing** | — | No executable agent implementation |
-| COM-010 | Translation and Language Agent | **Missing** | — | No executable agent implementation |
-| COM-011 | Afrikaans Communications Agent | **Missing** | — | No executable agent implementation |
-| COM-012 | English Communications Agent | **Missing** | — | No executable agent implementation |
-| COM-013 | Tone and Brand Voice Agent | **Missing** | — | No executable agent implementation |
-| COM-014 | Message Delivery Monitoring Agent | **Missing** | — | No executable agent implementation |
-| COM-015 | Spam and Abuse Protection Agent | **Missing** | — | No executable agent implementation |
-| COM-016 | Escalation Routing Agent | **Missing** | — | No executable agent implementation |
-
-### Marketing, Trends & Strategy (31 agents)
-
-| Agent ID | Professional role | Implementation status | Code registry key | Evidence pointer |
-|----------|-------------------|----------------------|-------------------|------------------|
-| MKT-001 | Marketing Director Agent | **Partial** | marketing | `packages/shared/src/agents.ts` → `marketing` |
-| MKT-002 | Marketing Specialist Agent | **Missing** | — | No executable agent implementation |
-| MKT-003 | Marketing Analytics Agent | **Missing** | — | No executable agent implementation |
-| MKT-004 | Advertising and Campaign Agent | **Missing** | — | No executable agent implementation |
-| MKT-005 | Local SEO Agent | **Missing** | — | No executable agent implementation |
-| MKT-006 | Google Business Profile Agent | **Missing** | — | No executable agent implementation |
-| MKT-007 | Social Media Agent | **Provider-blocked** | — | No executable agent implementation |
-| MKT-008 | Community Management Agent | **Missing** | — | No executable agent implementation |
-| MKT-009 | Content Director Agent | **Missing** | — | No executable agent implementation |
-| MKT-010 | Content Strategy Agent | **Missing** | — | No executable agent implementation |
-| MKT-011 | Content Calendar Agent | **Missing** | — | No executable agent implementation |
-| MKT-012 | Copywriting Agent | **Missing** | — | No executable agent implementation |
-| MKT-013 | Advertising Copy Agent | **Missing** | — | No executable agent implementation |
-| MKT-014 | SEO Content Writer | **Missing** | — | No executable agent implementation |
-| MKT-015 | Blog and Website Writer | **Missing** | — | No executable agent implementation |
-| MKT-016 | Email Campaign Writer | **Missing** | — | No executable agent implementation |
-| MKT-017 | Case Study Writer | **Missing** | — | No executable agent implementation |
-| MKT-018 | Customer Education Agent | **Missing** | — | No executable agent implementation |
-| MKT-019 | Campaign Planning Agent | **Missing** | — | No executable agent implementation |
-| MKT-020 | Content Approval Coordinator | **Missing** | — | No executable agent implementation |
-| MKT-021 | Publishing and Scheduling Agent | **Provider-blocked** | — | No executable agent implementation |
-| MKT-022 | Global Trend Research Agent | **Missing** | — | No executable agent implementation |
-| MKT-023 | Cape Town Trend Research Agent | **Missing** | — | No executable agent implementation |
-| MKT-024 | Industry Trend Analyst | **Missing** | — | No executable agent implementation |
-| MKT-025 | Social Media Trend Hunter | **Missing** | — | No executable agent implementation |
-| MKT-026 | Viral Content Research Agent | **Missing** | — | No executable agent implementation |
-| MKT-027 | Customer Behaviour Research Agent | **Missing** | — | No executable agent implementation |
-| MKT-028 | Competitor Content Analyst | **Missing** | — | No executable agent implementation |
-| MKT-029 | Platform Algorithm Research Agent | **Missing** | — | No executable agent implementation |
-| MKT-030 | Seasonal Campaign Research Agent | **Missing** | — | No executable agent implementation |
-| MKT-031 | Emerging Technology Research Agent | **Missing** | — | No executable agent implementation |
-
-### Creative Production (14 agents)
-
-| Agent ID | Professional role | Implementation status | Code registry key | Evidence pointer |
-|----------|-------------------|----------------------|-------------------|------------------|
-| CRE-001 | Creative Director Agent | **Missing** | — | No executable agent implementation |
-| CRE-002 | Senior Graphic Designer Agent | **Missing** | — | No executable agent implementation |
-| CRE-003 | Brand Identity Designer Agent | **Missing** | — | No executable agent implementation |
-| CRE-004 | Social Media Designer Agent | **Missing** | — | No executable agent implementation |
-| CRE-005 | Advertising Designer Agent | **Missing** | — | No executable agent implementation |
-| CRE-006 | Document and Proposal Designer Agent | **Missing** | — | No executable agent implementation |
-| CRE-007 | Web and UI Designer Agent | **Missing** | — | No executable agent implementation |
-| CRE-008 | Presentation Designer Agent | **Missing** | — | No executable agent implementation |
-| CRE-009 | Infographic Designer Agent | **Missing** | — | No executable agent implementation |
-| CRE-010 | Image Retouching and Quality Agent | **Missing** | — | No executable agent implementation |
-| CRE-011 | Brand Consistency Reviewer Agent | **Missing** | — | No executable agent implementation |
-| CRE-012 | Photography Director Agent | **Missing** | — | No executable agent implementation |
-| CRE-013 | Shot List Planner Agent | **Missing** | — | No executable agent implementation |
-| CRE-014 | On-Site Content Coordinator Agent | **Missing** | — | No executable agent implementation |
-
-### Video & Audio Production (20 agents)
-
-| Agent ID | Professional role | Implementation status | Code registry key | Evidence pointer |
-|----------|-------------------|----------------------|-------------------|------------------|
-| VID-001 | Video Creative Director Agent | **Missing** | — | No executable agent implementation |
-| VID-002 | Video Content Strategist Agent | **Missing** | — | No executable agent implementation |
-| VID-003 | Scriptwriting Agent | **Missing** | — | No executable agent implementation |
-| VID-004 | Hook and Storytelling Agent | **Missing** | — | No executable agent implementation |
-| VID-005 | Short-Form Video Creator Agent | **Missing** | — | No executable agent implementation |
-| VID-006 | Long-Form Video Creator Agent | **Missing** | — | No executable agent implementation |
-| VID-007 | Professional Video Editor Agent | **Missing** | — | No executable agent implementation |
-| VID-008 | Motion Graphics Agent | **Missing** | — | No executable agent implementation |
-| VID-009 | Animation Agent | **Missing** | — | No executable agent implementation |
-| VID-010 | Voice-Over Planning Agent | **Missing** | — | No executable agent implementation |
-| VID-011 | Caption and Subtitle Agent | **Missing** | — | No executable agent implementation |
-| VID-012 | Thumbnail Designer Agent | **Missing** | — | No executable agent implementation |
-| VID-013 | Podcast and Audio Editor Agent | **Missing** | — | No executable agent implementation |
-| VID-014 | Audio Engineer Agent | **Missing** | — | No executable agent implementation |
-| VID-015 | Colour-Grading Agent | **Missing** | — | No executable agent implementation |
-| VID-016 | Visual Effects Agent | **Missing** | — | No executable agent implementation |
-| VID-017 | Video Quality Controller Agent | **Missing** | — | No executable agent implementation |
-| VID-018 | Content Repurposing Agent | **Missing** | — | No executable agent implementation |
-| VID-019 | Content Rights and Licensing Agent | **Missing** | — | No executable agent implementation |
-| VID-020 | Creative Performance Analyst Agent | **Missing** | — | No executable agent implementation |
-
-### HR, Training & Administration (20 agents)
-
-| Agent ID | Professional role | Implementation status | Code registry key | Evidence pointer |
-|----------|-------------------|----------------------|-------------------|------------------|
-| HR-001 | HR Manager Agent | **Partial** | workforce_intelligence | `packages/shared/src/agents.ts` → `workforce_intelligence` |
-| HR-002 | Recruitment Specialist Agent | **Partial** | recruiting | `packages/shared/src/agents.ts` → `recruiting` |
-| HR-003 | Employee Relations Agent | **Missing** | — | No executable agent implementation |
-| HR-004 | Performance Management Agent | **Missing** | — | No executable agent implementation |
-| HR-005 | Attendance Agent | **Missing** | — | No executable agent implementation |
-| HR-006 | Payroll and Overtime Agent | **Missing** | — | No executable agent implementation |
-| HR-007 | Technician Performance Agent | **Missing** | — | No executable agent implementation |
-| HR-008 | Training and Development Agent | **Missing** | — | No executable agent implementation |
-| HR-009 | Leadership Development Agent | **Missing** | — | No executable agent implementation |
-| HR-010 | Employee Onboarding Agent | **Missing** | — | No executable agent implementation |
-| HR-011 | Skills Assessment Agent | **Missing** | — | No executable agent implementation |
-| HR-012 | Technical Training Agent | **Missing** | — | No executable agent implementation |
-| HR-013 | Health and Safety Training Agent | **Missing** | — | No executable agent implementation |
-| HR-014 | Customer Service Coach Agent | **Missing** | — | No executable agent implementation |
-| HR-015 | Sales Coach Agent | **Missing** | — | No executable agent implementation |
-| HR-016 | Knowledge Manager Agent | **Missing** | — | No executable agent implementation |
-| HR-017 | SOP Agent | **Missing** | — | No executable agent implementation |
-| HR-018 | Knowledge Quality Reviewer Agent | **Missing** | — | No executable agent implementation |
-| HR-019 | Document and Filing Agent | **Missing** | — | No executable agent implementation |
-| HR-020 | Compliance Administration Agent | **Missing** | — | No executable agent implementation |
-
-### Legal, Safety, Risk & Compliance (16 agents)
-
-| Agent ID | Professional role | Implementation status | Code registry key | Evidence pointer |
-|----------|-------------------|----------------------|-------------------|------------------|
-| LEG-001 | Legal Counsel Agent | **Partial** | legal_compliance | `packages/shared/src/agents.ts` → `legal_compliance` |
-| LEG-002 | Contract Review Agent | **Missing** | — | No executable agent implementation |
-| LEG-003 | Employment Compliance Agent | **Missing** | — | No executable agent implementation |
-| LEG-004 | Consumer Protection Agent | **Missing** | — | No executable agent implementation |
-| LEG-005 | POPIA and Privacy Officer Agent | **Missing** | — | No executable agent implementation |
-| LEG-006 | Commercial Risk Agent | **Missing** | — | No executable agent implementation |
-| LEG-007 | Plumbing and Trade Compliance Agent | **Missing** | — | No executable agent implementation |
-| LEG-008 | Health and Safety Officer Agent | **Missing** | — | No executable agent implementation |
-| LEG-009 | Incident Investigation Agent | **Missing** | — | No executable agent implementation |
-| LEG-010 | Insurance Claims Agent | **Missing** | — | No executable agent implementation |
-| LEG-011 | Occupational Health Compliance Agent | **Missing** | — | No executable agent implementation |
-| LEG-012 | Municipal Permit and Approval Agent | **Missing** | — | No executable agent implementation |
-| LEG-013 | Trade Certification Agent | **Missing** | — | No executable agent implementation |
-| LEG-014 | Environmental Compliance Agent | **Missing** | — | No executable agent implementation |
-| LEG-015 | Emergency and Disaster Response Agent | **Missing** | — | No executable agent implementation |
-| LEG-016 | Audit and Governance Agent | **Missing** | — | No executable agent implementation |
-
-### Software, IT & Product (26 agents)
-
-| Agent ID | Professional role | Implementation status | Code registry key | Evidence pointer |
-|----------|-------------------|----------------------|-------------------|------------------|
-| SW-001 | AURA Developer Coordinator | **Missing** | — | No executable agent implementation |
-| SW-002 | Software Engineering Agent | **Missing** | — | No executable agent implementation |
-| SW-003 | Frontend Engineering Agent | **Missing** | — | No executable agent implementation |
-| SW-004 | Backend Engineering Agent | **Missing** | — | No executable agent implementation |
-| SW-005 | Mobile App Engineer Agent | **Missing** | — | No executable agent implementation |
-| SW-006 | Database Engineering Agent | **Missing** | — | No executable agent implementation |
-| SW-007 | IT Systems Engineer Agent | **Missing** | — | No executable agent implementation |
-| SW-008 | Cloud and Infrastructure Agent | **Missing** | — | No executable agent implementation |
-| SW-009 | Integration Engineer Agent | **Missing** | — | No executable agent implementation |
-| SW-010 | DevOps Engineer Agent | **Missing** | — | No executable agent implementation |
-| SW-011 | Site Reliability Engineer Agent | **Missing** | — | No executable agent implementation |
-| SW-012 | Cybersecurity Agent | **Missing** | — | No executable agent implementation |
-| SW-013 | AI Systems Engineer Agent | **Missing** | — | No executable agent implementation |
-| SW-014 | Prompt and Agent Engineer Agent | **Missing** | — | No executable agent implementation |
-| SW-015 | Architecture Agent | **Missing** | — | No executable agent implementation |
-| SW-016 | Product Manager Agent | **Missing** | — | No executable agent implementation |
-| SW-017 | Product Owner Agent | **Missing** | — | No executable agent implementation |
-| SW-018 | UX Research Agent | **Missing** | — | No executable agent implementation |
-| SW-019 | Accessibility Testing Agent | **Missing** | — | No executable agent implementation |
-| SW-020 | Automated Testing Agent | **Missing** | — | No executable agent implementation |
-| SW-021 | Integration Testing Agent | **Missing** | — | No executable agent implementation |
-| SW-022 | Release Manager Agent | **Partial** | release_manager | `packages/shared/src/agents.ts` → `release_manager` |
-| SW-023 | Technical Documentation Agent | **Missing** | — | No executable agent implementation |
-| SW-024 | System Health and Self-Healing Agent | **Partial** | platform_health | `packages/shared/src/agents.ts` → `platform_health` |
-| SW-025 | Disaster Recovery Agent | **Missing** | — | No executable agent implementation |
-| SW-026 | Technical Support Agent | **Missing** | — | No executable agent implementation |
-
-### Data & Analytics (10 agents)
-
-| Agent ID | Professional role | Implementation status | Code registry key | Evidence pointer |
-|----------|-------------------|----------------------|-------------------|------------------|
-| DAT-001 | Data Analyst Agent | **Missing** | — | No executable agent implementation |
-| DAT-002 | Analytics Engineer Agent | **Missing** | — | No executable agent implementation |
-| DAT-003 | Data Quality Agent | **Missing** | — | No executable agent implementation |
-| DAT-004 | Data Governance Agent | **Missing** | — | No executable agent implementation |
-| DAT-005 | Master Data Management Agent | **Missing** | — | No executable agent implementation |
-| DAT-006 | CRM Data-Cleaning Agent | **Missing** | — | No executable agent implementation |
-| DAT-007 | Forecasting and Predictive Analytics Agent | **Missing** | — | No executable agent implementation |
-| DAT-008 | KPI Design Agent | **Missing** | — | No executable agent implementation |
-| DAT-009 | Report Automation Agent | **Missing** | — | No executable agent implementation |
-| DAT-010 | Business Intelligence Agent | **Partial** | business_intelligence | `packages/shared/src/agents.ts` → `business_intelligence` |
-
-### Inventory, Procurement & Assets (17 agents)
-
-| Agent ID | Professional role | Implementation status | Code registry key | Evidence pointer |
-|----------|-------------------|----------------------|-------------------|------------------|
-| INV-001 | Inventory Control Agent | **Missing** | — | No executable agent implementation |
-| INV-002 | Warehouse Agent | **Missing** | — | No executable agent implementation |
-| INV-003 | Tool Tracking Agent | **Missing** | — | No executable agent implementation |
-| INV-004 | Procurement Agent | **Partial** | procurement | `packages/shared/src/agents.ts` → `procurement` |
-| INV-005 | Supplier Price Comparison Agent | **Missing** | — | No executable agent implementation |
-| INV-006 | Vendor Relationship Manager Agent | **Missing** | — | No executable agent implementation |
-| INV-007 | Supplier Contract Agent | **Missing** | — | No executable agent implementation |
-| INV-008 | Purchase Approval Agent | **Missing** | — | No executable agent implementation |
-| INV-009 | Demand Forecasting Agent | **Missing** | — | No executable agent implementation |
-| INV-010 | Stock Replenishment Agent | **Missing** | — | No executable agent implementation |
-| INV-011 | Dead-Stock Detection Agent | **Missing** | — | No executable agent implementation |
-| INV-012 | Tool Maintenance Agent | **Missing** | — | No executable agent implementation |
-| INV-013 | Tool Loss Investigation Agent | **Missing** | — | No executable agent implementation |
-| INV-014 | Asset Lifecycle Agent | **Missing** | — | No executable agent implementation |
-| INV-015 | Facilities Manager Agent | **Missing** | — | No executable agent implementation |
-| INV-016 | Warehouse Layout Agent | **Missing** | — | No executable agent implementation |
-| INV-017 | Delivery and Logistics Agent | **Missing** | — | No executable agent implementation |
-
-### Fleet, Maps & Driver Safety (13 agents)
-
-| Agent ID | Professional role | Implementation status | Code registry key | Evidence pointer |
-|----------|-------------------|----------------------|-------------------|------------------|
-| FLT-001 | Fleet Manager Agent | **Partial** | asset_intelligence | `packages/shared/src/agents.ts` → `asset_intelligence` |
-| FLT-002 | Google Maps and Routing Agent | **Missing** | — | No executable agent implementation |
-| FLT-003 | Cartrack Telemetry Agent | **Missing** | — | No executable agent implementation |
-| FLT-004 | Vehicle Maintenance Agent | **Missing** | — | No executable agent implementation |
-| FLT-005 | Driver Behaviour Agent | **Missing** | — | No executable agent implementation |
-| FLT-006 | Fuel Consumption Agent | **Missing** | — | No executable agent implementation |
-| FLT-007 | Vehicle Utilisation Agent | **Missing** | — | No executable agent implementation |
-| FLT-008 | Accident and Incident Agent | **Missing** | — | No executable agent implementation |
-| FLT-009 | Licence and Registration Agent | **Missing** | — | No executable agent implementation |
-| FLT-010 | Fleet Insurance Agent | **Missing** | — | No executable agent implementation |
-| FLT-011 | Route Efficiency Agent | **Missing** | — | No executable agent implementation |
-| FLT-012 | Vehicle Replacement Planning Agent | **Missing** | — | No executable agent implementation |
-| FLT-013 | Driver Coaching Agent | **Missing** | — | No executable agent implementation |
-
-### SaaS, Partnerships & Expansion (14 agents)
-
-| Agent ID | Professional role | Implementation status | Code registry key | Evidence pointer |
-|----------|-------------------|----------------------|-------------------|------------------|
-| SaaS-001 | Tenant Onboarding Agent | **Missing** | — | No executable agent implementation |
-| SaaS-002 | Subscription and Billing Agent | **Missing** | — | No executable agent implementation |
-| SaaS-003 | SaaS Customer Success Agent | **Missing** | — | No executable agent implementation |
-| SaaS-004 | Platform Usage and Health Agent | **Missing** | — | No executable agent implementation |
-| SaaS-005 | Partnerships Director Agent | **Missing** | — | No executable agent implementation |
-| SaaS-006 | Franchise Development Agent | **Missing** | — | No executable agent implementation |
-| SaaS-007 | Corporate Accounts Agent | **Missing** | — | No executable agent implementation |
-| SaaS-008 | Property Manager Relationship Agent | **Missing** | — | No executable agent implementation |
-| SaaS-009 | Construction Partnership Agent | **Missing** | — | No executable agent implementation |
-| SaaS-010 | Supplier Partnership Agent | **Missing** | — | No executable agent implementation |
-| SaaS-011 | Geographic Expansion Agent | **Missing** | — | No executable agent implementation |
-| SaaS-012 | New Industry Research Agent | **Missing** | — | No executable agent implementation |
-| SaaS-013 | Acquisition and Merger Research Agent | **Missing** | — | No executable agent implementation |
-| SaaS-014 | Investor Relations Agent | **Missing** | — | No executable agent implementation |
-
-### Permanent Audit Department (14 agents)
-
-| Agent ID | Professional role | Implementation status | Code registry key | Evidence pointer |
-|----------|-------------------|----------------------|-------------------|------------------|
-| AUD-001 | Chief Audit Agent | **Missing** | — | No executable agent implementation |
-| AUD-002 | Application Auditor | **Missing** | — | No executable agent implementation |
-| AUD-003 | Browser and User-Journey Auditor | **Missing** | — | No executable agent implementation |
-| AUD-004 | Role and Permission Auditor | **Missing** | — | No executable agent implementation |
-| AUD-005 | Tenant-Isolation Auditor | **Missing** | — | No executable agent implementation |
-| AUD-006 | Financial Data Auditor | **Missing** | — | No executable agent implementation |
-| AUD-007 | Integration Auditor | **Missing** | — | No executable agent implementation |
-| AUD-008 | Mobile and Responsive Auditor | **Missing** | — | No executable agent implementation |
-| AUD-009 | Accessibility Auditor | **Missing** | — | No executable agent implementation |
-| AUD-010 | Security and Privacy Auditor | **Missing** | — | No executable agent implementation |
-| AUD-011 | Data Quality Auditor | **Missing** | — | No executable agent implementation |
-| AUD-012 | Document and Compliance Auditor | **Missing** | — | No executable agent implementation |
-| AUD-013 | Performance and Reliability Auditor | **Missing** | — | No executable agent implementation |
-| AUD-014 | Acceptance Register Reconciliation Agent | **Missing** | — | No executable agent implementation |
-
----
-
-**Maintenance:** Regenerate via `node scripts/generate-master-agent-register.mjs` then `node scripts/render-agent-register-tables.mjs` then `node scripts/assemble-master-agent-register.mjs`.
+**Document control:** AGENT-001 · Total registered roles: **191** · No fixed maximum.

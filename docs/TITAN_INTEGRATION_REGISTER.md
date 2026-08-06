@@ -1,14 +1,77 @@
 # TITAN Integration Register
 
+**Document ID:** INT register (includes INT-UNIVERSAL-001)  
 **Document type:** Permanent provider and integration source of truth — documentation only  
 **Generated (UTC):** 2026-08-06  
-**No provider calls made during register creation**  
+**Last updated (UTC):** 2026-08-06 — AGENT-001 universal integration standard  
+**No provider calls made during register maintenance**  
+
+**Related documents:**
+
+- [TITAN_MASTER_AGENT_REGISTER.md](./TITAN_MASTER_AGENT_REGISTER.md) (AGENT-001)
+- [TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md](./TITAN_AGENT_LEARNING_AND_GOVERNANCE_STANDARD.md) (AGENT-003)
+- [TITAN_MASTER_ACCEPTANCE_REGISTER.md](./TITAN_MASTER_ACCEPTANCE_REGISTER.md)
+
+---
+
+## INT-UNIVERSAL-001 — Universal Integration Wizard Standard (permanent)
+
+All **client-facing** provider integrations must follow this journey:
+
+```
+Connect → Official provider login → Choose business/account → Choose Page/profile/resource → TITAN verifies → Secure server-side save → Connected
+```
+
+### Applies to
+
+Facebook · Instagram · TikTok · Google Business Profile · LinkedIn · YouTube · WhatsApp Business · Gmail · Microsoft 365 · Xero · Yoco · Google Maps · Cartrack · **Future providers**
+
+### Clients must never be required to
+
+- Open provider developer dashboards  
+- Use Railway or infrastructure consoles  
+- Paste API keys, client secrets, or access tokens  
+- Find Page IDs or resource identifiers manually  
+- Configure callback URLs or webhook verify tokens  
+- Understand OAuth scopes or repair integration state manually  
+
+### Platform administration responsibility
+
+Technical provider setup (app registration, webhook URLs, verify tokens, redirect URIs, encryption keys) is completed by **TITAN platform administration** before clients use the integration.
+
+### Truthful client-facing states only
+
+| State | Meaning |
+|-------|---------|
+| Not connected | No credentials stored |
+| Connect | Owner may start official provider login |
+| Choose account | OAuth succeeded; pick business/account |
+| Choose Page/profile/resource | Pick the resource TITAN will operate on |
+| Approval required | Owner must approve a pending action |
+| Provider review pending | Meta/provider review in progress |
+| Connected | Verified token + resource stored |
+| Connected with limited permissions | Connected; optional capabilities not yet granted |
+| Attention required | Action needed (reconnect, choose resource) — plain language only |
+| Temporarily unavailable | Provider outage or platform misconfiguration |
+
+### Facebook lesson (recorded 2026-08-06)
+
+The multi-day Facebook setup for Young Guns proved that **developer-level configuration is unacceptable** as a normal customer onboarding journey. Meta App Dashboard webhook configuration, OAuth scope tiers, and infrastructure secrets must be hidden behind:
+
+1. A **reusable integration wizard** (Connect → Choose Page → Connected)  
+2. **Platform-managed provider configuration** (staging/production env vars managed by TITAN ops, not the client)  
+
+Clients see Sync & Alerts webhook status in plain language — never verify tokens, app secrets, or raw provider errors with credentials.
+
+**Do not expose** secrets, tokens, or technical diagnostics to normal clients.
 
 ---
 
 ## Scope
 
-Records connection infrastructure for TITAN integrations. Integration completion ≠ agent completion. Agent rows reference this register for **Provider-blocked** status.
+Records connection infrastructure for TITAN integrations. Integration completion ≠ agent completion. Agent rows reference this register for provider truth.
+
+**Execution-capable integrations** require Draft → Approve → Execute per [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md).
 
 ---
 
@@ -34,39 +97,43 @@ Records connection infrastructure for TITAN integrations. Integration completion
 | Module | `/facebook-business` |
 | API | `apps/api/src/services/facebook-business.service.ts` |
 | Tenant | Young Guns (`095aef76-fef5-4139-af37-a42f2d7e2faf`) |
-| **Basic Page connection** | **Verified complete (staging)** |
-| Page | Young Guns Plumbing – Cape Town |
-| State | `CONNECTED_LIMITED` |
+| **Page connection** | **Connected (staging)** — Young Guns Plumbing - Cape Town |
+| Page ID | `394603137072407` |
 | Staging API | https://young-guns-os-staging.up.railway.app |
 | Staging Web | https://comfortable-determination-staging.up.railway.app |
+| Code HEAD (webhook fix) | `23debd9cfa90a05ab31f051b76d3e7a86708b14f` |
 
-### Granted scopes
+### Granted scopes (@ 2026-08-06)
 
-| Scope | Status |
-|-------|--------|
-| `pages_show_list` | Granted |
-| `business_management` | Granted |
-| `public_profile` | Granted |
+`pages_show_list`, `business_management`, `pages_read_engagement`, `pages_read_user_content`, `pages_manage_posts`, `pages_manage_engagement`, `pages_manage_metadata`, `read_insights`, `public_profile`
 
-### Provider-blocked scopes (Meta App Review)
+### Webhook status (J-6.7F14)
 
-| Capability | Scope | Agent impact |
-|------------|-------|--------------|
-| Page read / verification | `pages_read_engagement` | Deferred to page-read OAuth tier |
-| Publishing | `pages_manage_posts` | MKT-021 Provider-blocked |
-| Comments | `pages_manage_engagement` | Provider-blocked |
-| Messaging | `pages_messaging` | COM-007 Provider-blocked |
-| Leads | `leads_retrieval` | Provider-blocked |
-| Insights | `read_insights` | Provider-blocked |
+| Item | State |
+|------|-------|
+| Webhook code | Pushed — `feed` + `mention` fields only; Owner Subscribe action |
+| `webhook_subscribed_at` (staging DB) | NULL pending Owner deploy + Subscribe |
+| Live event proof | **Pending** — no test post created |
+| Polling fallback | **Active** — 15-minute backfill preserved |
 
-### Operational notes
+### Client journey compliance
 
-- Sync **inactive** until required permissions granted  
-- **Not a current development blocker** for non-Facebook work  
-- J-6.7F11 basic Page selection deployed (`0782ebb` integration branch)  
-- No automatic OAuth or Page selection during deploy verification  
+| Step | Status |
+|------|--------|
+| Connect via official Meta login | ✅ |
+| Choose Page | ✅ |
+| TITAN verifies | ✅ |
+| Server-side encrypted save | ✅ |
+| Developer dashboard required for client | ❌ Must not be required — platform admin configures Meta App webhook URL |
 
----
+### Agent impact
+
+| Agent | Register ID | Status |
+|-------|-------------|--------|
+| Facebook Agent | MKT-005 | **Implemented but inactive** — publish requires Owner approval |
+| Social Media Agent | MKT-004 | **Defined** |
+
+**Not a blocker** for non-Facebook agent documentation work. **XERO-002 remains parked.**
 
 ## Instagram Business
 

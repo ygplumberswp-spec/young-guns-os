@@ -1,52 +1,38 @@
 # TITAN Agent Learning and Governance Standard
 
+**Document ID:** AGENT-003  
 **Document type:** Permanent governance standard — documentation only  
 **Generated (UTC):** 2026-08-06  
-**Applies to:** All 307 agents in [TITAN_MASTER_AGENT_REGISTER.md](./TITAN_MASTER_AGENT_REGISTER.md)  
+**Applies to:** All agents in [TITAN_MASTER_AGENT_REGISTER.md](./TITAN_MASTER_AGENT_REGISTER.md)  
+**Capability matrix:** [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md)  
+**Activation:** [TITAN_AGENT_ACTIVATION_ROADMAP.md](./TITAN_AGENT_ACTIVATION_ROADMAP.md)  
 
 ---
 
 ## Principle
 
-All TITAN agents must support **controlled continuous learning**. Learning is never silent, never cross-tenant, and never bypasses Owner approval for material changes.
+TITAN agents may improve over time only through **controlled self-learning**. Learning is never silent, never cross-tenant, and never bypasses Owner approval for material changes.
+
+AURA coordinates specialists but does not override governance rules defined here.
 
 ---
 
 ## Locked learning lifecycle
 
 ```
-Observe → analyse → propose improvement → test → Owner approval → activate → monitor → rollback if necessary
+Observe → Analyse → Propose → Test in isolation → Human or policy approval → Activate → Monitor → Roll back when necessary
 ```
 
 | Stage | Requirement |
 |-------|-------------|
-| **Observe** | Capture tenant-scoped events, outcomes, corrections |
+| **Observe** | Capture tenant-scoped events, outcomes, human corrections |
 | **Analyse** | Pattern detection within allowed data only |
-| **Propose improvement** | Versioned proposal with diff, rationale, risk |
-| **Test** | Automated + sandbox validation before activation |
-| **Owner approval** | Explicit Owner (or delegated policy) sign-off |
-| **Activate** | Versioned memory/policy update with audit record |
-| **Monitor** | KPIs tracked post-activation |
-| **Rollback** | One-click revert to prior version |
-
----
-
-## Approved learning sources
-
-Agents may learn from:
-
-- Completed jobs and actual job duration
-- Materials used and inventory movements
-- Estimate-versus-actual results
-- Quote acceptance and rejection reasons
-- Customer feedback (tenant-scoped, consented)
-- Approved Owner corrections
-- Approved company policies and SOPs
-- Approved pricebooks
-- Provider outcomes (OAuth, sync, delivery receipts)
-- Campaign performance (when integrations permit)
-- System incidents and post-mortems
-- Verified audit findings
+| **Propose** | Versioned proposal with diff, rationale, risk class |
+| **Test in isolation** | Sandbox / shadow mode — no production side effects |
+| **Human or policy approval** | Owner or delegated policy sign-off recorded |
+| **Activate** | Versioned memory or policy update with audit record |
+| **Monitor** | KPIs and regression checks post-activation |
+| **Roll back when necessary** | Revert to prior version on regression or Owner command |
 
 ---
 
@@ -54,97 +40,165 @@ Agents may learn from:
 
 Agents must **never** silently:
 
-- Change prices or margin rules
-- Modify permissions or RBAC
-- Alter legal or financial policies
-- Send customer communications
-- Publish content to external channels
-- Deploy code or infrastructure
-- Apply database migrations
-- Delete records
-- Train or infer across tenant boundaries
-- Expose confidential information (PII, credentials, cross-tenant data)
+| Category | Forbidden silent action |
+|----------|------------------------|
+| Engineering | Change production code |
+| Commercial | Change pricing or margins |
+| Policy | Change financial, legal, or compliance policy |
+| Security | Change permissions or roles |
+| Marketing | Publish social content |
+| Communications | Send external messages (email, SMS, WhatsApp, social DM) |
+| Finance | Create payments or move money |
+| Finance | Reconcile transactions without evidence |
+| Data | Delete records |
+| Platform | Run database migrations |
+| Tenancy | Access another tenant's data |
+| Learning | Train or infer across tenant boundaries |
+| Integrations | Activate a new provider connection |
+| Legal | Change compliance wording without human review |
 
 ---
 
-## Learning properties (required)
+## Approval levels
 
-| Property | Rule |
-|----------|------|
-| **Tenant-isolated** | All learning artifacts scoped to `companyId` |
-| **Versioned** | Immutable version history with semantic labels |
-| **Auditable** | Who approved, when, what changed, rollback pointer |
-| **Reversible** | Owner may rollback any activated learning version |
-| **Measurable** | KPI delta recorded before/after activation |
-| **Owner-controlled** | No auto-activation of material policy changes |
+| Level | Approver | Examples |
+|-------|----------|----------|
+| **L0 — Informational** | None | Read, Monitor, internal summaries |
+| **L1 — Staff draft** | Office Staff or above | Internal schedule drafts, CRM notes |
+| **L2 — Owner approval** | Company Owner | Publish, payment, integration connect, policy change |
+| **L3 — Professional sign-off** | Qualified human | Tax submission, statutory CoC, legal contract execution |
 
----
-
-## Memory rules
-
-| Memory type | Default TTL | Notes |
-|-------------|-------------|-------|
-| Session context | End of session | No PII in prompts beyond job need |
-| Job outcome memory | 24 months | Tenant-scoped |
-| Owner correction memory | Permanent until rollback | Highest trust weight |
-| Pricebook learning | Versioned with pricebook | Never override approved pricebook without approval |
-| Cross-agent shared memory | Via AURA orchestration only | No direct agent-to-agent secret sharing |
+Agents may reach **L0–L1** autonomously only when explicitly **Active** and listed in the capability matrix. **L2+** always requires human action.
 
 ---
 
-## Human professional sign-off
+## Risk classes
 
-| Domain | AI may | Human must |
-|--------|--------|------------|
-| Finance / tax | Analyse, prepare drafts, reconcile suggestions | Statutory sign-off, filing, payment execution |
-| Legal | Draft, summarise, flag risks | Regulated legal advice and contract execution |
-| HR / employment | Draft policies, schedule training | Disciplinary decisions, terminations |
-| Safety | Incident analysis, checklist drafts | Regulatory notifications, OHS sign-off |
-| Publishing | Draft content, schedule proposals | Approve customer-facing publish |
+| Class | Description | Default mode |
+|-------|-------------|--------------|
+| **Low** | Read, summarise, internal draft | Shadow or Supervised |
+| **Medium** | Customer-facing drafts, scheduling proposals | Supervised |
+| **High** | Finance, legal, publish, payments, permissions | Supervised — Execute forbidden without L2+ |
+| **Critical** | Cross-tenant, security, migration, provider activation | Forbidden without platform admin + Owner |
 
----
-
-## Finance-specific disclaimer (locked)
-
-> AI may analyse, prepare, reconcile and advise, but formal statutory or regulated sign-off must be completed by a properly qualified human where required.
+Every agent in the register carries a **Risk rating** aligned to this table.
 
 ---
 
-## QS-specific disclaimer (locked)
+## Sandboxed testing and shadow mode
 
-> Never invent measurements from unreadable plans. If scale cannot be verified, agent must request Owner input or site survey (QS-010).
+| Mode | Behaviour |
+|------|-----------|
+| **Shadow mode** | Agent observes and produces drafts; no Execute path wired |
+| **Sandbox** | Isolated test tenant or fixture dataset; no production writes |
+| **Supervised** | Production reads; Execute requires per-action approval |
+| **Active** | Policy-bound automation with monitoring and kill switch |
+
+Promotion: Shadow → Supervised → Active requires roadmap phase exit criteria and Owner approval.
 
 ---
 
-## Code-changing agents
+## Evaluation, regression, and rollback
 
-Software agents (SW-*) follow an extended lifecycle:
+| Control | Requirement |
+|---------|-------------|
+| **Evaluation datasets** | Tenant-scoped, redacted, versioned |
+| **Regression checks** | Automated tests before learning activation |
+| **Model/version recording** | Model ID, prompt version, activation timestamp in audit log |
+| **Prompt/version recording** | Immutable prompt hash stored with each agent action |
+| **Human override** | Owner may override any agent output before Execute |
+| **Kill switch** | Owner can Pause any agent immediately |
+| **Rollback procedure** | One-click revert to prior learning/policy version |
+
+LRN department agents (see register § M) maintain this infrastructure.
+
+---
+
+## Cross-tenant learning prohibition
+
+- All learning artifacts scoped to `companyId`
+- No federated training across tenants
+- No use of Tenant A outcomes to advise Tenant B
+- Platform-wide improvements use **aggregated, anonymised** metrics only — never raw tenant payloads
+
+---
+
+## Personal data and POPIA
+
+| Rule | Implementation |
+|------|----------------|
+| **Minimisation** | Agents read minimum fields required for task |
+| **Purpose limitation** | Data used only for stated agent mission |
+| **Retention** | Learning artifacts TTL-defined; deletable on Owner request |
+| **Redaction** | PII stripped from logs and evaluation sets where possible |
+| **Escalation** | POPIA/privacy conflicts → HRL-013 POPIA Agent + human |
+
+---
+
+## Financial and legal escalation
+
+| Trigger | Escalate to |
+|---------|-------------|
+| Tax, VAT, statutory accounts | FIN + qualified accountant human |
+| Contract execution | HRL-012 Contract Agent draft → human sign |
+| Debt collection tone / legal threat | FIN-016 + human |
+| Compliance wording change | HRL + AUD Document Auditor |
+
+---
+
+## Agent conflict resolution
+
+When two agents produce conflicting recommendations:
+
+1. AURA presents both with evidence citations  
+2. Higher **Risk rating** agent does not override lower — human decides  
+3. AUD agents may flag conflict without executing either recommendation  
+4. Owner decision recorded in audit log  
+
+---
+
+## Recommendation vs execution separation
+
+| Layer | Responsibility |
+|-------|----------------|
+| **Recommendation** | Propose, Draft — any agent in Shadow/Supervised |
+| **Execution** | Separate tool path; requires Approve gate and audit entry |
+| **AURA** | May assemble recommendations; must not bypass Execute gates |
+
+---
+
+## Audit logging (required events)
+
+- Agent ID, user ID, tenant ID, timestamp  
+- Action verb (Read/Propose/Draft/Approve/Execute/Monitor/Rollback)  
+- Input hash (not raw secrets)  
+- Output reference or draft ID  
+- Approval record ID when Execute  
+- Model and prompt version  
+- Integration receipt ID when provider involved  
+
+---
+
+## Universal Integration Rule (client-facing)
+
+All client-facing provider integrations must follow:
 
 ```
-Detect → investigate → isolated branch/worktree → implement → test → preview
-  → Owner approval → staging → production approval → rollback
+Connect → Official provider login → Choose business/account → Choose Page/profile/resource → TITAN verifies → Secure server-side save → Connected
 ```
 
-Production modification without approval path is **forbidden**.
+Clients must never be required to open developer dashboards, paste API keys, configure webhooks, or understand OAuth scopes. Platform administration completes technical provider setup before client use.
+
+Full standard: [TITAN_INTEGRATION_REGISTER.md](./TITAN_INTEGRATION_REGISTER.md) § INT-UNIVERSAL-001.
+
+**Facebook lesson (2026-08-06):** Two-day Facebook setup proved developer-level configuration is unacceptable for normal customer onboarding. TITAN must hide infrastructure behind a reusable integration wizard and platform-managed provider configuration.
 
 ---
 
-## Audit requirements for learning events
+## Governance maintenance
 
-Every learning activation logs:
+- Any new **Execute** capability requires update to AGENT-002 matrix and Owner approval  
+- Learning activation requires LRN department regression sign-off  
+- Documentation existence does not imply governance is wired in runtime  
 
-- `agentId`, `companyId`, `userId` (approver)
-- `proposalVersion`, `activatedVersion`
-- `kpiBaseline`, `kpiTarget`
-- `rollbackVersionId`
-- Timestamp and correlation ID
-
-Retention: minimum 7 years for finance-affecting learning; 2 years for operational learning unless Owner extends.
-
----
-
-## Related documents
-
-- [TITAN_AGENT_CAPABILITY_MATRIX.md](./TITAN_AGENT_CAPABILITY_MATRIX.md)
-- [TITAN_AUDIT_DEPARTMENT_AND_TOOLING_STANDARD.md](./TITAN_AUDIT_DEPARTMENT_AND_TOOLING_STANDARD.md)
-- [TITAN_AGENT_ACTIVATION_ROADMAP.md](./TITAN_AGENT_ACTIVATION_ROADMAP.md)
+**Document control:** AGENT-003 · Binding on all current and future register agents.

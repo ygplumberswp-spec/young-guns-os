@@ -2,25 +2,31 @@
 
 **Audit type:** READ-ONLY planning artifact — no new features  
 **Generated (UTC):** 2026-08-05  
-**Last updated (UTC):** 2026-08-06 — Master Agent Register programme  
-**HEAD:** see agent register commit on `cursor/titan-master-agent-register-998f`  
+**Last updated (UTC):** 2026-08-06 — AGENT-001 formal master AI workforce standard  
+**Base HEAD:** `23debd9cfa90a05ab31f051b76d3e7a86708b14f`  
+**Branch:** `cursor/titan-agent-register-001`  
 **Scope:** Unmet **accepted** requirements only — deferred items at end  
 
 ---
 
-## Agent workforce gaps (2026-08-06)
+## Agent workforce gaps (AGENT-001 — 2026-08-06)
 
 | Gap | Count | Closure path |
 |-----|------:|--------------|
-| Agents with no implementation | 283 | [TITAN_AGENT_ACTIVATION_ROADMAP.md](./TITAN_AGENT_ACTIVATION_ROADMAP.md) phases 2–15 |
-| Agents with registry/UI only (Partial) | 21 | Phase 1 tool wiring + live verification |
-| Provider-blocked agent capabilities | 3 | [TITAN_INTEGRATION_REGISTER.md](./TITAN_INTEGRATION_REGISTER.md) — Meta review |
-| Verified complete agents | 0 | None — do not fake |
-| AUD department agents | 14 Missing | Phase 14 audit framework activation |
+| Agents Defined / Planned (no executable loop) | majority of 191 | [TITAN_AGENT_ACTIVATION_ROADMAP.md](./TITAN_AGENT_ACTIVATION_ROADMAP.md) Phases B–F |
+| Supervised (AURA only) | 1 | Phase B exit → expand read-only agents |
+| Implemented but inactive | 1 (Facebook) | Phase C–E; webhook live proof pending deploy |
+| Build-ready | 2 | Phase D prerequisites |
+| **Active** | **0** | None — do not fake |
+| AUD department agents | 14 Defined | Phase A approved → Phase B shadow |
 
-**Facebook:** Basic connection closed on staging. Do **not** treat advanced Facebook as blocker for other gap closure.
+**Facebook:** Connection and content features complete on staging. Webhook subscription at `23debd9` — **live event proof pending Owner deploy**. Not a blocker for AGENT-001 documentation.
 
-**Owner approval gate:** Review [TITAN_MASTER_AGENT_REGISTER.md](./TITAN_MASTER_AGENT_REGISTER.md) before any agent activation work.
+**XERO-002:** **Parked** — no work started.
+
+**Owner approval gate:** Review [TITAN_MASTER_AGENT_REGISTER.md](./TITAN_MASTER_AGENT_REGISTER.md) (AGENT-001) before any agent activation work.
+
+**Universal integration gap:** Client-facing wizard must hide developer setup per [INT-UNIVERSAL-001](./TITAN_INTEGRATION_REGISTER.md).
 
 ---
 
