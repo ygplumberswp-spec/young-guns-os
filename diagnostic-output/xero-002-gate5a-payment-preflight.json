@@ -1,0 +1,45 @@
+{
+  "label": "XERO-002-gate5a-payment-preflight",
+  "mode": "read-only",
+  "executedAt": "2026-08-06T17:05:00.000Z",
+  "verdict": "PREPARED",
+  "controlledRecords": {
+    "quote": "Q-0253",
+    "titanInvoice": "TITAN-INV-000589",
+    "xeroInvoice": "INV-0586"
+  },
+  "inv0586": {
+    "titanStatus": "draft",
+    "xeroStatusAtGate4": "DRAFT",
+    "totalCents": 66125,
+    "amountPaidCents": 0,
+    "reconciliationState": "invoice_issued",
+    "reconciliationProven": false
+  },
+  "stagingCounts": {
+    "payments": 512,
+    "xeroPaymentMappingsSynced": 511,
+    "duplicateXeroPaymentIds": 0,
+    "paymentCreateWriteApprovals": 0,
+    "yocoWebhookDeliveries": 0,
+    "xeroInvoiceWebhookEvents": 1,
+    "xeroPaymentWebhookEvents": 0,
+    "bankTransactions": 3142,
+    "bankTransactionsReconciled": 3139
+  },
+  "genuinePaidExample": {
+    "invoiceNumber": "INV-0280",
+    "titanStatus": "paid",
+    "amountPaidCents": 174920,
+    "hasXeroPaymentMapping": true,
+    "gate2ReadOnlyVerified": true
+  },
+  "xeroPaymentRules": {
+    "draftInvoicePaymentAllowed": false,
+    "authorisationRequired": true,
+    "zeroAmountAllowed": false,
+    "bankAccountResolution": "first BANK account from Xero Accounts API"
+  },
+  "recommendation": "OPTION_B",
+  "gate5NotExecuted": true
+}
