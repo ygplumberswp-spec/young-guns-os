@@ -17,7 +17,11 @@
 | **Binding rule** | `TITAN_BINDING_ACCEPTANCE_RULE.md` (10 criteria) |
 | **Audit sources** | `TITAN_COMPLETE_APP_AUDIT.md`, `TITAN_ACCEPTANCE_REGISTER.md`, `TITAN_GAP_BACKLOG.md`, `TITAN_AURA_AGENT_COLLABORATION_AUDIT.md`, finance J-6.x phase evidence, [TITAN_XERO_FULL_AUDIT_REPORT.md](./TITAN_XERO_FULL_AUDIT_REPORT.md) (XERO-001) |
 
-**XERO-002 (2026-08-06):** P0 gap closure implemented — connection health, scope persistence, stale sync recovery, customer mapping, reconciliation model, finance UI. **Do not mark Xero complete.** Live proof: [TITAN_XERO_002_LIVE_PROOF_PLAN.md](./TITAN_XERO_002_LIVE_PROOF_PLAN.md). **Do not begin live proof** until INT-OVERVIEW-001 is approved and **PERF-001 → XERO-003 → DASH-001** are formally sequenced.
+**DASH-001 (2026-08-06):** **Approved and closed** by Owner. DASH-001A/001B/001C visual cleanup complete.
+
+**XERO-002A (2026-08-06):** Read-only live proof preflight complete — [TITAN_XERO_002A_LIVE_PROOF_PREFLIGHT.md](./TITAN_XERO_002A_LIVE_PROOF_PREFLIGHT.md). Gate 2 pending Owner approval. **Do not mark Xero complete.**
+
+**XERO-002 (2026-08-06):** P0 gap closure implemented — connection health, scope persistence, stale sync recovery, customer mapping, reconciliation model, finance UI. **Do not mark Xero complete.** Live proof: [TITAN_XERO_002_LIVE_PROOF_PLAN.md](./TITAN_XERO_002_LIVE_PROOF_PLAN.md). **Gate 2 blocked pending Owner approval.**
 
 **INT-UI-001B (2026-08-06):** Dashboard Connections card aligned to enterprise status mapping (same truth as `/integrations`). **Pending Owner approval.**
 
@@ -336,7 +340,7 @@ Boolean columns use **YES** / **NO** / **—** (not applicable).
 | INT-OVERVIEW-001 | integrations | Integrations overview + Dashboard Connections — enterprise status alignment | BUILT LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | PR #10; ConnectionsPanel; IntegrationOverviewCard | INT-UI-001B |  | Owner visual approval pending | Owner sign-off |
 | PERF-001 | performance | TITAN Performance Foundation — measurable speed audit and repair | NOT FOUND | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  |  |  | High-priority — record only | Owner sequences after INT-OVERVIEW-001 |
 | XERO-003 | xero | Near-real-time Xero quote, invoice and payment intersync | NOT FOUND | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  |  |  | Record only — after PERF-001 | Owner sequences before DASH-001 |
-| DASH-001 | dashboard | Owner Dashboard — Business Heartbeat redesign | BUILT LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | BusinessHeartbeatPanel; FinancialTruthPanel; dash001 API | DASH-001 |  | Owner visual approval pending | STOP — approve before XERO-002 |
+| DASH-001 | dashboard | Owner Dashboard — Business Heartbeat redesign | **APPROVED & CLOSED** | YES | YES | YES | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | BusinessHeartbeatPanel; FinancialTruthPanel; dash001 API | DASH-001C |  | Owner visual approval received 2026-08-06 | CLOSED |
 | MKT-001 | marketing | Marketing consent + eligibility gates (POPIA) | DEPLOYED TO STAGING | YES | NO | NO | NO | NO | YES | NO | NO | NO | NO | YES | YES | NO | NO | UX-H/UX-026 | f8cc0c4 |  |  |  |
 | MKT-002 | marketing | Campaign execute — honest SEND_PATH_NOT_IMPLEMENTED | DEPLOYED TO STAGING | YES | NO | NO | NO | NO | YES | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  |  |  |
 | MKT-003 | marketing | Live email/SMS/WhatsApp campaign send | NOT FOUND | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  | Provider + Owner approval |  |

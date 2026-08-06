@@ -114,6 +114,7 @@ export * from './xero-finance-pipeline.js';
 export * from './xero-two-way-sync.js';
 export * from './xero-connection-health.js';
 export * from './xero-customer-mapping.js';
+export * from './xero-financial-truth-matrix.js';
 export * from './xero-reconciliation.js';
 export * from './xero-realtime-intersync.js';
 export * from './bank-statement-import.js';

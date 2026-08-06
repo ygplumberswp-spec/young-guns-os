@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import {
   classifyCustomerMapping,
   summarizeCustomerMappingReport,
+  toOwnerMappingReviewBucket,
+  ownerApprovalRequiredForMappingBucket,
 } from './xero-customer-mapping.js';
 
 test('existing Xero Contact ID is confirmed linked', () => {
@@ -90,4 +92,23 @@ test('summarizeCustomerMappingReport counts unmapped customers', () => {
   ]);
   assert.equal(summary.confirmedLinked, 1);
   assert.equal(summary.unmappedCustomers, 1);
+});
+
+test('maps classifications to Owner review buckets', () => {
+  assert.equal(toOwnerMappingReviewBucket('confirmed_linked'), 'already_mapped');
+  assert.equal(
+    toOwnerMappingReviewBucket('safe_deterministic_match', 'Exact normalized email match'),
+    'exact_match',
+  );
+  assert.equal(
+    toOwnerMappingReviewBucket(
+      'safe_deterministic_match',
+      'Exact normalized name with corroborating email or phone',
+    ),
+    'strong_suggested_match',
+  );
+  assert.equal(toOwnerMappingReviewBucket('possible_match_review_required'), 'ambiguous');
+  assert.equal(toOwnerMappingReviewBucket('duplicate_xero_contacts'), 'conflict');
+  assert.equal(ownerApprovalRequiredForMappingBucket('ambiguous'), true);
+  assert.equal(ownerApprovalRequiredForMappingBucket('exact_match'), false);
 });

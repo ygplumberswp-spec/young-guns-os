@@ -1,7 +1,8 @@
 # TITAN XERO-002 — Controlled Live-Write Proof Plan (Owner Gate)
 
-**Status:** PREPARED — **DO NOT EXECUTE** until Owner explicitly approves  
-**Sequencing (2026-08-06):** **Blocked** until (1) INT-OVERVIEW-001 receives Owner approval, and (2) **PERF-001 → XERO-003 → DASH-001** are formally sequenced by Owner. See [TITAN_GAP_CLOSURE_PLAN.md](./TITAN_GAP_CLOSURE_PLAN.md#next-enterprise-priorities-record-only--do-not-implement-yet).
+**Status:** PREPARED — **DO NOT EXECUTE** until Owner explicitly approves each gate  
+**Preflight (2026-08-06):** [TITAN_XERO_002A_LIVE_PROOF_PREFLIGHT.md](./TITAN_XERO_002A_LIVE_PROOF_PREFLIGHT.md) — read-only evidence complete  
+**Sequencing (2026-08-06):** DASH-001 **approved and closed**. Live proof remains gated per section **G1–G7** below.
 **Prepared (UTC):** 2026-08-06  
 **Environment:** Staging only  
 **Staging API:** https://young-guns-os-staging.up.railway.app  
@@ -15,7 +16,86 @@
 
 1. XERO-002 implementation deployed to staging (API + Web).
 2. Owner signed in as **Company Owner** on staging Web.
-3. Xero connection shows **Connected** with granted scopes including `accounting.attachments.read` (Owner reconnect if **Connected with limited permissions**).
+3. Xero connection shows **Connected** with granted scopes including `accounting.attachments.read`. *(Staging 2026-08-06: scope granted — Gate 2 must confirm attachment list.)*
+
+---
+
+## Gated live-proof stages (G1–G7)
+
+**Do not execute any gate without explicit Owner approval for that gate.**
+
+### GATE 1 — Owner reconnect approval (conditional)
+
+| | |
+|---|---|
+| **Prerequisites** | Gate 2 attachment list fails with insufficient scope |
+| **Owner action** | Integrations → Xero → **Review access** → Reconnect securely → choose Young Guns Plumbing |
+| **Expected result** | **Connected**; attachment read scope granted |
+| **Stop condition** | Scope already granted (staging 2026-08-06 — **skip unless Gate 2 fails**) |
+| **Rollback** | None — no financial write |
+| **Forbidden** | Railway, manual tokens, credential edits |
+
+### GATE 2 — Read-only proof
+
+| | |
+|---|---|
+| **Prerequisites** | Gate 1 pass or skipped; Owner signed in |
+| **Owner action** | Open linked customer; open existing invoice; view attachment metadata if available |
+| **Expected result** | Tenant mapping correct; attachment metadata lists without error; **no writes** |
+| **Stop condition** | Any write prompt or provider error — stop and capture audit |
+| **Rollback** | N/A |
+| **Forbidden** | Download attachment to public URL; create records |
+
+### GATE 3 — Controlled quote proof
+
+| | |
+|---|---|
+| **Prerequisites** | Gate 2 pass; **Confirmed linked** test customer; explicit Owner approval |
+| **Owner action** | Create one **DRAFT** quote labelled `TITAN XERO E2E TEST`; approve write; push once |
+| **Expected result** | Official Xero quote ID stored; retry does not duplicate |
+| **Stop condition** | Duplicate Xero quote on retry — stop proof |
+| **Rollback** | Void/delete draft in Xero; remove TITAN draft |
+| **Forbidden** | Send quote to customer |
+
+### GATE 4 — Controlled invoice proof
+
+| | |
+|---|---|
+| **Prerequisites** | Gate 3 pass; separate Owner approval |
+| **Owner action** | Convert to one **DRAFT** invoice; approve; push once; wait for webhook refresh |
+| **Expected result** | Official Xero invoice number; targeted refresh updates TITAN |
+| **Rollback** | Void draft invoice in Xero |
+| **Forbidden** | Email invoice; authorise unless separately approved |
+
+### GATE 5 — Controlled payment proof
+
+| | |
+|---|---|
+| **Prerequisites** | Gate 4 pass; separate Owner approval |
+| **Owner action** | Only if Owner confirms real authorised transaction — or Yoco sandbox if configured |
+| **Expected result** | Yoco event recorded; Xero payment import separate; reconciliation states distinct |
+| **Rollback** | Refund if real payment |
+| **Forbidden** | Fabricated payment; equating Yoco paid with reconciled |
+
+### GATE 6 — Attachment proof
+
+| | |
+|---|---|
+| **Prerequisites** | Gate 2 metadata pass; separate approval if upload needed |
+| **Owner action** | List/read metadata; optional upload only if separately approved |
+| **Expected result** | Private storage; RBAC on access |
+| **Forbidden** | Public exposure of file bytes |
+
+### GATE 7 — Reconciliation proof
+
+| | |
+|---|---|
+| **Prerequisites** | Gate 5 pass or existing reconciled invoice for observation |
+| **Owner action** | Open reconciliation view; compare Yoco vs Xero vs bank import states |
+| **Expected result** | TITAN shows Xero reconciliation only with authoritative evidence |
+| **Forbidden** | Auto-reconcile in TITAN |
+
+---
 4. No stale/running import job — use **Recover stale sync** or **Clear failed sync safely** if needed.
 5. Customer mapping review queue cleared or test customer has **Confirmed linked** Xero contact.
 6. Yoco credentials configured on staging (if real payment step included).
@@ -94,6 +174,8 @@ Replace timestamp at execution time.
 
 ## Single next Owner action
 
-**Approve this plan**, then execute manually on staging as Company Owner, OR reply **"XERO-002 LIVE PROOF GO"** to authorise a supervised agent run of the steps above.
+**Approve XERO-002A preflight**, then authorise **Gate 2 (read-only proof)** on staging. Do not begin Gate 3+ until Gate 2 evidence is reviewed.
+
+Reply **"XERO-002 GATE 2 GO"** to authorise supervised Gate 2 only.
 
 **Do not mark Xero production-complete** until this proof succeeds.

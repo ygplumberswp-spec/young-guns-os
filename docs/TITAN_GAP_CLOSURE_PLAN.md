@@ -27,11 +27,13 @@
 
 **XERO-001 audit (2026-08-06):** [TITAN_XERO_FULL_AUDIT_REPORT.md](./TITAN_XERO_FULL_AUDIT_REPORT.md) — read-only staging recount complete. OAuth connected; read import partial; attachments provider-blocked; full chain **not proven**.
 
+**XERO-002A preflight (2026-08-06):** [TITAN_XERO_002A_LIVE_PROOF_PREFLIGHT.md](./TITAN_XERO_002A_LIVE_PROOF_PREFLIGHT.md) — read-only staging audit complete. **No live proof executed.** Gate 2 pending Owner approval.
+
 **XERO-002 (2026-08-06):** Implementation complete on task branch — connection health, scope persistence, stale-job recovery, customer mapping dry-run, reconciliation model, finance UI panels. **Live proof NOT executed.** See [TITAN_XERO_002_LIVE_PROOF_PLAN.md](./TITAN_XERO_002_LIVE_PROOF_PLAN.md).
 
-**Integrations overview (2026-08-06):** Enterprise connection status + unified card system + fine-details finishing pass on branch `cursor/integrations-ui-polish-enterprise-status-998f` ([PR #10](https://github.com/ygplumberswp-spec/young-guns-os/pull/10)). **Pending Owner approval** — do not treat as complete until visual sign-off.
+**DASH-001 (2026-08-06):** **Approved and closed** by Owner.
 
-**Owner approval gate (sequencing):** Do **not** begin **XERO-002 LIVE PROOF** until the Integrations overview is approved and the next two enterprise priorities below are **formally sequenced** by Owner. See [Next enterprise priorities](#next-enterprise-priorities-record-only--do-not-implement-yet).
+**Owner approval gate:** Live proof **Gate 2** requires explicit Owner approval. See XERO-002A preflight report.
 
 **Universal integration gap:** Client-facing wizard must hide developer setup per [INT-UNIVERSAL-001](./TITAN_INTEGRATION_REGISTER.md).
 
@@ -50,7 +52,8 @@
 | 2 | **XERO-003** | **Near-real-time Xero intersync** | **Implemented** — [TITAN_XERO_003_COMPLETION_REPORT.md](./TITAN_XERO_003_COMPLETION_REPORT.md); staging deploy + Xero platform config pending |
 | 2A | **BANK-IMPORT-001** | **Manual bank statement import fallback** | **Implemented** — [TITAN_BANK_STATEMENT_IMPORT_ARCHITECTURE.md](./TITAN_BANK_STATEMENT_IMPORT_ARCHITECTURE.md); migration 0182 pending Owner approval |
 | 3 | **DASH-001** | **Owner Dashboard — Business Heartbeat** | Owner sequences after XERO-003 review |
-| 4 | XERO-002 | Controlled Xero live proof (Owner gate) | **Blocked** until steps 0–3 formally sequenced |
+| 4 | XERO-002A | Controlled live proof **preflight** (read-only) | **COMPLETE** — [TITAN_XERO_002A_LIVE_PROOF_PREFLIGHT.md](./TITAN_XERO_002A_LIVE_PROOF_PREFLIGHT.md) |
+| 5 | XERO-002 | Controlled Xero live proof (Owner gate) | **Blocked** at Gate 2 — Owner approval required |
 
 Both tasks must meet the **Enterprise Product Quality Gate** and **Fine Details & Finishing** standard applied to the Integrations overview.
 
@@ -142,7 +145,7 @@ Photo, PDF, spreadsheet or authorised email attachment → secure validation →
 | X-P1-4 | Playwright authenticated Xero journeys |
 | X-P1-5 | Reduce sync log failure noise / date parsing |
 
-**Next locked task:** **PERF-001 — TITAN Performance Foundation** (after INT-OVERVIEW-001 Owner approval). **XERO-002 live proof remains blocked** until PERF-001, XERO-003 and DASH-001 are formally sequenced.
+**Next locked task:** **XERO-002 Gate 2 read-only live proof** (after Owner approves XERO-002A preflight). DASH-001 closed.
 
 ---
 

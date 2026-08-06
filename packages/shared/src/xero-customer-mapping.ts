@@ -242,3 +242,56 @@ export function normalizeDisplayName(name: string | null | undefined): string | 
   const trimmed = name?.trim().toLowerCase();
   return trimmed ? trimmed.replace(/\s+/g, ' ') : null;
 }
+
+/**
+ * Owner-facing review buckets for XERO-002A controlled mapping review.
+ * Ambiguous and conflict matches always require explicit Owner approval before linking.
+ */
+export type XeroCustomerMappingReviewBucket =
+  | 'exact_match'
+  | 'strong_suggested_match'
+  | 'ambiguous'
+  | 'no_match'
+  | 'conflict'
+  | 'already_mapped';
+
+export const XERO_MAPPING_REVIEW_BUCKET_LABELS: Record<XeroCustomerMappingReviewBucket, string> = {
+  exact_match: 'Exact match',
+  strong_suggested_match: 'Strong suggested match',
+  ambiguous: 'Ambiguous',
+  no_match: 'No match',
+  conflict: 'Conflict',
+  already_mapped: 'Already mapped',
+};
+
+/** Maps internal classifications to Owner review vocabulary — never auto-merge ambiguous/conflict. */
+export function toOwnerMappingReviewBucket(
+  classification: XeroCustomerMappingClassification,
+  matchReason: string | null = null,
+): XeroCustomerMappingReviewBucket {
+  switch (classification) {
+    case 'confirmed_linked':
+      return 'already_mapped';
+    case 'safe_deterministic_match':
+      return matchReason?.includes('name with corroborating')
+        ? 'strong_suggested_match'
+        : 'exact_match';
+    case 'possible_match_review_required':
+    case 'invalid_source_data':
+    case 'archived_xero_contact':
+      return 'ambiguous';
+    case 'duplicate_xero_contacts':
+    case 'duplicate_titan_customers':
+    case 'conflict':
+      return 'conflict';
+    case 'no_matching_xero_contact':
+    default:
+      return 'no_match';
+  }
+}
+
+export function ownerApprovalRequiredForMappingBucket(
+  bucket: XeroCustomerMappingReviewBucket,
+): boolean {
+  return bucket === 'ambiguous' || bucket === 'conflict';
+}
