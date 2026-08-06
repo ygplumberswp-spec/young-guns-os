@@ -69,23 +69,14 @@ Both tasks must meet the **Enterprise Product Quality Gate** and **Fine Details 
 
 ### DASH-001 — Owner Dashboard — Business Heartbeat
 
-**Gap:** Current Owner Dashboard has significant visual, information and usability gaps — **not enterprise-demo ready**.
+**Status (2026-08-06):** Implemented on branch `cursor/titan-dash-001-business-heartbeat`. Executive summary extended with `dash001` sections: Business Heartbeat, Financial Truth, Attention Required, Team Performance, Sales & Opportunities, AURA Executive, priority alerts. See [TITAN_DASH_001_COMPLETION_REPORT.md](./TITAN_DASH_001_COMPLETION_REPORT.md).
 
-**Future redesign scope (not started)** — centre on business heartbeat:
+**UI-THEME-001 (record only):** Premium Dark Mode Colour System — apply ChatGPT-style soft off-white text app-wide after major screens complete. **Not implemented during DASH-001.**
 
-- Financial truth (revenue vs cash vs profit; monthly profit and margin)
-- Jobs and dispatch; overdue operational work
-- Quotes and sales follow-up
-- Invoices and collections
-- Technicians and job duration
-- Fleet
-- Leads
-- Recurring maintenance
-- System and integration alerts
-- AURA executive recommendations
-- Source freshness and drill-down evidence
+**Gap (remaining):**
 
-**Explicit exclusions:** Do not add irrelevant low-stock or supplier-order metrics where they do not apply to Young Guns Plumbing.
+- Owner visual approval on staging (desktop / tablet / mobile)
+- Authenticated dashboard smoke after deploy
 
 **Quality bar:** Same Enterprise Product Quality Gate + Fine Details & Finishing as Integrations overview.
 

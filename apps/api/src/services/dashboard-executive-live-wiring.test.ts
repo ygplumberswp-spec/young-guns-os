@@ -55,8 +55,9 @@ describe('executive dashboard live wiring', () => {
     );
     assert.ok(aggregation.length > 0, 'aggregation block not found');
     const settled = aggregation.match(/settle\(/g)?.length ?? 0;
-    assert.ok(settled >= 18, `expected every source to be settled, saw ${settled}`);
-    assert.match(dashboardSource, /sections: buildSectionStatuses\(/);
+    assert.ok(settled >= 21, `expected every source to be settled, saw ${settled}`);
+    assert.match(dashboardSource, /buildSectionStatuses\(/);
+    assert.match(dashboardSource, /buildDash001Extensions\(/);
   });
 
   it('binds timestamps as ISO text inside raw sql templates', () => {

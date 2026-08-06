@@ -5,6 +5,10 @@ export type ExecutiveHeaderCounts = {
   prioritiesToday: number;
   teamWorking: number;
   approvalsWaiting: number;
+  /** DASH-001 — concise business summary line for executive header. */
+  businessSummary?: string;
+  priorityCount?: number;
+  urgentAlertCount?: number;
 };
 
 export type ExecutiveGlanceJobs = {
@@ -222,7 +226,11 @@ export type ExecutiveSectionKey =
   | 'activeJobs'
   | 'completedToday'
   | 'outstandingInvoices'
-  | 'team';
+  | 'team'
+  | 'businessHeartbeat'
+  | 'financialTruth'
+  | 'teamPerformance'
+  | 'salesOpportunities';
 
 export type ExecutiveSectionState = 'live' | 'partial' | 'unavailable';
 
@@ -242,6 +250,8 @@ export type ExecutiveSectionStatus = {
   reason: string | null;
 };
 
+import type { Dash001DashboardExtensions } from './dashboard-business-heartbeat.js';
+
 export type ExecutiveDashboardSummary = {
   generatedAt: string;
   /** Per-section availability — one failed source must never blank the whole dashboard. */
@@ -256,4 +266,6 @@ export type ExecutiveDashboardSummary = {
   xeroFinance: ExecutiveXeroFinance;
   /** @deprecated V1.1 — retained for compatibility; UI no longer renders Team Today. */
   teamToday: ExecutiveTeamMember[];
+  /** DASH-001 Business Heartbeat extensions — real tenant data only. */
+  dash001: Dash001DashboardExtensions;
 };

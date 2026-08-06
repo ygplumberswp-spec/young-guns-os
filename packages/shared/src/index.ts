@@ -90,6 +90,7 @@ export * from './integration-capability.js';
 export * from './marketing-eligibility.js';
 export * from './customer-value-classification.js';
 export * from './dashboard-executive.js';
+export * from './dashboard-business-heartbeat.js';
 export * from './supplier-price-intelligence.js';
 export * from './communications.js';
 export * from './documents.js';

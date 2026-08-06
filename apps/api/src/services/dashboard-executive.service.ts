@@ -13,9 +13,10 @@ import type {
   ExecutiveXeroFinance,
   XeroSyncStatusResponse,
 } from '@titan/shared';
-import { buildFinanceDashboardSnapshot } from '@titan/shared';
+import { buildFinanceDashboardSnapshot, buildDash001Extensions } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
 import {
+  companies,
   communications,
   customers,
   invoices,
@@ -149,6 +150,10 @@ const SECTION_SOURCES: Record<ExecutiveSectionKey, readonly SummarySourceKey[]> 
   completedToday: ['completedJobs'],
   outstandingInvoices: ['outstanding'],
   team: ['team', 'calendar'],
+  businessHeartbeat: ['jobsStats', 'money', 'outstanding', 'customerActivity'],
+  financialTruth: ['money', 'outstanding', 'xero'],
+  teamPerformance: ['team', 'calendar', 'todayJobs'],
+  salesOpportunities: ['customerActivity', 'xero'],
 };
 
 const SECTION_SOURCE_LABELS: Record<ExecutiveSectionKey, string> = {
@@ -160,6 +165,10 @@ const SECTION_SOURCE_LABELS: Record<ExecutiveSectionKey, string> = {
   completedToday: 'TITAN job completions',
   outstandingInvoices: 'TITAN invoices',
   team: 'TITAN team & time entries',
+  businessHeartbeat: 'TITAN jobs, finance & CRM',
+  financialTruth: 'TITAN finance & Xero',
+  teamPerformance: 'TITAN team & jobs',
+  salesOpportunities: 'TITAN CRM & quotes',
 };
 
 function buildSectionStatuses(
@@ -288,6 +297,9 @@ export class DashboardExecutiveService {
       returningCustomerCount,
       outstanding,
       xeroStatus,
+      unassignedJobs,
+      quotesCounts,
+      companyName,
     ] = await Promise.all([
       settle('jobsStats', null, () => this.deps.jobsService.getStats(companyId)),
       settle('financeStats', null, () => this.deps.financeService.getStats(companyId)),
@@ -363,6 +375,48 @@ export class DashboardExecutiveService {
       ),
       settle('outstanding', null, () => this.loadOutstandingSnapshot(companyId)),
       settle('xero', null, () => this.loadXeroFinance(companyId)),
+      settle('todayJobs', { count: 0 }, async () => {
+        const rows = await this.deps.db
+          .select({ count: sql<number>`count(*)::int` })
+          .from(jobs)
+          .where(
+            and(
+              eq(jobs.companyId, companyId),
+              gte(jobs.scheduledAt, start),
+              lt(jobs.scheduledAt, end),
+              inArray(jobs.status, ['scheduled', 'in_progress']),
+              sql`${jobs.assignedUserId} is null`,
+            ),
+          );
+        return { count: rows[0]?.count ?? 0 };
+      }),
+      settle('customerActivity', { awaiting: 0, followUp: 0 }, async () => {
+        const [awaiting, followUp] = await Promise.all([
+          this.deps.db
+            .select({ count: sql<number>`count(*)::int` })
+            .from(quotes)
+            .where(
+              and(
+                eq(quotes.companyId, companyId),
+                inArray(quotes.status, ['sent', 'viewed', 'internal_review', 'approved_for_sending']),
+              ),
+            ),
+          this.deps.db
+            .select({ count: sql<number>`count(*)::int` })
+            .from(quotes)
+            .where(
+              and(eq(quotes.companyId, companyId), inArray(quotes.status, ['sent', 'viewed'])),
+            ),
+        ]);
+        return { awaiting: awaiting[0]?.count ?? 0, followUp: followUp[0]?.count ?? 0 };
+      }),
+      settle('jobsStats', null, async () => {
+        const row = await this.deps.db.query.companies.findFirst({
+          where: eq(companies.id, companyId),
+          columns: { name: true },
+        });
+        return row?.name ?? null;
+      }),
     ]);
 
     const calendarEvents = calendar?.events ?? [];
@@ -470,9 +524,10 @@ export class DashboardExecutiveService {
       }
     }
 
-    return {
+    const sections = buildSectionStatuses(failures, now, outstanding);
+    const baseSummary = {
       generatedAt: now.toISOString(),
-      sections: buildSectionStatuses(failures, now, outstanding),
+      sections,
       header: {
         jobsToday: jobsStats?.todayScheduledCount ?? scheduledCount,
         prioritiesToday: activePlans.length,
@@ -538,6 +593,26 @@ export class DashboardExecutiveService {
       },
       xeroFinance: xeroStatus ?? emptyXeroFinance(),
       teamToday,
+    };
+
+    const dash001 = buildDash001Extensions({
+      summary: baseSummary,
+      companyName,
+      unassignedJobsCount: unassignedJobs?.count ?? 0,
+      quotesAwaitingApproval: quotesCounts?.awaiting ?? 0,
+      quotesFollowUp: quotesCounts?.followUp ?? 0,
+      now,
+    });
+
+    return {
+      ...baseSummary,
+      header: {
+        ...baseSummary.header,
+        businessSummary: dash001.headerExtended.businessSummary,
+        priorityCount: dash001.headerExtended.priorityCount,
+        urgentAlertCount: dash001.headerExtended.urgentAlertCount,
+      },
+      dash001,
     };
   }
 

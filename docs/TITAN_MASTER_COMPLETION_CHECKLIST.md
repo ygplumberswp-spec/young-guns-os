@@ -336,7 +336,7 @@ Boolean columns use **YES** / **NO** / **—** (not applicable).
 | INT-OVERVIEW-001 | integrations | Integrations overview + Dashboard Connections — enterprise status alignment | BUILT LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | PR #10; ConnectionsPanel; IntegrationOverviewCard | INT-UI-001B |  | Owner visual approval pending | Owner sign-off |
 | PERF-001 | performance | TITAN Performance Foundation — measurable speed audit and repair | NOT FOUND | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  |  |  | High-priority — record only | Owner sequences after INT-OVERVIEW-001 |
 | XERO-003 | xero | Near-real-time Xero quote, invoice and payment intersync | NOT FOUND | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  |  |  | Record only — after PERF-001 | Owner sequences before DASH-001 |
-| DASH-001 | dashboard | Owner Dashboard — Business Heartbeat redesign | PARTIALLY IMPLEMENTED | YES | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | Owner Command Centre routes | f8cc0c4 |  | Not enterprise-demo ready | Owner sequences after XERO-003 |
+| DASH-001 | dashboard | Owner Dashboard — Business Heartbeat redesign | BUILT LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | BusinessHeartbeatPanel; FinancialTruthPanel; dash001 API | DASH-001 |  | Owner visual approval pending | STOP — approve before XERO-002 |
 | MKT-001 | marketing | Marketing consent + eligibility gates (POPIA) | DEPLOYED TO STAGING | YES | NO | NO | NO | NO | YES | NO | NO | NO | NO | YES | YES | NO | NO | UX-H/UX-026 | f8cc0c4 |  |  |  |
 | MKT-002 | marketing | Campaign execute — honest SEND_PATH_NOT_IMPLEMENTED | DEPLOYED TO STAGING | YES | NO | NO | NO | NO | YES | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  |  |  |
 | MKT-003 | marketing | Live email/SMS/WhatsApp campaign send | NOT FOUND | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  | Provider + Owner approval |  |
@@ -441,7 +441,7 @@ These phases are **documented and visible in backlog/plans** but must **not** be
 | **Integrations overview enterprise polish** | Unified cards, status lines, sales-demo surface on `/integrations` | INT-OVERVIEW-001, PR #10 | **BUILT LOCALLY** — Owner approval pending |
 | **TITAN Performance Foundation** | Load, navigation, API waterfalls, bundles, DB indexes, caching, mobile perf + metrics | PERF-001 | **RECORDED — NOT STARTED** |
 | **Xero near-real-time intersync** | Quote, invoice, payment intersync with freshness evidence | XERO-003 | **RECORDED — NOT STARTED** — after PERF-001 |
-| **Owner Dashboard — Business Heartbeat** | Financial truth, ops heartbeat, fleet, leads, alerts, AURA exec recs | DASH-001 | **RECORDED — NOT STARTED** — after XERO-003 |
+| **Owner Dashboard — Business Heartbeat** | Financial truth, ops heartbeat, fleet, leads, alerts, AURA exec recs | DASH-001 | **BUILT LOCALLY** — Owner visual approval pending; UI-THEME-001 recorded only |
 | **Xero live proof** | Controlled staging write E2E | XERO-002 | **BLOCKED** — after PERF-001 + XERO-003 + DASH-001 sequenced |
 | **Pricebook YGP-001** | Tenant-scoped pricebook DB replacing temp YG constants | FIN-014, FIN-015 | **QUEUED** |
 | **Configuration Studio** | Draft / preview / version / rollback (FRZ-019) | TITAN_FRZ019_CONFIG_STUDIO_AUDIT.md | **QUEUED** |
