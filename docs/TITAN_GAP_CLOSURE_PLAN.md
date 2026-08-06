@@ -2,7 +2,7 @@
 
 **Audit type:** READ-ONLY planning artifact — no new features  
 **Generated (UTC):** 2026-08-05  
-**Last updated (UTC):** 2026-08-06 — PERF-001 performance foundation implemented on `cursor/titan-perf-001-foundation`; staging deploy pending Owner/Railway action  
+**Last updated (UTC):** 2026-08-06 — XERO-003A BANK-IMPORT-001 implemented; AI-FIN-DOC-001 recorded (not implemented)  
 **Base HEAD:** `cc0abbcde96902711fc0e141590144470abc5444` → task branch `cursor/titan-xero-002-p0-finance`  
 **Branch:** `cursor/titan-v1-integration`  
 **Scope:** Unmet **accepted** requirements only — deferred items at end  
@@ -48,6 +48,7 @@
 | 0 | INT-OVERVIEW-001 | Integrations overview + Dashboard Connections alignment | **Pending Owner approval** |
 | 1 | **PERF-001** | **TITAN Performance Foundation** | **Implemented** — [TITAN_PERF_001_COMPLETION_REPORT.md](./TITAN_PERF_001_COMPLETION_REPORT.md); staging deploy pending |
 | 2 | **XERO-003** | **Near-real-time Xero intersync** | **Implemented** — [TITAN_XERO_003_COMPLETION_REPORT.md](./TITAN_XERO_003_COMPLETION_REPORT.md); staging deploy + Xero platform config pending |
+| 2A | **BANK-IMPORT-001** | **Manual bank statement import fallback** | **Implemented** — [TITAN_BANK_STATEMENT_IMPORT_ARCHITECTURE.md](./TITAN_BANK_STATEMENT_IMPORT_ARCHITECTURE.md); migration 0182 pending Owner approval |
 | 3 | **DASH-001** | **Owner Dashboard — Business Heartbeat** | Owner sequences after XERO-003 review |
 | 4 | XERO-002 | Controlled Xero live proof (Owner gate) | **Blocked** until steps 0–3 formally sequenced |
 
@@ -93,6 +94,34 @@ Both tasks must meet the **Enterprise Product Quality Gate** and **Fine Details 
 **Gap:** Quote → invoice → payment state changes are not reflected near-real-time across TITAN and Xero.
 
 **Future scope (not started):** Near-real-time intersync for quotes, invoices and payments — incremental sync, webhook-driven updates where available, honest UI freshness, and measurable latency evidence. **Does not replace** XERO-002 controlled live proof; runs as a separate sequenced task before DASH-001.
+
+### BANK-IMPORT-001 — Manual bank statement import fallback
+
+**Status (2026-08-06):** Implemented on branch `cursor/titan-xero-003-realtime-intersync` (XERO-003A). Controlled CSV import at Finance → Bank Transactions → Import statement. Preview-before-approval, RBAC, tenant isolation, duplicate detection vs Xero and prior manual imports. Migration `0182_bank_statement_manual_import.sql` created — **not applied**. See [TITAN_BANK_STATEMENT_IMPORT_ARCHITECTURE.md](./TITAN_BANK_STATEMENT_IMPORT_ARCHITECTURE.md).
+
+### AI-FIN-DOC-001 — AI Financial Capture Engine (RECORD ONLY — do not implement during XERO-003A)
+
+**Status:** Documented only. **Not implemented.**
+
+**Child capabilities (future):**
+
+| ID | Name |
+|----|------|
+| AP-DOC-001 | Supplier Invoice Import |
+| EXP-REC-001 | Receipt and Till-Slip Capture |
+| INV-PRICE-001 | Supplier Price List Import |
+
+**Required future AI workflow:**
+
+Photo, PDF, spreadsheet or authorised email attachment → secure validation → AI document classification → AI data extraction → supplier/account matching → duplicate and fraud checks → VAT support → line-item extraction → job/project/vehicle/technician allocation suggestions → confidence scoring → human review → authorised approval → TITAN financial records updated → controlled Xero draft creation → payment and reconciliation tracked separately.
+
+**Required statuses:** Captured by AI → Review required → Approved → Sent to Xero → Paid → Reconciled.
+
+**After approval, future captured data must update:** supplier bills, accounts payable, expenses, material and job costs, vehicle expenses, technician expenses, inventory purchase cost, supplier price history, project profitability, gross profit and margin, supplier spending, VAT input estimate, cash-flow forecast, Owner Dashboard figures.
+
+**AI constraints:** AI may extract and recommend, but may **not** silently approve, post to Xero, mark paid, reconcile, change VAT, merge suppliers or overwrite prices.
+
+**Locked sequence unchanged:** XERO-003 → DASH-001 → XERO-002 controlled live proof → remaining roadmap.
 
 ---
 

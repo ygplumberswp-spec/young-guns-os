@@ -140,6 +140,10 @@ export const PaymentListPage = lazyNamed(
   () => import('../pages/finance/PaymentListPage'),
   'PaymentListPage',
 );
+export const BankStatementImportPage = lazyNamed(
+  () => import('../pages/finance/BankStatementImportPage'),
+  'BankStatementImportPage',
+);
 export const PaymentCreatePage = lazyNamed(
   () => import('../pages/finance/PaymentCreatePage'),
   'PaymentCreatePage',

@@ -26,6 +26,8 @@ import { resolveJobEvidenceStoragePath } from './lib/job-evidence-storage.js';
 import { validateDeploymentStorageConfiguration } from './lib/deployment-storage-validation.js';
 import { JobEvidenceStorageService } from './services/job-evidence-storage.service.js';
 import { FinanceDocumentEvidenceStorageService } from './services/finance-document-evidence-storage.service.js';
+import { BankStatementStorageService } from './services/bank-statement-storage.service.js';
+import { BankStatementImportService } from './services/bank-statement-import.service.js';
 import { createErrorHandler, notFoundHandler } from './middleware/error-handler.js';
 import { requestContextMiddleware } from './middleware/request-context.js';
 import { configureRbacAudit } from './middleware/rbac.js';
@@ -62,6 +64,7 @@ import { ReportExportService } from './services/report-export.service.js';
 import { SchedulingService } from './services/scheduling.service.js';
 import { FinanceService } from './services/finance.service.js';
 import { createFinanceRouter } from './routes/finance.js';
+import { createBankStatementImportRouter } from './routes/bank-statement-import.js';
 import { createLiveUpdatesRouter } from './routes/live-updates.js';
 import './lib/live-updates.js';
 import { createBoqRouter } from './routes/boq.js';
@@ -526,6 +529,8 @@ const jobEvidenceStorageService = new JobEvidenceStorageService(jobEvidenceStora
 const financeDocumentEvidenceStorageService = new FinanceDocumentEvidenceStorageService(
   jobEvidenceStoragePath,
 );
+const bankStatementStorageService = new BankStatementStorageService(jobEvidenceStoragePath);
+const bankStatementImportService = new BankStatementImportService(db, bankStatementStorageService);
 const teamService = new TeamService(db, env.APP_URL);
 const enterpriseSaasPlatformService = new EnterpriseSaasPlatformService({
   db,
@@ -1831,6 +1836,16 @@ app.use(
     db,
     jobEvidenceStorage: jobEvidenceStorageService,
     financeDocumentEvidenceStorage: financeDocumentEvidenceStorageService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/finance/bank-statements',
+  createBankStatementImportRouter({
+    bankStatementImportService,
+    teamService,
+    db,
     jwtSecret: env.JWT_SECRET,
     authService,
   }),

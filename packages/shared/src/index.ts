@@ -114,6 +114,7 @@ export * from './xero-connection-health.js';
 export * from './xero-customer-mapping.js';
 export * from './xero-reconciliation.js';
 export * from './xero-realtime-intersync.js';
+export * from './bank-statement-import.js';
 export * from './xero-source-of-truth.js';
 export * from './vehicle-registration.js';
 export * from './whatsapp.js';

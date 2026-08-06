@@ -6,6 +6,7 @@ const sectionTabs = [
   { href: '/finance/boq', label: 'BOQs' },
   { href: '/finance/invoices', label: 'Invoices' },
   { href: '/finance/payments', label: 'Payments' },
+  { href: '/finance/bank-transactions/import', label: 'Bank Transactions' },
 ];
 
 const secondaryItems = [

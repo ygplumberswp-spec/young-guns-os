@@ -430,6 +430,10 @@ export function App() {
                           component={OwnerPages.PaymentDetailPage}
                         />
                         <Route path="/finance/payments" component={OwnerPages.PaymentListPage} />
+                        <Route
+                          path="/finance/bank-transactions/import"
+                          component={OwnerPages.BankStatementImportPage}
+                        />
                         <Route path="/scheduling" component={OwnerPages.SchedulingPage} />
                         <Route
                           path="/workforce/day-timeline"

@@ -25,6 +25,10 @@
 
 **XERO-003 (2026-08-06):** Near-real-time Xero intersync implemented — webhook receiver, targeted invoice refresh, quote incremental refresh, finance freshness UI. Staging deploy pending.
 
+**XERO-003A / BANK-IMPORT-001 (2026-08-06):** Manual bank statement CSV import fallback implemented — preview-before-approval, RBAC, duplicate detection, migration 0182 created (not applied). See [TITAN_BANK_STATEMENT_IMPORT_ARCHITECTURE.md](./TITAN_BANK_STATEMENT_IMPORT_ARCHITECTURE.md).
+
+**AI-FIN-DOC-001 (2026-08-06):** AI Financial Capture Engine and children AP-DOC-001, EXP-REC-001, INV-PRICE-001 — **documented only**, not implemented. See [TITAN_GAP_CLOSURE_PLAN.md](./TITAN_GAP_CLOSURE_PLAN.md).
+
 **Integrations overview (2026-08-06):** Enterprise polish on PR #10 — unified cards, enterprise status lines, fine-details finishing. **Pending Owner approval** — not complete until signed off.
 
 ---
