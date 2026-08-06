@@ -1,10 +1,11 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useLocation } from 'wouter';
-import { Button, Input, PageHeader } from '@titan/ui';
+import { useLocation, useSearch } from 'wouter';
+import { Button, Input } from '@titan/ui';
 import type {
   CreateJobDocumentInput,
   CustomerPropertySummary,
   CustomerSummary,
+  GoogleGeocodedAddress,
   JobPriority,
   TeamMember,
 } from '@titan/shared';
@@ -29,6 +30,12 @@ import {
   JOB_DOCUMENT_ACCEPT,
   titleFromFileName,
 } from '../../features/jobs/job-document-attach';
+import { PageHeader } from '../../components/ux';
+import { useFormDraftShell } from '../../hooks/useFormDraftShell';
+import { fetchDraft } from '../../lib/drafts-api';
+import { useTitanNotify } from '../../components/ux/TitanNotifications';
+import { Link } from 'wouter';
+import { AddressAutocomplete } from '../../features/maps/AddressAutocomplete';
 
 type SiteMode = 'existing' | 'new';
 
@@ -48,6 +55,7 @@ export function JobCreatePage() {
   const { accessToken, user } = useAuth();
   const { invalidateJobs } = useStaffMutationInvalidation();
   const [, navigate] = useLocation();
+  const search = useSearch();
   const [customers, setCustomers] = useState<CustomerSummary[]>([]);
   const [properties, setProperties] = useState<CustomerPropertySummary[]>([]);
   const [members, setMembers] = useState<TeamMember[]>([]);
@@ -61,6 +69,19 @@ export function JobCreatePage() {
   const [postalCode, setPostalCode] = useState('');
   const [unit, setUnit] = useState('');
   const [propertyName, setPropertyName] = useState('');
+  const [geo, setGeo] = useState<{
+    latitude: number | null;
+    longitude: number | null;
+    placeId: string | null;
+    formattedAddress: string | null;
+    geocodeStatus: 'unverified' | 'verified' | 'failed' | null;
+  }>({
+    latitude: null,
+    longitude: null,
+    placeId: null,
+    formattedAddress: null,
+    geocodeStatus: null,
+  });
   const [siteContactName, setSiteContactName] = useState('');
   const [siteContactMobile, setSiteContactMobile] = useState('');
   const [siteContactEmail, setSiteContactEmail] = useState('');
@@ -79,6 +100,7 @@ export function JobCreatePage() {
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [documents, setDocuments] = useState<CreateJobDocumentInput[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const pendingPropertyIdRef = useRef<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingProperties, setIsLoadingProperties] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -98,6 +120,46 @@ export function JobCreatePage() {
       }),
     [jobType, suburb, street, siteContactName, selectedCustomer?.name],
   );
+
+  const draftShell = useFormDraftShell({
+    accessToken,
+    userId: user?.id,
+    recordType: 'job',
+    enabled: canWrite && !isLoading,
+    getPayload: () => ({
+      customerId,
+      siteMode,
+      propertyId,
+      street,
+      suburb,
+      city,
+      province,
+      postalCode,
+      unit,
+      propertyName,
+      siteContactName,
+      siteContactMobile,
+      siteContactEmail,
+      siteContactDiffers,
+      jobType,
+      description,
+      priority,
+      appointmentLocal,
+      assignedUserId,
+      accessInstructions,
+      notes,
+      customerVisibleNotes,
+      docTitle,
+      documentCount: documents.length,
+    }),
+    getMeta: () => ({
+      title: titlePreview,
+      customerLabel: selectedCustomer?.name ?? (siteContactName || null),
+      completionPct: street.trim() && customerId ? 45 : 15,
+    }),
+  });
+
+  const { notify } = useTitanNotify();
 
   const emailPlaceholderWarning =
     siteContactEmail.trim() && isValidEmailAddress(siteContactEmail)
@@ -128,7 +190,20 @@ export function JobCreatePage() {
         if (!cancelled) {
           setCustomers(customerData);
           setMembers(memberData.filter((member) => member.isActive));
-          setCustomerId(customerData[0]?.id ?? '');
+          const params = new URLSearchParams(search);
+          const preCustomerId = params.get('customerId');
+          const prePropertyId = params.get('propertyId');
+          const preSiteContactMobile = params.get('siteContactMobile');
+          pendingPropertyIdRef.current = prePropertyId;
+          if (preCustomerId && customerData.some((customer) => customer.id === preCustomerId)) {
+            setCustomerId(preCustomerId);
+          } else {
+            setCustomerId(customerData[0]?.id ?? '');
+          }
+          if (preSiteContactMobile) {
+            setSiteContactMobile(preSiteContactMobile);
+            setSiteContactDiffers(true);
+          }
         }
       } catch (err) {
         if (!cancelled) {
@@ -145,7 +220,90 @@ export function JobCreatePage() {
     return () => {
       cancelled = true;
     };
-  }, [accessToken]);
+  }, [accessToken, search]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(search);
+    const draftId = params.get('draftId');
+    if (!accessToken || !draftId) return;
+
+    let cancelled = false;
+    void fetchDraft(accessToken, draftId).then((draft) => {
+      if (cancelled || draft.recordType !== 'job') return;
+      const payload = draft.payload;
+      if (typeof payload.customerId === 'string') setCustomerId(payload.customerId);
+      if (payload.siteMode === 'existing' || payload.siteMode === 'new') {
+        setSiteMode(payload.siteMode);
+      }
+      if (typeof payload.propertyId === 'string') setPropertyId(payload.propertyId);
+      if (typeof payload.street === 'string') setStreet(payload.street);
+      if (typeof payload.suburb === 'string') setSuburb(payload.suburb);
+      if (typeof payload.city === 'string') setCity(payload.city);
+      if (typeof payload.province === 'string') setProvince(payload.province);
+      if (typeof payload.postalCode === 'string') setPostalCode(payload.postalCode);
+      if (typeof payload.unit === 'string') setUnit(payload.unit);
+      if (typeof payload.propertyName === 'string') setPropertyName(payload.propertyName);
+      if (typeof payload.siteContactName === 'string') setSiteContactName(payload.siteContactName);
+      if (typeof payload.siteContactMobile === 'string') {
+        setSiteContactMobile(payload.siteContactMobile);
+      }
+      if (typeof payload.siteContactEmail === 'string') setSiteContactEmail(payload.siteContactEmail);
+      if (typeof payload.siteContactDiffers === 'boolean') {
+        setSiteContactDiffers(payload.siteContactDiffers);
+      }
+      if (typeof payload.jobType === 'string') setJobType(payload.jobType);
+      if (typeof payload.description === 'string') setDescription(payload.description);
+      if (typeof payload.priority === 'string') setPriority(payload.priority as JobPriority);
+      if (typeof payload.appointmentLocal === 'string') {
+        setAppointmentLocal(payload.appointmentLocal);
+      }
+      if (typeof payload.assignedUserId === 'string') setAssignedUserId(payload.assignedUserId);
+      if (typeof payload.accessInstructions === 'string') {
+        setAccessInstructions(payload.accessInstructions);
+      }
+      if (typeof payload.notes === 'string') setNotes(payload.notes);
+      if (typeof payload.customerVisibleNotes === 'string') {
+        setCustomerVisibleNotes(payload.customerVisibleNotes);
+      }
+      if (typeof payload.docTitle === 'string') setDocTitle(payload.docTitle);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [accessToken, search]);
+
+  useEffect(() => {
+    if (isLoading) return;
+    draftShell.touchField();
+  }, [
+    isLoading,
+    customerId,
+    siteMode,
+    propertyId,
+    street,
+    suburb,
+    city,
+    province,
+    postalCode,
+    unit,
+    propertyName,
+    siteContactName,
+    siteContactMobile,
+    siteContactEmail,
+    siteContactDiffers,
+    jobType,
+    description,
+    priority,
+    appointmentLocal,
+    assignedUserId,
+    accessInstructions,
+    notes,
+    customerVisibleNotes,
+    docTitle,
+    documents.length,
+    draftShell,
+  ]);
 
   useEffect(() => {
     let cancelled = false;
@@ -161,14 +319,26 @@ export function JobCreatePage() {
         const data = await fetchCustomerProperties(accessToken, customerId);
         if (!cancelled) {
           setProperties(data);
-          const primary = data.find((item) => item.isPrimary) ?? data[0];
-          if (primary && primary.street && primary.suburb && primary.city) {
+          const pendingPropertyId = pendingPropertyIdRef.current;
+          const pendingProperty =
+            pendingPropertyId != null
+              ? data.find((item) => item.id === pendingPropertyId)
+              : undefined;
+          if (pendingProperty) {
             setSiteMode('existing');
-            setPropertyId(primary.id);
-            applyProperty(primary);
+            setPropertyId(pendingProperty.id);
+            applyProperty(pendingProperty);
+            pendingPropertyIdRef.current = null;
           } else {
-            setSiteMode('new');
-            setPropertyId('');
+            const primary = data.find((item) => item.isPrimary) ?? data[0];
+            if (primary && primary.street && primary.suburb && primary.city) {
+              setSiteMode('existing');
+              setPropertyId(primary.id);
+              applyProperty(primary);
+            } else {
+              setSiteMode('new');
+              setPropertyId('');
+            }
           }
 
           const customer = customers.find((item) => item.id === customerId);
@@ -204,6 +374,28 @@ export function JobCreatePage() {
     setPostalCode(property.postalCode ?? '');
     setUnit(property.unit ?? '');
     setPropertyName(property.propertyName);
+    setGeo({
+      latitude: property.latitude ?? null,
+      longitude: property.longitude ?? null,
+      placeId: property.placeId ?? null,
+      formattedAddress: property.formattedAddress ?? null,
+      geocodeStatus: property.geocodeStatus ?? null,
+    });
+  }
+
+  function applyGeocodedAddress(resolved: GoogleGeocodedAddress) {
+    if (resolved.street) setStreet(resolved.street);
+    if (resolved.suburb) setSuburb(resolved.suburb);
+    if (resolved.city) setCity(resolved.city);
+    if (resolved.province) setProvince(resolved.province);
+    if (resolved.postalCode) setPostalCode(resolved.postalCode);
+    setGeo({
+      latitude: resolved.latitude,
+      longitude: resolved.longitude,
+      placeId: resolved.placeId,
+      formattedAddress: resolved.formattedAddress,
+      geocodeStatus: 'verified',
+    });
   }
 
   function validate(): boolean {
@@ -258,6 +450,11 @@ export function JobCreatePage() {
                 province: province.trim(),
                 postalCode: postalCode.trim(),
                 unit: unit.trim() || null,
+                latitude: geo.latitude,
+                longitude: geo.longitude,
+                placeId: geo.placeId,
+                formattedAddress: geo.formattedAddress,
+                geocodeStatus: geo.geocodeStatus,
               }
             : null,
         address:
@@ -291,6 +488,8 @@ export function JobCreatePage() {
       });
 
       invalidateJobs();
+      draftShell.markSubmitted();
+      notify({ variant: 'saved', message: 'Job created', dedupeKey: 'job-created' });
       navigate(`/jobs/${job.id}`);
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : 'Unable to create job');
@@ -340,14 +539,14 @@ export function JobCreatePage() {
   return (
     <div className="jobs-page">
       <PageHeader
-        title="New job"
-        description="Book Young Guns work with a full site handoff for dispatch and technicians."
-        actions={
-          <Link href="/jobs">
-            <Button variant="secondary">Back to jobs</Button>
-          </Link>
-        }
+        title="New Job"
+        description="Book work with a full site handoff for dispatch and technicians."
+        guardNavigation={draftShell.guard.guardNavigation}
       />
+      {draftShell.autosave.statusLabel ? (
+        <p className="jobs-draft-status">{draftShell.autosave.statusLabel}</p>
+      ) : null}
+      {draftShell.guard.unsavedChangesModal}
 
       {error ? (
         <p className="form-error" role="alert">
@@ -359,7 +558,7 @@ export function JobCreatePage() {
         <div className="jobs-empty-customers">
           <p className="page-muted">You need at least one customer before creating a job.</p>
           <Link href="/crm/new">
-            <Button>Add customer</Button>
+            <Button>Add Customer</Button>
           </Link>
         </div>
       ) : (
@@ -447,7 +646,7 @@ export function JobCreatePage() {
                 </label>
               ) : (
                 <Input
-                  label="Property name (optional)"
+                  label="Property Name (Optional)"
                   value={propertyName}
                   onChange={(event) => setPropertyName(event.target.value)}
                   placeholder="e.g. Main house / Flat 3"
@@ -455,15 +654,40 @@ export function JobCreatePage() {
               )}
 
               <div className="jobs-form__grid">
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <AddressAutocomplete
+                    label="Street / Search Address"
+                    value={street}
+                    onChange={(value) => {
+                      setStreet(value);
+                      setGeo((prev) => ({
+                        ...prev,
+                        latitude: null,
+                        longitude: null,
+                        placeId: null,
+                        formattedAddress: null,
+                        geocodeStatus: null,
+                      }));
+                    }}
+                    onResolved={applyGeocodedAddress}
+                    placeholder="Start typing a street address…"
+                  />
+                  {fieldErrors.street ? (
+                    <span className="form-error">{fieldErrors.street}</span>
+                  ) : null}
+                  {geo.latitude != null && geo.longitude != null ? (
+                    <p className="page-muted">
+                      Verified: {geo.latitude.toFixed(5)}, {geo.longitude.toFixed(5)}
+                      {geo.placeId ? ' · Place ID stored' : ''}
+                    </p>
+                  ) : (
+                    <p className="page-muted">
+                      Verify with Google Maps to store coordinates. TITAN will not invent a pin.
+                    </p>
+                  )}
+                </div>
                 <Input
-                  label="Street"
-                  value={street}
-                  onChange={(event) => setStreet(event.target.value)}
-                  required
-                  error={fieldErrors.street}
-                />
-                <Input
-                  label="Unit / apartment"
+                  label="Unit / Apartment"
                   value={unit}
                   onChange={(event) => setUnit(event.target.value)}
                   placeholder="Optional"
@@ -501,7 +725,7 @@ export function JobCreatePage() {
                   ) : null}
                 </label>
                 <Input
-                  label="Postal code"
+                  label="Postal Code"
                   value={postalCode}
                   onChange={(event) => setPostalCode(event.target.value)}
                   required
@@ -523,7 +747,7 @@ export function JobCreatePage() {
             </label>
             <div className="jobs-form__grid">
               <Input
-                label="Contact name"
+                label="Contact Name"
                 value={siteContactName}
                 onChange={(event) => setSiteContactName(event.target.value)}
                 required
@@ -606,7 +830,7 @@ export function JobCreatePage() {
                 </select>
               </label>
               <Input
-                label="Preferred appointment"
+                label="Preferred Appointment"
                 type="datetime-local"
                 value={appointmentLocal}
                 onChange={(event) => setAppointmentLocal(event.target.value)}
@@ -671,7 +895,7 @@ export function JobCreatePage() {
             </p>
             <div className="jobs-form__grid">
               <Input
-                label="Document title"
+                label="Document Title"
                 value={docTitle}
                 onChange={(event) => setDocTitle(event.target.value)}
                 placeholder="Blocked drain"

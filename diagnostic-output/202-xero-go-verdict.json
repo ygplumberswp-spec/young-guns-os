@@ -1,0 +1,75 @@
+{
+  "label": "202-xero-go-verdict",
+  "generatedAt": "2026-08-01T17:43:00.000Z",
+  "xeroGo": "NO",
+  "deployRef": "60b4829",
+  "stagingHost": "young-guns-os-staging.up.railway.app",
+  "primaryGoJobId": "6a8304c4-753f-4994-a99d-8c4365c21aee",
+  "latestCompletedImportJobId": "8e6aec9b-2d99-493c-85b8-75f61d7f414b",
+  "last_sync_at": "2026-08-01T17:37:22.876Z",
+  "mappingCounts": {
+    "customer_mappings": 673,
+    "invoice_mappings": 5,
+    "payment_mappings": 0,
+    "bank_tx_logs": 3078
+  },
+  "duplicateCustomerContactIds": 0,
+  "health": {
+    "url": "https://young-guns-os-staging.up.railway.app/api/v1/health/ready",
+    "status": 200,
+    "pass": true
+  },
+  "stageSummary": {
+    "contacts": "completed (673 mappings, 0 dupes)",
+    "invoices": "completed (5 mappings)",
+    "payments": "completed (0 payment mappings)",
+    "bank_transactions": "completed (3078 success logs; resume chain finished on 8e6aec9b)"
+  },
+  "incrementalJob08d2da82": {
+    "status": "completed",
+    "completedAt": "2026-08-01T15:55:40.223Z",
+    "assessment": "Post-GO scheduled incremental; not blocking after completion; earlier contact-stage SQL failures cleared after schema/migration catch-up on staging."
+  },
+  "quiescence": {
+    "activeImportJobsAtFinalCheck": 0,
+    "finalCheckAt": "2026-08-01T17:37:44.162Z",
+    "pollWindowMinutes": 105,
+    "artifacts": [
+      "diagnostic-output/205-xero-go-poll.log",
+      "diagnostic-output/205-quiescence-final.log"
+    ]
+  },
+  "cv001b": {
+    "verdict": "FAIL",
+    "artifact": "diagnostic-output/205-cv-001b-post-xero-go.json",
+    "cvMetricsRefreshJobId": null,
+    "cvMetricsRefreshAt": null
+  },
+  "migrationsStaging": {
+    "appliedMigrationRowCount": 114,
+    "journalExpectedThrough": "0109_xero_two_way_sync_scaffolding",
+    "conflictMetadataColumnPresent": false,
+    "note": "Staging row count increased 107→114 during poll window (likely Railway migrate hook). Did not run migrate-staging-safe in this session. 0107_whatsapp_contact_enrichment.sql exists on disk but is not in drizzle journal; 0110_supplier_price_intelligence.sql exists — Owner approval before apply.",
+    "action": "NO migrate apply this session — quiescence reached late; CV-001b gate still open; reconcile 0109 column drift if incremental SQL errors recur."
+  },
+  "pipelinePhase1Recovery": "GO",
+  "pipelinePhase2XeroGo": "NO-GO",
+  "nextPipelinePhase": "SPI-001 (blocked until Phase 2 GO — cvMetricsRefreshJobId + 187 verdict PASS)",
+  "checksPassing": [
+    "primary_import_completed_6a8304c4",
+    "last_sync_at_populated",
+    "all_stages_completed_on_latest_success_path",
+    "no_duplicate_customer_mappings",
+    "health_200",
+    "staging_quiescent_at_final_check"
+  ],
+  "checksFailing": [
+    "cv_auto_recalc_fired",
+    "187_verdict_pass"
+  ],
+  "recommendation": [
+    "Investigate why handleXeroImportJobSettled / refreshPendingCustomerValueMetrics did not set cvMetricsRefreshJobId after completed imports (8e6aec9b / 6a8304c4).",
+    "Re-run 187 after fix or after manual tick confirms cvMetricsRefreshJobId matches latest completed import job.",
+    "Apply 0109 only in Owner-approved window if conflict_metadata drift persists; defer 0107/0110/0111 until explicit approval."
+  ]
+}

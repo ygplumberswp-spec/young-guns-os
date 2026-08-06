@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Link, useRoute } from 'wouter';
-import { Button, Input, PageHeader, Panel } from '@titan/ui';
+import { Button, Input, Panel } from '@titan/ui';
 import type { InventoryLocationSummary, PurchaseOrderDetail, PurchaseOrderStatus } from '@titan/shared';
 import { formatMoney } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
@@ -146,22 +147,26 @@ export function PurchaseOrderDetailPage() {
     }
   }
 
-  if (isLoading) return <p className="page-muted">Loading purchase order…</p>;
+  if (isLoading) {
+    return (
+      <div className="page-shell">
+        <PageHeader title="Purchase Order" description="Purchase order detail" />
+        <p className="page-muted">Loading purchase order…</p>
+      </div>
+    );
+  }
 
   if (!purchaseOrder) {
     return (
       <div className="inventory-page">
-        <PageHeader title="Purchase order not found" description="This order may have been removed." />
-        <Link href="/procurement">
-          <Button variant="secondary">Back to purchase orders</Button>
-        </Link>
+        <PageHeader title="Purchase Order Not Found" description="This order may have been removed." />
       </div>
     );
   }
 
   const canReceive =
     canWrite &&
-    ['approved', 'ordered'].includes(purchaseOrder.status) &&
+    ['approved', 'ordered', 'received'].includes(purchaseOrder.status) &&
     purchaseOrder.deliveryStatus !== 'delivered';
   const nextStatuses = NEXT_STATUS_OPTIONS[purchaseOrder.status] ?? [];
 
@@ -170,17 +175,12 @@ export function PurchaseOrderDetailPage() {
       <PageHeader
         title={purchaseOrder.referenceNumber}
         description={`${purchaseOrder.supplierName} · ${formatMoney(purchaseOrder.totalCostCents)}`}
-        actions={
-          <Link href="/procurement">
-            <Button variant="secondary">Back to purchase orders</Button>
-          </Link>
-        }
       />
 
       {error ? <p className="form-error">{error}</p> : null}
       {success ? <p className="form-success">{success}</p> : null}
 
-      <Panel title="Order details">
+      <Panel title="Order Details">
         <dl className="fleet-detail-list">
           <div>
             <dt>Supplier</dt>
@@ -239,7 +239,7 @@ export function PurchaseOrderDetailPage() {
         </dl>
       </Panel>
 
-      <Panel title="Line items">
+      <Panel title="Line Items">
         <div className="inventory-table-wrap">
           <table className="inventory-table">
             <thead>
@@ -296,7 +296,7 @@ export function PurchaseOrderDetailPage() {
           {nextStatuses.includes('cancelled') ? (
             <div className="jobs-form__actions" style={{ marginBottom: '0.75rem' }}>
               <Input
-                label="Cancellation reason"
+                label="Cancellation Reason"
                 value={cancelReason}
                 onChange={(e) => setCancelReason(e.target.value)}
               />

@@ -31,20 +31,20 @@ export const COMMUNICATION_VISIBILITY_OPTIONS: Array<{
   value: CommunicationVisibility;
   label: string;
 }> = [
-  { value: 'internal_note', label: 'Internal note (staff only)' },
-  { value: 'customer_visible', label: 'Customer-visible message' },
-  { value: 'outbound_request', label: 'Outbound send request' },
+  { value: 'internal_note', label: 'Internal Note (Staff Only)' },
+  { value: 'customer_visible', label: 'Customer-Visible Message' },
+  { value: 'outbound_request', label: 'Outbound Send Request' },
 ];
 
 export const COMMUNICATION_DELIVERY_STATE_OPTIONS: Array<{
   value: CommunicationDeliveryState;
   label: string;
 }> = [
-  { value: 'logged_only', label: 'Logged only — not provider-delivered' },
-  { value: 'requested', label: 'Requested — awaiting send path' },
+  { value: 'logged_only', label: 'Logged Only — Not Provider-Delivered' },
+  { value: 'requested', label: 'Requested — Awaiting Send Path' },
   { value: 'queued', label: 'Queued' },
-  { value: 'send_failed', label: 'Send failed' },
-  { value: 'provider_delivered', label: 'Provider delivered' },
+  { value: 'send_failed', label: 'Send Failed' },
+  { value: 'provider_delivered', label: 'Provider Delivered' },
 ];
 
 export type MessageTemplateSummary = {

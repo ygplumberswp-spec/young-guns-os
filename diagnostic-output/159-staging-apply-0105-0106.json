@@ -1,0 +1,19 @@
+{
+  "ok": true,
+  "journalCount": 106,
+  "expected": 106,
+  "results": [
+    {
+      "tag": "0105_boq_workspace",
+      "applied": true,
+      "journalRecorded": true,
+      "tablePresent": true
+    },
+    {
+      "tag": "0106_job_document_packs",
+      "applied": true,
+      "journalRecorded": true,
+      "tablePresent": true
+    }
+  ]
+}

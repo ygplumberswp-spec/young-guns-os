@@ -32,12 +32,12 @@ export const WHATSAPP_TEMPLATE_CATEGORY_OPTIONS: Array<{
   value: WhatsappTemplateCategory;
   label: string;
 }> = [
-  { value: 'job_booked_confirmation', label: 'Job booked confirmation' },
-  { value: 'technician_assigned', label: 'Technician assigned' },
-  { value: 'technician_on_the_way', label: 'Technician on the way' },
-  { value: 'job_completed', label: 'Job completed' },
-  { value: 'invoice_sent', label: 'Invoice sent' },
-  { value: 'payment_reminder', label: 'Payment reminder' },
+  { value: 'job_booked_confirmation', label: 'Job Booked Confirmation' },
+  { value: 'technician_assigned', label: 'Technician Assigned' },
+  { value: 'technician_on_the_way', label: 'Technician On The Way' },
+  { value: 'job_completed', label: 'Job Completed' },
+  { value: 'invoice_sent', label: 'Invoice Sent' },
+  { value: 'payment_reminder', label: 'Payment Reminder' },
   { value: 'utility', label: 'Utility' },
   { value: 'marketing', label: 'Marketing' },
 ];
@@ -55,7 +55,7 @@ export const WHATSAPP_TEMPLATE_STATUS_OPTIONS: Array<{
   value: WhatsappTemplateStatus;
   label: string;
 }> = [
-  { value: 'pending', label: 'Pending approval' },
+  { value: 'pending', label: 'Pending Approval' },
   { value: 'approved', label: 'Approved' },
   { value: 'rejected', label: 'Rejected' },
 ];
@@ -71,6 +71,14 @@ export type WhatsappConnectionSummary = {
   lastError: string | null;
   connectedAt: string | null;
   webhookUrl: string;
+  /** Runtime gate: WHATSAPP_ENABLED && PROVIDERS_ENABLED */
+  featureEnabled: boolean;
+  /** Runtime gate: WEBHOOKS_ENABLED (inbound processing) */
+  webhooksEnabled: boolean;
+  /** Runtime gate: OUTBOUND_MESSAGES_ENABLED (live send/approve) */
+  outboundMessagesEnabled: boolean;
+  /** Honest operator note when flags block live traffic */
+  runtimeNote: string | null;
 };
 
 export type SaveWhatsappConnectionRequest = {

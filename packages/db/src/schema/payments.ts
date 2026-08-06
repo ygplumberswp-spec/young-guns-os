@@ -26,9 +26,17 @@ export const payments = pgTable('payments', {
   notes: text('notes'),
   clientActionId: text('client_action_id'),
   xeroPaymentId: text('xero_payment_id'),
+  xeroPaymentStatus: text('xero_payment_status'),
+  /** Yoco Checkout payment id (`p_…`) — idempotency for webhook-ingested payments. */
+  yocoPaymentId: text('yoco_payment_id'),
   recordedByUserId: uuid('recorded_by_user_id').references(() => users.id, {
     onDelete: 'set null',
   }),
+  /** Import provenance — set on Xero pull; never invents financial values. */
+  sourceProvider: text('source_provider'),
+  sourceExternalId: text('source_external_id'),
+  sourceSyncedAt: timestamp('source_synced_at', { withTimezone: true }),
+  sourceImportJobId: uuid('source_import_job_id'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 

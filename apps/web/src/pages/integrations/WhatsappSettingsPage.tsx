@@ -1,12 +1,13 @@
+import { PageHeader } from '../../components/ux';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { Button, Input, PageHeader, Panel } from '@titan/ui';
+import { Button, Input, Panel } from '@titan/ui';
 import type {
   WhatsappConnectionSummary,
   WhatsappStats,
   WhatsappTemplateCategory,
   WhatsappTemplateSummary,
 } from '@titan/shared';
-import { WHATSAPP_TEMPLATE_CATEGORY_OPTIONS } from '@titan/shared';
+import { WHATSAPP_CONNECTION_STATUS_OPTIONS, WHATSAPP_TEMPLATE_CATEGORY_OPTIONS } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import {
   createWhatsappTemplate,
@@ -20,17 +21,41 @@ import {
 import { useAuth } from '../../lib/auth-context';
 import { IntegrationsNav } from '../../features/integrations/IntegrationsNav';
 import { canAccessIntegrations, canManageIntegrations } from '../../features/integrations/utils';
-import { formatConnectionStatus } from '../../features/integrations/formatters';
+
+function formatWhatsappStatus(status: WhatsappConnectionSummary['status']): string {
+  return WHATSAPP_CONNECTION_STATUS_OPTIONS.find((option) => option.value === status)?.label ?? status;
+}
+
+function messageHealthLabel(
+  connection: WhatsappConnectionSummary,
+  stats: WhatsappStats | null,
+): string {
+  if (connection.status === 'error' || connection.lastError) {
+    return 'Needs Attention';
+  }
+  if (connection.status === 'connected' && connection.hasCredentials) {
+    if (stats && stats.pendingReplyCount > 0) {
+      return 'Active — Pending Replies';
+    }
+    return 'Healthy';
+  }
+  if (connection.status === 'pending') {
+    return 'Pending';
+  }
+  return 'Not Connected';
+}
 
 export function WhatsappSettingsPage() {
   const { accessToken, user } = useAuth();
   const [connection, setConnection] = useState<WhatsappConnectionSummary | null>(null);
   const [stats, setStats] = useState<WhatsappStats | null>(null);
   const [templates, setTemplates] = useState<WhatsappTemplateSummary[]>([]);
-  const [accessTokenField, setAccessTokenField] = useState('');
-  const [phoneNumberId, setPhoneNumberId] = useState('');
-  const [businessAccountId, setBusinessAccountId] = useState('');
-  const [webhookVerifyToken, setWebhookVerifyToken] = useState('');
+  const [formValues, setFormValues] = useState({
+    accessToken: '',
+    phoneNumberId: '',
+    businessAccountId: '',
+    webhookVerifyToken: '',
+  });
   const [testPhoneNumber, setTestPhoneNumber] = useState('');
   const [testMessage, setTestMessage] = useState('');
   const [templateName, setTemplateName] = useState('');
@@ -42,9 +67,19 @@ export function WhatsappSettingsPage() {
   const [isCreatingTemplate, setIsCreatingTemplate] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [showManualSetup, setShowManualSetup] = useState(false);
+  const [manageOpen, setManageOpen] = useState(false);
+  const [confirmDisconnect, setConfirmDisconnect] = useState(false);
+  const [manageSection, setManageSection] = useState<
+    null | 'webhook' | 'diagnostics' | 'permissions' | 'sync'
+  >(null);
 
   const canView = useMemo(() => (user ? canAccessIntegrations(user.permissions) : false), [user]);
   const canManage = useMemo(() => (user ? canManageIntegrations(user.permissions) : false), [user]);
+
+  const isConnected = Boolean(
+    connection && (connection.hasCredentials || connection.status === 'connected'),
+  );
 
   async function loadPageData() {
     if (!accessToken || !canView) return;
@@ -52,8 +87,12 @@ export function WhatsappSettingsPage() {
     setConnection(data.connection);
     setStats(data.stats);
     setTemplates(data.templates);
-    if (data.connection.phoneNumberId) setPhoneNumberId(data.connection.phoneNumberId);
-    if (data.connection.businessAccountId) setBusinessAccountId(data.connection.businessAccountId);
+    setFormValues((current) => ({
+      accessToken: '',
+      phoneNumberId: data.connection.phoneNumberId ?? current.phoneNumberId,
+      businessAccountId: data.connection.businessAccountId ?? current.businessAccountId,
+      webhookVerifyToken: '',
+    }));
   }
 
   useEffect(() => {
@@ -70,7 +109,7 @@ export function WhatsappSettingsPage() {
       } catch (err) {
         if (!cancelled) {
           setError(
-            err instanceof ApiClientError ? err.message : 'Unable to load WhatsApp settings',
+            err instanceof ApiClientError ? err.message : 'Unable to load Business WhatsApp settings',
           );
         }
       } finally {
@@ -94,17 +133,19 @@ export function WhatsappSettingsPage() {
 
     try {
       const updated = await saveWhatsappConnection(accessToken, {
-        accessToken: accessTokenField,
-        phoneNumberId,
-        businessAccountId,
-        webhookVerifyToken: webhookVerifyToken.trim() || null,
+        accessToken: formValues.accessToken || undefined,
+        phoneNumberId: formValues.phoneNumberId,
+        businessAccountId: formValues.businessAccountId,
+        webhookVerifyToken: formValues.webhookVerifyToken.trim() || null,
       });
       setConnection(updated);
-      setAccessTokenField('');
-      setSuccess('WhatsApp Business connected successfully.');
+      setFormValues((current) => ({ ...current, accessToken: '', webhookVerifyToken: '' }));
+      setShowManualSetup(false);
+      setManageOpen(false);
+      setSuccess('Business WhatsApp connected successfully.');
       await loadPageData();
     } catch (err) {
-      setError(err instanceof ApiClientError ? err.message : 'Unable to connect WhatsApp');
+      setError(err instanceof ApiClientError ? err.message : 'Unable to connect Business WhatsApp');
     } finally {
       setIsSaving(false);
     }
@@ -120,10 +161,13 @@ export function WhatsappSettingsPage() {
     try {
       const updated = await disconnectWhatsapp(accessToken);
       setConnection(updated);
-      setSuccess('WhatsApp disconnected.');
+      setManageOpen(false);
+      setConfirmDisconnect(false);
+      setManageSection(null);
+      setSuccess('Business WhatsApp disconnected.');
       await loadPageData();
     } catch (err) {
-      setError(err instanceof ApiClientError ? err.message : 'Unable to disconnect WhatsApp');
+      setError(err instanceof ApiClientError ? err.message : 'Unable to disconnect Business WhatsApp');
     } finally {
       setIsSaving(false);
     }
@@ -209,149 +253,357 @@ export function WhatsappSettingsPage() {
   }
 
   if (isLoading) {
-    return <p className="page-muted">Loading WhatsApp settings…</p>;
+    return <p className="page-muted">Loading Business WhatsApp settings…</p>;
   }
+
+  const statusLabel = connection
+    ? isConnected
+      ? 'Connected'
+      : formatWhatsappStatus(connection.status)
+    : 'Not Connected';
 
   return (
     <div className="integrations-page">
       <PageHeader
-        title="WhatsApp Business"
-        description="Connect WhatsApp Business API for customer messaging and notifications."
+        title="Business WhatsApp"
+        description="Connect your Meta WhatsApp Business account for customer messaging, notifications and AI communications."
       />
       <IntegrationsNav />
 
       {error ? <p className="form-error">{error}</p> : null}
       {success ? <p className="form-success">{success}</p> : null}
 
-      <div className="integrations-grid">
-        <Panel title="Connection status">
-          {connection ? (
-            <dl className="integrations-detail-list">
-              <div>
-                <dt>Status</dt>
-                <dd>{formatConnectionStatus(connection.status)}</dd>
-              </div>
-              <div>
-                <dt>Phone number</dt>
-                <dd>{connection.displayPhoneNumber ?? connection.phoneNumberId ?? '—'}</dd>
-              </div>
-              <div>
-                <dt>Business account ID</dt>
-                <dd>{connection.businessAccountId ?? '—'}</dd>
-              </div>
-              <div>
-                <dt>Webhook URL</dt>
-                <dd>
-                  <code>{connection.webhookUrl}</code>
-                </dd>
-              </div>
-              <div>
-                <dt>Verify token</dt>
-                <dd>{connection.webhookVerifyTokenHint ?? 'Generated on connect'}</dd>
-              </div>
-              {connection.lastError ? (
+      {connection ? (
+        <Panel title="Business WhatsApp">
+          {isConnected ? (
+            <>
+              <dl className="integrations-detail-list">
                 <div>
-                  <dt>Last error</dt>
-                  <dd className="form-error">{connection.lastError}</dd>
+                  <dt>Status</dt>
+                  <dd>{statusLabel}</dd>
                 </div>
+                <div>
+                  <dt>Connected Number</dt>
+                  <dd>{connection.displayPhoneNumber ?? connection.phoneNumberId ?? '—'}</dd>
+                </div>
+                <div>
+                  <dt>Business Name</dt>
+                  <dd>Unavailable</dd>
+                </div>
+                <div>
+                  <dt>Last Sync</dt>
+                  <dd>{connection.connectedAt ?? 'Never'}</dd>
+                </div>
+                <div>
+                  <dt>Message Health</dt>
+                  <dd>{messageHealthLabel(connection, stats)}</dd>
+                </div>
+                <div>
+                  <dt>Availability</dt>
+                  <dd>
+                    {connection.featureEnabled === false
+                      ? 'Disabled'
+                      : connection.webhooksEnabled === false ||
+                          connection.outboundMessagesEnabled === false
+                        ? 'Limited'
+                        : 'Live'}
+                  </dd>
+                </div>
+              </dl>
+              {connection.runtimeNote ? (
+                <p className="muted" style={{ marginTop: '0.5rem' }}>
+                  {connection.runtimeNote}
+                </p>
               ) : null}
-            </dl>
-          ) : null}
 
-          {canManage ? (
-            <form className="integrations-form" onSubmit={(event) => void handleConnect(event)}>
-              <Input
-                label="Access token"
-                type="password"
-                value={accessTokenField}
-                onChange={(event) => setAccessTokenField(event.target.value)}
-                placeholder={
-                  connection?.hasCredentials ? 'Leave blank to keep current token' : undefined
-                }
-                required={!connection?.hasCredentials}
-              />
-              <Input
-                label="Phone number ID"
-                value={phoneNumberId}
-                onChange={(event) => setPhoneNumberId(event.target.value)}
-                required
-              />
-              <Input
-                label="Business account ID (WABA)"
-                value={businessAccountId}
-                onChange={(event) => setBusinessAccountId(event.target.value)}
-                required
-              />
-              <Input
-                label="Webhook verify token (optional)"
-                value={webhookVerifyToken}
-                onChange={(event) => setWebhookVerifyToken(event.target.value)}
-                placeholder="Auto-generated if empty"
-              />
-              <div className="integrations-form__actions">
-                <Button type="submit" disabled={isSaving}>
-                  {isSaving
-                    ? 'Connecting…'
-                    : connection?.status === 'connected'
-                      ? 'Update connection'
-                      : 'Connect WhatsApp'}
-                </Button>
-                {connection?.status === 'connected' ? (
+              {canManage ? (
+                <>
+                  <div className="integration-actions" style={{ marginTop: '0.75rem' }}>
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        setManageOpen((open) => !open);
+                        setConfirmDisconnect(false);
+                        setManageSection(null);
+                      }}
+                    >
+                      {manageOpen ? 'Close' : 'Manage'}
+                    </Button>
+                  </div>
+
+                  {manageOpen ? (
+                    <div className="page-header-actions" style={{ marginTop: '0.75rem' }}>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        disabled={isSaving}
+                        onClick={() => {
+                          setShowManualSetup(true);
+                          setManageSection(null);
+                        }}
+                      >
+                        Reconnect
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        disabled={isSaving}
+                        onClick={() => {
+                          if (!confirmDisconnect) {
+                            setConfirmDisconnect(true);
+                            return;
+                          }
+                          void handleDisconnect();
+                        }}
+                      >
+                        {confirmDisconnect ? 'Confirm Disconnect' : 'Disconnect'}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() =>
+                          setManageSection((current) =>
+                            current === 'permissions' ? null : 'permissions',
+                          )
+                        }
+                      >
+                        Permissions
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() =>
+                          setManageSection((current) => (current === 'webhook' ? null : 'webhook'))
+                        }
+                      >
+                        Webhook Status
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() =>
+                          setManageSection((current) =>
+                            current === 'diagnostics' ? null : 'diagnostics',
+                          )
+                        }
+                      >
+                        Diagnostics
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() =>
+                          setManageSection((current) => (current === 'sync' ? null : 'sync'))
+                        }
+                      >
+                        Sync History
+                      </Button>
+                    </div>
+                  ) : null}
+
+                  {manageOpen && manageSection === 'permissions' ? (
+                    <p className="page-muted" style={{ marginTop: '0.75rem' }}>
+                      Permissions detail view is not available yet. Business WhatsApp uses your Meta
+                      Cloud API token scopes as configured in Meta Business Manager.
+                    </p>
+                  ) : null}
+                  {manageOpen && manageSection === 'webhook' ? (
+                    <dl className="integrations-detail-list" style={{ marginTop: '0.75rem' }}>
+                      <div>
+                        <dt>Webhook URL</dt>
+                        <dd>{connection.webhookUrl}</dd>
+                      </div>
+                      <div>
+                        <dt>Verify Token</dt>
+                        <dd>{connection.webhookVerifyTokenHint ?? 'Generated on connect'}</dd>
+                      </div>
+                    </dl>
+                  ) : null}
+                  {manageOpen && manageSection === 'diagnostics' ? (
+                    <p className="page-muted" style={{ marginTop: '0.75rem' }}>
+                      {connection.lastError
+                        ? `Last error: ${connection.lastError}`
+                        : `Status ${formatWhatsappStatus(connection.status)}. No recent connection errors reported.`}
+                    </p>
+                  ) : null}
+                  {manageOpen && manageSection === 'sync' ? (
+                    <p className="page-muted" style={{ marginTop: '0.75rem' }}>
+                      Sync history is not available yet. Background message sync runs when Business
+                      WhatsApp is connected
+                      {connection.connectedAt ? ` (connected ${connection.connectedAt})` : ''}.
+                    </p>
+                  ) : null}
+                </>
+              ) : (
+                <p className="page-muted" style={{ marginTop: '0.75rem' }}>
+                  Connection is managed by company owners and integration managers.
+                </p>
+              )}
+            </>
+          ) : (
+            <>
+              <dl className="integrations-detail-list">
+                <div>
+                  <dt>Status</dt>
+                  <dd>Not Connected</dd>
+                </div>
+              </dl>
+              <p style={{ marginTop: '0.75rem' }}>
+                Connect your Meta WhatsApp Business account for customer messaging, notifications and
+                AI communications.
+              </p>
+              {canManage && !showManualSetup ? (
+                <div className="integration-actions" style={{ marginTop: '0.75rem' }}>
+                  <Button
+                    type="button"
+                    onClick={() => setShowManualSetup(true)}
+                    disabled={isSaving}
+                  >
+                    Connect
+                  </Button>
                   <Button
                     type="button"
                     variant="secondary"
+                    onClick={() => setShowManualSetup(true)}
                     disabled={isSaving}
-                    onClick={() => void handleDisconnect()}
                   >
-                    Disconnect
+                    Manual Setup
                   </Button>
-                ) : null}
-              </div>
-            </form>
-          ) : null}
-        </Panel>
-
-        <Panel title="Message statistics">
-          {stats ? (
-            <dl className="integrations-detail-list">
-              <div>
-                <dt>Total messages</dt>
-                <dd>{stats.totalMessages}</dd>
-              </div>
-              <div>
-                <dt>Incoming</dt>
-                <dd>{stats.incomingCount}</dd>
-              </div>
-              <div>
-                <dt>Outgoing</dt>
-                <dd>{stats.outgoingCount}</dd>
-              </div>
-              <div>
-                <dt>Drafts awaiting approval</dt>
-                <dd>{stats.draftCount}</dd>
-              </div>
-              <div>
-                <dt>Pending replies</dt>
-                <dd>{stats.pendingReplyCount}</dd>
-              </div>
-              <div>
-                <dt>Templates</dt>
-                <dd>
-                  {stats.approvedTemplateCount} / {stats.templateCount} approved
-                </dd>
-              </div>
-            </dl>
-          ) : (
-            <p className="page-muted">No message activity yet.</p>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => setShowManualSetup(true)}
+                    disabled={isSaving}
+                  >
+                    Advanced
+                  </Button>
+                </div>
+              ) : null}
+              {!canManage ? (
+                <p className="page-muted" style={{ marginTop: '0.75rem' }}>
+                  Not connected. Ask an owner to connect Business WhatsApp.
+                </p>
+              ) : null}
+            </>
           )}
         </Panel>
-      </div>
+      ) : null}
+
+      {canManage && connection && showManualSetup ? (
+        <Panel title={isConnected ? 'Reconnect Business WhatsApp' : 'Manual Setup'}>
+          <p className="page-muted">
+            Enter Meta Cloud API credentials. Access tokens are never returned to the browser.
+            Sending templates or campaigns still requires existing approval rules.
+          </p>
+          <form
+            className="settings-form"
+            onSubmit={(event) => void handleConnect(event)}
+            autoComplete="off"
+          >
+            <Input
+              label="Access Token"
+              type="password"
+              value={formValues.accessToken}
+              onChange={(event) =>
+                setFormValues((current) => ({ ...current, accessToken: event.target.value }))
+              }
+              autoComplete="new-password"
+              required={!isConnected}
+            />
+            <Input
+              label="Phone Number ID"
+              value={formValues.phoneNumberId}
+              onChange={(event) =>
+                setFormValues((current) => ({ ...current, phoneNumberId: event.target.value }))
+              }
+              autoComplete="off"
+              required
+            />
+            <Input
+              label="Business Account ID (WABA)"
+              value={formValues.businessAccountId}
+              onChange={(event) =>
+                setFormValues((current) => ({
+                  ...current,
+                  businessAccountId: event.target.value,
+                }))
+              }
+              autoComplete="off"
+              required
+            />
+            <Input
+              label="Webhook Verify Token"
+              value={formValues.webhookVerifyToken}
+              onChange={(event) =>
+                setFormValues((current) => ({
+                  ...current,
+                  webhookVerifyToken: event.target.value,
+                }))
+              }
+              autoComplete="off"
+              required={false}
+            />
+            <div className="integration-actions">
+              <Button type="submit" disabled={isSaving}>
+                {isSaving ? 'Connecting…' : isConnected ? 'Validate & Reconnect' : 'Connect'}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                disabled={isSaving}
+                onClick={() => setShowManualSetup(false)}
+              >
+                Cancel
+              </Button>
+            </div>
+          </form>
+        </Panel>
+      ) : null}
+
+      {isConnected ? (
+        <div className="integrations-grid">
+          <Panel title="Message Statistics">
+            {stats ? (
+              <dl className="integrations-detail-list">
+                <div>
+                  <dt>Messages Today</dt>
+                  <dd>{stats.totalMessages}</dd>
+                </div>
+                <div>
+                  <dt>Incoming Messages</dt>
+                  <dd>{stats.incomingCount}</dd>
+                </div>
+                <div>
+                  <dt>Outgoing Messages</dt>
+                  <dd>{stats.outgoingCount}</dd>
+                </div>
+                <div>
+                  <dt>Pending Approval</dt>
+                  <dd>{stats.pendingReplyCount}</dd>
+                </div>
+                <div>
+                  <dt>Draft Messages</dt>
+                  <dd>{stats.draftCount}</dd>
+                </div>
+                <div>
+                  <dt>Templates</dt>
+                  <dd>
+                    {stats.approvedTemplateCount} / {stats.templateCount} approved
+                  </dd>
+                </div>
+              </dl>
+            ) : (
+              <p className="page-muted">No message activity yet.</p>
+            )}
+          </Panel>
+        </div>
+      ) : null}
 
       {canManage && connection?.status === 'connected' ? (
-        <Panel title="Send test message">
+        <Panel title="Send Test Message">
           <form className="integrations-form" onSubmit={(event) => void handleTestMessage(event)}>
             <Input
-              label="Recipient phone number"
+              label="Recipient Phone Number"
               value={testPhoneNumber}
               onChange={(event) => setTestPhoneNumber(event.target.value)}
               placeholder="+27..."
@@ -368,95 +620,97 @@ export function WhatsappSettingsPage() {
               />
             </label>
             <Button type="submit" disabled={isTesting}>
-              {isTesting ? 'Sending…' : 'Send test message'}
+              {isTesting ? 'Sending…' : 'Send Test Message'}
             </Button>
           </form>
         </Panel>
       ) : null}
 
-      <Panel title="Template management">
-        {canManage ? (
-          <form
-            className="integrations-form integrations-form--compact"
-            onSubmit={(event) => void handleCreateTemplate(event)}
-          >
-            <Input
-              label="Template name"
-              value={templateName}
-              onChange={(event) => setTemplateName(event.target.value)}
-              required
-            />
-            <label className="titan-input-group">
-              <span className="titan-input-label">Category</span>
-              <select
-                className="titan-input"
-                value={templateCategory}
-                onChange={(event) =>
-                  setTemplateCategory(event.target.value as WhatsappTemplateCategory)
-                }
-              >
-                {WHATSAPP_TEMPLATE_CATEGORY_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="titan-input-group">
-              <span className="titan-input-label">Body</span>
-              <textarea
-                className="titan-input crm-textarea"
-                rows={3}
-                value={templateBody}
-                onChange={(event) => setTemplateBody(event.target.value)}
-                placeholder="Hi {{customer_name}}, your job is confirmed."
+      {isConnected ? (
+        <Panel title="Template Management">
+          {canManage ? (
+            <form
+              className="integrations-form integrations-form--compact"
+              onSubmit={(event) => void handleCreateTemplate(event)}
+            >
+              <Input
+                label="Template Name"
+                value={templateName}
+                onChange={(event) => setTemplateName(event.target.value)}
                 required
               />
-            </label>
-            <Button type="submit" disabled={isCreatingTemplate}>
-              {isCreatingTemplate ? 'Saving…' : 'Add template'}
-            </Button>
-          </form>
-        ) : null}
+              <label className="titan-input-group">
+                <span className="titan-input-label">Category</span>
+                <select
+                  className="titan-input"
+                  value={templateCategory}
+                  onChange={(event) =>
+                    setTemplateCategory(event.target.value as WhatsappTemplateCategory)
+                  }
+                >
+                  {WHATSAPP_TEMPLATE_CATEGORY_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="titan-input-group">
+                <span className="titan-input-label">Body</span>
+                <textarea
+                  className="titan-input crm-textarea"
+                  rows={3}
+                  value={templateBody}
+                  onChange={(event) => setTemplateBody(event.target.value)}
+                  placeholder="Hi {{customer_name}}, your job is confirmed."
+                  required
+                />
+              </label>
+              <Button type="submit" disabled={isCreatingTemplate}>
+                {isCreatingTemplate ? 'Saving…' : 'Add Template'}
+              </Button>
+            </form>
+          ) : null}
 
-        {templates.length === 0 ? (
-          <p className="page-muted">No WhatsApp templates configured yet.</p>
-        ) : (
-          <ul className="integrations-template-list">
-            {templates.map((template) => (
-              <li key={template.id} className="integrations-template-item">
-                <div>
-                  <strong>{template.name}</strong>
-                  <span className="integrations-template-item__meta">
-                    {template.category} · {template.status} · {template.language}
-                  </span>
-                  <p>{template.body}</p>
-                </div>
-                {canManage ? (
-                  <div className="integrations-form__actions">
-                    {template.status !== 'approved' ? (
+          {templates.length === 0 ? (
+            <p className="page-muted">No Business WhatsApp templates configured yet.</p>
+          ) : (
+            <ul className="integrations-template-list">
+              {templates.map((template) => (
+                <li key={template.id} className="integrations-template-item">
+                  <div>
+                    <strong>{template.name}</strong>
+                    <span className="integrations-template-item__meta">
+                      {template.category} · {template.status} · {template.language}
+                    </span>
+                    <p>{template.body}</p>
+                  </div>
+                  {canManage ? (
+                    <div className="integrations-form__actions">
+                      {template.status !== 'approved' ? (
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          onClick={() => void handleApproveTemplate(template.id)}
+                        >
+                          Mark Approved
+                        </Button>
+                      ) : null}
                       <Button
                         type="button"
-                        variant="secondary"
-                        onClick={() => void handleApproveTemplate(template.id)}
+                        variant="ghost"
+                        onClick={() => void handleDeleteTemplate(template.id)}
                       >
-                        Mark approved
+                        Delete
                       </Button>
-                    ) : null}
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      onClick={() => void handleDeleteTemplate(template.id)}
-                    >
-                      Delete
-                    </Button>
-                  </div>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        )}
-      </Panel>
+                    </div>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          )}
+        </Panel>
+      ) : null}
     </div>
   );
 }

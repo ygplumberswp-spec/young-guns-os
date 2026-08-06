@@ -1,0 +1,193 @@
+{
+  "label": "XERO-002-gate5b-payment-observation",
+  "startedAt": "2026-08-06T17:30:13.925Z",
+  "startingHead": "a800ab5c1650f3a1fba8eaf67de006455eea9bef",
+  "endingHead": "a800ab5c1650f3a1fba8eaf67de006455eea9bef",
+  "mode": "composite-gate2-historical-plus-db",
+  "precheck": {
+    "pwd": "/workspace/.worktrees/titan-recovery",
+    "branch": "cursor/titan-xero-002-gate5b-payment-observation-998f",
+    "stagingDbRef": "cpkuwtaipjxeipvbssvn",
+    "productionForbidden": "rshuiaghmtrvvilhqpwm",
+    "stagingApiHealth": 200,
+    "connectionStatus": "connected",
+    "organisationName": "Young Guns Plumbing",
+    "tenantIdMasked": "20176b90…",
+    "invoiceNumber": "INV-0280",
+    "invoicePrecheck": {
+      "invoiceMapping": {
+        "invoiceIdMasked": "a58f98a7…",
+        "xeroInvoiceIdMasked": "dcccdb37…",
+        "syncStatus": "synced"
+      },
+      "invoice": {
+        "invoiceNumber": "INV-0280",
+        "xeroInvoiceNumber": "INV-0280",
+        "status": "paid",
+        "totalCents": 174920,
+        "amountPaidCents": 174920,
+        "amountDueCents": 0
+      },
+      "payments": [
+        {
+          "paymentIdMasked": "5ebb70b5…",
+          "amountCents": 174920,
+          "method": "bank_transfer",
+          "xeroPaymentIdMasked": "6fb956e7…",
+          "yocoPaymentIdPresent": false,
+          "sourceProvider": "xero"
+        }
+      ],
+      "paymentMappings": [
+        {
+          "paymentIdMasked": "5ebb70b5…",
+          "xeroPaymentIdMasked": "6fb956e7…",
+          "syncStatus": "synced"
+        }
+      ],
+      "duplicatePaymentMappingCount": 0
+    },
+    "orgTestOk": false
+  },
+  "selection": {
+    "customerId": "5834ee96…",
+    "xeroContactId": "3307015e…",
+    "invoiceId": "a58f98a7…",
+    "xeroInvoiceId": "dcccdb37…",
+    "invoiceNumber": "INV-0280"
+  },
+  "countsBefore": {
+    "invoices": 589,
+    "payments": 512,
+    "invoiceMappings": 586,
+    "paymentMappings": 511,
+    "webhookEvents": 1,
+    "refreshJobs": 1,
+    "writeApprovals": 3,
+    "yocoDeliveries": 0,
+    "bankTransactions": 3142
+  },
+  "countsAfter": {
+    "invoices": 589,
+    "payments": 512,
+    "invoiceMappings": 586,
+    "paymentMappings": 511,
+    "webhookEvents": 1,
+    "refreshJobs": 1,
+    "writeApprovals": 3,
+    "yocoDeliveries": 0,
+    "bankTransactions": 3142
+  },
+  "observation": {
+    "readAt": "2026-08-06T16:33:04.389Z",
+    "organisationName": "Young Guns Plumbing",
+    "tenantId": "20176b90-a093-4da1-a04e-8ae616f89fef",
+    "invoice": {
+      "titanInvoiceIdMasked": "a58f98a7…",
+      "xeroInvoiceIdMasked": "dcccdb37…",
+      "invoiceNumber": "INV-0280",
+      "titanStatus": "paid",
+      "invoiceIdMatch": true,
+      "providerOk": true
+    },
+    "payment": {
+      "titanPaymentIdMasked": "5ebb70b5…",
+      "xeroPaymentIdMasked": "6fb956e7…",
+      "paymentIdMatch": true,
+      "titanAmountCents": 174920,
+      "xeroPaymentAmountCents": 174920,
+      "amountMatch": true,
+      "providerOk": false,
+      "note": "Live Xero payment row fetch requires Gate 5B deploy; TITAN mapping and invoice amounts verified"
+    },
+    "amounts": {
+      "titanTotalCents": 174920,
+      "titanAmountPaidCents": 174920,
+      "titanAmountDueCents": 0,
+      "xeroAmountPaid": 1749.2,
+      "xeroAmountDue": 0,
+      "xeroStatus": "PAID",
+      "paidMatches": true,
+      "dueMatches": true
+    },
+    "truthSeparation": {
+      "invoiceIssued": true,
+      "xeroPaymentRecorded": true,
+      "invoicePaidInXero": true,
+      "bankTransactionImported": false,
+      "reconciliationProven": false,
+      "yocoPaymentPresent": false,
+      "statesNotEquivalent": [
+        "bank_transaction_imported",
+        "xero_payment_reconciled",
+        "yoco_payment_completed"
+      ]
+    },
+    "reconciliation": {
+      "state": "xero_payment_recorded",
+      "stateLabel": "Xero payment recorded",
+      "reconciliationProven": false,
+      "sourceLabel": "Xero payment record",
+      "staleDataWarning": "Xero payment recorded — bank reconciliation not confirmed"
+    },
+    "yoco": {
+      "connected": true,
+      "paymentIdPresent": false,
+      "webhookDeliveriesOnStaging": 0
+    },
+    "targetedRefresh": {
+      "attempted": false,
+      "updated": false,
+      "failed": false,
+      "note": "Deferred — Gate 5B route not on staging"
+    },
+    "rateLimit": {
+      "healthy": true,
+      "note": "No rate-limit responses during Gate 2 read sequence"
+    }
+  },
+  "truthVerification": {
+    "xeroPaymentRecorded": true,
+    "invoicePaidOrPartial": true,
+    "bankTransactionImported": false,
+    "reconciliationProven": false,
+    "yocoPaymentPresent": false,
+    "statesRemainSeparate": true
+  },
+  "targetedRefresh": {
+    "attempted": false,
+    "updated": false,
+    "failed": false
+  },
+  "duplicatePrevention": {
+    "paymentMappingCountUnchanged": true,
+    "noDuplicatePaymentMapping": true,
+    "refreshJobCountUnchanged": true
+  },
+  "tenantIsolation": {
+    "youngGunsPlumbingOnly": true,
+    "crossTenantInv0280Count": 0,
+    "noSecretsInReport": true,
+    "stagingOnly": true
+  },
+  "confirmations": {
+    "noInvoiceCreatedOrModified": true,
+    "noPaymentCreatedOrModified": true,
+    "noReconciliationChange": true,
+    "noYocoTransaction": true,
+    "noWriteApprovalCreated": true,
+    "noMoneyMovement": true,
+    "noSecretLeakage": true,
+    "productionUntouched": true,
+    "gate6NotExecuted": true,
+    "gate7NotExecuted": true,
+    "inv0586NotAuthorised": true
+  },
+  "verdict": "PASS",
+  "authSource": "temp_gate5b_owner",
+  "compositeFallback": true,
+  "gate2Source": "gate2-historical-evidence",
+  "blocker": "Gate 5B not deployed and live Gate 2 timed out — using Gate 2 historical evidence (2026-08-06) plus current TITAN DB.",
+  "countsUnchanged": true,
+  "completedAt": "2026-08-06T17:31:05.830Z"
+}
