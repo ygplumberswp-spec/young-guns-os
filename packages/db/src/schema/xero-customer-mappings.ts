@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { companies } from './companies';
 import { customers } from './customers';
 import { integrationConnections } from './integration-connections';
@@ -20,6 +20,7 @@ export const xeroCustomerMappings = pgTable('xero_customer_mappings', {
   lastSyncedAt: timestamp('last_synced_at', { withTimezone: true }),
   lastSuccessfulSyncAt: timestamp('last_successful_sync_at', { withTimezone: true }),
   lastError: text('last_error'),
+  conflictMetadata: jsonb('conflict_metadata').$type<Record<string, unknown> | null>(),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });

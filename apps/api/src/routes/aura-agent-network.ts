@@ -1,0 +1,40 @@
+import { Router } from 'express';
+import { z } from 'zod';
+import type { DatabaseClient } from '@titan/db';
+import { AURA_NETWORK_AGENT_KEYS } from '@titan/shared';
+import { AuraAgentNetworkError, type AuraAgentNetworkActor, type AuraAgentNetworkService } from '../services/aura-agent-network.service.js';
+import { createAuthMiddleware, type AuthenticatedRequest } from '../middleware/auth.js';
+import { requireAnyPermission } from '../middleware/rbac.js';
+import { createDenyTechnicianFromOwnerModules } from '../middleware/authorization-guards.js';
+const agent=z.enum(AURA_NETWORK_AGENT_KEYS as unknown as [string,...string[]]);
+const message=z.object({fromAgentKey:agent,toAgentKey:agent,kind:z.enum(['handoff','delegation','insight','draft']),subject:z.string().trim().min(1).max(300),body:z.string().trim().min(1).max(10000),contextDomain:z.string().trim().max(120).optional()});
+const workflow=z.object({name:z.string().trim().min(1).max(300),description:z.string().trim().max(4000).optional(),mode:z.enum(['sequential','parallel']).optional(),definition:z.record(z.unknown()).optional()});
+const decide=z.object({decision:z.enum(['approve','reject']),notes:z.string().trim().max(2000).optional()});
+const context=z.object({fromAgentKey:agent,toAgentKey:agent,contextDomain:z.string().trim().min(1).max(120)});
+type Deps={auraAgentNetworkService:AuraAgentNetworkService;jwtSecret:string;authService:import('../services/auth.service.js').AuthService;db:DatabaseClient};
+const actor=(req:import('express').Request):AuraAgentNetworkActor=>{const a=(req as AuthenticatedRequest).auth;return {companyId:a.companyId,userId:a.userId,roleName:a.roleName,permissions:a.permissions};};
+function fail(res:import('express').Response,error:unknown){if(!(error instanceof AuraAgentNetworkError))return false;res.status(error.code==='FORBIDDEN'?403:error.code==='NOT_FOUND'?404:400).json({error:{code:error.code,message:error.message}});return true;}
+const parsed=<T>(res:import('express').Response,value:{success:boolean;data?:T;error?:any})=>{if(value.success)return value.data!;res.status(400).json({error:{code:'VALIDATION_ERROR',message:value.error?.issues?.[0]?.message??'Invalid request'}});return null;};
+export function createAuraAgentNetworkRouter({auraAgentNetworkService,jwtSecret,authService,db}:Deps):Router{
+ const router=Router(); router.use(createAuthMiddleware({jwtSecret,authService})); const denyTechnicianFromOwner=createDenyTechnicianFromOwnerModules(db);router.use(denyTechnicianFromOwner);
+ const read=requireAnyPermission('agents:read','agents:write','agents:manage','orchestration:read','orchestration:write','*');const write=requireAnyPermission('agents:write','agents:manage','orchestration:write','*');router.use(read);
+ const call=(fn:(a:AuraAgentNetworkActor)=>Promise<unknown>)=>async(req:import('express').Request,res:import('express').Response)=>{try{res.json({data:await fn(actor(req))});}catch(e){if(!fail(res,e))throw e;}};
+ router.get('/monitor',call(async a=>({overview:await auraAgentNetworkService.getMonitorOverview(a)})));
+ router.get('/registry',call(async a=>({agents:await auraAgentNetworkService.listRegistry(a)})));
+ router.post('/registry/ensure',write,call(async a=>({agents:await auraAgentNetworkService.ensureRegistry(a)})));
+ router.get('/messages',call(async a=>({messages:await auraAgentNetworkService.listMessages(a)})));
+ router.post('/messages',write,async(req,res)=>{const v=parsed(res,message.safeParse(req.body));if(!v)return;try{res.status(201).json({data:{message:await auraAgentNetworkService.createMessage(actor(req),v as any)}});}catch(e){if(!fail(res,e))throw e;}});
+ router.get('/workflows',call(async a=>({workflows:await auraAgentNetworkService.listWorkflows(a)})));
+ router.post('/workflows',write,async(req,res)=>{const v=parsed(res,workflow.safeParse(req.body));if(!v)return;try{res.status(201).json({data:{workflow:await auraAgentNetworkService.createWorkflow(actor(req),v)}});}catch(e){if(!fail(res,e))throw e;}});
+ router.post('/workflows/example',write,call(async a=>({workflow:await auraAgentNetworkService.ensureExampleWorkflow(a)})));
+ router.post('/workflows/start',write,async(req,res)=>{const id=z.object({workflowId:z.string().uuid()}).safeParse(req.body);const v=parsed(res,id);if(!v)return;try{res.json({data:{run:await auraAgentNetworkService.startWorkflow(actor(req),v.workflowId)}});}catch(e){if(!fail(res,e))throw e;}});
+ router.get('/runs',call(async a=>({runs:await auraAgentNetworkService.listRuns(a)})));
+ router.get('/runs/:id/tasks',async(req,res)=>{try{res.json({data:{tasks:await auraAgentNetworkService.listTasks(actor(req),String(req.params.id))}});}catch(e){if(!fail(res,e))throw e;}});
+ router.get('/approvals',call(async a=>({approvals:await auraAgentNetworkService.listApprovals(a)})));
+ router.get('/approvals/history',call(async a=>({approvals:await auraAgentNetworkService.listApprovals(a,true)})));
+ router.post('/approvals/:id/decide',write,async(req,res)=>{const v=parsed(res,decide.safeParse(req.body));if(!v)return;try{const approval=await auraAgentNetworkService.decideApproval(actor(req),String(req.params.id),v.decision,v.notes);res.json({data:{approval,autoExecuted:false as const}});}catch(e){if(!fail(res,e))throw e;}});
+ router.get('/context-access',call(async a=>({access:await auraAgentNetworkService.listContext(a)})));
+ router.post('/context-access',write,async(req,res)=>{const v=parsed(res,context.safeParse(req.body));if(!v)return;try{res.status(201).json({data:{access:await auraAgentNetworkService.shareContext(actor(req),v as any)}});}catch(e){if(!fail(res,e))throw e;}});
+ router.get('/activity',call(async a=>({activity:await auraAgentNetworkService.listActivity(a)})));
+ return router;
+}

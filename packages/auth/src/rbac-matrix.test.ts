@@ -7,6 +7,7 @@ import {
   canAccessOwnerModule,
   canAccessTenant,
   canAssignRoleName,
+  canWriteCompanyMemory,
   CLIENT_ROLE_NAME,
   COMPANY_OWNER_ROLE_NAME,
   DEFAULT_TEAM_ROLES,
@@ -112,6 +113,16 @@ describe('RBAC matrix — access boundaries', () => {
     assert.equal(resolveCanonicalRoleName(LEGACY_ADMIN_ROLE_NAME), MANAGER_ROLE_NAME);
     assert.equal(resolveStaffExperience(admin), 'manager');
     assert.equal(isLegacyRoleName(LEGACY_ADMIN_ROLE_NAME), true);
+  });
+
+  it('allows company memory writes for owners and legacy admins only', () => {
+    const owner = { roleName: LEGACY_OWNER_ROLE_NAME, permissions: ['*'] };
+    const admin = { roleName: LEGACY_ADMIN_ROLE_NAME, permissions: [...ADMIN_PERMISSIONS] };
+    const manager = { roleName: MANAGER_ROLE_NAME, permissions: [...MANAGER_PERMISSIONS] };
+
+    assert.equal(canWriteCompanyMemory(owner), true);
+    assert.equal(canWriteCompanyMemory(admin), true);
+    assert.equal(canWriteCompanyMemory(manager), false);
   });
 
   it('enforces Manager vs Accountant vs Dispatcher permission boundaries', () => {

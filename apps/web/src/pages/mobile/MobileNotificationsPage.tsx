@@ -1,5 +1,6 @@
+import { PageHeader } from '../../components/ux';
 import { useState } from 'react';
-import { PageHeader, Panel } from '@titan/ui';
+import { Panel } from '@titan/ui';
 import { fetchMobileNotifications, markMobileNotificationRead } from '../../lib/mobile-api-client';
 import { useAuth } from '../../lib/auth-context';
 import { useStaffCachedQuery } from '../../lib/use-scoped-cached-query';
@@ -44,13 +45,13 @@ export function MobileNotificationsPage() {
         error={notificationsQuery.error ?? actionError}
         hasData={payload !== undefined}
         isEmpty={payload !== undefined && payload.notifications.length === 0}
-        emptyTitle="No notifications"
+        emptyTitle="No Notifications"
         emptyDescription="You are all caught up."
         loadingLabel="Loading notifications…"
         onRetry={() => void notificationsQuery.refetch()}
       >
         {payload && payload.notifications.length > 0 ? (
-          <Panel title="Recent notifications">
+          <Panel title="Recent Notifications">
             <ul className="portal-list">
               {payload.notifications.map((item) => (
                 <li key={item.id}>

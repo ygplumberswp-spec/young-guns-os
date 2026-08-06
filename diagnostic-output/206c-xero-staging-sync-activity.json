@@ -1,0 +1,423 @@
+{
+  "label": "206c-xero-staging-sync-activity",
+  "generatedAt": "2026-08-03T22:59:14.050Z",
+  "companyId": "095aef76-fef5-4139-af37-a42f2d7e2faf",
+  "syncLogColumns": [
+    "id",
+    "company_id",
+    "integration_connection_id",
+    "sync_job_id",
+    "entity_type",
+    "entity_id",
+    "xero_entity_id",
+    "action",
+    "status",
+    "message",
+    "details",
+    "created_at"
+  ],
+  "logsByEntityStatus": [
+    {
+      "entity_type": "customer",
+      "status": "success",
+      "n": 21707,
+      "oldest": "2026-08-01T10:45:33.265Z",
+      "newest": "2026-08-03T22:59:15.201Z"
+    },
+    {
+      "entity_type": "customer",
+      "status": "failed",
+      "n": 4383,
+      "oldest": "2026-08-01T12:21:46.639Z",
+      "newest": "2026-08-02T21:34:13.233Z"
+    },
+    {
+      "entity_type": "quote",
+      "status": "failed",
+      "n": 747,
+      "oldest": "2026-08-03T18:57:42.190Z",
+      "newest": "2026-08-03T21:46:51.758Z"
+    },
+    {
+      "entity_type": "invoice",
+      "status": "success",
+      "n": 149,
+      "oldest": "2026-08-01T11:41:59.230Z",
+      "newest": "2026-08-03T17:37:48.705Z"
+    },
+    {
+      "entity_type": "invoice",
+      "status": "failed",
+      "n": 21856,
+      "oldest": "2026-08-01T11:35:32.687Z",
+      "newest": "2026-08-03T21:59:54.329Z"
+    },
+    {
+      "entity_type": "bank_transaction",
+      "status": "success",
+      "n": 3093,
+      "oldest": "2026-08-01T13:40:13.252Z",
+      "newest": "2026-08-03T03:28:43.943Z"
+    },
+    {
+      "entity_type": "bank_transaction",
+      "status": "failed",
+      "n": 11357,
+      "oldest": "2026-08-03T17:58:42.449Z",
+      "newest": "2026-08-03T22:34:16.153Z"
+    }
+  ],
+  "recentLogs": [
+    {
+      "entity_type": "customer",
+      "status": "success",
+      "message": "Imported Xero contact Louise",
+      "created_at": "2026-08-03T22:59:15.201Z"
+    },
+    {
+      "entity_type": "customer",
+      "status": "success",
+      "message": "Imported Xero contact Rococo erf 4410 (PTY) LTD",
+      "created_at": "2026-08-03T22:59:13.739Z"
+    },
+    {
+      "entity_type": "customer",
+      "status": "success",
+      "message": "Imported Xero contact EFS assist (PTY) LTD",
+      "created_at": "2026-08-03T22:59:12.276Z"
+    },
+    {
+      "entity_type": "customer",
+      "status": "success",
+      "message": "Imported Xero contact Clarissa Van Rensburg",
+      "created_at": "2026-08-03T22:59:10.815Z"
+    },
+    {
+      "entity_type": "customer",
+      "status": "success",
+      "message": "Imported Xero contact Space NK",
+      "created_at": "2026-08-03T22:59:09.353Z"
+    },
+    {
+      "entity_type": "customer",
+      "status": "success",
+      "message": "Imported Xero contact Uber",
+      "created_at": "2026-08-03T22:59:07.894Z"
+    },
+    {
+      "entity_type": "customer",
+      "status": "success",
+      "message": "Imported Xero contact SKH Investments LTD",
+      "created_at": "2026-08-03T22:59:06.433Z"
+    },
+    {
+      "entity_type": "customer",
+      "status": "success",
+      "message": "Imported Xero contact Elite online",
+      "created_at": "2026-08-03T22:59:04.970Z"
+    },
+    {
+      "entity_type": "customer",
+      "status": "success",
+      "message": "Imported Xero contact SFI Group",
+      "created_at": "2026-08-03T22:59:03.512Z"
+    },
+    {
+      "entity_type": "customer",
+      "status": "success",
+      "message": "Imported Xero contact Hein Mulder",
+      "created_at": "2026-08-03T22:58:57.800Z"
+    },
+    {
+      "entity_type": "customer",
+      "status": "success",
+      "message": "Imported Xero contact Fang Fences & Guards",
+      "created_at": "2026-08-03T22:58:56.338Z"
+    },
+    {
+      "entity_type": "customer",
+      "status": "success",
+      "message": "Imported Xero contact Andrew Block",
+      "created_at": "2026-08-03T22:58:54.883Z"
+    },
+    {
+      "entity_type": "customer",
+      "status": "success",
+      "message": "Imported Xero contact Charl opperman",
+      "created_at": "2026-08-03T22:58:53.426Z"
+    },
+    {
+      "entity_type": "customer",
+      "status": "success",
+      "message": "Imported Xero contact Stuart",
+      "created_at": "2026-08-03T22:58:51.969Z"
+    },
+    {
+      "entity_type": "customer",
+      "status": "success",
+      "message": "Imported Xero contact Cold drink",
+      "created_at": "2026-08-03T22:58:50.514Z"
+    },
+    {
+      "entity_type": "customer",
+      "status": "success",
+      "message": "Imported Xero contact Loxton",
+      "created_at": "2026-08-03T22:58:49.057Z"
+    },
+    {
+      "entity_type": "customer",
+      "status": "success",
+      "message": "Imported Xero contact Wimpy",
+      "created_at": "2026-08-03T22:58:47.364Z"
+    },
+    {
+      "entity_type": "customer",
+      "status": "success",
+      "message": "Imported Xero contact Aircons sold",
+      "created_at": "2026-08-03T22:58:45.266Z"
+    },
+    {
+      "entity_type": "customer",
+      "status": "success",
+      "message": "Imported Xero contact Chris Prins",
+      "created_at": "2026-08-03T22:58:42.958Z"
+    },
+    {
+      "entity_type": "customer",
+      "status": "success",
+      "message": "Imported Xero contact Best Board Express",
+      "created_at": "2026-08-03T22:58:26.866Z"
+    },
+    {
+      "entity_type": "customer",
+      "status": "success",
+      "message": "Imported Xero contact Hugo",
+      "created_at": "2026-08-03T22:58:11.556Z"
+    },
+    {
+      "entity_type": "customer",
+      "status": "success",
+      "message": "Imported Xero contact Danielle",
+      "created_at": "2026-08-03T22:58:05.139Z"
+    },
+    {
+      "entity_type": "customer",
+      "status": "success",
+      "message": "Imported Xero contact Cold Drinks",
+      "created_at": "2026-08-03T22:58:03.672Z"
+    },
+    {
+      "entity_type": "customer",
+      "status": "success",
+      "message": "Imported Xero contact Work Outsource",
+      "created_at": "2026-08-03T22:58:02.205Z"
+    },
+    {
+      "entity_type": "customer",
+      "status": "success",
+      "message": "Imported Xero contact Plant hire",
+      "created_at": "2026-08-03T22:58:00.741Z"
+    }
+  ],
+  "recentFailures": [
+    {
+      "entity_type": "bank_transaction",
+      "status": "failed",
+      "message": "Failed query: select \"id\", \"company_id\", \"integration_connection_id\", \"xero_bank_transaction_id\", \"transaction_date\", \"amount_cents\", \"currency\", \"reference\", \"description\", \"category\", \"bank_account_code\", \"contact_name\", \"xero_contact_id\", \"status\", \"type\", \"is_reconciled\", \"source_provider\", \"source_synced_at\", \"source_import_job_id\", \"raw_summary\", \"created_at\", \"updated_at\" from \"xero_bank_transactions\" \"xeroBankTransactions\" where (\"xeroBankTransactions\".\"company_id\" = $1 and \"xeroBankTransactions\".\"xero_bank_transaction_id\" = $2) limit $3\nparams: 095aef76-fef5-4139-af37-a42f2d7e2faf,c4a2e821-2b9d-4662-b52a-63fc37963134,1",
+      "created_at": "2026-08-03T22:34:16.153Z"
+    },
+    {
+      "entity_type": "bank_transaction",
+      "status": "failed",
+      "message": "Failed query: select \"id\", \"company_id\", \"integration_connection_id\", \"xero_bank_transaction_id\", \"transaction_date\", \"amount_cents\", \"currency\", \"reference\", \"description\", \"category\", \"bank_account_code\", \"contact_name\", \"xero_contact_id\", \"status\", \"type\", \"is_reconciled\", \"source_provider\", \"source_synced_at\", \"source_import_job_id\", \"raw_summary\", \"created_at\", \"updated_at\" from \"xero_bank_transactions\" \"xeroBankTransactions\" where (\"xeroBankTransactions\".\"company_id\" = $1 and \"xeroBankTransactions\".\"xero_bank_transaction_id\" = $2) limit $3\nparams: 095aef76-fef5-4139-af37-a42f2d7e2faf,b66da5b9-e67c-4bde-869e-787d0c67486b,1",
+      "created_at": "2026-08-03T22:34:15.570Z"
+    },
+    {
+      "entity_type": "bank_transaction",
+      "status": "failed",
+      "message": "Failed query: select \"id\", \"company_id\", \"integration_connection_id\", \"xero_bank_transaction_id\", \"transaction_date\", \"amount_cents\", \"currency\", \"reference\", \"description\", \"category\", \"bank_account_code\", \"contact_name\", \"xero_contact_id\", \"status\", \"type\", \"is_reconciled\", \"source_provider\", \"source_synced_at\", \"source_import_job_id\", \"raw_summary\", \"created_at\", \"updated_at\" from \"xero_bank_transactions\" \"xeroBankTransactions\" where (\"xeroBankTransactions\".\"company_id\" = $1 and \"xeroBankTransactions\".\"xero_bank_transaction_id\" = $2) limit $3\nparams: 095aef76-fef5-4139-af37-a42f2d7e2faf,88cbe97c-d857-426d-9b37-f4977ac75f1c,1",
+      "created_at": "2026-08-03T22:34:14.970Z"
+    },
+    {
+      "entity_type": "bank_transaction",
+      "status": "failed",
+      "message": "Failed query: select \"id\", \"company_id\", \"integration_connection_id\", \"xero_bank_transaction_id\", \"transaction_date\", \"amount_cents\", \"currency\", \"reference\", \"description\", \"category\", \"bank_account_code\", \"contact_name\", \"xero_contact_id\", \"status\", \"type\", \"is_reconciled\", \"source_provider\", \"source_synced_at\", \"source_import_job_id\", \"raw_summary\", \"created_at\", \"updated_at\" from \"xero_bank_transactions\" \"xeroBankTransactions\" where (\"xeroBankTransactions\".\"company_id\" = $1 and \"xeroBankTransactions\".\"xero_bank_transaction_id\" = $2) limit $3\nparams: 095aef76-fef5-4139-af37-a42f2d7e2faf,258a19f4-926b-44c0-98f5-d07434af20a4,1",
+      "created_at": "2026-08-03T22:34:14.388Z"
+    },
+    {
+      "entity_type": "bank_transaction",
+      "status": "failed",
+      "message": "Failed query: select \"id\", \"company_id\", \"integration_connection_id\", \"xero_bank_transaction_id\", \"transaction_date\", \"amount_cents\", \"currency\", \"reference\", \"description\", \"category\", \"bank_account_code\", \"contact_name\", \"xero_contact_id\", \"status\", \"type\", \"is_reconciled\", \"source_provider\", \"source_synced_at\", \"source_import_job_id\", \"raw_summary\", \"created_at\", \"updated_at\" from \"xero_bank_transactions\" \"xeroBankTransactions\" where (\"xeroBankTransactions\".\"company_id\" = $1 and \"xeroBankTransactions\".\"xero_bank_transaction_id\" = $2) limit $3\nparams: 095aef76-fef5-4139-af37-a42f2d7e2faf,24bc7992-6078-442d-861c-6f8a3eb614fb,1",
+      "created_at": "2026-08-03T22:34:13.791Z"
+    },
+    {
+      "entity_type": "bank_transaction",
+      "status": "failed",
+      "message": "Failed query: select \"id\", \"company_id\", \"integration_connection_id\", \"xero_bank_transaction_id\", \"transaction_date\", \"amount_cents\", \"currency\", \"reference\", \"description\", \"category\", \"bank_account_code\", \"contact_name\", \"xero_contact_id\", \"status\", \"type\", \"is_reconciled\", \"source_provider\", \"source_synced_at\", \"source_import_job_id\", \"raw_summary\", \"created_at\", \"updated_at\" from \"xero_bank_transactions\" \"xeroBankTransactions\" where (\"xeroBankTransactions\".\"company_id\" = $1 and \"xeroBankTransactions\".\"xero_bank_transaction_id\" = $2) limit $3\nparams: 095aef76-fef5-4139-af37-a42f2d7e2faf,f1f4d990-8df2-4954-8b25-90aecddd9131,1",
+      "created_at": "2026-08-03T22:34:13.209Z"
+    },
+    {
+      "entity_type": "bank_transaction",
+      "status": "failed",
+      "message": "Failed query: select \"id\", \"company_id\", \"integration_connection_id\", \"xero_bank_transaction_id\", \"transaction_date\", \"amount_cents\", \"currency\", \"reference\", \"description\", \"category\", \"bank_account_code\", \"contact_name\", \"xero_contact_id\", \"status\", \"type\", \"is_reconciled\", \"source_provider\", \"source_synced_at\", \"source_import_job_id\", \"raw_summary\", \"created_at\", \"updated_at\" from \"xero_bank_transactions\" \"xeroBankTransactions\" where (\"xeroBankTransactions\".\"company_id\" = $1 and \"xeroBankTransactions\".\"xero_bank_transaction_id\" = $2) limit $3\nparams: 095aef76-fef5-4139-af37-a42f2d7e2faf,5e647b02-47f2-4f13-a460-a0072626e3eb,1",
+      "created_at": "2026-08-03T22:34:12.610Z"
+    },
+    {
+      "entity_type": "bank_transaction",
+      "status": "failed",
+      "message": "Failed query: select \"id\", \"company_id\", \"integration_connection_id\", \"xero_bank_transaction_id\", \"transaction_date\", \"amount_cents\", \"currency\", \"reference\", \"description\", \"category\", \"bank_account_code\", \"contact_name\", \"xero_contact_id\", \"status\", \"type\", \"is_reconciled\", \"source_provider\", \"source_synced_at\", \"source_import_job_id\", \"raw_summary\", \"created_at\", \"updated_at\" from \"xero_bank_transactions\" \"xeroBankTransactions\" where (\"xeroBankTransactions\".\"company_id\" = $1 and \"xeroBankTransactions\".\"xero_bank_transaction_id\" = $2) limit $3\nparams: 095aef76-fef5-4139-af37-a42f2d7e2faf,750ed152-aea3-462c-8f2f-c5987d2131ce,1",
+      "created_at": "2026-08-03T22:34:12.029Z"
+    },
+    {
+      "entity_type": "bank_transaction",
+      "status": "failed",
+      "message": "Failed query: select \"id\", \"company_id\", \"integration_connection_id\", \"xero_bank_transaction_id\", \"transaction_date\", \"amount_cents\", \"currency\", \"reference\", \"description\", \"category\", \"bank_account_code\", \"contact_name\", \"xero_contact_id\", \"status\", \"type\", \"is_reconciled\", \"source_provider\", \"source_synced_at\", \"source_import_job_id\", \"raw_summary\", \"created_at\", \"updated_at\" from \"xero_bank_transactions\" \"xeroBankTransactions\" where (\"xeroBankTransactions\".\"company_id\" = $1 and \"xeroBankTransactions\".\"xero_bank_transaction_id\" = $2) limit $3\nparams: 095aef76-fef5-4139-af37-a42f2d7e2faf,1f0cde0b-7950-47fa-9e7c-7c940af496a3,1",
+      "created_at": "2026-08-03T22:34:11.430Z"
+    },
+    {
+      "entity_type": "bank_transaction",
+      "status": "failed",
+      "message": "Failed query: select \"id\", \"company_id\", \"integration_connection_id\", \"xero_bank_transaction_id\", \"transaction_date\", \"amount_cents\", \"currency\", \"reference\", \"description\", \"category\", \"bank_account_code\", \"contact_name\", \"xero_contact_id\", \"status\", \"type\", \"is_reconciled\", \"source_provider\", \"source_synced_at\", \"source_import_job_id\", \"raw_summary\", \"created_at\", \"updated_at\" from \"xero_bank_transactions\" \"xeroBankTransactions\" where (\"xeroBankTransactions\".\"company_id\" = $1 and \"xeroBankTransactions\".\"xero_bank_transaction_id\" = $2) limit $3\nparams: 095aef76-fef5-4139-af37-a42f2d7e2faf,4d499028-ef7c-4df1-9fcd-a5f06bd7776a,1",
+      "created_at": "2026-08-03T22:34:10.849Z"
+    },
+    {
+      "entity_type": "bank_transaction",
+      "status": "failed",
+      "message": "Failed query: select \"id\", \"company_id\", \"integration_connection_id\", \"xero_bank_transaction_id\", \"transaction_date\", \"amount_cents\", \"currency\", \"reference\", \"description\", \"category\", \"bank_account_code\", \"contact_name\", \"xero_contact_id\", \"status\", \"type\", \"is_reconciled\", \"source_provider\", \"source_synced_at\", \"source_import_job_id\", \"raw_summary\", \"created_at\", \"updated_at\" from \"xero_bank_transactions\" \"xeroBankTransactions\" where (\"xeroBankTransactions\".\"company_id\" = $1 and \"xeroBankTransactions\".\"xero_bank_transaction_id\" = $2) limit $3\nparams: 095aef76-fef5-4139-af37-a42f2d7e2faf,0a5d3b55-9bf5-4493-8df9-7ebdebe8b5fe,1",
+      "created_at": "2026-08-03T22:34:10.251Z"
+    },
+    {
+      "entity_type": "bank_transaction",
+      "status": "failed",
+      "message": "Failed query: select \"id\", \"company_id\", \"integration_connection_id\", \"xero_bank_transaction_id\", \"transaction_date\", \"amount_cents\", \"currency\", \"reference\", \"description\", \"category\", \"bank_account_code\", \"contact_name\", \"xero_contact_id\", \"status\", \"type\", \"is_reconciled\", \"source_provider\", \"source_synced_at\", \"source_import_job_id\", \"raw_summary\", \"created_at\", \"updated_at\" from \"xero_bank_transactions\" \"xeroBankTransactions\" where (\"xeroBankTransactions\".\"company_id\" = $1 and \"xeroBankTransactions\".\"xero_bank_transaction_id\" = $2) limit $3\nparams: 095aef76-fef5-4139-af37-a42f2d7e2faf,48141917-8f29-44e5-9f20-63f966dc8fd6,1",
+      "created_at": "2026-08-03T22:34:09.669Z"
+    },
+    {
+      "entity_type": "bank_transaction",
+      "status": "failed",
+      "message": "Failed query: select \"id\", \"company_id\", \"integration_connection_id\", \"xero_bank_transaction_id\", \"transaction_date\", \"amount_cents\", \"currency\", \"reference\", \"description\", \"category\", \"bank_account_code\", \"contact_name\", \"xero_contact_id\", \"status\", \"type\", \"is_reconciled\", \"source_provider\", \"source_synced_at\", \"source_import_job_id\", \"raw_summary\", \"created_at\", \"updated_at\" from \"xero_bank_transactions\" \"xeroBankTransactions\" where (\"xeroBankTransactions\".\"company_id\" = $1 and \"xeroBankTransactions\".\"xero_bank_transaction_id\" = $2) limit $3\nparams: 095aef76-fef5-4139-af37-a42f2d7e2faf,f736ad97-1242-452e-a73c-8d3e5b9aea21,1",
+      "created_at": "2026-08-03T22:34:09.071Z"
+    },
+    {
+      "entity_type": "bank_transaction",
+      "status": "failed",
+      "message": "Failed query: select \"id\", \"company_id\", \"integration_connection_id\", \"xero_bank_transaction_id\", \"transaction_date\", \"amount_cents\", \"currency\", \"reference\", \"description\", \"category\", \"bank_account_code\", \"contact_name\", \"xero_contact_id\", \"status\", \"type\", \"is_reconciled\", \"source_provider\", \"source_synced_at\", \"source_import_job_id\", \"raw_summary\", \"created_at\", \"updated_at\" from \"xero_bank_transactions\" \"xeroBankTransactions\" where (\"xeroBankTransactions\".\"company_id\" = $1 and \"xeroBankTransactions\".\"xero_bank_transaction_id\" = $2) limit $3\nparams: 095aef76-fef5-4139-af37-a42f2d7e2faf,62a1f15c-deb8-407b-a6d5-d4ab21f90ad2,1",
+      "created_at": "2026-08-03T22:34:08.490Z"
+    },
+    {
+      "entity_type": "bank_transaction",
+      "status": "failed",
+      "message": "Failed query: select \"id\", \"company_id\", \"integration_connection_id\", \"xero_bank_transaction_id\", \"transaction_date\", \"amount_cents\", \"currency\", \"reference\", \"description\", \"category\", \"bank_account_code\", \"contact_name\", \"xero_contact_id\", \"status\", \"type\", \"is_reconciled\", \"source_provider\", \"source_synced_at\", \"source_import_job_id\", \"raw_summary\", \"created_at\", \"updated_at\" from \"xero_bank_transactions\" \"xeroBankTransactions\" where (\"xeroBankTransactions\".\"company_id\" = $1 and \"xeroBankTransactions\".\"xero_bank_transaction_id\" = $2) limit $3\nparams: 095aef76-fef5-4139-af37-a42f2d7e2faf,39963011-5995-4837-8996-12ab2fea006d,1",
+      "created_at": "2026-08-03T22:34:07.892Z"
+    },
+    {
+      "entity_type": "bank_transaction",
+      "status": "failed",
+      "message": "Failed query: select \"id\", \"company_id\", \"integration_connection_id\", \"xero_bank_transaction_id\", \"transaction_date\", \"amount_cents\", \"currency\", \"reference\", \"description\", \"category\", \"bank_account_code\", \"contact_name\", \"xero_contact_id\", \"status\", \"type\", \"is_reconciled\", \"source_provider\", \"source_synced_at\", \"source_import_job_id\", \"raw_summary\", \"created_at\", \"updated_at\" from \"xero_bank_transactions\" \"xeroBankTransactions\" where (\"xeroBankTransactions\".\"company_id\" = $1 and \"xeroBankTransactions\".\"xero_bank_transaction_id\" = $2) limit $3\nparams: 095aef76-fef5-4139-af37-a42f2d7e2faf,d8a053da-8a98-4044-968f-dcb8798284e1,1",
+      "created_at": "2026-08-03T22:34:07.310Z"
+    },
+    {
+      "entity_type": "bank_transaction",
+      "status": "failed",
+      "message": "Failed query: select \"id\", \"company_id\", \"integration_connection_id\", \"xero_bank_transaction_id\", \"transaction_date\", \"amount_cents\", \"currency\", \"reference\", \"description\", \"category\", \"bank_account_code\", \"contact_name\", \"xero_contact_id\", \"status\", \"type\", \"is_reconciled\", \"source_provider\", \"source_synced_at\", \"source_import_job_id\", \"raw_summary\", \"created_at\", \"updated_at\" from \"xero_bank_transactions\" \"xeroBankTransactions\" where (\"xeroBankTransactions\".\"company_id\" = $1 and \"xeroBankTransactions\".\"xero_bank_transaction_id\" = $2) limit $3\nparams: 095aef76-fef5-4139-af37-a42f2d7e2faf,c9d58ff9-f4a7-428b-af8d-e66440b052cf,1",
+      "created_at": "2026-08-03T22:34:06.713Z"
+    },
+    {
+      "entity_type": "bank_transaction",
+      "status": "failed",
+      "message": "Failed query: select \"id\", \"company_id\", \"integration_connection_id\", \"xero_bank_transaction_id\", \"transaction_date\", \"amount_cents\", \"currency\", \"reference\", \"description\", \"category\", \"bank_account_code\", \"contact_name\", \"xero_contact_id\", \"status\", \"type\", \"is_reconciled\", \"source_provider\", \"source_synced_at\", \"source_import_job_id\", \"raw_summary\", \"created_at\", \"updated_at\" from \"xero_bank_transactions\" \"xeroBankTransactions\" where (\"xeroBankTransactions\".\"company_id\" = $1 and \"xeroBankTransactions\".\"xero_bank_transaction_id\" = $2) limit $3\nparams: 095aef76-fef5-4139-af37-a42f2d7e2faf,e5cdc4d0-1153-434f-b879-716498fdb1ba,1",
+      "created_at": "2026-08-03T22:34:06.132Z"
+    },
+    {
+      "entity_type": "bank_transaction",
+      "status": "failed",
+      "message": "Failed query: select \"id\", \"company_id\", \"integration_connection_id\", \"xero_bank_transaction_id\", \"transaction_date\", \"amount_cents\", \"currency\", \"reference\", \"description\", \"category\", \"bank_account_code\", \"contact_name\", \"xero_contact_id\", \"status\", \"type\", \"is_reconciled\", \"source_provider\", \"source_synced_at\", \"source_import_job_id\", \"raw_summary\", \"created_at\", \"updated_at\" from \"xero_bank_transactions\" \"xeroBankTransactions\" where (\"xeroBankTransactions\".\"company_id\" = $1 and \"xeroBankTransactions\".\"xero_bank_transaction_id\" = $2) limit $3\nparams: 095aef76-fef5-4139-af37-a42f2d7e2faf,379500f5-ad86-4b78-938b-2a1d09382259,1",
+      "created_at": "2026-08-03T22:34:05.534Z"
+    },
+    {
+      "entity_type": "bank_transaction",
+      "status": "failed",
+      "message": "Failed query: select \"id\", \"company_id\", \"integration_connection_id\", \"xero_bank_transaction_id\", \"transaction_date\", \"amount_cents\", \"currency\", \"reference\", \"description\", \"category\", \"bank_account_code\", \"contact_name\", \"xero_contact_id\", \"status\", \"type\", \"is_reconciled\", \"source_provider\", \"source_synced_at\", \"source_import_job_id\", \"raw_summary\", \"created_at\", \"updated_at\" from \"xero_bank_transactions\" \"xeroBankTransactions\" where (\"xeroBankTransactions\".\"company_id\" = $1 and \"xeroBankTransactions\".\"xero_bank_transaction_id\" = $2) limit $3\nparams: 095aef76-fef5-4139-af37-a42f2d7e2faf,167f47a8-d41e-4e5f-9a52-d9804125b211,1",
+      "created_at": "2026-08-03T22:34:04.952Z"
+    },
+    {
+      "entity_type": "bank_transaction",
+      "status": "failed",
+      "message": "Failed query: select \"id\", \"company_id\", \"integration_connection_id\", \"xero_bank_transaction_id\", \"transaction_date\", \"amount_cents\", \"currency\", \"reference\", \"description\", \"category\", \"bank_account_code\", \"contact_name\", \"xero_contact_id\", \"status\", \"type\", \"is_reconciled\", \"source_provider\", \"source_synced_at\", \"source_import_job_id\", \"raw_summary\", \"created_at\", \"updated_at\" from \"xero_bank_transactions\" \"xeroBankTransactions\" where (\"xeroBankTransactions\".\"company_id\" = $1 and \"xeroBankTransactions\".\"xero_bank_transaction_id\" = $2) limit $3\nparams: 095aef76-fef5-4139-af37-a42f2d7e2faf,4a2fd8ec-ec5a-4eaf-910b-166728c35b8f,1",
+      "created_at": "2026-08-03T22:34:04.355Z"
+    },
+    {
+      "entity_type": "bank_transaction",
+      "status": "failed",
+      "message": "Failed query: select \"id\", \"company_id\", \"integration_connection_id\", \"xero_bank_transaction_id\", \"transaction_date\", \"amount_cents\", \"currency\", \"reference\", \"description\", \"category\", \"bank_account_code\", \"contact_name\", \"xero_contact_id\", \"status\", \"type\", \"is_reconciled\", \"source_provider\", \"source_synced_at\", \"source_import_job_id\", \"raw_summary\", \"created_at\", \"updated_at\" from \"xero_bank_transactions\" \"xeroBankTransactions\" where (\"xeroBankTransactions\".\"company_id\" = $1 and \"xeroBankTransactions\".\"xero_bank_transaction_id\" = $2) limit $3\nparams: 095aef76-fef5-4139-af37-a42f2d7e2faf,c3b9cc92-6b04-48ec-af29-d879551b35e2,1",
+      "created_at": "2026-08-03T22:34:03.773Z"
+    },
+    {
+      "entity_type": "bank_transaction",
+      "status": "failed",
+      "message": "Failed query: select \"id\", \"company_id\", \"integration_connection_id\", \"xero_bank_transaction_id\", \"transaction_date\", \"amount_cents\", \"currency\", \"reference\", \"description\", \"category\", \"bank_account_code\", \"contact_name\", \"xero_contact_id\", \"status\", \"type\", \"is_reconciled\", \"source_provider\", \"source_synced_at\", \"source_import_job_id\", \"raw_summary\", \"created_at\", \"updated_at\" from \"xero_bank_transactions\" \"xeroBankTransactions\" where (\"xeroBankTransactions\".\"company_id\" = $1 and \"xeroBankTransactions\".\"xero_bank_transaction_id\" = $2) limit $3\nparams: 095aef76-fef5-4139-af37-a42f2d7e2faf,5c6347fd-7728-44db-b10c-59799345c68e,1",
+      "created_at": "2026-08-03T22:34:03.176Z"
+    },
+    {
+      "entity_type": "bank_transaction",
+      "status": "failed",
+      "message": "Failed query: select \"id\", \"company_id\", \"integration_connection_id\", \"xero_bank_transaction_id\", \"transaction_date\", \"amount_cents\", \"currency\", \"reference\", \"description\", \"category\", \"bank_account_code\", \"contact_name\", \"xero_contact_id\", \"status\", \"type\", \"is_reconciled\", \"source_provider\", \"source_synced_at\", \"source_import_job_id\", \"raw_summary\", \"created_at\", \"updated_at\" from \"xero_bank_transactions\" \"xeroBankTransactions\" where (\"xeroBankTransactions\".\"company_id\" = $1 and \"xeroBankTransactions\".\"xero_bank_transaction_id\" = $2) limit $3\nparams: 095aef76-fef5-4139-af37-a42f2d7e2faf,a2b9849a-52a5-428f-b4d0-fa49f443afc3,1",
+      "created_at": "2026-08-03T22:34:02.594Z"
+    },
+    {
+      "entity_type": "bank_transaction",
+      "status": "failed",
+      "message": "Failed query: select \"id\", \"company_id\", \"integration_connection_id\", \"xero_bank_transaction_id\", \"transaction_date\", \"amount_cents\", \"currency\", \"reference\", \"description\", \"category\", \"bank_account_code\", \"contact_name\", \"xero_contact_id\", \"status\", \"type\", \"is_reconciled\", \"source_provider\", \"source_synced_at\", \"source_import_job_id\", \"raw_summary\", \"created_at\", \"updated_at\" from \"xero_bank_transactions\" \"xeroBankTransactions\" where (\"xeroBankTransactions\".\"company_id\" = $1 and \"xeroBankTransactions\".\"xero_bank_transaction_id\" = $2) limit $3\nparams: 095aef76-fef5-4139-af37-a42f2d7e2faf,093040cb-78dc-4c2c-b3cb-6112bc427f4d,1",
+      "created_at": "2026-08-03T22:34:01.995Z"
+    }
+  ],
+  "syncSchedules": [
+    {
+      "id": "4a5b8436-c759-4222-b9c8-dde31f11b97b",
+      "company_id": "095aef76-fef5-4139-af37-a42f2d7e2faf",
+      "connector_id": "f0019eb3-b6fd-45f6-ac14-ed32890ea145",
+      "sync_scope": "incremental",
+      "frequency_minutes": 20,
+      "enabled": true,
+      "next_run_at": "2026-08-03T23:03:33.673Z",
+      "last_run_at": "2026-08-03T22:43:33.673Z",
+      "created_at": "2026-08-01T11:17:47.234Z",
+      "updated_at": "2026-08-03T22:43:33.673Z"
+    },
+    {
+      "id": "3e740b9a-db4b-4773-a980-2ce3b12f898e",
+      "company_id": "095aef76-fef5-4139-af37-a42f2d7e2faf",
+      "connector_id": "e7d96548-c1e4-4858-8723-7f3e3f9744ef",
+      "sync_scope": "incremental",
+      "frequency_minutes": 15,
+      "enabled": true,
+      "next_run_at": "2026-08-03T23:02:00.072Z",
+      "last_run_at": "2026-08-03T22:47:00.072Z",
+      "created_at": "2026-08-01T17:54:46.233Z",
+      "updated_at": "2026-08-03T22:47:00.072Z"
+    },
+    {
+      "id": "ad3f29d1-ec8b-4250-8be3-273ae4b24aaf",
+      "company_id": "095aef76-fef5-4139-af37-a42f2d7e2faf",
+      "connector_id": "39851ee3-d001-481b-9af7-4bc0258acd60",
+      "sync_scope": "incremental",
+      "frequency_minutes": 60,
+      "enabled": true,
+      "next_run_at": "2026-08-03T23:58:53.938Z",
+      "last_run_at": "2026-08-03T22:58:53.938Z",
+      "created_at": "2026-08-03T12:55:32.255Z",
+      "updated_at": "2026-08-03T22:58:53.938Z"
+    }
+  ],
+  "customerMappings": {
+    "n": 678,
+    "oldest": "2026-08-01T10:45:32.964Z",
+    "newest": "2026-08-03T22:59:16.005Z"
+  },
+  "invoiceMappings": {
+    "n": 5,
+    "oldest": "2026-08-01T11:41:58.965Z",
+    "newest": "2026-08-03T17:37:48.053Z"
+  },
+  "duplicateContactMappings": 1
+}

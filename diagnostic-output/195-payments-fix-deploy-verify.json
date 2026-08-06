@@ -1,0 +1,82 @@
+{
+  "label": "195-payments-fix-deploy-verify",
+  "generatedAt": "2026-08-01T12:33:00.000Z",
+  "stagingApiOrigin": "https://young-guns-os-staging.up.railway.app",
+  "requiredCommit": {
+    "full": "162cbf4451024591c3a861b49e023a0daab5407d",
+    "short": "162cbf4",
+    "subject": "Fix Xero payments stage invoice-mapping lateral join SQL error."
+  },
+  "deployConfirmedAtOrAbove162cbf4": false,
+  "verdict": "UNVERIFIED",
+  "gitRemote": {
+    "branch": "cursor/titan-frozen-scope-completion",
+    "originTipShort": "4f5865c",
+    "originIncludes162cbf4": true,
+    "localHeadBeforePull": "4a24b89",
+    "note": "Fix and follow-up docs are on origin; staging runtime commit hash not exposed by API."
+  },
+  "attempts": [
+    {
+      "method": "railway_cli",
+      "result": "BLOCKED",
+      "detail": "railway not on PATH; npx @railway/cli whoami/status → Unauthorized (no RAILWAY_TOKEN / login)"
+    },
+    {
+      "method": "github_actions_auto_deploy",
+      "result": "NOT_CONFIGURED",
+      "detail": "Only workflow CI (.github/workflows/ci.yml) on push/PR to main; zero runs on cursor/titan-frozen-scope-completion"
+    },
+    {
+      "method": "staging_health_metadata",
+      "result": "NO_COMMIT_FINGERPRINT",
+      "detail": "/api/v1/health returns service=titan-api version=0.2.0 only; /version /build /api/v1/version /api/v1/meta → 404"
+    },
+    {
+      "method": "repo_deploy_hooks",
+      "result": "MANUAL_RAILWAY",
+      "detail": "railway.toml + Dockerfile.api healthcheck /api/v1/health/ready; no package.json deploy script; infra notes dashboard Config-as-code"
+    },
+    {
+      "method": "origin_vs_railway_lag",
+      "result": "CANNOT_CORRELATE",
+      "detail": "Origin ahead of last known staging inference but no Railway deployment list without auth"
+    }
+  ],
+  "stagingProbeEvidence": {
+    "health": {
+      "url": "/api/v1/health",
+      "httpStatus": 200,
+      "bodySummary": "status ok, service titan-api, version 0.2.0"
+    },
+    "ready": {
+      "url": "/api/v1/health/ready",
+      "httpStatus": 200,
+      "bodySummary": "database connected, providersEnabled true, workersEnabled false"
+    },
+    "responseHeaders": ["server: railway-hikari", "x-railway-edge present", "no git/build header"]
+  },
+  "indirectRuntimeSignals": {
+    "xeroRecoveryHeartbeatJob81c5b8d8": "ACTIVE — confirms post-9bec8c3-style recovery on staging",
+    "paymentsSqlFix162cbf4": "NOT_PROVABLE — fix is server-side SQL in xero-sync.service.ts with no public probe endpoint"
+  },
+  "ownerActionRequiredForDeploy": true,
+  "ownerActions": [
+    "Railway dashboard: redeploy titan-staging-api from cursor/titan-frozen-scope-completion (or commit >= 162cbf4)",
+    "Or provide valid RAILWAY_TOKEN / railway login on runner for CLI deploy list + redeploy"
+  ],
+  "xeroImportUrgency": {
+    "activeJobId": "81c5b8d8-839b-4875-b106-2ecece11a966",
+    "stage": "contacts",
+    "contactsPage": 5,
+    "customerMappings": 673,
+    "invoiceMappings": 5,
+    "paymentMappings": 0,
+    "heartbeatAt": "2026-08-01T12:29:39.941Z",
+    "approachingPayments": false,
+    "note": "Still on contacts stage; prior failure was payments-stage lateral join on job 8e6aec9b. Deploy fix before checkpoint reaches payments.",
+    "187Verdict": "IN_PROGRESS"
+  },
+  "nextAutomaticAction": "Read-only re-run diagnostic-output/187-xero-import-recovery-verify.mjs on interval; escalate Owner Railway redeploy if stage advances to invoices/payments while deploy remains unverified",
+  "productionTouched": false
+}

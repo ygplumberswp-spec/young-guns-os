@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'wouter';
-import { Button, EmptyState, PageHeader, Panel, StatCard } from '@titan/ui';
+import { Button, EmptyState, Panel, StatCard } from '@titan/ui';
 import type { EnterpriseWorkforceIntelligenceDashboard } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import {
@@ -174,7 +175,7 @@ export function WorkforceIntelligencePage() {
             <StatCard label="Timesheets Pending" value={String(dashboard.pendingTimesheetCount)} />
             <StatCard label="Active Providers" value={String(dashboard.activeProviderCount)} />
             <StatCard
-              label="Candidates in Pipeline"
+              label="Candidates In Pipeline"
               value={String(dashboard.workforceStats.activePipelineCount)}
             />
             <StatCard label="Payroll Batches" value={String(dashboard.payrollBatchCount)} />
@@ -204,7 +205,7 @@ export function WorkforceIntelligencePage() {
         <Panel title="Workforce Registry" description="Tenant-configured workforce profiles">
           {dashboard.recentProfiles.length === 0 ? (
             <EmptyState
-              title="No workforce profiles"
+              title="No Workforce Profiles"
               description="Create profiles linked to team members when onboarding staff."
             />
           ) : (
@@ -228,7 +229,7 @@ export function WorkforceIntelligencePage() {
         >
           {dashboard.recentTimesheets.length === 0 ? (
             <EmptyState
-              title="No timesheets"
+              title="No Timesheets"
               description="Timesheets appear when employees submit time records."
             />
           ) : (
@@ -262,7 +263,7 @@ export function WorkforceIntelligencePage() {
         <Panel title="Leave Management" description="Configurable leave categories per tenant">
           {dashboard.pendingLeaveApplications.length === 0 ? (
             <EmptyState
-              title="No pending leave"
+              title="No Pending Leave"
               description="Leave applications appear when employees request time off."
             />
           ) : (
@@ -299,7 +300,7 @@ export function WorkforceIntelligencePage() {
         >
           {dashboard.payrollPreparations.length === 0 ? (
             <EmptyState
-              title="No payroll batches"
+              title="No Payroll Batches"
               description="Create payroll periods and prepare batches from approved timesheets."
             />
           ) : (
@@ -322,7 +323,7 @@ export function WorkforceIntelligencePage() {
           {dashboard.technicianPerformance.length === 0 ? (
             <>
               <EmptyState
-                title="No performance snapshots"
+                title="No Performance Snapshots"
                 description="Capture performance from real job completion data."
               />
               {canWrite ? (
@@ -360,7 +361,7 @@ export function WorkforceIntelligencePage() {
         >
           {dashboard.providerCount === 0 ? (
             <EmptyState
-              title="No providers configured"
+              title="No Providers Configured"
               description="Add Sage, Xero, PaySpace, BambooHR, or custom REST/SFTP adapters."
             />
           ) : (
@@ -386,7 +387,7 @@ export function WorkforceIntelligencePage() {
             </ul>
           ) : (
             <EmptyState
-              title="No analytics captured"
+              title="No Analytics Captured"
               description="Capture analytics from real workforce activity."
             />
           )}

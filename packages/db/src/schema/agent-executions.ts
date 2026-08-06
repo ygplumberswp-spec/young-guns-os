@@ -1,6 +1,8 @@
 import { jsonb, pgEnum, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { agentProfiles } from './agent-profiles';
 import { companies } from './companies';
+import { companyBusinessRules } from './company-business-rules';
+import { companyDayPlans } from './company-day-plans';
 
 export const agentExecutionStatusEnum = pgEnum('agent_execution_status', [
   'pending',
@@ -26,6 +28,10 @@ export const agentExecutions = pgTable('agent_executions', {
   outputSummary: text('output_summary'),
   errorMessage: text('error_message'),
   resultPayload: jsonb('result_payload').$type<Record<string, unknown>>(),
+  businessRuleId: uuid('business_rule_id').references(() => companyBusinessRules.id, {
+    onDelete: 'set null',
+  }),
+  dayPlanId: uuid('day_plan_id').references(() => companyDayPlans.id, { onDelete: 'set null' }),
   startedAt: timestamp('started_at', { withTimezone: true }).notNull().defaultNow(),
   completedAt: timestamp('completed_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

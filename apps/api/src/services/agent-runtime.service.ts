@@ -116,6 +116,8 @@ export class AgentRuntimeError extends Error {
 type TenantScope = {
   companyId: string;
   userId: string;
+  roleName?: string;
+  permissions?: string[];
 };
 
 type AgentRuntimeDeps = {

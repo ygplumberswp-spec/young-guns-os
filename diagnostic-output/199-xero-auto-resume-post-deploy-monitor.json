@@ -1,0 +1,187 @@
+{
+  "label": "199-xero-auto-resume-post-deploy-monitor",
+  "generatedAt": "2026-08-01T13:32:29.447Z",
+  "deployCommit": "d2f771dd882722950f1be0c523f3e8e809b65a5d",
+  "targetJobId": "81c5b8d8-839b-4875-b106-2ecece11a966",
+  "xeroJob81Resumed": false,
+  "currentStage": "payments",
+  "blockingActiveJobId": null,
+  "samples": [
+    {
+      "at": "2026-08-01T13:14:50.236Z",
+      "label": "poll-1",
+      "targetJob": {
+        "id": "81c5b8d8-839b-4875-b106-2ecece11a966",
+        "status": "failed",
+        "stage": "payments",
+        "failedStage": "payments",
+        "resumedFromAbandoned": false,
+        "heartbeatAt": "2026-08-01T12:48:40.984Z"
+      },
+      "activeJob": {
+        "id": "6a8304c4-753f-4994-a99d-8c4365c21aee",
+        "status": "running",
+        "stage": "contacts",
+        "trigger": "incremental",
+        "heartbeatAt": "2026-08-01T13:14:43.299Z"
+      },
+      "mappingCounts": {
+        "customers": 673,
+        "invoices": 5,
+        "payments": 0
+      },
+      "lastSyncAt": null
+    },
+    {
+      "at": "2026-08-01T13:17:21.551Z",
+      "label": "poll-2",
+      "targetJob": {
+        "id": "81c5b8d8-839b-4875-b106-2ecece11a966",
+        "status": "failed",
+        "stage": "payments",
+        "failedStage": "payments",
+        "resumedFromAbandoned": false,
+        "heartbeatAt": "2026-08-01T12:48:40.984Z"
+      },
+      "activeJob": {
+        "id": "6a8304c4-753f-4994-a99d-8c4365c21aee",
+        "status": "running",
+        "stage": "contacts",
+        "trigger": "incremental",
+        "heartbeatAt": "2026-08-01T13:16:43.299Z"
+      },
+      "mappingCounts": {
+        "customers": 673,
+        "invoices": 5,
+        "payments": 0
+      },
+      "lastSyncAt": null
+    },
+    {
+      "at": "2026-08-01T13:19:52.860Z",
+      "label": "poll-3",
+      "targetJob": {
+        "id": "81c5b8d8-839b-4875-b106-2ecece11a966",
+        "status": "failed",
+        "stage": "payments",
+        "failedStage": "payments",
+        "resumedFromAbandoned": false,
+        "heartbeatAt": "2026-08-01T12:48:40.984Z"
+      },
+      "activeJob": {
+        "id": "6a8304c4-753f-4994-a99d-8c4365c21aee",
+        "status": "running",
+        "stage": "invoices",
+        "trigger": "incremental",
+        "heartbeatAt": "2026-08-01T13:19:43.433Z"
+      },
+      "mappingCounts": {
+        "customers": 673,
+        "invoices": 5,
+        "payments": 0
+      },
+      "lastSyncAt": null
+    },
+    {
+      "at": "2026-08-01T13:22:24.180Z",
+      "label": "poll-4",
+      "targetJob": {
+        "id": "81c5b8d8-839b-4875-b106-2ecece11a966",
+        "status": "failed",
+        "stage": "payments",
+        "failedStage": "payments",
+        "resumedFromAbandoned": false,
+        "heartbeatAt": "2026-08-01T12:48:40.984Z"
+      },
+      "activeJob": {
+        "id": "6a8304c4-753f-4994-a99d-8c4365c21aee",
+        "status": "running",
+        "stage": "invoices",
+        "trigger": "incremental",
+        "heartbeatAt": "2026-08-01T13:21:43.296Z"
+      },
+      "mappingCounts": {
+        "customers": 673,
+        "invoices": 5,
+        "payments": 0
+      },
+      "lastSyncAt": null
+    },
+    {
+      "at": "2026-08-01T13:24:55.499Z",
+      "label": "poll-5",
+      "targetJob": {
+        "id": "81c5b8d8-839b-4875-b106-2ecece11a966",
+        "status": "failed",
+        "stage": "payments",
+        "failedStage": "payments",
+        "resumedFromAbandoned": false,
+        "heartbeatAt": "2026-08-01T12:48:40.984Z"
+      },
+      "activeJob": null,
+      "mappingCounts": {
+        "customers": 673,
+        "invoices": 5,
+        "payments": 0
+      },
+      "lastSyncAt": null
+    },
+    {
+      "at": "2026-08-01T13:27:26.813Z",
+      "label": "poll-6",
+      "targetJob": {
+        "id": "81c5b8d8-839b-4875-b106-2ecece11a966",
+        "status": "failed",
+        "stage": "payments",
+        "failedStage": "payments",
+        "resumedFromAbandoned": false,
+        "heartbeatAt": "2026-08-01T12:48:40.984Z"
+      },
+      "activeJob": null,
+      "mappingCounts": {
+        "customers": 673,
+        "invoices": 5,
+        "payments": 0
+      },
+      "lastSyncAt": null
+    },
+    {
+      "at": "2026-08-01T13:29:58.136Z",
+      "label": "poll-7",
+      "targetJob": {
+        "id": "81c5b8d8-839b-4875-b106-2ecece11a966",
+        "status": "failed",
+        "stage": "payments",
+        "failedStage": "payments",
+        "resumedFromAbandoned": false,
+        "heartbeatAt": "2026-08-01T12:48:40.984Z"
+      },
+      "activeJob": null,
+      "mappingCounts": {
+        "customers": 673,
+        "invoices": 5,
+        "payments": 0
+      },
+      "lastSyncAt": null
+    },
+    {
+      "at": "2026-08-01T13:32:29.447Z",
+      "label": "poll-8",
+      "targetJob": {
+        "id": "81c5b8d8-839b-4875-b106-2ecece11a966",
+        "status": "failed",
+        "stage": "payments",
+        "failedStage": "payments",
+        "resumedFromAbandoned": false,
+        "heartbeatAt": "2026-08-01T12:48:40.984Z"
+      },
+      "activeJob": null,
+      "mappingCounts": {
+        "customers": 673,
+        "invoices": 5,
+        "payments": 0
+      },
+      "lastSyncAt": null
+    }
+  ]
+}

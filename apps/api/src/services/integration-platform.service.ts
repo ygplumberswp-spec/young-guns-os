@@ -30,6 +30,8 @@ import { buildTenantCacheKey, cachedTenantRead, CACHE_TTLS } from './api-read-ca
 import type { ConnectorEngineService } from './connector-engine.service.js';
 import type { IntegrationApiManagementService } from './integration-api-management.service.js';
 import type { IntegrationHubService } from './integration-hub.service.js';
+import type { IntegrationSyncOrchestratorService } from './integration-sync-orchestrator.service.js';
+import type { AutoSyncProviderKey } from '@titan/shared';
 
 export class IntegrationPlatformError extends Error {
   constructor(
@@ -51,7 +53,42 @@ type IntegrationPlatformDeps = {
 };
 
 export class IntegrationPlatformService {
+  private syncOrchestrator: IntegrationSyncOrchestratorService | null = null;
+
   constructor(private readonly deps: IntegrationPlatformDeps) {}
+
+  setSyncOrchestrator(orchestrator: IntegrationSyncOrchestratorService): void {
+    this.syncOrchestrator = orchestrator;
+  }
+
+  async getAutoSyncStatuses(companyId: string) {
+    if (!this.syncOrchestrator) {
+      throw new IntegrationPlatformError('NOT_READY', 'Auto-sync orchestrator is not configured');
+    }
+
+    return this.syncOrchestrator.getAllProviderSyncStatuses(companyId);
+  }
+
+  async getAutoSyncStatus(companyId: string, provider: AutoSyncProviderKey) {
+    if (!this.syncOrchestrator) {
+      throw new IntegrationPlatformError('NOT_READY', 'Auto-sync orchestrator is not configured');
+    }
+
+    return this.syncOrchestrator.getProviderSyncStatus(companyId, provider);
+  }
+
+  async runManualProviderSync(scope: StaffScope, provider: AutoSyncProviderKey) {
+    if (!this.syncOrchestrator) {
+      throw new IntegrationPlatformError('NOT_READY', 'Auto-sync orchestrator is not configured');
+    }
+
+    return this.syncOrchestrator.runProviderSync({
+      companyId: scope.companyId,
+      provider,
+      trigger: 'manual',
+      userId: scope.userId,
+    });
+  }
 
   async getExecutiveDashboard(
     companyId: string,
@@ -596,8 +633,21 @@ export class IntegrationPlatformService {
   async retryConnectorSync(
     scope: StaffScope,
     connectorId: string,
-  ): Promise<{ syncJobId: string | null }> {
+  ): Promise<{ syncJobId: string | null; result?: unknown }> {
     const connector = await this.deps.connectorEngine.getConnector(scope.companyId, connectorId);
+    const providerKey = connector.connectorKey as AutoSyncProviderKey;
+
+    if (this.syncOrchestrator) {
+      const result = await this.syncOrchestrator.runProviderSync({
+        companyId: scope.companyId,
+        provider: providerKey,
+        trigger: 'retry',
+        userId: scope.userId,
+      });
+
+      return { syncJobId: result.syncJobId, result };
+    }
+
     const manager = await this.deps.apiManagementService.getSyncManagerStatus(scope.companyId);
     const failedJob = manager.syncJobs.find(
       (job) => job.provider === connector.provider && job.status === 'failed',

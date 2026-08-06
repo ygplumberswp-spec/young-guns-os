@@ -15,10 +15,7 @@ export function AuthLayout({
   banner,
   attribution = 'created',
 }: AuthLayoutProps) {
-  const credit =
-    attribution === 'built'
-      ? 'Built by Young Guns Plumbing'
-      : 'Created by Young Guns Plumbing';
+  const creditPrefix = attribution === 'built' ? 'Built by' : 'Created by';
 
   return (
     <div className="auth-stage">
@@ -33,7 +30,10 @@ export function AuthLayout({
         </header>
         {banner}
         <div className="auth-stage__card">{children}</div>
-        <p className="auth-stage__credit">{credit}</p>
+        <p className="auth-stage__credit">
+          <span className="brand-credit__by">{creditPrefix}</span>{' '}
+          <span className="brand-credit__org">Young Guns Plumbing</span>
+        </p>
       </div>
     </div>
   );

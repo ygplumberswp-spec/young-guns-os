@@ -501,6 +501,15 @@ export function isCompanyOwnerRole(identity: StaffIdentity): boolean {
   return canonical === COMPANY_OWNER_ROLE_NAME || identity.roleName === LEGACY_OWNER_ROLE_NAME;
 }
 
+/** Permanent company memory rules — Owner, legacy Admin, or Platform Owner only. */
+export function canWriteCompanyMemory(identity: StaffIdentity): boolean {
+  return (
+    isPlatformOwnerRole(identity) ||
+    isCompanyOwnerRole(identity) ||
+    identity.roleName === LEGACY_ADMIN_ROLE_NAME
+  );
+}
+
 export function isManagerRole(identity: StaffIdentity): boolean {
   const canonical = resolveCanonicalRoleName(identity.roleName);
   return canonical === MANAGER_ROLE_NAME;

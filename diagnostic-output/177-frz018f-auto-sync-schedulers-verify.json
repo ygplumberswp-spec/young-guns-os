@@ -1,0 +1,211 @@
+{
+  "schemaVersion": "frz018f-auto-sync-schedulers-verify-v1",
+  "sprint": "FRZ-018f",
+  "startedAt": "2026-08-01T10:58:34.940Z",
+  "branch": "cursor/titan-frozen-scope-completion",
+  "priorCheckpoint": "5457989",
+  "priorSprint": "FRZ-018e",
+  "autoSyncDeploy": "4e285b8",
+  "ownerSignal": "schedulers enabled — Railway staging API SCHEDULERS_ENABLED=true",
+  "apiOrigin": "https://young-guns-os-staging.up.railway.app",
+  "webOrigin": "https://comfortable-determination-staging.up.railway.app",
+  "stagingSupabaseRef": "cpkuwtaipjxeipvbssvn",
+  "productionRefTouched": false,
+  "liveFinancialWrites": false,
+  "readOnlyIntent": true,
+  "ownerAccessTokenProvided": false,
+  "results": [
+    {
+      "name": "staging_api_ready",
+      "status": "PASS",
+      "detail": "{\"database\":\"connected\",\"providersEnabled\":true,\"workersEnabled\":false,\"webhooksEnabled\":false}"
+    },
+    {
+      "name": "health_schedulers_field",
+      "status": "PARTIAL",
+      "detail": "health/ready does not expose schedulersEnabled — corroborate via Owner signal + DB schedule activity"
+    },
+    {
+      "name": "staging_web_health",
+      "status": "PASS",
+      "detail": "healthz ok"
+    },
+    {
+      "name": "unauthenticated_xero_denied",
+      "status": "PASS",
+      "detail": "401"
+    },
+    {
+      "name": "probe_signup_session",
+      "status": "PASS",
+      "detail": "f01fa030…"
+    },
+    {
+      "name": "tenant_isolation_disconnected_independent",
+      "status": "PASS",
+      "detail": "foreign disconnected"
+    },
+    {
+      "name": "db_connected_xero_tenant",
+      "status": "PASS",
+      "detail": "org=Young Guns Plumbing"
+    },
+    {
+      "name": "db_last_sync_at_populated",
+      "status": "FAIL",
+      "detail": "last_sync_at null"
+    },
+    {
+      "name": "db_sync_logs_present",
+      "status": "PASS",
+      "detail": "count=49"
+    },
+    {
+      "name": "db_import_mappings_present",
+      "status": "PASS",
+      "detail": "customers=49 invoices=0 payments=0"
+    },
+    {
+      "name": "db_sync_jobs_present",
+      "status": "PARTIAL",
+      "detail": "count=1, latest=failed job_type=manual"
+    },
+    {
+      "name": "db_scheduler_activity",
+      "status": "PARTIAL",
+      "detail": "no scheduled jobs or schedule lastRunAt"
+    },
+    {
+      "name": "db_idempotency_no_duplicate_mappings",
+      "status": "PASS",
+      "detail": "no duplicate xero_contact_id rows"
+    },
+    {
+      "name": "db_token_connection_valid",
+      "status": "PARTIAL",
+      "detail": "last_error set but partial imports kept"
+    },
+    {
+      "name": "auto_sync_xero_unauth_denied",
+      "status": "PASS",
+      "detail": "401"
+    },
+    {
+      "name": "auto_sync_foreign_disconnected_truthful",
+      "status": "PARTIAL",
+      "detail": "{\"provider\":\"xero\",\"integrationProvider\":\"xero\",\"displayName\":\"Xero\",\"implementation\":\"full\",\"uiState\":\"not_configured\","
+    },
+    {
+      "name": "auto_sync_owner_status",
+      "status": "PARTIAL",
+      "detail": "OWNER_ACCESS_TOKEN not set — DB-only auto-sync state"
+    },
+    {
+      "name": "duplicate_protection_schema",
+      "status": "PASS",
+      "detail": "unique indexes on xero_*_mappings; orchestrator 5-min idempotency bucket"
+    },
+    {
+      "name": "secret_leak_scan",
+      "status": "PASS",
+      "detail": "clean"
+    },
+    {
+      "name": "tenant_isolation_owner_company_distinct",
+      "status": "PASS",
+      "detail": "owner vs foreign company differ"
+    }
+  ],
+  "checklist": {
+    "connectedOrganisation": "PASS-DB",
+    "schedulersEnabled": "PARTIAL-HEALTH-NO-FIELD",
+    "schedulerDrivenSync": "PARTIAL",
+    "lastSyncAt": "FAIL",
+    "auditEvidence": "PASS-DB",
+    "duplicateProtection": "PASS-DB",
+    "tokenHandling": "PARTIAL",
+    "autoSyncUiState": "SKIP-NO-TOKEN",
+    "tenantIsolation": "PASS",
+    "truthfulProviderStatus": "PASS",
+    "contactsImport": "PASS-DB",
+    "invoicesImport": "PARTIAL",
+    "paymentsImport": "PARTIAL"
+  },
+  "verdict": "PARTIAL",
+  "healthReady": {
+    "status": "ready",
+    "database": "connected",
+    "redis": "not_configured",
+    "providersEnabled": true,
+    "workersEnabled": false,
+    "webhooksEnabled": false,
+    "timestamp": "2026-08-01T10:58:35.734Z"
+  },
+  "dbSnapshot": {
+    "companyIdPrefix": "095aef76…",
+    "organisationName": "Young Guns Plumbing",
+    "connectedAt": "2026-08-01T10:20:52.209Z",
+    "lastSyncAt": null,
+    "updatedAt": "2026-08-01T10:46:59.196Z",
+    "lastVerifiedAt": "2026-08-01T10:20:52.209Z",
+    "lastError": "Xero sync failed during contacts. Xero sync timed out after 90s during contacts. Partial imports were kept; Last sync was not updated. Contacts 0 new / 0 updated, invoices 0 new / 0 updated, payments 0 new / 0 updated, bank transactions 0 new / 0 updated. Imported 0 new and updated 0 existing records. Last sync was not updated.",
+    "hasCredentials": true,
+    "syncLogCount": 49,
+    "globalSyncLogCount": 49,
+    "syncSummary": [
+      {
+        "entity_type": "customer",
+        "status": "success",
+        "c": 49
+      }
+    ],
+    "customerMappings": 49,
+    "invoiceMappings": 0,
+    "paymentMappings": 0,
+    "syncJobCount": 1,
+    "scheduledJobCount": 0,
+    "completedJobCount": 0,
+    "recentJobs": [
+      {
+        "jobType": "manual",
+        "status": "failed",
+        "syncScope": "import",
+        "startedAt": "2026-08-01T10:45:28.769Z",
+        "completedAt": "2026-08-01T10:46:59.492Z",
+        "errorPrefix": "Xero sync failed during contacts. Xero sync timed out after 90s during contacts."
+      }
+    ],
+    "syncSchedules": [],
+    "connectorAutoSync": [
+      {
+        "key": "cartrack",
+        "status": "disconnected",
+        "autoSync": null
+      },
+      {
+        "key": "xero",
+        "status": "connected",
+        "autoSync": null
+      }
+    ],
+    "duplicateCustomerMappings": 0,
+    "auditActions": [
+      "xero_import_sync_failed",
+      "xero_connected"
+    ]
+  },
+  "ownerAction": {
+    "step": 1,
+    "action": "Wait up to 2 scheduler ticks (60s interval) after SCHEDULERS_ENABLED deploy; re-run this script",
+    "step2": "Optional: OWNER_ACCESS_TOKEN for live auto-sync UI state probe",
+    "note": "Health endpoint does not expose schedulersEnabled; DB schedule lastRunAt is primary corroboration"
+  },
+  "totals": {
+    "passed": 13,
+    "failed": 1,
+    "paused": 0,
+    "skipped": 0,
+    "partial": 6
+  },
+  "completedAt": "2026-08-01T10:58:49.814Z"
+}

@@ -1,0 +1,137 @@
+{
+  "generatedAt": "2026-08-01T15:30:54.873Z",
+  "environment": "staging",
+  "apiOrigin": "https://young-guns-os-staging.up.railway.app",
+  "webOrigin": "https://comfortable-determination-staging.up.railway.app",
+  "branch": "cursor/titan-frozen-scope-completion",
+  "commit": "9c076a4",
+  "probes": {
+    "api_health_ready": {
+      "http": 200,
+      "dnsMs": 2,
+      "connectMs": 166,
+      "ttfbMs": 778,
+      "totalMs": 778,
+      "sizeBytes": 210
+    },
+    "web_index": {
+      "http": 200,
+      "dnsMs": 2,
+      "connectMs": 161,
+      "ttfbMs": 635,
+      "totalMs": 635,
+      "sizeBytes": 863
+    },
+    "api_customers_unauth": {
+      "http": 401,
+      "dnsMs": 3,
+      "connectMs": 169,
+      "ttfbMs": 651,
+      "totalMs": 651,
+      "sizeBytes": 69
+    },
+    "api_jobs_unauth": {
+      "http": 401,
+      "dnsMs": 3,
+      "connectMs": 162,
+      "ttfbMs": 630,
+      "totalMs": 630,
+      "sizeBytes": 69
+    },
+    "api_invoices_unauth": {
+      "http": 401,
+      "dnsMs": 2,
+      "connectMs": 155,
+      "ttfbMs": 619,
+      "totalMs": 619,
+      "sizeBytes": 69
+    },
+    "api_background_work_unauth": {
+      "http": 401,
+      "dnsMs": 2,
+      "connectMs": 161,
+      "ttfbMs": 627,
+      "totalMs": 627,
+      "sizeBytes": 69
+    },
+    "api_analytics_unauth": {
+      "http": 401,
+      "dnsMs": 1,
+      "connectMs": 158,
+      "ttfbMs": 622,
+      "totalMs": 622,
+      "sizeBytes": 69
+    }
+  },
+  "bundle": {
+    "totalJsFiles": 181,
+    "indexChunkKb": 408,
+    "auraChatChunkKb": 198,
+    "largestChunks": [
+      {
+        "file": "index-C-H4Qz3o.js",
+        "sizeBytes": 418232,
+        "sizeKb": 408
+      },
+      {
+        "file": "useAuraChat-CSz7oExI.js",
+        "sizeBytes": 202310,
+        "sizeKb": 198
+      },
+      {
+        "file": "agents-0soLQ1Eo.js",
+        "sizeBytes": 52001,
+        "sizeKb": 51
+      },
+      {
+        "file": "JobDetailPage-DkqiRbun.js",
+        "sizeBytes": 34827,
+        "sizeKb": 34
+      },
+      {
+        "file": "MarketingIntelligencePage-C2yjUFvx.js",
+        "sizeBytes": 28236,
+        "sizeKb": 28
+      },
+      {
+        "file": "BusinessEvolutionPage-DWVnd3Jn.js",
+        "sizeBytes": 26460,
+        "sizeKb": 26
+      },
+      {
+        "file": "ItOperationsPage-DANjN-GV.js",
+        "sizeBytes": 23116,
+        "sizeKb": 23
+      },
+      {
+        "file": "AnalyticsPage-CAoGccKk.js",
+        "sizeBytes": 22289,
+        "sizeKb": 22
+      },
+      {
+        "file": "PlatformPage-BcXA7cV0.js",
+        "sizeBytes": 18279,
+        "sizeKb": 18
+      },
+      {
+        "file": "AppBuilderPage-Ddre_OZ0.js",
+        "sizeBytes": 17914,
+        "sizeKb": 17
+      },
+      {
+        "file": "DashboardPage-CYksGT-D.js",
+        "sizeBytes": 17074,
+        "sizeKb": 17
+      },
+      {
+        "file": "DeveloperPortalPage-DeeGY76E.js",
+        "sizeBytes": 16333,
+        "sizeKb": 16
+      }
+    ]
+  },
+  "notes": [
+    "Unauthenticated API probes measure edge + auth rejection latency only (HTTP 401 expected).",
+    "Authenticated route and AURA message timings require staging credentials — not invented here."
+  ]
+}

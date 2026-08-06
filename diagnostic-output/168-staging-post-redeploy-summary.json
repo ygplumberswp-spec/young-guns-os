@@ -1,0 +1,18 @@
+{
+  "label": "STAGING-POST-REDEPLOY",
+  "timestamp": "2026-08-01T09:06:00Z",
+  "branch": "cursor/titan-frozen-scope-completion",
+  "minFixCommit": "58a16b7",
+  "health": {
+    "live": 200,
+    "ready": 200,
+    "database": "connected"
+  },
+  "smokes": {
+    "phase5": { "verdict": "GO", "passed": 10, "failed": 0 },
+    "phase6": { "verdict": "GO", "passed": 12, "failed": 0 },
+    "phase8_12": { "verdict": "GO", "passed": 18, "failed": 0 }
+  },
+  "overallVerdict": "GO",
+  "productionRefTouched": false
+}

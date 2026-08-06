@@ -1,40 +1,105 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'wouter';
-import { Button, PageHeader, PageLoadState, Panel } from '@titan/ui';
+import { PageLoadState, Panel } from '@titan/ui';
 import { formatMoney, INVOICE_STATUS_OPTIONS, type InvoiceSummary } from '@titan/shared';
 import { fetchInvoices } from '../../lib/finance-api';
 import { useAuth } from '../../lib/auth-context';
 import { useStaffCachedQuery } from '../../lib/use-scoped-cached-query';
 import { FinanceNav } from '../../features/finance/FinanceNav';
+import { FinancePageHeader } from '../../features/finance/FinancePageHeader';
+import { FinanceWorkspaceDraftRow } from '../../features/finance/FinanceWorkspaceDraftRow';
+import {
+  INVOICE_LIST_FILTERS,
+  invoiceApiStatus,
+  invoiceMatchesFilter,
+  isInvoiceDraft,
+  visibleWorkspaceDrafts,
+  type InvoiceListFilter,
+} from '../../features/finance/finance-filters';
+import { useFinanceSectionDrafts } from '../../features/finance/useFinanceSectionDrafts';
 import { canAccessFinance, canManageFinance } from '../../features/finance/utils';
+import { FinanceFreshnessLine } from '../../features/finance/FinanceFreshnessLine';
+import { useXeroFinanceRefresh } from '../../features/finance/useXeroFinanceRefresh';
+import { CompactFilterTabs, PageHeader, StatusBadge } from '../../components/ux';
 
 function formatStatus(status: InvoiceSummary['status']): string {
   return INVOICE_STATUS_OPTIONS.find((option) => option.value === status)?.label ?? status;
 }
 
+function isSyncPending(invoice: InvoiceSummary): boolean {
+  if (invoice.xeroSyncStatus === 'synced' || invoice.numberAuthority === 'xero') {
+    return false;
+  }
+  return invoice.numberAuthority === 'internal_pending_xero' && !invoice.xeroInvoiceNumber;
+}
+
+function formatInvoiceMoney(invoice: InvoiceSummary, cents: number): string {
+  if (invoice.financialDataComplete === false && cents <= 0) {
+    return '—';
+  }
+  return formatMoney(cents, invoice.currency);
+}
+
 export function InvoiceListPage() {
   const { accessToken, user } = useAuth();
   const [q, setQ] = useState('');
-  const [status, setStatus] = useState('');
-  const [overdueOnly, setOverdueOnly] = useState(false);
+  const [filter, setFilter] = useState<InvoiceListFilter>('all');
+  const [sortDesc, setSortDesc] = useState(true);
 
   const canView = useMemo(() => (user ? canAccessFinance(user.permissions) : false), [user]);
   const canWrite = useMemo(() => (user ? canManageFinance(user.permissions) : false), [user]);
+
+  const includeArchivedDrafts = filter === 'archived';
+
+  const { drafts: workspaceDrafts } = useFinanceSectionDrafts({
+    accessToken,
+    recordType: 'invoice',
+    enabled: canView && (filter === 'all' || filter === 'drafts' || includeArchivedDrafts),
+    includeArchived: includeArchivedDrafts,
+  });
 
   const {
     data: invoices,
     error,
     isLoading,
   } = useStaffCachedQuery({
-    queryKey: `finance/invoices:${q.trim()}:${status}:${overdueOnly ? 1 : 0}`,
+    queryKey: `finance/invoices:${q.trim()}:${filter}`,
     enabled: canView,
     fetcher: async () =>
       fetchInvoices(accessToken!, {
         q: q.trim() || undefined,
-        status: status || undefined,
-        overdueOnly,
+        status: invoiceApiStatus(filter),
+        overdueOnly: filter === 'overdue',
       }),
   });
+
+  const { label: freshnessLabel, refreshing } = useXeroFinanceRefresh({
+    accessToken,
+    enabled: canView,
+    surface: 'invoices',
+  });
+
+  const visibleInvoices = useMemo(() => {
+    let rows = (invoices ?? []).filter((invoice) => invoiceMatchesFilter(invoice, filter));
+    rows.sort((a, b) => {
+      const aTime = new Date(a.dueDate ?? a.createdAt).getTime();
+      const bTime = new Date(b.dueDate ?? b.createdAt).getTime();
+      return sortDesc ? bTime - aTime : aTime - bTime;
+    });
+    return rows;
+  }, [filter, invoices, sortDesc]);
+
+  const visibleDrafts = useMemo(
+    () =>
+      visibleWorkspaceDrafts(workspaceDrafts, visibleInvoices, {
+        filter,
+        isDraftRecord: (record) => isInvoiceDraft(record),
+        includeArchived: includeArchivedDrafts,
+      }),
+    [filter, includeArchivedDrafts, visibleInvoices, workspaceDrafts],
+  );
+
+  const isEmpty = visibleInvoices.length === 0 && visibleDrafts.length === 0;
 
   if (!canView) {
     return (
@@ -46,64 +111,42 @@ export function InvoiceListPage() {
 
   return (
     <div className="finance-page">
-      <PageHeader
-        title="Finance"
-        description="Quotes, invoices, and payment records for your company."
-        actions={
-          canWrite ? (
-            <Link href="/finance/invoices/new">
-              <Button>New invoice</Button>
-            </Link>
-          ) : undefined
-        }
-      />
+      <FinancePageHeader canWrite={canWrite} usePrimaryAction />
       <FinanceNav />
 
       <Panel title="Invoices">
+        <FinanceFreshnessLine label={freshnessLabel} refreshing={refreshing} />
+        <CompactFilterTabs<InvoiceListFilter>
+          options={INVOICE_LIST_FILTERS}
+          value={filter}
+          onChange={setFilter}
+          ariaLabel="Invoice filters"
+          maxVisible={4}
+        />
+
         <div className="finance-toolbar">
           <input
             className="titan-input"
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Search number or title…"
-            aria-label="Search invoices"
+            placeholder="Search number or customer…"
+            aria-label="Search Invoices"
           />
-          <select
-            className="titan-input"
-            value={status}
-            onChange={(e) => setStatus(e.target.value)}
-            aria-label="Filter by status"
+          <button
+            type="button"
+            className="finance-table__sort finance-toolbar__sort"
+            onClick={() => setSortDesc((value) => !value)}
           >
-            <option value="">All statuses</option>
-            {INVOICE_STATUS_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-          <label className="finance-toolbar__check">
-            <input
-              type="checkbox"
-              checked={overdueOnly}
-              onChange={(e) => setOverdueOnly(e.target.checked)}
-            />
-            Overdue only
-          </label>
+            Due date {sortDesc ? '↓' : '↑'}
+          </button>
         </div>
 
         <PageLoadState
           isLoading={isLoading}
           error={error}
-          isEmpty={(invoices?.length ?? 0) === 0}
-          emptyTitle={q || status || overdueOnly ? 'No matching invoices' : 'No invoices yet'}
+          isEmpty={isEmpty}
+          emptyTitle={q || filter !== 'all' ? 'No matching invoices' : 'No invoices yet'}
           emptyDescription="Create your first invoice to start billing customers."
-          emptyAction={
-            canWrite ? (
-              <Link href="/finance/invoices/new">
-                <Button>New invoice</Button>
-              </Link>
-            ) : undefined
-          }
           loadingLabel="Loading invoices…"
         >
           <div className="finance-table-wrap">
@@ -111,27 +154,43 @@ export function InvoiceListPage() {
               <thead>
                 <tr>
                   <th>Number</th>
-                  <th>Title</th>
                   <th>Customer</th>
                   <th>Job</th>
                   <th>Status</th>
                   <th>Total</th>
                   <th>Outstanding</th>
-                  <th>Due</th>
+                  <th>
+                    <button
+                      type="button"
+                      className="finance-table__sort"
+                      onClick={() => setSortDesc((value) => !value)}
+                    >
+                      Due {sortDesc ? '↓' : '↑'}
+                    </button>
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                {(invoices ?? []).map((invoice) => (
-                  <tr key={invoice.id}>
+                {visibleDrafts.map((draft) => (
+                  <FinanceWorkspaceDraftRow
+                    key={`draft-${draft.id}`}
+                    draft={draft}
+                    colSpan={7}
+                    entityLabel="Invoice"
+                  />
+                ))}
+                {visibleInvoices.map((invoice) => (
+                  <tr
+                    key={invoice.id}
+                    className={invoice.status === 'cancelled' ? 'finance-table__row--muted' : ''}
+                  >
                     <td>
                       <Link href={`/finance/invoices/${invoice.id}`} className="finance-link">
-                        {invoice.displayInvoiceNumber}
+                        {invoice.displayOfficialInvoiceNumber}
                       </Link>
-                    </td>
-                    <td>
-                      <Link href={`/finance/invoices/${invoice.id}`} className="finance-link">
-                        {invoice.title}
-                      </Link>
+                      {isSyncPending(invoice) ? (
+                        <StatusBadge label="Sync Pending" tone="sync" className="finance-sync-badge" />
+                      ) : null}
                     </td>
                     <td>
                       <Link href={`/crm/${invoice.customerId}`} className="finance-link">
@@ -151,13 +210,18 @@ export function InvoiceListPage() {
                       <span className={`finance-status finance-status--${invoice.status}`}>
                         {formatStatus(invoice.status)}
                       </span>
+                      {isInvoiceDraft(invoice) ? (
+                        <StatusBadge label="Draft" tone="info" className="finance-draft-badge" />
+                      ) : null}
                       {invoice.isOverdue ? (
                         <span className="finance-badge--overdue"> · Overdue</span>
                       ) : null}
                     </td>
-                    <td className="tabular-nums">{formatMoney(invoice.totalCents ?? invoice.amountCents, invoice.currency)}</td>
                     <td className="tabular-nums">
-                      {formatMoney(invoice.outstandingCents, invoice.currency)}
+                      {formatInvoiceMoney(invoice, invoice.totalCents)}
+                    </td>
+                    <td className="tabular-nums">
+                      {formatInvoiceMoney(invoice, invoice.outstandingCents)}
                     </td>
                     <td>
                       {invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : '—'}

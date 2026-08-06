@@ -1,0 +1,372 @@
+# TITAN Gap Closure Plan
+
+**Audit type:** READ-ONLY planning artifact — no new features  
+**Generated (UTC):** 2026-08-05  
+**Last updated (UTC):** 2026-08-06 — OCC-001 recorded (not implemented); XERO-002 Gate sequence remains active  
+**Base HEAD:** `cc0abbcde96902711fc0e141590144470abc5444` → task branch `cursor/titan-xero-002-p0-finance`  
+**Branch:** `cursor/titan-v1-integration`  
+**Scope:** Unmet **accepted** requirements only — deferred items at end  
+
+---
+
+## Agent workforce gaps (AGENT-001B — 2026-08-06)
+
+| Gap | Count | Closure path |
+|-----|------:|--------------|
+| Agents Missing (no meaningful implementation) | 283 of 307 | [TITAN_AGENT_ACTIVATION_ROADMAP.md](./TITAN_AGENT_ACTIVATION_ROADMAP.md) Phases B–F |
+| Agents Partial (registry/UI shell only) | 21 | Phase B–D tool wiring |
+| Provider-blocked | 3 | External provider gates |
+| Supervised (AURA only) | 1 | Phase B exit → expand read-only agents |
+| Shadow mode | 20 | Phase B–C |
+| **Active** | **0** | None — do not fake |
+| AUD department agents | 14 Defined | Phase A approved → Phase B shadow |
+
+**Register restoration:** Approved **307** unique agents across **18 departments** recovered from commit `363111f`. **0 missing approved Agent IDs.** AGENT-001 role families (191) reconciled as mappings/aliases — not replacements.
+
+**Facebook (J-6.7F14 deployed to staging):** Young Guns Plumbing - Cape Town connected and verified. Content permissions granted (publish, schedule, comments, reply, Page details, insights). Webhook fields **feed** + **mention** provider-confirmed; Meta dashboard sample delivery succeeded; no webhook error; polling fallback every 15 minutes. Genuine live Page event pending (Meta app unpublished). Messenger and Lead Ads outside scope. **Not production-complete.**
+
+**XERO-001 audit (2026-08-06):** [TITAN_XERO_FULL_AUDIT_REPORT.md](./TITAN_XERO_FULL_AUDIT_REPORT.md) — read-only staging recount complete. OAuth connected; read import partial; attachments provider-blocked; full chain **not proven**.
+
+**XERO-002A preflight (2026-08-06):** [TITAN_XERO_002A_LIVE_PROOF_PREFLIGHT.md](./TITAN_XERO_002A_LIVE_PROOF_PREFLIGHT.md) — read-only staging audit complete. **No live proof executed.** Gate 2 pending Owner approval.
+
+**XERO-002 (2026-08-06):** Implementation complete on task branch — connection health, scope persistence, stale-job recovery, customer mapping dry-run, reconciliation model, finance UI panels. **Live proof NOT executed.** See [TITAN_XERO_002_LIVE_PROOF_PLAN.md](./TITAN_XERO_002_LIVE_PROOF_PLAN.md).
+
+**DASH-001 (2026-08-06):** **Approved and closed** by Owner.
+
+**Owner approval gate:** Live proof **Gate 2** requires explicit Owner approval. See XERO-002A preflight report.
+
+**Universal integration gap:** Client-facing wizard must hide developer setup per [INT-UNIVERSAL-001](./TITAN_INTEGRATION_REGISTER.md).
+
+---
+
+## Next enterprise priorities (RECORD ONLY — do not implement yet)
+
+**Status:** High-priority enterprise gaps — **documented only**. No implementation during Integrations overview or before Owner formal sequencing.
+
+**Formal sequence after Integrations overview approval (INT-UI-001B):**
+
+| Order | Task ID | Name | Gate |
+|------:|---------|------|------|
+| 0 | INT-OVERVIEW-001 | Integrations overview + Dashboard Connections alignment | **Pending Owner approval** |
+| 1 | **PERF-001** | **TITAN Performance Foundation** | **Implemented** — [TITAN_PERF_001_COMPLETION_REPORT.md](./TITAN_PERF_001_COMPLETION_REPORT.md); staging deploy pending |
+| 2 | **XERO-003** | **Near-real-time Xero intersync** | **Implemented** — [TITAN_XERO_003_COMPLETION_REPORT.md](./TITAN_XERO_003_COMPLETION_REPORT.md); staging deploy + Xero platform config pending |
+| 2A | **BANK-IMPORT-001** | **Manual bank statement import fallback** | **Implemented** — [TITAN_BANK_STATEMENT_IMPORT_ARCHITECTURE.md](./TITAN_BANK_STATEMENT_IMPORT_ARCHITECTURE.md); migration 0182 pending Owner approval |
+| 3 | **DASH-001** | **Owner Dashboard — Business Heartbeat** | Owner sequences after XERO-003 review |
+| 4 | XERO-002A | Controlled live proof **preflight** (read-only) | **COMPLETE** — [TITAN_XERO_002A_LIVE_PROOF_PREFLIGHT.md](./TITAN_XERO_002A_LIVE_PROOF_PREFLIGHT.md) |
+| 5 | XERO-002 | Controlled Xero live proof (Owner gate) | **Blocked** at Gate 2 — Owner approval required |
+
+Both tasks must meet the **Enterprise Product Quality Gate** and **Fine Details & Finishing** standard applied to the Integrations overview.
+
+### PERF-001 — TITAN Performance Foundation
+
+**Status (2026-08-06):** Implemented on branch `cursor/titan-perf-001-foundation`. Measured main bundle reduction 566 KB → 332 KB entry (+ vendor splits). Dashboard deferred panel loading, social connection dedupe, cache policies, prefetch alignment. See [TITAN_PERF_001_BASELINE_REPORT.md](./TITAN_PERF_001_BASELINE_REPORT.md) and [TITAN_PERF_001_COMPLETION_REPORT.md](./TITAN_PERF_001_COMPLETION_REPORT.md). Staging deploy and authenticated route verification **pending**.
+
+**Gap (remaining):**
+
+- Authenticated Owner route before/after timings
+- List pagination (CRM, jobs, quotes, invoices)
+- DB index audit with tenant query evidence
+- Post-deploy staging verification
+
+**Deliverable:** Measurable performance evidence (before/after metrics) plus improved perceived and actual speed.
+
+### DASH-001 — Owner Dashboard — Business Heartbeat
+
+**Status (2026-08-06):** Implemented on branch `cursor/titan-dash-001-business-heartbeat`. Executive summary extended with `dash001` sections: Business Heartbeat, Financial Truth, Attention Required, Team Performance, Sales & Opportunities, AURA Executive, priority alerts. See [TITAN_DASH_001_COMPLETION_REPORT.md](./TITAN_DASH_001_COMPLETION_REPORT.md).
+
+**UI-THEME-001 (record only):** Premium Dark Mode Colour System — apply ChatGPT-style soft off-white text app-wide after major screens complete. **Not implemented during DASH-001.**
+
+**Gap (remaining):**
+
+- Owner visual approval on staging (desktop / tablet / mobile)
+- Authenticated dashboard smoke after deploy
+
+**Quality bar:** Same Enterprise Product Quality Gate + Fine Details & Finishing as Integrations overview.
+
+### XERO-003 — Near-real-time Xero quote, invoice and payment intersync
+
+**Gap:** Quote → invoice → payment state changes are not reflected near-real-time across TITAN and Xero.
+
+**Future scope (not started):** Near-real-time intersync for quotes, invoices and payments — incremental sync, webhook-driven updates where available, honest UI freshness, and measurable latency evidence. **Does not replace** XERO-002 controlled live proof; runs as a separate sequenced task before DASH-001.
+
+### BANK-IMPORT-001 — Manual bank statement import fallback
+
+**Status (2026-08-06):** Implemented on branch `cursor/titan-xero-003-realtime-intersync` (XERO-003A). Controlled CSV import at Finance → Bank Transactions → Import statement. Preview-before-approval, RBAC, tenant isolation, duplicate detection vs Xero and prior manual imports. Migration `0182_bank_statement_manual_import.sql` created — **not applied**. See [TITAN_BANK_STATEMENT_IMPORT_ARCHITECTURE.md](./TITAN_BANK_STATEMENT_IMPORT_ARCHITECTURE.md).
+
+### AI-FIN-DOC-001 — AI Financial Capture Engine (RECORD ONLY — do not implement during XERO-003A)
+
+**Status:** Documented only. **Not implemented.**
+
+**Child capabilities (future):**
+
+| ID | Name |
+|----|------|
+| AP-DOC-001 | Supplier Invoice Import |
+| EXP-REC-001 | Receipt and Till-Slip Capture |
+| INV-PRICE-001 | Supplier Price List Import |
+
+**Required future AI workflow:**
+
+Photo, PDF, spreadsheet or authorised email attachment → secure validation → AI document classification → AI data extraction → supplier/account matching → duplicate and fraud checks → VAT support → line-item extraction → job/project/vehicle/technician allocation suggestions → confidence scoring → human review → authorised approval → TITAN financial records updated → controlled Xero draft creation → payment and reconciliation tracked separately.
+
+**Required statuses:** Captured by AI → Review required → Approved → Sent to Xero → Paid → Reconciled.
+
+**After approval, future captured data must update:** supplier bills, accounts payable, expenses, material and job costs, vehicle expenses, technician expenses, inventory purchase cost, supplier price history, project profitability, gross profit and margin, supplier spending, VAT input estimate, cash-flow forecast, Owner Dashboard figures.
+
+**AI constraints:** AI may extract and recommend, but may **not** silently approve, post to Xero, mark paid, reconcile, change VAT, merge suppliers or overwrite prices.
+
+**Locked sequence unchanged:** XERO-003 → DASH-001 → XERO-002 controlled live proof → remaining roadmap.
+
+---
+
+### PRICEBOOK-001 — Master Pricebook and AI Estimating Engine (RECORD ONLY — do not implement during XERO-002)
+
+**Status:** Documented only. **Not implemented.** **Do not modify pricing, quotes, invoices, jobs or supplier records.**
+
+**Recorded (UTC):** 2026-08-06
+
+**Placement:** Next major core-platform implementation **after XERO-002 closes** and **before DASH-002**.
+
+| ID | Name | Phase |
+|----|------|-------|
+| **PRICEBOOK-001** | Master Pricebook — single source of pricing truth | Parent |
+| PRICEBOOK-001A | Core data model, versioning, RBAC, price calculation | A |
+| PRICEBOOK-001B | Residential service catalogue and Young Guns YGP codes | B |
+| PRICEBOOK-001C | Construction point assemblies and BOQ engine | C |
+| PRICEBOOK-001D | Supplier cost integration (INV-PRICE-001) | D |
+| PRICEBOOK-001E | Quote, invoice, job-card, purchasing, job-cost integration | E |
+| **AI-EST-001** | AI Floor Plan Estimator | A–D sub-phases |
+| **AI-EST-LEARN-001** | Estimate accuracy learning | Post job-costing |
+
+**Documentation:**
+
+- [TITAN_MASTER_PRICEBOOK_SPECIFICATION.md](./TITAN_MASTER_PRICEBOOK_SPECIFICATION.md)
+- [TITAN_PRICEBOOK_ARCHITECTURE.md](./TITAN_PRICEBOOK_ARCHITECTURE.md)
+- [TITAN_AI_ESTIMATING_ENGINE_SPECIFICATION.md](./TITAN_AI_ESTIMATING_ENGINE_SPECIFICATION.md)
+- [TITAN_ROADMAP.md](./TITAN_ROADMAP.md)
+
+**Cross-links:** INV-PRICE-001 · AI-FIN-DOC-001 · AP-DOC-001 · EXP-REC-001 · BANK-IMPORT-001 · DASH-002 · UI-THEME-001
+
+**Governance:** No duplicate pricing systems. Immutable price snapshots on documents. AI may suggest; Owner must approve. No silent selling-price overwrites from supplier imports.
+
+**Implementation gate:** Forbidden during active XERO-002 Gate proof sequence.
+
+---
+
+### JOB-COST-001 — Intelligent Job Costing & Profit Engine (RECORD ONLY — do not implement during XERO-002)
+
+**Status:** Documented only. **Not implemented.** **Do not modify quotes, invoices, jobs, pricing, supplier records or financial records.**
+
+**Recorded (UTC):** 2026-08-06
+
+**Placement:** Next major core-platform implementation **after PRICEBOOK-001** and **before DASH-002**.
+
+| ID | Name | Phase |
+|----|------|-------|
+| **JOB-COST-001** | Intelligent Job Costing & Profit Engine | Parent |
+| JOB-COST-001A | Core job-cost model, immutable estimate baseline and financial states | A |
+| JOB-COST-001B | Labour, material, purchase and site-cost capture | B |
+| JOB-COST-001C | Live variance calculation and profitability projections | C |
+| JOB-COST-001D | Variation-order engine and margin protection | D |
+| JOB-COST-001E | AURA risk detection, alerts and recommendations | E |
+| JOB-COST-001F | Job financial dashboard and reporting | F |
+| JOB-COST-001G | Estimate-versus-actual learning integration | G |
+
+**Documentation:**
+
+- [TITAN_JOB_COSTING_PROFIT_ENGINE_SPECIFICATION.md](./TITAN_JOB_COSTING_PROFIT_ENGINE_SPECIFICATION.md)
+- [TITAN_JOB_COSTING_ARCHITECTURE.md](./TITAN_JOB_COSTING_ARCHITECTURE.md)
+- [TITAN_ROADMAP.md](./TITAN_ROADMAP.md)
+
+**Architectural relationship:**
+
+- **PRICEBOOK-001** — source of estimated pricing and cost assumptions
+- **JOB-COST-001** — source of job-level actual cost, variance and profitability truth
+- **AI-FIN-DOC-001** — supplies approved supplier invoices, receipts, till slips and expenses into actual job costing
+- **DASH-001 / DASH-002** — display resulting financial health and alerts
+
+**Cross-links:** PRICEBOOK-001 · PRICEBOOK-001E · AI-EST-001 · AI-EST-LEARN-001 · AI-FIN-DOC-001 · AP-DOC-001 · EXP-REC-001 · INV-PRICE-001 · BANK-IMPORT-001 · Xero · Yoco · Warehouse · Purchase Orders · Payroll/Timesheets · Fleet/Cartrack · DASH-002 · UI-THEME-001
+
+**Governance:** No duplicate costing formulas. Immutable estimate baselines from approved quotes. Cost state machine enforced. AURA may suggest; Owner must approve. No silent budget, price or reconciliation changes.
+
+**Implementation gate:** Forbidden during active XERO-002 Gate proof sequence. Requires PRICEBOOK-001A minimum before JOB-COST-001A.
+
+---
+
+### OCC-001 — Owner Command Center & AURA Business Coach (RECORD ONLY — do not implement during XERO-002)
+
+**Status:** Documented only. **Not implemented.**
+
+**Recorded (UTC):** 2026-08-06
+
+**Placement:** After **DASH-002** and **JOB-COST-001C** minimum — extends **DASH-001** (approved).
+
+| ID | Name | Phase |
+|----|------|-------|
+| **OCC-001** | Owner Command Center & AURA Business Coach | Parent |
+| OCC-001A | Owner Command Center daily dashboard | A |
+| OCC-001B | AURA Daily CEO Briefing | B |
+| OCC-001C | Business Health Score engine | C |
+| OCC-001D | Weekly CEO Review and Monthly Board Report | D |
+| OCC-001E | Business Coach lessons (EXEC-009) | E |
+| OCC-001F | What-If Simulator | F |
+| OCC-001G | Business DNA learning store | G |
+| OCC-001H | Money Leak Detector | H |
+| OCC-001I | Opportunity Finder | I |
+| OCC-001J | AI Business Advisor narrative layer | J |
+
+**Documentation:**
+
+- [TITAN_OWNER_COMMAND_CENTER_AURA_COACH_SPECIFICATION.md](./TITAN_OWNER_COMMAND_CENTER_AURA_COACH_SPECIFICATION.md)
+- [TITAN_OWNER_COMMAND_CENTER_ARCHITECTURE.md](./TITAN_OWNER_COMMAND_CENTER_ARCHITECTURE.md)
+- [TITAN_ROADMAP.md](./TITAN_ROADMAP.md)
+
+**Objective:** Transform TITAN into an AI Business Operating System — Owner-first command center, daily CEO briefing, health score, CEO meetings, business coach, what-if simulator, business DNA, money leak detector, opportunity finder, AI advisor.
+
+**Cross-links:** DASH-001 · DASH-002 · JOB-COST-001 · PRICEBOOK-001 · AI-FIN-DOC-001 · EXEC-009 · UI-THEME-001
+
+**Governance:** Owner/Company Owner only. Real data only. AURA advises; Owner approves all financial and pricing decisions. No automatic data changes.
+
+**Implementation gate:** Forbidden during active XERO-002 Gate proof sequence.
+
+---
+
+## Xero gaps (XERO-001 audit 2026-08-06)
+
+**Report:** [TITAN_XERO_FULL_AUDIT_REPORT.md](./TITAN_XERO_FULL_AUDIT_REPORT.md)
+
+### P0 — blocks Young Guns internal pilot
+
+| ID | Action | Requirements | XERO-002 status |
+|----|--------|--------------|-----------------|
+| X-P0-1 | Fix attachment stage / scope diagnosis | XERO-004 | **Partial** — root cause classified; Owner reconnect required |
+| X-P0-2 | Owner authenticated quote→invoice→payment E2E proof | XERO-005, BC-024 | **Owner gate** — plan prepared, not executed |
+| X-P0-3 | Close 159 unmapped customers | XERO-009 | **Partial** — dry-run + review queue; Owner apply on staging |
+| X-P0-4 | Recover stale/running import job safely | XERO-002 | **Closed in code** — recovery APIs + UI |
+| X-P0-5 | Live-verify write approval execute path | XERO-008 | **Partial** — tests pass; live proof pending |
+| X-P0-6 | Yoco payment link implementation | XERO-006, FIN-013 | **Partial** — foundation in shared + document engine |
+| X-P0-7 | Reconciliation workflow proof | XERO-007 | **Partial** — model + API; live proof pending |
+
+### P1 — first 30 days
+
+| ID | Action |
+|----|--------|
+| X-P1-1 | Credit notes + tracking category import |
+| X-P1-2 | Configure scheduled Xero sync |
+| X-P1-3 | Persist granted scopes on connection row | **Addressed in XERO-002** |
+| X-P1-4 | Playwright authenticated Xero journeys |
+| X-P1-5 | Reduce sync log failure noise / date parsing |
+
+**Next locked task:** **XERO-002 Gate 2 read-only live proof** (after Owner approves XERO-002A preflight). DASH-001 closed.
+
+---
+
+## Principles
+
+- No new ideas — only closes documented gaps
+- Security + data integrity + broken E2E workflows first
+- Separate local-only work from staging verification
+- Separate external-provider blockers
+- Deferred Owner decisions last
+- Do not rebuild completed architecture
+
+---
+
+## Phase 1 — Staging proof (verification only)
+
+**Goal:** Convert COMPLETE_LOCAL_ONLY → COMPLETE_AND_PROVEN without new features.
+
+| ID | Action | Requirements |
+|----|--------|--------------|
+| 1.1 | Owner authenticated finance staging smoke per `docs/TITAN_FINANCE_STAGING_SMOKE_J65.md` | J66A–J66D, FIN-001–FIN-010, BC-010, BC-012 |
+| 1.2 | Owner authenticated report PDF download smoke (job, completion, workforce, finance, extended) | J67A–J67E, BC-019 |
+| 1.3 | Owner/Admin/Office/Tech/Client RBAC click-path on new routes | J67B, J67F-008, ROLE-001–008 |
+| 1.4 | Visual sign-off 1440/1024/768/390 — finance + integrations | UX-001, UX-002, J66B, J67F-009 |
+| 1.5 | Re-run cross-tenant matrix against staging API | ROLE-008, SEC-001 |
+
+**Exit gate:** All Phase 1 items COMPLETE_AND_PROVEN with recorded JSON/screenshots.
+
+---
+
+## Phase 2 — Security & data integrity
+
+| ID | Action | Requirements |
+|----|--------|--------------|
+| 2.1 | Staging data cleanup — 59 E2E tenants after Owner approval | CLN-001, CLN-002 |
+| 2.2 | Configuration Studio draft/preview/version/rollback | FRZ-019 |
+| 2.3 | Domain events: materials/variations → costing | EXE-004, BIND-003 |
+| 2.4 | Session/MFA staging click-path | AUTH-002, AUTH-003 |
+| 2.5 | Backup restore drill from verified pg_dump | BAK-001, RB-002 |
+
+---
+
+## Phase 3 — Broken end-to-end business chain
+
+| ID | Action | Requirements |
+|----|--------|--------------|
+| 3.1 | Quote → job → complete → invoice → payment chain live proof | BC-024, FRZ-023, FIN-008 |
+| 3.2 | Payment links / Yoco checkout implementation | FIN-013, BC-013, J66D-005 |
+| 3.3 | Invoice stages (deposit/progress/final) staging proof | FIN-008 |
+| 3.4 | Job detail finance strip + billing chain panel wiring | JOB-004, JOB-005 |
+| 3.5 | Portal appointment booking completion | JOB-006, BC-004 |
+
+---
+
+## Phase 4 — External provider blockers
+
+| ID | Action | Requirements | Blocker |
+|----|--------|--------------|---------|
+| 4.1 | Xero import GO + two-way write verify queue | XERO-002, XERO-004, BC-014 | Xero OAuth + Owner write approval |
+| 4.2 | Meta FB OAuth on staging — basic Page connection **Verified complete (staging)** Young Guns Plumbing – Cape Town `CONNECTED_LIMITED`; advanced scopes Provider-blocked (not dev blocker) | J67F-003, J67F-004, AGT-008 | Meta App Review for `pages_read_engagement`, publishing, messaging |
+| 4.3 | TikTok live OAuth after review | J67F-010 | `TIKTOK_LIVE_OAUTH_ENABLED` + provider review |
+| 4.4 | WhatsApp live send + human takeover | INT-003, BC-022 | Meta Business credentials |
+| 4.5 | Cartrack credentials + fleet map | FLT-002–FLT-004, BC-021 | Cartrack API |
+| 4.6 | Yoco business profile + checkout | INT-005, FIN-013 | Yoco secret |
+| 4.7 | Google Calendar live sync | COM-008 | Google OAuth |
+| 4.8 | Gmail backend (Decision 4) | INT-001 | Google OAuth + scope |
+
+---
+
+## Phase 5 — Partial module completion
+
+| ID | Action | Requirements |
+|----|--------|--------------|
+| 5.1 | Pricebook YGP-001 DB + UI | FIN-014, FIN-015 |
+| 5.2 | Warehouse/bin management UI completion | WH-001 |
+| 5.3 | COC generation linked to job pack | COC-002 |
+| 5.4 | Global search live invalidation | FRZ-004 |
+| 5.5 | Hide or wire enterprise decorative pages | TITAN_CLEAN_DATA_UX_QUEUE F3 |
+| 5.6 | Marketing live send (post consent gates) | MKT-003, BC-018 |
+| 5.7 | Technician live tracking + portal ETA | EXE-005, UX-030 |
+
+---
+
+## Phase 6 — Deferred (Owner decision required)
+
+| ID | Item | Requirements |
+|----|------|--------------|
+| 6.1 | LinkedIn Company Page | J67X-001 |
+| 6.2 | YouTube / additional social | J67X-002 |
+| 6.3 | YG-VIS / final branding | Documented deferred |
+| 6.4 | Platform Owner/Manager/Accountant roles | ROLE-006 |
+| 6.5 | SSO / IdP | AUTH-005 |
+| 6.6 | Production deploy + migration | PRD-002 |
+| 6.7 | Pilot sign-off → commercial launch | PRD-003, FRZ-022 |
+| 6.8 | AURA Voice throughout TITAN | Future phases doc |
+| 6.10 | Master agent register (AGENT-001B — 307 approved minimum; extensible) activation | AGENT-001–004, AGT-001–010 | [TITAN_AGENT_ACTIVATION_ROADMAP.md](./TITAN_AGENT_ACTIVATION_ROADMAP.md) |
+
+---
+
+## Phase summary
+
+| Phase | Focus | Type |
+|-------|-------|------|
+| **0** | **Next enterprise priorities (PERF-001, XERO-003, DASH-001)** | **Recorded — Owner sequencing required** |
+| 1 | Staging verification | Verification only |
+| 2 | Security & data integrity | Implementation + verify |
+| 3 | E2E business chain | Implementation + verify |
+| 4 | External providers | Config + verify |
+| 5 | Partial modules | Implementation |
+| 6 | Deferred | Owner approval gates |
+
+**Next recommended action:** Owner approve INT-OVERVIEW-001 → formally sequence **PERF-001 → XERO-003 → DASH-001** → then approve Xero live proof.
