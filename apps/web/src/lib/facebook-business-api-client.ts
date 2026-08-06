@@ -269,6 +269,52 @@ export function disconnectFacebook(accessToken: string) {
   });
 }
 
+export type FacebookWebhookStatusView = {
+  state:
+    | 'not_configured'
+    | 'verification_required'
+    | 'ready_to_subscribe'
+    | 'subscribed'
+    | 'partial'
+    | 'provider_blocked'
+    | 'failed';
+  label: string;
+  detail: string;
+  subscribedPageId: string | null;
+  subscribedPageName: string | null;
+  subscribedFields: string[];
+  requestedFields: string[];
+  providerSubscribedFields: string[] | null;
+  lastSubscriptionError: string | null;
+  lastSubscriptionAttemptAt: string | null;
+  webhookSubscribedAt: string | null;
+  lastWebhookEventReceivedAt: string | null;
+  lastWebhookEventProcessedAt: string | null;
+  lastWebhookVerificationAt: string | null;
+  pollingFallbackActive: boolean;
+  pollingFallbackMinutes: number;
+  canSubscribe: boolean;
+  canRetrySubscription: boolean;
+};
+
+export function fetchFacebookWebhookStatus(accessToken: string) {
+  return request<FacebookWebhookStatusView>(`${BASE}/connection/webhook-status`, { accessToken });
+}
+
+export function checkFacebookWebhookStatus(accessToken: string) {
+  return request<FacebookWebhookStatusView>(`${BASE}/connection/check-webhook-status`, {
+    method: 'POST',
+    accessToken,
+  });
+}
+
+export function subscribeFacebookWebhooks(accessToken: string) {
+  return request<FacebookWebhookStatusView>(`${BASE}/connection/subscribe-webhooks`, {
+    method: 'POST',
+    accessToken,
+  });
+}
+
 // ─── Content ─────────────────────────────────────────────────────────────────
 
 export function fetchFacebookContent(accessToken: string, status?: FacebookContentStatus) {

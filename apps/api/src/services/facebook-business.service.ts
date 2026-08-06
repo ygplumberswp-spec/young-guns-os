@@ -20,8 +20,10 @@ import {
   evaluateFacebookPublishEligibility,
   FACEBOOK_LEAD_SOURCE_KEY,
   FACEBOOK_PENDING_PAGE_SELECTION_DETAIL,
-  FACEBOOK_SUBSCRIBED_WEBHOOK_FIELDS,
   FACEBOOK_SYNC_POLICY,
+  resolveFacebookWebhookFieldsForSubscription,
+  resolveFacebookWebhookStatus,
+  type FacebookWebhookStatusResult,
   isCompanyOwnerRole,
   missingFacebookPermissions,
   nextFacebookPublishAttempt,
@@ -808,27 +810,14 @@ export class FacebookBusinessService {
         .where(eq(fbConnections.id, existing.id));
 
       if (verification.outcome.ok) {
-        try {
-          await graph.subscribePageWebhooks({
-            pageId: existing.pageId as string,
-            pageAccessToken: mergedCredentials.pageAccessToken,
-            fields: [...FACEBOOK_SUBSCRIBED_WEBHOOK_FIELDS],
-          });
-          await this.db
-            .update(fbConnections)
-            .set({ webhookSubscribedAt: new Date() })
-            .where(eq(fbConnections.id, existing.id));
-        } catch (error) {
-          await this.recordConnectionEvent({
-            companyId: stateRow.companyId,
-            connectionId: existing.id,
-            eventType: 'webhook_subscribe_failed',
-            stateBefore,
-            stateAfter: existing.state,
-            message: `Page read access granted, but webhook subscription failed: ${describeGraphError(error)}.`,
-            actorUserId: stateRow.userId,
-          });
-        }
+        await this.attemptWebhookSubscription({
+          connection: existing,
+          pageAccessToken: mergedCredentials.pageAccessToken,
+          companyId: stateRow.companyId,
+          actorUserId: stateRow.userId,
+          stateBefore,
+          context: 'Page read access granted',
+        });
       }
 
       const refreshed = await this.loadConnection(stateRow.companyId);
@@ -929,27 +918,14 @@ export class FacebookBusinessService {
         .where(eq(fbConnections.id, existing.id));
 
       if (verification.outcome.ok && grantedPermissions.includes('pages_manage_metadata')) {
-        try {
-          await graph.subscribePageWebhooks({
-            pageId: existing.pageId as string,
-            pageAccessToken: mergedCredentials.pageAccessToken,
-            fields: [...FACEBOOK_SUBSCRIBED_WEBHOOK_FIELDS],
-          });
-          await this.db
-            .update(fbConnections)
-            .set({ webhookSubscribedAt: new Date() })
-            .where(eq(fbConnections.id, existing.id));
-        } catch (error) {
-          await this.recordConnectionEvent({
-            companyId: stateRow.companyId,
-            connectionId: existing.id,
-            eventType: 'webhook_subscribe_failed',
-            stateBefore,
-            stateAfter: existing.state,
-            message: `Content features granted, but webhook subscription failed: ${describeGraphError(error)}.`,
-            actorUserId: stateRow.userId,
-          });
-        }
+        await this.attemptWebhookSubscription({
+          connection: existing,
+          pageAccessToken: mergedCredentials.pageAccessToken,
+          companyId: stateRow.companyId,
+          actorUserId: stateRow.userId,
+          stateBefore,
+          context: 'Content features granted',
+        });
       }
 
       const refreshed = await this.loadConnection(stateRow.companyId);
@@ -3400,16 +3376,316 @@ export class FacebookBusinessService {
 
   // ─── Webhooks ──────────────────────────────────────────────────────────────
 
+  private readWebhookMetadata(row: ConnectionRow | null | undefined): Record<string, unknown> {
+    return (row?.metadata as Record<string, unknown> | null) ?? {};
+  }
+
+  private buildWebhookStatus(
+    row: ConnectionRow | null,
+    providerSubscribedFields: readonly string[] | null,
+  ): FacebookWebhookStatusResult {
+    const metadata = this.readWebhookMetadata(row);
+    const grantedPermissions = row?.grantedPermissions ?? [];
+    const requestedFields = resolveFacebookWebhookFieldsForSubscription(grantedPermissions);
+    const syncInactive = !hasFacebookPageReadEngagement(grantedPermissions);
+
+    return resolveFacebookWebhookStatus({
+      appConfigured: this.isAppConfigured(),
+      webhookVerifyTokenConfigured: Boolean(this.getWebhookVerifyToken()),
+      pageSelected: Boolean(row?.pageId),
+      hasStoredToken: Boolean(row?.credentialsEncrypted),
+      pagesManageMetadataGranted: grantedPermissions.includes('pages_manage_metadata'),
+      providerSubscribedFields,
+      requestedFields,
+      lastSubscriptionError:
+        typeof metadata.lastWebhookSubscriptionError === 'string'
+          ? metadata.lastWebhookSubscriptionError
+          : null,
+      lastSubscriptionAttemptAt:
+        typeof metadata.lastWebhookSubscriptionAttemptAt === 'string'
+          ? metadata.lastWebhookSubscriptionAttemptAt
+          : null,
+      webhookSubscribedAt: row?.webhookSubscribedAt?.toISOString() ?? null,
+      lastWebhookEventReceivedAt:
+        typeof metadata.lastWebhookEventReceivedAt === 'string'
+          ? metadata.lastWebhookEventReceivedAt
+          : null,
+      lastWebhookEventProcessedAt:
+        typeof metadata.lastWebhookEventProcessedAt === 'string'
+          ? metadata.lastWebhookEventProcessedAt
+          : null,
+      lastWebhookVerificationAt:
+        typeof metadata.lastWebhookStatusCheckAt === 'string'
+          ? metadata.lastWebhookStatusCheckAt
+          : null,
+      pollingFallbackActive: !syncInactive,
+      pageId: row?.pageId ?? null,
+      pageName: row?.pageName ?? null,
+    });
+  }
+
+  async getWebhookStatus(actor: FacebookActor): Promise<FacebookWebhookStatusResult> {
+    this.assertRead(actor);
+    const row = await this.loadConnection(actor.companyId);
+    const metadata = this.readWebhookMetadata(row);
+    const cachedFields = Array.isArray(metadata.providerSubscribedFields)
+      ? metadata.providerSubscribedFields.filter((entry): entry is string => typeof entry === 'string')
+      : null;
+    return this.buildWebhookStatus(row, cachedFields);
+  }
+
+  async checkWebhookStatus(actor: FacebookActor): Promise<FacebookWebhookStatusResult> {
+    this.assertManageConnection(actor);
+    this.requireAppConfig();
+    const row = await this.loadConnection(actor.companyId);
+    if (!row?.pageId || !row.credentialsEncrypted) {
+      throw new FacebookBusinessError(
+        'PRECONDITION_FAILED',
+        'Connect and select a Facebook Page before checking webhook status.',
+      );
+    }
+
+    const credentials = this.decryptCredentials(row);
+    if (!credentials?.pageAccessToken) {
+      throw new FacebookBusinessError('PRECONDITION_FAILED', 'No stored Page token is available.');
+    }
+
+    const graph = this.graph();
+    const provider = await this.probe(() =>
+      graph.getPageWebhookSubscription({
+        pageId: row.pageId as string,
+        pageAccessToken: credentials.pageAccessToken,
+      }),
+    );
+
+    const nowIso = new Date().toISOString();
+    const priorMetadata = this.readWebhookMetadata(row);
+    const providerFields = provider.value?.fields ?? [];
+    const requestedFields = resolveFacebookWebhookFieldsForSubscription(row.grantedPermissions ?? []);
+    const subscribed =
+      providerFields.length > 0 &&
+      requestedFields.every((field) => providerFields.includes(field));
+
+    await this.db
+      .update(fbConnections)
+      .set({
+        webhookSubscribedAt: subscribed ? row.webhookSubscribedAt ?? new Date() : null,
+        metadata: {
+          ...priorMetadata,
+          providerSubscribedFields: providerFields,
+          lastWebhookStatusCheckAt: nowIso,
+          lastWebhookSubscriptionError: provider.outcome.ok
+            ? null
+            : provider.outcome.message,
+        },
+        updatedAt: new Date(),
+      })
+      .where(eq(fbConnections.id, row.id));
+
+    const refreshed = await this.loadConnection(actor.companyId);
+    return this.buildWebhookStatus(refreshed, providerFields);
+  }
+
+  async subscribeWebhooks(actor: FacebookActor): Promise<FacebookWebhookStatusResult> {
+    this.assertManageConnection(actor);
+    this.requireAppConfig();
+    const row = await this.loadConnection(actor.companyId);
+    if (!row?.pageId || !row.credentialsEncrypted) {
+      throw new FacebookBusinessError(
+        'PRECONDITION_FAILED',
+        'Connect and select a Facebook Page before subscribing webhooks.',
+      );
+    }
+
+    const credentials = this.decryptCredentials(row);
+    if (!credentials?.pageAccessToken) {
+      throw new FacebookBusinessError('PRECONDITION_FAILED', 'No stored Page token is available.');
+    }
+
+    const fields = resolveFacebookWebhookFieldsForSubscription(row.grantedPermissions ?? []);
+    if (fields.length === 0) {
+      throw new FacebookBusinessError(
+        'PRECONDITION_FAILED',
+        'Meta requires pages_manage_metadata to subscribe Page webhooks. Enable Facebook content features first.',
+      );
+    }
+
+    const graph = this.graph();
+    const nowIso = new Date().toISOString();
+    const priorMetadata = this.readWebhookMetadata(row);
+
+    try {
+      await graph.subscribePageWebhooks({
+        pageId: row.pageId,
+        pageAccessToken: credentials.pageAccessToken,
+        fields: [...fields],
+      });
+    } catch (error) {
+      const message = describeGraphError(error);
+      await this.db
+        .update(fbConnections)
+        .set({
+          metadata: {
+            ...priorMetadata,
+            lastWebhookSubscriptionAttemptAt: nowIso,
+            lastWebhookSubscriptionError: message,
+            requestedWebhookFields: fields,
+          },
+          updatedAt: new Date(),
+        })
+        .where(eq(fbConnections.id, row.id));
+      await this.recordConnectionEvent({
+        companyId: actor.companyId,
+        connectionId: row.id,
+        eventType: 'webhook_subscribe_failed',
+        stateBefore: row.state,
+        stateAfter: row.state,
+        message: `Webhook subscription failed: ${message}`,
+        actorUserId: actor.userId,
+      });
+      throw new FacebookBusinessError('PROVIDER_ERROR', message);
+    }
+
+    const provider = await this.probe(() =>
+      graph.getPageWebhookSubscription({
+        pageId: row.pageId as string,
+        pageAccessToken: credentials.pageAccessToken,
+      }),
+    );
+    const providerFields = provider.value?.fields ?? [];
+    const subscribed =
+      providerFields.length > 0 && fields.every((field) => providerFields.includes(field));
+
+    await this.db
+      .update(fbConnections)
+      .set({
+        webhookSubscribedAt: subscribed ? new Date() : null,
+        metadata: {
+          ...priorMetadata,
+          lastWebhookSubscriptionAttemptAt: nowIso,
+          lastWebhookSubscriptionError: subscribed
+            ? null
+            : provider.outcome.ok
+              ? 'Meta did not confirm the requested webhook fields after subscription.'
+              : provider.outcome.message,
+          requestedWebhookFields: fields,
+          providerSubscribedFields: providerFields,
+          lastWebhookStatusCheckAt: nowIso,
+        },
+        updatedAt: new Date(),
+      })
+      .where(eq(fbConnections.id, row.id));
+
+    await this.recordConnectionEvent({
+      companyId: actor.companyId,
+      connectionId: row.id,
+      eventType: subscribed ? 'webhook_subscribed' : 'webhook_subscribe_partial',
+      stateBefore: row.state,
+      stateAfter: row.state,
+      message: subscribed
+        ? `Page subscribed to ${providerFields.join(', ')} webhooks.`
+        : `Subscription attempted for ${fields.join(', ')}; Meta reports ${providerFields.join(', ') || 'no fields'}.`,
+      actorUserId: actor.userId,
+      metadata: { requestedFields: fields, providerFields },
+    });
+
+    const refreshed = await this.loadConnection(actor.companyId);
+    return this.buildWebhookStatus(refreshed, providerFields);
+  }
+
+  private async attemptWebhookSubscription(input: {
+    connection: ConnectionRow;
+    pageAccessToken: string;
+    companyId: string;
+    actorUserId: string;
+    stateBefore: ConnectionRow['state'] | null;
+    context: string;
+  }): Promise<void> {
+    const fields = resolveFacebookWebhookFieldsForSubscription(
+      input.connection.grantedPermissions ?? [],
+    );
+    if (fields.length === 0) return;
+
+    const graph = this.graph();
+    const nowIso = new Date().toISOString();
+    const priorMetadata = this.readWebhookMetadata(input.connection);
+
+    try {
+      await graph.subscribePageWebhooks({
+        pageId: input.connection.pageId as string,
+        pageAccessToken: input.pageAccessToken,
+        fields: [...fields],
+      });
+
+      const provider = await this.probe(() =>
+        graph.getPageWebhookSubscription({
+          pageId: input.connection.pageId as string,
+          pageAccessToken: input.pageAccessToken,
+        }),
+      );
+      const providerFields = provider.value?.fields ?? [];
+      const subscribed =
+        providerFields.length > 0 && fields.every((field) => providerFields.includes(field));
+
+      await this.db
+        .update(fbConnections)
+        .set({
+          webhookSubscribedAt: subscribed ? new Date() : null,
+          metadata: {
+            ...priorMetadata,
+            lastWebhookSubscriptionAttemptAt: nowIso,
+            lastWebhookSubscriptionError: subscribed
+              ? null
+              : 'Meta did not confirm the requested webhook fields after subscription.',
+            requestedWebhookFields: fields,
+            providerSubscribedFields: providerFields,
+            lastWebhookStatusCheckAt: nowIso,
+          },
+          updatedAt: new Date(),
+        })
+        .where(eq(fbConnections.id, input.connection.id));
+    } catch (error) {
+      const message = describeGraphError(error);
+      await this.db
+        .update(fbConnections)
+        .set({
+          metadata: {
+            ...priorMetadata,
+            lastWebhookSubscriptionAttemptAt: nowIso,
+            lastWebhookSubscriptionError: `${input.context}, but webhook subscription failed: ${message}`,
+            requestedWebhookFields: fields,
+          },
+          updatedAt: new Date(),
+        })
+        .where(eq(fbConnections.id, input.connection.id));
+      await this.recordConnectionEvent({
+        companyId: input.companyId,
+        connectionId: input.connection.id,
+        eventType: 'webhook_subscribe_failed',
+        stateBefore: input.stateBefore,
+        stateAfter: input.connection.state,
+        message: `${input.context}, but webhook subscription failed: ${message}.`,
+        actorUserId: input.actorUserId,
+      });
+    }
+  }
+
   /**
-   * Records a signature-validated webhook and applies it.
-   *
-   * The dedupe key makes Meta's redeliveries idempotent, so a retried delivery
-   * never produces a second lead or comment.
+   * Validates and records webhook deliveries. Returns quickly so Meta gets a 200
+   * without waiting for comment import or notification work.
    */
-  async handleWebhook(input: {
+  async acknowledgeWebhook(input: {
     signatureValid: boolean;
     payload: Record<string, unknown>;
-  }): Promise<{ accepted: boolean; processed: number }> {
+  }): Promise<{
+    accepted: boolean;
+    deliveries: Array<{
+      eventId: string;
+      connection: ConnectionRow;
+      field: string;
+      value: Record<string, unknown>;
+    }>;
+  }> {
     if (!input.signatureValid) {
       await this.db
         .insert(fbWebhookEvents)
@@ -3421,14 +3697,19 @@ export class FacebookBusinessService {
           payload: input.payload,
         })
         .onConflictDoNothing();
-      return { accepted: false, processed: 0 };
+      return { accepted: false, deliveries: [] };
     }
 
     const entries = Array.isArray(input.payload.entry)
       ? (input.payload.entry as Array<Record<string, unknown>>)
       : [];
 
-    let processed = 0;
+    const deliveries: Array<{
+      eventId: string;
+      connection: ConnectionRow;
+      field: string;
+      value: Record<string, unknown>;
+    }> = [];
 
     for (const entry of entries) {
       const pageId = typeof entry.id === 'string' ? entry.id : null;
@@ -3443,6 +3724,20 @@ export class FacebookBusinessService {
             .where(eq(fbConnections.pageId, pageId))
             .limit(1)
         : [];
+
+      if (connection) {
+        const priorMetadata = this.readWebhookMetadata(connection);
+        await this.db
+          .update(fbConnections)
+          .set({
+            metadata: {
+              ...priorMetadata,
+              lastWebhookEventReceivedAt: new Date().toISOString(),
+            },
+            updatedAt: new Date(),
+          })
+          .where(eq(fbConnections.id, connection.id));
+      }
 
       for (const change of changes) {
         const field = typeof change.field === 'string' ? change.field : 'unknown';
@@ -3464,30 +3759,76 @@ export class FacebookBusinessService {
           .onConflictDoNothing()
           .returning();
 
-        // Already seen — Meta redelivered. Nothing further to do.
-        if (recorded.length === 0) continue;
-        if (!connection) continue;
+        if (recorded.length === 0 || !connection) continue;
 
-        try {
-          if (field === 'leadgen') {
-            await this.processLeadgenWebhook(connection, value);
-          } else if (field === 'feed') {
-            await this.processFeedWebhook(connection, value);
-          }
-          await this.db
-            .update(fbWebhookEvents)
-            .set({ processedAt: new Date() })
-            .where(eq(fbWebhookEvents.id, recorded[0]!.id));
-          processed += 1;
-        } catch (error) {
-          await this.db
-            .update(fbWebhookEvents)
-            .set({ processingError: describeGraphError(error) })
-            .where(eq(fbWebhookEvents.id, recorded[0]!.id));
-        }
+        deliveries.push({
+          eventId: recorded[0]!.id,
+          connection,
+          field,
+          value,
+        });
       }
     }
 
+    return { accepted: true, deliveries };
+  }
+
+  async processWebhookDeliveries(
+    deliveries: Array<{
+      eventId: string;
+      connection: ConnectionRow;
+      field: string;
+      value: Record<string, unknown>;
+    }>,
+  ): Promise<number> {
+    let processed = 0;
+
+    for (const delivery of deliveries) {
+      try {
+        if (delivery.field === 'leadgen') {
+          await this.processLeadgenWebhook(delivery.connection, delivery.value);
+        } else if (delivery.field === 'feed') {
+          await this.processFeedWebhook(delivery.connection, delivery.value);
+        } else if (delivery.field === 'mention') {
+          await this.processFeedWebhook(delivery.connection, delivery.value);
+        }
+        await this.db
+          .update(fbWebhookEvents)
+          .set({ processedAt: new Date() })
+          .where(eq(fbWebhookEvents.id, delivery.eventId));
+
+        const priorMetadata = this.readWebhookMetadata(delivery.connection);
+        await this.db
+          .update(fbConnections)
+          .set({
+            metadata: {
+              ...priorMetadata,
+              lastWebhookEventProcessedAt: new Date().toISOString(),
+            },
+            updatedAt: new Date(),
+          })
+          .where(eq(fbConnections.id, delivery.connection.id));
+
+        processed += 1;
+      } catch (error) {
+        await this.db
+          .update(fbWebhookEvents)
+          .set({ processingError: describeGraphError(error) })
+          .where(eq(fbWebhookEvents.id, delivery.eventId));
+      }
+    }
+
+    return processed;
+  }
+
+  /** @deprecated Use acknowledgeWebhook + processWebhookDeliveries for fast 200 ack. */
+  async handleWebhook(input: {
+    signatureValid: boolean;
+    payload: Record<string, unknown>;
+  }): Promise<{ accepted: boolean; processed: number }> {
+    const ack = await this.acknowledgeWebhook(input);
+    if (!ack.accepted) return { accepted: false, processed: 0 };
+    const processed = await this.processWebhookDeliveries(ack.deliveries);
     return { accepted: true, processed };
   }
 

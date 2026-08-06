@@ -1125,6 +1125,27 @@ export class FacebookGraphClient {
     });
   }
 
+  /** Reads provider-confirmed Page webhook subscription for this app. */
+  async getPageWebhookSubscription(input: {
+    pageId: string;
+    pageAccessToken: string;
+  }): Promise<{ subscribed: boolean; fields: string[] }> {
+    const response = await this.request<{
+      data?: Array<{ id?: string; subscribed_fields?: string[] }>;
+    }>(`/${input.pageId}/subscribed_apps`, {
+      accessToken: input.pageAccessToken,
+    });
+
+    const entry =
+      response.data?.find((row) => row.id === this.config.appId) ?? response.data?.[0] ?? null;
+    const fields = entry?.subscribed_fields ?? [];
+
+    return {
+      subscribed: fields.length > 0,
+      fields: [...fields],
+    };
+  }
+
   /** Best-effort revocation so a disconnect also ends the grant on Meta's side. */
   async revokePermissions(userAccessToken: string): Promise<void> {
     await this.request<unknown>('/me/permissions', {

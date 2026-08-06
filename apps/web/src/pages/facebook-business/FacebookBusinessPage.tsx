@@ -31,6 +31,7 @@ import {
   approveAndSendFacebookReply,
   cancelFacebookContent,
   checkFacebookConnection,
+  checkFacebookWebhookStatus,
   convertFacebookCommentToLead,
   createFacebookContent,
   disconnectFacebook,
@@ -44,6 +45,7 @@ import {
   fetchFacebookNotifications,
   fetchFacebookPages,
   fetchFacebookSyncRuns,
+  fetchFacebookWebhookStatus,
   publishFacebookContent,
   refreshFacebookInsights,
   rejectFacebookContent,
@@ -51,6 +53,7 @@ import {
   runFacebookSync,
   selectFacebookPage,
   startFacebookOAuth,
+  subscribeFacebookWebhooks,
   startFacebookBusinessPortfolioOAuth,
   startFacebookPageReadOAuth,
   startFacebookContentFeaturesOAuth,
@@ -64,6 +67,7 @@ import {
   type FacebookNotificationView,
   type FacebookPagesDiscoveryResponse,
   type FacebookSyncRunView,
+  type FacebookWebhookStatusView,
 } from '../../lib/facebook-business-api-client';
 
 type Tab = 'connection' | 'content' | 'comments' | 'leads' | 'insights' | 'activity';
@@ -106,6 +110,7 @@ export function FacebookBusinessPage() {
   const [insights, setInsights] = useState<FacebookInsightsView | null>(null);
   const [syncRuns, setSyncRuns] = useState<FacebookSyncRunView[]>([]);
   const [notifications, setNotifications] = useState<FacebookNotificationView[]>([]);
+  const [webhookStatus, setWebhookStatus] = useState<FacebookWebhookStatusView | null>(null);
 
   const [isLoading, setIsLoading] = useState(true);
   const [isBusy, setIsBusy] = useState(false);
@@ -158,14 +163,16 @@ export function FacebookBusinessPage() {
     setComments(nextComments);
     setLeads(nextLeads);
 
-    const [nextInsights, nextRuns, nextNotifications] = await Promise.all([
+    const [nextInsights, nextRuns, nextNotifications, nextWebhookStatus] = await Promise.all([
       fetchFacebookInsights(accessToken),
       fetchFacebookSyncRuns(accessToken),
       fetchFacebookNotifications(accessToken),
+      fetchFacebookWebhookStatus(accessToken),
     ]);
     setInsights(nextInsights);
     setSyncRuns(nextRuns);
     setNotifications(nextNotifications);
+    setWebhookStatus(nextWebhookStatus);
   }, [accessToken]);
 
   useEffect(() => {
@@ -573,6 +580,28 @@ export function FacebookBusinessPage() {
     });
   }
 
+  async function handleSubscribeWebhooks() {
+    if (!accessToken) return;
+    await withAction(async () => {
+      const status = await subscribeFacebookWebhooks(accessToken);
+      setWebhookStatus(status);
+      setSuccess(
+        status.state === 'subscribed'
+          ? `Facebook webhooks subscribed for ${status.subscribedFields.join(', ')}.`
+          : status.detail,
+      );
+    });
+  }
+
+  async function handleCheckWebhookStatus() {
+    if (!accessToken) return;
+    await withAction(async () => {
+      const status = await checkFacebookWebhookStatus(accessToken);
+      setWebhookStatus(status);
+      setSuccess(`Webhook status: ${status.label}. ${status.detail}`);
+    });
+  }
+
   async function handleRefreshInsights() {
     if (!accessToken) return;
     await withAction(async () => {
@@ -747,8 +776,12 @@ export function FacebookBusinessPage() {
               syncRuns={syncRuns}
               notifications={notifications}
               connection={connection}
+              webhookStatus={webhookStatus}
+              canManage={canManage}
               isBusy={isBusy}
               onSync={handleSync}
+              onSubscribeWebhooks={handleSubscribeWebhooks}
+              onCheckWebhookStatus={handleCheckWebhookStatus}
             />
           ) : null}
         </>
@@ -1002,10 +1035,11 @@ function ConnectionTab({
             {connection.state === 'connected_limited' ||
             connection.syncPolicy.pollingBackfillMinutes === 0 ? (
               FACEBOOK_SYNC_INACTIVE_UNTIL_READ_PERMISSION
-            ) : connection.webhookSubscribedAt ? (
-              `Subscribed ${connection.webhookSubscribedAt}`
             ) : (
-              `Not subscribed — polling every ${connection.syncPolicy.pollingBackfillMinutes} minutes instead.`
+              <>
+                See Sync &amp; Alerts for webhook status. Polling fallback remains every{' '}
+                {connection.syncPolicy.pollingBackfillMinutes} minutes.
+              </>
             )}
           </dd>
         </dl>
@@ -1733,17 +1767,104 @@ function ActivityTab({
   syncRuns,
   notifications,
   connection,
+  webhookStatus,
+  canManage,
   isBusy,
   onSync,
+  onSubscribeWebhooks,
+  onCheckWebhookStatus,
 }: {
   syncRuns: FacebookSyncRunView[];
   notifications: FacebookNotificationView[];
   connection: FacebookConnectionView | null;
+  webhookStatus: FacebookWebhookStatusView | null;
+  canManage: boolean;
   isBusy: boolean;
   onSync: () => void;
+  onSubscribeWebhooks: () => void;
+  onCheckWebhookStatus: () => void;
 }) {
+  const webhookPanelClass =
+    webhookStatus?.state === 'subscribed'
+      ? 'titan-panel--success'
+      : webhookStatus?.state === 'ready_to_subscribe'
+        ? 'titan-panel'
+        : 'titan-panel--warning';
+
   return (
     <div className="space-y-4">
+      <Panel title="Webhooks" className={webhookPanelClass}>
+        {webhookStatus ? (
+          <>
+            <p>
+              <strong>{webhookStatus.label}</strong> — {webhookStatus.detail}
+            </p>
+            <dl>
+              <dt>Subscribed Page</dt>
+              <dd>
+                {webhookStatus.subscribedPageName
+                  ? `${webhookStatus.subscribedPageName}${webhookStatus.subscribedPageId ? ` (${webhookStatus.subscribedPageId})` : ''}`
+                  : 'None'}
+              </dd>
+              <dt>Requested fields</dt>
+              <dd>
+                {webhookStatus.requestedFields.length > 0
+                  ? webhookStatus.requestedFields.join(', ')
+                  : 'None available'}
+              </dd>
+              <dt>Provider-confirmed fields</dt>
+              <dd>
+                {webhookStatus.providerSubscribedFields?.length
+                  ? webhookStatus.providerSubscribedFields.join(', ')
+                  : 'Not confirmed by Meta yet'}
+              </dd>
+              <dt>Last verification</dt>
+              <dd>{webhookStatus.lastWebhookVerificationAt ?? 'Never'}</dd>
+              <dt>Last event received</dt>
+              <dd>{webhookStatus.lastWebhookEventReceivedAt ?? 'None'}</dd>
+              <dt>Last event processed</dt>
+              <dd>{webhookStatus.lastWebhookEventProcessedAt ?? 'None'}</dd>
+              <dt>Last webhook error</dt>
+              <dd>{webhookStatus.lastSubscriptionError ?? 'None'}</dd>
+              <dt>Polling fallback</dt>
+              <dd>
+                {webhookStatus.pollingFallbackActive
+                  ? `Active — every ${webhookStatus.pollingFallbackMinutes} minutes`
+                  : 'Inactive until Page read access is granted'}
+              </dd>
+            </dl>
+            {canManage ? (
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  onClick={onSubscribeWebhooks}
+                  disabled={
+                    isBusy ||
+                    !webhookStatus.canSubscribe ||
+                    webhookStatus.state === 'subscribed' ||
+                    webhookStatus.state === 'not_configured'
+                  }
+                >
+                  Subscribe Facebook webhooks
+                </Button>
+                <Button
+                  onClick={onCheckWebhookStatus}
+                  disabled={isBusy || webhookStatus.state === 'not_configured'}
+                >
+                  Check webhook status
+                </Button>
+                {webhookStatus.canRetrySubscription ? (
+                  <Button onClick={onSubscribeWebhooks} disabled={isBusy || !webhookStatus.canSubscribe}>
+                    Retry subscription
+                  </Button>
+                ) : null}
+              </div>
+            ) : null}
+          </>
+        ) : (
+          <p>Loading webhook status…</p>
+        )}
+      </Panel>
+
       <Panel title="Sync">
         <p>{connection?.syncPolicy.note ?? ''}</p>
         <Button

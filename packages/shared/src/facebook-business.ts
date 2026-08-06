@@ -1876,11 +1876,239 @@ export type FacebookWebhookField =
   | 'message_deliveries'
   | 'mention';
 
-export const FACEBOOK_SUBSCRIBED_WEBHOOK_FIELDS: FacebookWebhookField[] = [
-  'feed',
+/** Messenger and Lead Ads fields must never be requested during Page webhook subscription. */
+export const FACEBOOK_FORBIDDEN_WEBHOOK_FIELDS: FacebookWebhookField[] = [
   'leadgen',
   'messages',
+  'message_deliveries',
 ];
+
+/**
+ * Page webhook fields TITAN consumes. Excludes Messenger and Lead Ads, which
+ * require permissions this integration deliberately does not request.
+ */
+export const FACEBOOK_SUBSCRIBED_WEBHOOK_FIELDS: FacebookWebhookField[] = ['feed', 'mention'];
+
+/**
+ * Resolves provider-supported Page webhook fields the stored token can subscribe to.
+ * Returns an empty list when pages_manage_metadata is absent.
+ */
+export function resolveFacebookWebhookFieldsForSubscription(
+  grantedPermissions: readonly string[],
+): FacebookWebhookField[] {
+  const granted = new Set(grantedPermissions);
+  if (!granted.has('pages_manage_metadata')) return [];
+  return [...FACEBOOK_SUBSCRIBED_WEBHOOK_FIELDS];
+}
+
+export type FacebookWebhookStatusState =
+  | 'not_configured'
+  | 'verification_required'
+  | 'ready_to_subscribe'
+  | 'subscribed'
+  | 'partial'
+  | 'provider_blocked'
+  | 'failed';
+
+export const FACEBOOK_WEBHOOK_STATUS_LABELS: Record<FacebookWebhookStatusState, string> = {
+  not_configured: 'Not configured',
+  verification_required: 'Verification required',
+  ready_to_subscribe: 'Ready to subscribe',
+  subscribed: 'Subscribed',
+  partial: 'Partial',
+  provider_blocked: 'Provider-blocked',
+  failed: 'Failed',
+};
+
+export type FacebookWebhookStatusInput = {
+  appConfigured: boolean;
+  webhookVerifyTokenConfigured: boolean;
+  pageSelected: boolean;
+  hasStoredToken: boolean;
+  pagesManageMetadataGranted: boolean;
+  /** Fields Meta reports on GET /{page-id}/subscribed_apps for this app. Null when unchecked. */
+  providerSubscribedFields: readonly string[] | null;
+  requestedFields: readonly string[];
+  lastSubscriptionError: string | null;
+  lastSubscriptionAttemptAt: string | null;
+  webhookSubscribedAt: string | null;
+  lastWebhookEventReceivedAt: string | null;
+  lastWebhookEventProcessedAt: string | null;
+  lastWebhookVerificationAt: string | null;
+  pollingFallbackActive: boolean;
+};
+
+export type FacebookWebhookStatusResult = {
+  state: FacebookWebhookStatusState;
+  label: string;
+  detail: string;
+  subscribedPageId: string | null;
+  subscribedPageName: string | null;
+  subscribedFields: string[];
+  requestedFields: string[];
+  providerSubscribedFields: string[] | null;
+  lastSubscriptionError: string | null;
+  lastSubscriptionAttemptAt: string | null;
+  webhookSubscribedAt: string | null;
+  lastWebhookEventReceivedAt: string | null;
+  lastWebhookEventProcessedAt: string | null;
+  lastWebhookVerificationAt: string | null;
+  pollingFallbackActive: boolean;
+  pollingFallbackMinutes: number;
+  canSubscribe: boolean;
+  canRetrySubscription: boolean;
+};
+
+
+function providerCoversRequested(
+  providerFields: readonly string[],
+  requestedFields: readonly string[],
+): boolean {
+  const provider = new Set(providerFields);
+  return requestedFields.every((field) => provider.has(field));
+}
+
+/**
+ * Truthful webhook status — "Subscribed" requires provider-confirmed fields.
+ */
+export function resolveFacebookWebhookStatus(
+  input: FacebookWebhookStatusInput & {
+    pageId: string | null;
+    pageName: string | null;
+  },
+): FacebookWebhookStatusResult {
+  const requestedFields = [...input.requestedFields];
+  const providerFields = input.providerSubscribedFields
+    ? [...input.providerSubscribedFields]
+    : null;
+
+  const base = {
+    subscribedPageId: input.pageId,
+    subscribedPageName: input.pageName,
+    subscribedFields: providerFields ?? [],
+    requestedFields,
+    providerSubscribedFields: providerFields,
+    lastSubscriptionError: input.lastSubscriptionError,
+    lastSubscriptionAttemptAt: input.lastSubscriptionAttemptAt,
+    webhookSubscribedAt: input.webhookSubscribedAt,
+    lastWebhookEventReceivedAt: input.lastWebhookEventReceivedAt,
+    lastWebhookEventProcessedAt: input.lastWebhookEventProcessedAt,
+    lastWebhookVerificationAt: input.lastWebhookVerificationAt,
+    pollingFallbackActive: input.pollingFallbackActive,
+    pollingFallbackMinutes: FACEBOOK_SYNC_POLICY.pollingBackfillMinutes,
+    canSubscribe: false,
+    canRetrySubscription: false,
+  };
+
+  if (!input.appConfigured || !input.webhookVerifyTokenConfigured) {
+    return {
+      ...base,
+      state: 'not_configured',
+      label: FACEBOOK_WEBHOOK_STATUS_LABELS.not_configured,
+      detail:
+        'Meta app credentials or the webhook verify token are not configured on this TITAN host.',
+      canSubscribe: false,
+      canRetrySubscription: false,
+    };
+  }
+
+  if (!input.pageSelected || !input.hasStoredToken) {
+    return {
+      ...base,
+      state: 'verification_required',
+      label: FACEBOOK_WEBHOOK_STATUS_LABELS.verification_required,
+      detail: 'Connect and select a Facebook Page before webhooks can be subscribed.',
+      canSubscribe: false,
+      canRetrySubscription: false,
+    };
+  }
+
+  if (!input.pagesManageMetadataGranted) {
+    return {
+      ...base,
+      state: 'provider_blocked',
+      label: FACEBOOK_WEBHOOK_STATUS_LABELS.provider_blocked,
+      detail:
+        'Meta requires pages_manage_metadata to subscribe Page webhooks. Enable Facebook content features first.',
+      canSubscribe: false,
+      canRetrySubscription: false,
+    };
+  }
+
+  if (requestedFields.length === 0) {
+    return {
+      ...base,
+      state: 'failed',
+      label: FACEBOOK_WEBHOOK_STATUS_LABELS.failed,
+      detail: 'No Page webhook fields are available for subscription with the current permissions.',
+      canSubscribe: false,
+      canRetrySubscription: true,
+    };
+  }
+
+  if (providerFields && providerCoversRequested(providerFields, requestedFields)) {
+    return {
+      ...base,
+      state: 'subscribed',
+      label: FACEBOOK_WEBHOOK_STATUS_LABELS.subscribed,
+      detail: `Meta confirms the Page is subscribed to ${providerFields.join(', ')}.`,
+      subscribedFields: providerFields,
+      canSubscribe: true,
+      canRetrySubscription: false,
+    };
+  }
+
+  if (providerFields && providerFields.length > 0) {
+    const missing = requestedFields.filter((field) => !providerFields.includes(field));
+    return {
+      ...base,
+      state: 'partial',
+      label: FACEBOOK_WEBHOOK_STATUS_LABELS.partial,
+      detail: `Meta subscribed ${providerFields.join(', ')} but is missing ${missing.join(', ')}.`,
+      subscribedFields: providerFields,
+      canSubscribe: true,
+      canRetrySubscription: true,
+    };
+  }
+
+  if (input.lastSubscriptionError) {
+    const blocked =
+      input.lastSubscriptionError.includes('pages_messaging') ||
+      input.lastSubscriptionError.includes('leads_retrieval') ||
+      input.lastSubscriptionError.includes('permission');
+    return {
+      ...base,
+      state: blocked ? 'provider_blocked' : 'failed',
+      label: blocked
+        ? FACEBOOK_WEBHOOK_STATUS_LABELS.provider_blocked
+        : FACEBOOK_WEBHOOK_STATUS_LABELS.failed,
+      detail: input.lastSubscriptionError,
+      canSubscribe: !blocked,
+      canRetrySubscription: !blocked,
+    };
+  }
+
+  if (input.webhookSubscribedAt && !providerFields) {
+    return {
+      ...base,
+      state: 'verification_required',
+      label: FACEBOOK_WEBHOOK_STATUS_LABELS.verification_required,
+      detail:
+        'A subscription timestamp is stored but Meta has not confirmed the Page subscription yet. Check webhook status.',
+      canSubscribe: true,
+      canRetrySubscription: true,
+    };
+  }
+
+  return {
+    ...base,
+    state: 'ready_to_subscribe',
+    label: FACEBOOK_WEBHOOK_STATUS_LABELS.ready_to_subscribe,
+    detail: `The Page can be subscribed to ${requestedFields.join(', ')} webhooks.`,
+    canSubscribe: true,
+    canRetrySubscription: false,
+  };
+}
 
 /**
  * Webhooks can be dropped by either side, so polling backfills rather than

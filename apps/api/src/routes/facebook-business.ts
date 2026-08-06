@@ -224,11 +224,14 @@ export function createFacebookBusinessRouter({
     }
 
     facebookBusinessService
-      .handleWebhook({ signatureValid, payload })
+      .acknowledgeWebhook({ signatureValid, payload })
       .then((result) => {
         // Meta retries on any non-200, so a rejected signature still answers 403
         // deliberately rather than inviting an infinite redelivery loop.
         res.sendStatus(result.accepted ? 200 : 403);
+        if (result.accepted && result.deliveries.length > 0) {
+          void facebookBusinessService.processWebhookDeliveries(result.deliveries);
+        }
       })
       .catch(next);
   });
@@ -370,6 +373,18 @@ export function createFacebookBusinessRouter({
 
   router.post('/connection/check', (req, res, next) =>
     wrap(res, next, () => facebookBusinessService.checkConnection(toActor(req))),
+  );
+
+  router.get('/connection/webhook-status', (req, res, next) =>
+    wrap(res, next, () => facebookBusinessService.getWebhookStatus(toActor(req))),
+  );
+
+  router.post('/connection/check-webhook-status', (req, res, next) =>
+    wrap(res, next, () => facebookBusinessService.checkWebhookStatus(toActor(req))),
+  );
+
+  router.post('/connection/subscribe-webhooks', (req, res, next) =>
+    wrap(res, next, () => facebookBusinessService.subscribeWebhooks(toActor(req))),
   );
 
   router.post('/connection/disconnect', (req, res, next) =>
