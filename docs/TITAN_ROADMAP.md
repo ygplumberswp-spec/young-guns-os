@@ -10,7 +10,7 @@
 ## Active work (do not interrupt)
 
 **XERO-002** — Controlled live proof gate sequence (Gates 5B–7 remaining).  
-**Do not implement PRICEBOOK-001, DASH-002, or other major features during active Xero proof.**
+**Do not implement PRICEBOOK-001, JOB-COST-001, DASH-002, or other major features during active Xero proof.**
 
 See: [TITAN_XERO_002_LIVE_PROOF_PLAN.md](./TITAN_XERO_002_LIVE_PROOF_PLAN.md)
 
@@ -24,16 +24,36 @@ Execute in order after prior gates close. Production forbidden until explicit pr
 |------:|-----|------|--------|
 | **—** | **XERO-002** | **Complete Gates 5B–7 and close Xero integration proof** | **ACTIVE** |
 | 1 | **PRICEBOOK-001** | **Master Pricebook foundation** | **RECORDED** — not implemented |
-| 2 | **DASH-002** | **Customisable no-gap Dashboard grid** | Planned |
-| 3 | **AI-FIN-DOC-001** | **AI Financial Capture Engine** | Recorded only |
-| 3a | AP-DOC-001 | Supplier Invoice Import | Child — recorded |
-| 3b | EXP-REC-001 | Receipt and Till-Slip Capture | Child — recorded |
-| 3c | INV-PRICE-001 | Supplier Price List Import | Child — recorded |
-| 4 | — | Full BrowserStack role and journey audit | Planned |
-| 5 | — | Remaining integration and platform roadmap | Ongoing |
-| 6 | **UI-THEME-001** | **App-wide visual finishing (Premium Dark Mode)** | Recorded only |
-| 7 | — | Young Guns controlled pilot | Gate |
-| 8 | — | Production hardening and launch | Gate |
+| 2 | **JOB-COST-001** | **Intelligent Job Costing & Profit Engine** | **RECORDED** — not implemented |
+| 3 | **DASH-002** | **Customisable no-gap Dashboard grid** | Planned |
+| 4 | **AI-FIN-DOC-001** | **AI Financial Capture Engine** | Recorded only |
+| 4a | AP-DOC-001 | Supplier Invoice Import | Child — recorded |
+| 4b | EXP-REC-001 | Receipt and Till-Slip Capture | Child — recorded |
+| 4c | INV-PRICE-001 | Supplier Price List Import | Child — recorded |
+| 5 | — | Full BrowserStack role and journey audit | Planned |
+| 6 | — | Remaining integration and platform roadmap | Ongoing |
+| 7 | **UI-THEME-001** | **App-wide visual finishing (Premium Dark Mode)** | Recorded only |
+| 8 | — | Young Guns controlled pilot | Gate |
+| 9 | — | Production hardening and launch | Gate |
+
+---
+
+## JOB-COST-001 phased delivery (after PRICEBOOK-001 foundation)
+
+| Phase | ID | Scope |
+|-------|-----|-------|
+| A | JOB-COST-001A | Core job-cost model, immutable estimate baseline and financial states |
+| B | JOB-COST-001B | Labour, material, purchase and site-cost capture |
+| C | JOB-COST-001C | Live variance calculation and profitability projections |
+| D | JOB-COST-001D | Variation-order engine and margin protection |
+| E | JOB-COST-001E | AURA risk detection, alerts and recommendations |
+| F | JOB-COST-001F | Job financial dashboard and reporting |
+| G | JOB-COST-001G | Estimate-versus-actual learning integration (AI-EST-LEARN-001) |
+
+**Documentation:**
+
+- [TITAN_JOB_COSTING_PROFIT_ENGINE_SPECIFICATION.md](./TITAN_JOB_COSTING_PROFIT_ENGINE_SPECIFICATION.md)
+- [TITAN_JOB_COSTING_ARCHITECTURE.md](./TITAN_JOB_COSTING_ARCHITECTURE.md)
 
 ---
 
@@ -91,10 +111,11 @@ Execute in order after prior gates close. Production forbidden until explicit pr
 ## Rules
 
 1. **No duplicate pricing systems** — PRICEBOOK-001 is the sole pricing authority when implemented
-2. **No implementation during XERO-002 proof** — record and sequence only
-3. **PRICEBOOK-001 before DASH-002** — dashboard grid follows pricebook foundation
-4. **Production** — `rshuiaghmtrvvilhqpwm` forbidden until explicit Owner production GO
+2. **No duplicate costing formulas** — JOB-COST-001 is the sole job-cost and profit truth when implemented
+3. **No implementation during XERO-002 proof** — record and sequence only
+4. **PRICEBOOK-001 → JOB-COST-001 → DASH-002** — pricebook, then job costing, then dashboard grid
+5. **Production** — `rshuiaghmtrvvilhqpwm` forbidden until explicit Owner production GO
 
 ---
 
-*Roadmap updated 2026-08-06 to register PRICEBOOK-001, AI-EST-001, AI-EST-LEARN-001. No code changes.*
+*Roadmap updated 2026-08-06 to register JOB-COST-001. No code changes.*

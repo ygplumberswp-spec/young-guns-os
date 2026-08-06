@@ -33,7 +33,9 @@
 
 **AI-FIN-DOC-001 (2026-08-06):** AI Financial Capture Engine and children AP-DOC-001, EXP-REC-001, INV-PRICE-001 — **documented only**, not implemented. See [TITAN_GAP_CLOSURE_PLAN.md](./TITAN_GAP_CLOSURE_PLAN.md).
 
-**PRICEBOOK-001 (2026-08-06):** Master Pricebook and AI Estimating Engine (AI-EST-001, AI-EST-LEARN-001) — **documented only**, not implemented. Sequenced **after XERO-002 close** and **before DASH-002**. **Do not implement during active Xero proof.** See [TITAN_MASTER_PRICEBOOK_SPECIFICATION.md](./TITAN_MASTER_PRICEBOOK_SPECIFICATION.md), [TITAN_ROADMAP.md](./TITAN_ROADMAP.md).
+**PRICEBOOK-001 (2026-08-06):** Master Pricebook and AI Estimating Engine (AI-EST-001, AI-EST-LEARN-001) — **documented only**, not implemented. Sequenced **after XERO-002 close** and **before JOB-COST-001**. **Do not implement during active Xero proof.** See [TITAN_MASTER_PRICEBOOK_SPECIFICATION.md](./TITAN_MASTER_PRICEBOOK_SPECIFICATION.md), [TITAN_ROADMAP.md](./TITAN_ROADMAP.md).
+
+**JOB-COST-001 (2026-08-06):** Intelligent Job Costing & Profit Engine — **documented only**, not implemented. Sequenced **after PRICEBOOK-001** and **before DASH-002**. **Do not implement during active Xero proof.** See [TITAN_JOB_COSTING_PROFIT_ENGINE_SPECIFICATION.md](./TITAN_JOB_COSTING_PROFIT_ENGINE_SPECIFICATION.md), [TITAN_ROADMAP.md](./TITAN_ROADMAP.md).
 
 **Integrations overview (2026-08-06):** Enterprise polish on PR #10 — unified cards, enterprise status lines, fine-details finishing. **Pending Owner approval** — not complete until signed off.
 
@@ -211,7 +213,15 @@ Boolean columns use **YES** / **NO** / **—** (not applicable).
 | PB-001E | pricebook | Quote/invoice/job-card/purchasing/job-cost integration | **DOCUMENTED ONLY** | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_MASTER_PRICEBOOK_SPECIFICATION.md §10–12 | 2026-08-06 |  | PB-001C | Phase E |
 | AI-EST-001 | estimating | AI Floor Plan Estimator | **DOCUMENTED ONLY** | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_AI_ESTIMATING_ENGINE_SPECIFICATION.md | 2026-08-06 | PRICEBOOK-001 | Phases A–D |
 | AI-EST-LEARN-001 | estimating | Estimate accuracy learning | **DOCUMENTED ONLY** | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_AI_ESTIMATING_ENGINE_SPECIFICATION.md | 2026-08-06 | AI-EST-001 | Post job costing |
-| DASH-002 | dashboard | Customisable no-gap Dashboard grid | **PLANNED** | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_ROADMAP.md | 2026-08-06 | PRICEBOOK-001 | After pricebook foundation |
+| JC-001 | job-cost | JOB-COST-001 Intelligent Job Costing & Profit Engine | **DOCUMENTED ONLY** | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_JOB_COSTING_PROFIT_ENGINE_SPECIFICATION.md | 2026-08-06 | PRICEBOOK-001 | After pricebook foundation |
+| JC-001A | job-cost | Core job-cost model, immutable estimate baseline and financial states | **DOCUMENTED ONLY** | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_JOB_COSTING_ARCHITECTURE.md | 2026-08-06 | PRICEBOOK-001A | Phase A |
+| JC-001B | job-cost | Labour, material, purchase and site-cost capture | **DOCUMENTED ONLY** | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_JOB_COSTING_PROFIT_ENGINE_SPECIFICATION.md §3 | 2026-08-06 | JC-001A | Phase B |
+| JC-001C | job-cost | Live variance calculation and profitability projections | **DOCUMENTED ONLY** | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_JOB_COSTING_PROFIT_ENGINE_SPECIFICATION.md §3 | 2026-08-06 | JC-001B | Phase C |
+| JC-001D | job-cost | Variation-order engine and margin protection | **DOCUMENTED ONLY** | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_JOB_COSTING_PROFIT_ENGINE_SPECIFICATION.md §5 | 2026-08-06 | JC-001C | Phase D |
+| JC-001E | job-cost | AURA risk detection, alerts and recommendations | **DOCUMENTED ONLY** | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_JOB_COSTING_PROFIT_ENGINE_SPECIFICATION.md §6 | 2026-08-06 | JC-001C | Phase E |
+| JC-001F | job-cost | Job financial dashboard and reporting | **DOCUMENTED ONLY** | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_JOB_COSTING_PROFIT_ENGINE_SPECIFICATION.md §7 | 2026-08-06 | JC-001C | Phase F |
+| JC-001G | job-cost | Estimate-versus-actual learning integration | **DOCUMENTED ONLY** | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_JOB_COSTING_PROFIT_ENGINE_SPECIFICATION.md §11 | 2026-08-06 | AI-EST-LEARN-001 | Phase G |
+| DASH-002 | dashboard | Customisable no-gap Dashboard grid | **PLANNED** | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_ROADMAP.md | 2026-08-06 | JOB-COST-001 | After job costing foundation |
 | J66A-001 | finance | Phase J-6.6A: Finance RBAC hardening (cost strip, catalogue, document routes) | TESTED LOCALLY | YES | YES | NO | YES | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | finance-tenant-pricebook.test.ts; finance.service.ts sanitize | J-6.6A |  |  | Staging apply 0176–0178 |
 | J66A-002 | finance | Phase J-6.6A: Save semantics (Save vs Save Draft vs Save & New) | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | finance-document-save.test.ts | J-6.6A |  |  | Owner finance E2E |
 | J66A-003 | finance | Phase J-6.6A: Five reproducible test fixes (Cartrack TZ, doc-engine, merge heading) | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | shared 909/909; web 303/303; api 1046/1046 | J-6.6A |  |  |  |
@@ -716,13 +726,14 @@ See [TITAN_ROADMAP.md](./TITAN_ROADMAP.md) for authoritative order:
 |------:|-----|------|
 | — | **XERO-002** | **Complete Gates 5B–7 (ACTIVE)** |
 | 1 | **PRICEBOOK-001** | Master Pricebook foundation |
-| 2 | **DASH-002** | Customisable no-gap Dashboard grid |
-| 3 | **AI-FIN-DOC-001** | AI Financial Capture Engine (+ AP-DOC-001, EXP-REC-001, INV-PRICE-001) |
-| 4 | — | Full BrowserStack role and journey audit |
-| 5 | — | Remaining integration and platform roadmap |
-| 6 | **UI-THEME-001** | App-wide visual finishing |
-| 7 | — | Young Guns controlled pilot |
-| 8 | — | Production hardening and launch |
+| 2 | **JOB-COST-001** | Intelligent Job Costing & Profit Engine |
+| 3 | **DASH-002** | Customisable no-gap Dashboard grid |
+| 4 | **AI-FIN-DOC-001** | AI Financial Capture Engine (+ AP-DOC-001, EXP-REC-001, INV-PRICE-001) |
+| 5 | — | Full BrowserStack role and journey audit |
+| 6 | — | Remaining integration and platform roadmap |
+| 7 | **UI-THEME-001** | App-wide visual finishing |
+| 8 | — | Young Guns controlled pilot |
+| 9 | — | Production hardening and launch |
 
 After **INT-OVERVIEW-001** (Integrations overview) receives Owner approval, the completed prerequisite sequence was:
 

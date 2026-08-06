@@ -2,7 +2,7 @@
 
 **Audit type:** READ-ONLY planning artifact — no new features  
 **Generated (UTC):** 2026-08-05  
-**Last updated (UTC):** 2026-08-06 — PRICEBOOK-001 recorded (not implemented); XERO-002 Gate sequence remains active  
+**Last updated (UTC):** 2026-08-06 — JOB-COST-001 recorded (not implemented); XERO-002 Gate sequence remains active  
 **Base HEAD:** `cc0abbcde96902711fc0e141590144470abc5444` → task branch `cursor/titan-xero-002-p0-finance`  
 **Branch:** `cursor/titan-v1-integration`  
 **Scope:** Unmet **accepted** requirements only — deferred items at end  
@@ -150,6 +150,46 @@ Photo, PDF, spreadsheet or authorised email attachment → secure validation →
 **Governance:** No duplicate pricing systems. Immutable price snapshots on documents. AI may suggest; Owner must approve. No silent selling-price overwrites from supplier imports.
 
 **Implementation gate:** Forbidden during active XERO-002 Gate proof sequence.
+
+---
+
+### JOB-COST-001 — Intelligent Job Costing & Profit Engine (RECORD ONLY — do not implement during XERO-002)
+
+**Status:** Documented only. **Not implemented.** **Do not modify quotes, invoices, jobs, pricing, supplier records or financial records.**
+
+**Recorded (UTC):** 2026-08-06
+
+**Placement:** Next major core-platform implementation **after PRICEBOOK-001** and **before DASH-002**.
+
+| ID | Name | Phase |
+|----|------|-------|
+| **JOB-COST-001** | Intelligent Job Costing & Profit Engine | Parent |
+| JOB-COST-001A | Core job-cost model, immutable estimate baseline and financial states | A |
+| JOB-COST-001B | Labour, material, purchase and site-cost capture | B |
+| JOB-COST-001C | Live variance calculation and profitability projections | C |
+| JOB-COST-001D | Variation-order engine and margin protection | D |
+| JOB-COST-001E | AURA risk detection, alerts and recommendations | E |
+| JOB-COST-001F | Job financial dashboard and reporting | F |
+| JOB-COST-001G | Estimate-versus-actual learning integration | G |
+
+**Documentation:**
+
+- [TITAN_JOB_COSTING_PROFIT_ENGINE_SPECIFICATION.md](./TITAN_JOB_COSTING_PROFIT_ENGINE_SPECIFICATION.md)
+- [TITAN_JOB_COSTING_ARCHITECTURE.md](./TITAN_JOB_COSTING_ARCHITECTURE.md)
+- [TITAN_ROADMAP.md](./TITAN_ROADMAP.md)
+
+**Architectural relationship:**
+
+- **PRICEBOOK-001** — source of estimated pricing and cost assumptions
+- **JOB-COST-001** — source of job-level actual cost, variance and profitability truth
+- **AI-FIN-DOC-001** — supplies approved supplier invoices, receipts, till slips and expenses into actual job costing
+- **DASH-001 / DASH-002** — display resulting financial health and alerts
+
+**Cross-links:** PRICEBOOK-001 · PRICEBOOK-001E · AI-EST-001 · AI-EST-LEARN-001 · AI-FIN-DOC-001 · AP-DOC-001 · EXP-REC-001 · INV-PRICE-001 · BANK-IMPORT-001 · Xero · Yoco · Warehouse · Purchase Orders · Payroll/Timesheets · Fleet/Cartrack · DASH-002 · UI-THEME-001
+
+**Governance:** No duplicate costing formulas. Immutable estimate baselines from approved quotes. Cost state machine enforced. AURA may suggest; Owner must approve. No silent budget, price or reconciliation changes.
+
+**Implementation gate:** Forbidden during active XERO-002 Gate proof sequence. Requires PRICEBOOK-001A minimum before JOB-COST-001A.
 
 ---
 

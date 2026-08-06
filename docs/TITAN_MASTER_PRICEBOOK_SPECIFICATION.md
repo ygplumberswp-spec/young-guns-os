@@ -3,7 +3,7 @@
 **Status:** RECORD ONLY — **not implemented**  
 **Recorded (UTC):** 2026-08-06  
 **Active blocker:** XERO-002 Gate sequence remains active — **do not implement PRICEBOOK-001 during Xero proof**  
-**Placement:** Next major core-platform implementation **after XERO-002 closes** and **before DASH-002**
+**Placement:** Next major core-platform implementation **after XERO-002 closes**, **before JOB-COST-001**, and **before DASH-002**
 
 ---
 
@@ -25,6 +25,8 @@ Create one **Master Pricebook** as TITAN’s single source of truth for:
 |----|-----------------|
 | [TITAN_PRICEBOOK_ARCHITECTURE.md](./TITAN_PRICEBOOK_ARCHITECTURE.md) | Technical architecture |
 | [TITAN_AI_ESTIMATING_ENGINE_SPECIFICATION.md](./TITAN_AI_ESTIMATING_ENGINE_SPECIFICATION.md) | AI-EST-001, AI-EST-LEARN-001 |
+| [TITAN_JOB_COSTING_PROFIT_ENGINE_SPECIFICATION.md](./TITAN_JOB_COSTING_PROFIT_ENGINE_SPECIFICATION.md) | JOB-COST-001 — job costing and profit truth |
+| [TITAN_JOB_COSTING_ARCHITECTURE.md](./TITAN_JOB_COSTING_ARCHITECTURE.md) | JOB-COST-001 technical architecture |
 | INV-PRICE-001 | Supplier Price List Import (child of AI-FIN-DOC-001) |
 | AI-FIN-DOC-001 | AI Financial Capture Engine |
 | AP-DOC-001 | Supplier Invoice Import |
@@ -281,7 +283,8 @@ Checklist row **FIN-014 / YGP-001** — tenant-scoped pricebook table marked **P
 |------|------|
 | During XERO-002 | **Forbidden** — no pricebook code, pricing changes, quote/invoice/job/supplier record changes |
 | After XERO-002 close | Owner sequences PRICEBOOK-001A as next major core-platform task |
-| Before DASH-002 | PRICEBOOK foundation must be sequenced ahead of dashboard grid work |
+| Before JOB-COST-001 | PRICEBOOK foundation must provide estimate baseline snapshots |
+| Before DASH-002 | PRICEBOOK and JOB-COST foundations sequenced ahead of dashboard grid work |
 
 ---
 

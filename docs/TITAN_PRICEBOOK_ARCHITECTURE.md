@@ -34,13 +34,13 @@
              │
     ┌────────┼────────┬──────────────┬──────────────┐
     ▼        ▼        ▼              ▼              ▼
- Quotes   Invoices  Job cards    POs/BOQs    Job costing
+ Quotes   Invoices  Job cards    POs/BOQs    Job costing (JOB-COST-001)
     │        │        │              │              │
     └────────┴────────┴──────────────┴──────────────┘
              │
     ┌────────┴────────┐
     ▼                 ▼
- AI-EST-001      AI-EST-LEARN-001
+ AI-EST-001      AI-EST-LEARN-001 / JOB-COST-001G
  (takeoff/BOQ)   (variance learning)
              │
     ┌────────┴────────┐
@@ -175,9 +175,19 @@ Event names per master spec §18.
 | PRICEBOOK-001B | Residential assemblies + YGP codes |
 | PRICEBOOK-001C | Point catalogue + BOQ engine |
 | PRICEBOOK-001D | INV-PRICE-001 import pipeline |
-| PRICEBOOK-001E | Document snapshot integration across finance/ops |
+| PRICEBOOK-001E | Document snapshot integration; feeds JOB-COST-001 estimate baselines |
+| JOB-COST-001* | Job costing & profit engine (after PRICEBOOK-001A) |
 | AI-EST-001* | Estimating subsystem (parallel after 001C foundation) |
-| AI-EST-LEARN-001 | Learning loop after job costing evidence available |
+| AI-EST-LEARN-001 / JOB-COST-001G | Learning loop after job costing evidence available |
+
+---
+
+## Cross-reference
+
+| Document | Purpose |
+|----------|---------|
+| [TITAN_JOB_COSTING_PROFIT_ENGINE_SPECIFICATION.md](./TITAN_JOB_COSTING_PROFIT_ENGINE_SPECIFICATION.md) | JOB-COST-001 — actual cost, variance and profit truth |
+| [TITAN_JOB_COSTING_ARCHITECTURE.md](./TITAN_JOB_COSTING_ARCHITECTURE.md) | JOB-COST-001 technical architecture |
 
 ---
 
