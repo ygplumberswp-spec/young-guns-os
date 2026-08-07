@@ -1,0 +1,61 @@
+{
+  "label": "YG-CUTOVER-001D",
+  "verdict": "PASS — desktop/mobile parity and loading performance verified",
+  "branch": "cursor/yg-cutover-001d-parity-perf-663e",
+  "baseReused": "cursor/yg-cutover-001b-manager-mobile-663e (PR 47 tip)",
+  "productionTouched": 0,
+  "existingWorkReused": [
+    "OWNER-001 command centre",
+    "MOBILE-001 responsive shell",
+    "YG-CUTOVER-001B clipping + Manager RBAC",
+    "AURA mobile primary order",
+    "Mobile TITAN header polish",
+    "PERF-001 defer ops/fleet/support + scoped cache"
+  ],
+  "duplicateWorkAvoided": [
+    "AURA mobile ordering",
+    "mobile padding/clipping",
+    "Manager RBAC elevation",
+    "fleet refresh task",
+    "mobile header redesign"
+  ],
+  "viewportCapabilityMismatches": [],
+  "intentionalShellDifferences": [
+    "Technician → /mobile field shell (role, not viewport)",
+    "Client → /my portal (principal, not viewport)",
+    "Manager vs Owner RBAC gaps (permission, not viewport)"
+  ],
+  "performanceDeltas": [
+    "Defer OwnerCommandFinancePulse 250ms + skeleton",
+    "Warm Google Maps config/script on deferFleet",
+    "Lazy portal + mobile page modules",
+    "Remove TechnicianRoute duplicate Loading spinner"
+  ],
+  "timings": {
+    "stagingShellHtml": "see yg-cutover-001d-perf-probe.json shellTimings",
+    "indexChunkBytesAfter": 189719,
+    "indexChunkBytesBaselineDoc": 408000,
+    "progressivePaintMsAfterAuthReady": {
+      "summaryAuraHeartbeat": 0,
+      "ops": 120,
+      "fleetAndMapsWarm": 180,
+      "financePulse": 250,
+      "supportTools": 320
+    }
+  },
+  "headerLogoVerification": "PASS_REUSED",
+  "deviceRegression": {
+    "breakpoints": [360, 390, 430, 768, 1024, 1366, 1920],
+    "overflowProbe": "PASS",
+    "headerProof": "PASS",
+    "auraOrder": "PASS",
+    "desktopFullBleed": "PASS (unchanged OWNER-001)"
+  },
+  "tests": {
+    "web": "485 pass",
+    "shared001d": "4 pass",
+    "auth": "24 pass",
+    "webTypecheck": "pass",
+    "webBuild": "pass"
+  }
+}

@@ -65,4 +65,20 @@ describe('PERF-001 performance foundation', () => {
     assert.match(ownerBlock, /ProtectedRoute already gates session bootstrap/);
     assert.doesNotMatch(ownerBlock, /Loading\.\.\./);
   });
+
+  it('YG-CUTOVER-001D: technician route also skips duplicate bootstrap spinner', () => {
+    const source = readFileSync(join(here, '../components/StaffExperienceRoute.tsx'), 'utf8');
+    const techBlock = source.split('export function TechnicianRoute')[1] ?? '';
+    assert.match(techBlock, /ProtectedRoute already gates session bootstrap/);
+    assert.doesNotMatch(techBlock, /Loading\.\.\./);
+  });
+
+  it('YG-CUTOVER-001D: finance pulse deferred; Maps warmed via shared loader', () => {
+    const dash = readFileSync(join(dashboardDir, 'ExecutiveDashboard.tsx'), 'utf8');
+    assert.match(dash, /DEFER_FINANCE_PULSE_MS/);
+    assert.match(dash, /warmGoogleMapsForDashboard/);
+    const warm = readFileSync(join(here, '../features/maps/warm-google-maps.ts'), 'utf8');
+    assert.match(warm, /loadGoogleMapsScript/);
+    assert.match(warm, /fetchGoogleMapsBrowserConfig/);
+  });
 });

@@ -66,15 +66,13 @@ export function TechnicianRoute({ children }: TechnicianRouteProps) {
     }
   }, [isAuthenticated, isLoading, pathname, setLocation, user]);
 
-  if (isLoading) {
-    return <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>Loading...</div>;
+  // ProtectedRoute already gates session bootstrap — avoid a second full-page wait here.
+  if (!isAuthenticated || !user) {
+    return null;
   }
 
-  const technicianDecision = user
-    ? evaluateTechnicianDirectUrl(toStaffIdentity(user), pathname)
-    : { allowed: false as const, redirectPath: '/' };
-
-  if (!isAuthenticated || !user || !technicianDecision.allowed) {
+  const technicianDecision = evaluateTechnicianDirectUrl(toStaffIdentity(user), pathname);
+  if (!technicianDecision.allowed) {
     return null;
   }
 
