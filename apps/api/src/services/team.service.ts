@@ -17,8 +17,11 @@ import {
   type StaffIdentity,
 } from '@titan/auth';
 import {
+  canViewTechnicianPayroll,
   matchesUserDeleteConfirmation,
+  TECHNICIAN_ONBOARDING_STEPS,
   USER_HARD_DELETE_REFUSED_MESSAGE,
+  type CreateTeamInviteRequest,
   type CreateTeamInviteResponse,
   type TeamInvite,
   type TeamMember,
@@ -28,6 +31,8 @@ import {
 import type { DatabaseClient } from '@titan/db';
 import { roles, securityAuditLogs, sessions, userInvites, users } from '@titan/db';
 import { evaluateUserHardDeleteEligibility } from './user-safe-delete.js';
+import type { TechnicianPayrollService } from './technician-payroll.service.js';
+import { TechnicianPayrollError } from './technician-payroll.service.js';
 
 function toTeamMember(
   user: {
@@ -73,10 +78,16 @@ type TenantScope = {
 type ActorScope = TenantScope & StaffIdentity;
 
 export class TeamService {
+  private payrollService: TechnicianPayrollService | null = null;
+
   constructor(
     private readonly db: DatabaseClient,
     private readonly appUrl: string,
   ) {}
+
+  setPayrollService(payrollService: TechnicianPayrollService) {
+    this.payrollService = payrollService;
+  }
 
   async listMembers(companyId: string, actor?: ActorScope): Promise<TeamMember[]> {
     await this.ensureDefaultRoles(companyId);
@@ -97,29 +108,48 @@ export class TeamService {
     const canAssignRoles = Boolean(
       actor && (isCompanyOwnerRole(actor) || isPlatformOwnerRole(actor)),
     );
+    const canViewPayroll = Boolean(
+      actor && canViewTechnicianPayroll(actor.permissions, actor.roleName),
+    );
 
-    return members.map((member) => {
+    const result: TeamMember[] = [];
+    for (const member of members) {
       const base = toTeamMember(member, member.role?.name ?? 'Unknown');
-      if (!canManageLifecycle || !actor) {
-        return base;
+      let next: TeamMember = base;
+
+      if (canManageLifecycle && actor) {
+        const isSelf = member.id === actor.userId;
+        next = {
+          ...base,
+          lifecycle: {
+            canSuspend: !isSelf && member.isActive,
+            canReactivate: !isSelf && !member.isActive,
+            canRemoveAccess: !isSelf && member.isActive,
+            canEditRole: canAssignRoles && !isSelf,
+            // Hard-delete safety is resolved via DELETE eligibility endpoint / Actions menu.
+            canHardDelete: !isSelf,
+            hardDeleteRefusalMessage: isSelf
+              ? 'You cannot permanently delete your own account'
+              : null,
+          },
+        };
       }
 
-      const isSelf = member.id === actor.userId;
-      return {
-        ...base,
-        lifecycle: {
-          canSuspend: !isSelf && member.isActive,
-          canReactivate: !isSelf && !member.isActive,
-          canRemoveAccess: !isSelf && member.isActive,
-          canEditRole: canAssignRoles && !isSelf,
-          // Hard-delete safety is resolved via DELETE eligibility endpoint / Actions menu.
-          canHardDelete: !isSelf,
-          hardDeleteRefusalMessage: isSelf
-            ? 'You cannot permanently delete your own account'
-            : null,
-        },
-      };
-    });
+      // Salary/wage fields only for Owner/Finance — never for Technician viewers.
+      if (
+        canViewPayroll &&
+        this.payrollService &&
+        (member.role?.name ?? '') === 'Technician'
+      ) {
+        next = {
+          ...next,
+          payroll: await this.payrollService.getMemberPayrollBrief(companyId, member.id),
+        };
+      }
+
+      result.push(next);
+    }
+    return result;
   }
 
   async listRoles(companyId: string): Promise<TeamRole[]> {
@@ -173,6 +203,7 @@ export class TeamService {
     scope: TenantScope,
     email: string,
     roleId: string,
+    payrollSetup?: CreateTeamInviteRequest['payrollSetup'],
   ): Promise<CreateTeamInviteResponse> {
     const normalizedEmail = email.trim().toLowerCase();
 
@@ -189,6 +220,25 @@ export class TeamService {
         'ROLE_NOT_ASSIGNABLE',
         `The ${role.name} role cannot be assigned via invite`,
       );
+    }
+
+    let payrollDraft: Record<string, unknown> | null = null;
+    if (role.name === 'Technician' && payrollSetup) {
+      if (!this.payrollService) {
+        throw new TeamError('PAYROLL_UNAVAILABLE', 'Payroll service is not configured');
+      }
+      try {
+        const parsed = this.payrollService.parseInvitePayrollSetup(payrollSetup);
+        payrollDraft = parsed;
+      } catch (error) {
+        if (error instanceof TechnicianPayrollError) {
+          throw new TeamError(error.code, error.message);
+        }
+        throw error;
+      }
+    } else if (role.name === 'Technician' && payrollSetup === null) {
+      // Explicit incomplete onboarding — allowed, surfaces PAYROLL SETUP INCOMPLETE later.
+      payrollDraft = null;
     }
 
     const existingUser = await this.db.query.users.findFirst({
@@ -224,6 +274,7 @@ export class TeamService {
         invitedByUserId: scope.userId,
         tokenHash,
         expiresAt,
+        payrollSetup: role.name === 'Technician' ? payrollDraft : null,
       })
       .returning();
 
@@ -254,6 +305,8 @@ export class TeamService {
         inviteEmail: normalizedEmail,
         roleName: role.name,
         roleId,
+        onboardingSteps: role.name === 'Technician' ? TECHNICIAN_ONBOARDING_STEPS : undefined,
+        payrollSetupComplete: role.name === 'Technician' ? Boolean(payrollDraft) : undefined,
       },
     });
 

@@ -46,6 +46,7 @@ export * from './universal-phone-compat.js';
 export * from './localisation.js';
 export * from './team.js';
 export * from './team-user-lifecycle.js';
+export * from './technician-payroll.js';
 export * from './crm.js';
 export * from './crm-list-ui.js';
 export * from './customer-duplicate-merge.js';

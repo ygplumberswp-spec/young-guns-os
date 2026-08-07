@@ -5,6 +5,9 @@ import type {
   TeamInvite,
   TeamMember,
   TeamRole,
+  TechnicianPayrollProfileSummary,
+  TechnicianPayrollTermSummary,
+  TechnicianPeriodWageBreakdown,
   UserHardDeleteEligibility,
 } from '@titan/shared';
 import { request, type AuthPayload } from './api-client';
@@ -150,4 +153,40 @@ export async function acceptInvite(body: {
     body,
     skipAuthRefresh: true,
   });
+}
+
+export async function fetchTechnicianPayrollProfile(
+  accessToken: string,
+  memberId: string,
+): Promise<TechnicianPayrollProfileSummary> {
+  const data = await request<{ profile: TechnicianPayrollProfileSummary }>(
+    `/team/members/${memberId}/payroll`,
+    { accessToken },
+  );
+  return data.profile;
+}
+
+export async function createTechnicianPayrollTerm(
+  accessToken: string,
+  memberId: string,
+  body: NonNullable<CreateTeamInviteRequest['payrollSetup']>,
+): Promise<TechnicianPayrollTermSummary> {
+  const data = await request<{ term: TechnicianPayrollTermSummary }>(
+    `/team/members/${memberId}/payroll/terms`,
+    { method: 'POST', accessToken, body },
+  );
+  return data.term;
+}
+
+export async function fetchTechnicianPeriodWages(
+  accessToken: string,
+  memberId: string,
+  periodStart: string,
+  periodEnd: string,
+): Promise<TechnicianPeriodWageBreakdown> {
+  const data = await request<{ wages: TechnicianPeriodWageBreakdown }>(
+    `/team/members/${memberId}/payroll/period-wages?periodStart=${encodeURIComponent(periodStart)}&periodEnd=${encodeURIComponent(periodEnd)}`,
+    { accessToken },
+  );
+  return data.wages;
 }

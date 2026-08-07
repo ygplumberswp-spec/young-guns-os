@@ -3,7 +3,19 @@ import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Button, Input } from '@titan/ui';
 import { hasAnyPermission, isCompanyOwnerRole, isPlatformOwnerRole } from '@titan/auth/browser';
 import type { TeamMember } from '@titan/shared';
-import { USER_HARD_DELETE_REFUSED_MESSAGE } from '@titan/shared';
+import {
+  DEFAULT_OVERTIME_DAILY_THRESHOLD_HOURS,
+  DEFAULT_OVERTIME_MULTIPLIER_BPS,
+  DEFAULT_WORKING_DAYS_PER_WEEK,
+  DEFAULT_WORKING_HOURS_PER_DAY,
+  PAYROLL_SETUP_INCOMPLETE,
+  TECHNICIAN_ONBOARDING_STEP_LABELS,
+  TECHNICIAN_ONBOARDING_STEPS,
+  USER_HARD_DELETE_REFUSED_MESSAGE,
+  canViewTechnicianPayroll,
+  deriveInternalHourlyCostCents,
+  formatMoney,
+} from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import {
   createTeamInvite,
@@ -19,6 +31,7 @@ import {
 } from '../../lib/team-api';
 import { NAV_LABELS } from '@titan/shared';
 import { SettingsNav } from '../../features/settings/SettingsNav';
+import { TechnicianPayrollSetupPanel } from '../../features/settings/TechnicianPayrollSetupPanel';
 import { useAuth } from '../../lib/auth-context';
 import { useStaffCachedQuery } from '../../lib/use-scoped-cached-query';
 import { useStaffMutationInvalidation } from '../../lib/cache-invalidation';
@@ -46,9 +59,27 @@ export function TeamSettingsPage() {
   const [hardDeleteFlags, setHardDeleteFlags] = useState<
     Record<string, { canHardDelete: boolean; refusalMessage: string | null; loading: boolean }>
   >({});
+  const [payrollMemberId, setPayrollMemberId] = useState<string | null>(null);
+  const [inviteSalaryRands, setInviteSalaryRands] = useState('');
+  const [inviteEffectiveFrom, setInviteEffectiveFrom] = useState(
+    () => new Date().toISOString().slice(0, 10),
+  );
+  const [inviteDaysPerWeek, setInviteDaysPerWeek] = useState(String(DEFAULT_WORKING_DAYS_PER_WEEK));
+  const [inviteHoursPerDay, setInviteHoursPerDay] = useState(String(DEFAULT_WORKING_HOURS_PER_DAY));
+  const [inviteOtThreshold, setInviteOtThreshold] = useState(
+    String(DEFAULT_OVERTIME_DAILY_THRESHOLD_HOURS),
+  );
+  const [inviteOtMultiplier, setInviteOtMultiplier] = useState('1.5');
+  const [invitePayrollRef, setInvitePayrollRef] = useState('');
+  const [invitePayrollIncomplete, setInvitePayrollIncomplete] = useState(false);
 
   const canManage = useMemo(
     () => (user ? hasAnyPermission(user.permissions, ['users:manage']) : false),
+    [user],
+  );
+
+  const canViewPayroll = useMemo(
+    () => (user ? canViewTechnicianPayroll(user.permissions, user.roleName) : false),
     [user],
   );
 
@@ -119,6 +150,9 @@ export function TeamSettingsPage() {
     ]);
   }
 
+  const selectedInviteRole = assignableRoles.find((role) => role.id === roleId) ?? null;
+  const invitingTechnician = selectedInviteRole?.name === 'Technician';
+
   async function handleInvite(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -131,9 +165,38 @@ export function TeamSettingsPage() {
     setInviteUrl(null);
 
     try {
-      const result = await createTeamInvite(accessToken, { email, roleId });
+      let payrollSetup: Parameters<typeof createTeamInvite>[1]['payrollSetup'] = undefined;
+      if (invitingTechnician) {
+        if (invitePayrollIncomplete) {
+          payrollSetup = null;
+        } else {
+          const monthlySalaryCents = Math.round(Number(inviteSalaryRands) * 100);
+          if (!Number.isFinite(monthlySalaryCents) || monthlySalaryCents <= 0) {
+            setActionError('Enter a monthly salary, or mark payroll setup incomplete');
+            setIsInviting(false);
+            return;
+          }
+          const multiplier = Number(inviteOtMultiplier);
+          payrollSetup = {
+            monthlySalaryCents,
+            effectiveFrom: inviteEffectiveFrom,
+            workingDaysPerWeek: Number(inviteDaysPerWeek) || DEFAULT_WORKING_DAYS_PER_WEEK,
+            workingHoursPerDay: Number(inviteHoursPerDay) || DEFAULT_WORKING_HOURS_PER_DAY,
+            overtimeDailyThresholdHours:
+              Number(inviteOtThreshold) || DEFAULT_OVERTIME_DAILY_THRESHOLD_HOURS,
+            overtimeMultiplierBps: Math.round(
+              (Number.isFinite(multiplier) ? multiplier : 1.5) * 10_000,
+            ) || DEFAULT_OVERTIME_MULTIPLIER_BPS,
+            payrollReference: invitePayrollRef.trim() || null,
+          };
+        }
+      }
+
+      const result = await createTeamInvite(accessToken, { email, roleId, payrollSetup });
       setInviteUrl(result.inviteUrl);
       setEmail('');
+      setInviteSalaryRands('');
+      setInvitePayrollIncomplete(false);
       invalidateTeam();
       await reloadTeam();
     } catch (err) {
@@ -142,6 +205,16 @@ export function TeamSettingsPage() {
       setIsInviting(false);
     }
   }
+
+  const inviteDerivedHourly = (() => {
+    if (!invitingTechnician || invitePayrollIncomplete) return null;
+    const salaryCents = Math.round(Number(inviteSalaryRands) * 100);
+    if (!Number.isFinite(salaryCents) || salaryCents <= 0) return null;
+    return deriveInternalHourlyCostCents(salaryCents, {
+      workingDaysPerWeek: Number(inviteDaysPerWeek) || DEFAULT_WORKING_DAYS_PER_WEEK,
+      workingHoursPerDay: Number(inviteHoursPerDay) || DEFAULT_WORKING_HOURS_PER_DAY,
+    });
+  })();
 
   async function handleRevokeInvite(inviteId: string) {
     if (!accessToken || !canManage) return;
@@ -317,6 +390,13 @@ export function TeamSettingsPage() {
           <p className="page-muted">
             Invites are limited to Manager, Dispatcher, Accountant and Technician.
           </p>
+          {invitingTechnician ? (
+            <ol className="technician-onboarding-steps">
+              {TECHNICIAN_ONBOARDING_STEPS.map((step) => (
+                <li key={step}>{TECHNICIAN_ONBOARDING_STEP_LABELS[step]}</li>
+              ))}
+            </ol>
+          ) : null}
           <form className="settings-form" onSubmit={(event) => void handleInvite(event)}>
             <div className="settings-grid">
               <Input
@@ -344,8 +424,106 @@ export function TeamSettingsPage() {
                 </select>
               </label>
             </div>
+
+            {invitingTechnician ? (
+              <div className="technician-invite-payroll">
+                <h3 className="settings-section__title">Technician payroll setup</h3>
+                <p className="page-muted">
+                  Monthly salary is private (Owner / Finance only). Job labour uses the derived hourly
+                  allocation — salary expense is never double-counted with job labour.
+                </p>
+                <label className="settings-field settings-field--checkbox">
+                  <input
+                    type="checkbox"
+                    checked={invitePayrollIncomplete}
+                    onChange={(event) => setInvitePayrollIncomplete(event.target.checked)}
+                  />
+                  <span>Payroll information intentionally incomplete — show {PAYROLL_SETUP_INCOMPLETE}</span>
+                </label>
+                {!invitePayrollIncomplete ? (
+                  <div className="settings-grid">
+                    <Input
+                      label="Monthly salary (R)"
+                      type="number"
+                      min="1"
+                      step="0.01"
+                      value={inviteSalaryRands}
+                      onChange={(event) => setInviteSalaryRands(event.target.value)}
+                      required
+                    />
+                    <Input
+                      label="Effective start date"
+                      type="date"
+                      value={inviteEffectiveFrom}
+                      onChange={(event) => setInviteEffectiveFrom(event.target.value)}
+                      required
+                    />
+                    <Input
+                      label="Working days / week"
+                      type="number"
+                      min="1"
+                      max="7"
+                      step="0.5"
+                      value={inviteDaysPerWeek}
+                      onChange={(event) => setInviteDaysPerWeek(event.target.value)}
+                      required
+                    />
+                    <Input
+                      label="Working hours / day"
+                      type="number"
+                      min="1"
+                      max="24"
+                      step="0.25"
+                      value={inviteHoursPerDay}
+                      onChange={(event) => setInviteHoursPerDay(event.target.value)}
+                      required
+                    />
+                    <Input
+                      label="OT daily threshold (hours)"
+                      type="number"
+                      min="1"
+                      max="24"
+                      step="0.25"
+                      value={inviteOtThreshold}
+                      onChange={(event) => setInviteOtThreshold(event.target.value)}
+                      required
+                    />
+                    <Input
+                      label="OT multiplier"
+                      type="number"
+                      min="1"
+                      max="5"
+                      step="0.1"
+                      value={inviteOtMultiplier}
+                      onChange={(event) => setInviteOtMultiplier(event.target.value)}
+                      required
+                    />
+                    <Input
+                      label="Payroll reference (optional)"
+                      value={invitePayrollRef}
+                      onChange={(event) => setInvitePayrollRef(event.target.value)}
+                    />
+                  </div>
+                ) : (
+                  <p className="settings-alert settings-alert--error" role="status">
+                    {PAYROLL_SETUP_INCOMPLETE} — wage and job-cost figures will stay unavailable until
+                    payroll is completed.
+                  </p>
+                )}
+                {inviteDerivedHourly != null ? (
+                  <p className="page-muted">
+                    Derived internal hourly labour cost: {formatMoney(inviteDerivedHourly)} / hour
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
+
             <Button type="submit" disabled={isInviting || assignableRoles.length === 0}>
-              {isInviting ? 'Creating invite...' : 'Create invite link'}
+              {isInviting
+                ? 'Creating invite...'
+                : invitingTechnician
+                  ? 'Activate Access — create invite link'
+                  : 'Create invite link'}
             </Button>
           </form>
           {inviteUrl ? (
@@ -381,13 +559,19 @@ export function TeamSettingsPage() {
                   <th>Email</th>
                   <th>Role</th>
                   <th>Status</th>
+                  {canViewPayroll ? <th>Payroll</th> : null}
                   {canManage || canAssignRoles ? <th>Actions</th> : null}
                 </tr>
               </thead>
               <tbody>
                 {members.length === 0 ? (
                   <tr>
-                    <td colSpan={canManage || canAssignRoles ? 5 : 4} className="team-table__empty">
+                    <td
+                      colSpan={
+                        (canManage || canAssignRoles ? 5 : 4) + (canViewPayroll ? 1 : 0)
+                      }
+                      className="team-table__empty"
+                    >
                       No team members found.
                     </td>
                   </tr>
@@ -429,6 +613,33 @@ export function TeamSettingsPage() {
                           )}
                         </td>
                         <td>{member.isActive ? 'Active' : 'Suspended'}</td>
+                        {canViewPayroll ? (
+                          <td>
+                            {member.roleName === 'Technician' ? (
+                              member.payroll?.setupStatus === 'incomplete' ? (
+                                <button
+                                  type="button"
+                                  className="team-actions__link team-actions__link--warn"
+                                  onClick={() => setPayrollMemberId(member.id)}
+                                >
+                                  {member.payroll.setupLabel ?? PAYROLL_SETUP_INCOMPLETE}
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  className="team-actions__link"
+                                  onClick={() => setPayrollMemberId(member.id)}
+                                >
+                                  {member.payroll?.currentMonthlySalaryCents != null
+                                    ? formatMoney(member.payroll.currentMonthlySalaryCents)
+                                    : 'View payroll'}
+                                </button>
+                              )
+                            ) : (
+                              <span className="page-muted">—</span>
+                            )}
+                          </td>
+                        ) : null}
                         {canManage || canAssignRoles ? (
                           <td>
                             {isSelf ? (
@@ -541,6 +752,30 @@ export function TeamSettingsPage() {
               </tbody>
             </table>
           </div>
+
+          {canViewPayroll && payrollMemberId ? (
+            <section className="settings-section technician-payroll-section">
+              <div className="technician-payroll-section__toolbar">
+                <Button type="button" variant="secondary" onClick={() => setPayrollMemberId(null)}>
+                  Close payroll
+                </Button>
+              </div>
+              <TechnicianPayrollSetupPanel
+                accessToken={accessToken!}
+                memberId={payrollMemberId}
+                memberName={
+                  (() => {
+                    const m = members.find((row) => row.id === payrollMemberId);
+                    return m ? `${m.firstName} ${m.lastName}` : 'Technician';
+                  })()
+                }
+                onUpdated={() => {
+                  invalidateTeam();
+                  void membersQuery.refetch();
+                }}
+              />
+            </section>
+          ) : null}
         </section>
       </AnalyticsTabPanel>
 

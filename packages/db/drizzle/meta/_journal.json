@@ -1345,6 +1345,13 @@
       "when": 1786459200000,
       "tag": "0196_universal_evidence_client_visible",
       "breakpoints": true
+    },
+    {
+      "idx": 192,
+      "version": "7",
+      "when": 1786545600000,
+      "tag": "0197_technician_payroll_terms",
+      "breakpoints": true
     }
   ]
 }

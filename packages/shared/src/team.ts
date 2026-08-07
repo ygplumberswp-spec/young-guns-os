@@ -24,6 +24,17 @@ export type TeamMember = {
     canHardDelete: boolean;
     hardDeleteRefusalMessage: string | null;
   };
+  /**
+   * Owner/Finance only. Technicians never receive salary fields.
+   * When role is Technician and payroll is missing: setupStatus = incomplete.
+   */
+  payroll?: {
+    setupStatus: 'complete' | 'incomplete';
+    setupLabel: string | null;
+    currentMonthlySalaryCents: number | null;
+    derivedHourlyCostCents: number | null;
+    effectiveFrom: string | null;
+  } | null;
 };
 
 export type TeamInvite = {
@@ -39,6 +50,21 @@ export type TeamInvite = {
 export type CreateTeamInviteRequest = {
   email: string;
   roleId: string;
+  /**
+   * Required for a complete Technician onboarding payroll setup.
+   * When omitted for Technician invites, access can still activate but
+   * wage/job-cost surfaces show PAYROLL SETUP INCOMPLETE.
+   */
+  payrollSetup?: {
+    monthlySalaryCents: number;
+    effectiveFrom: string;
+    workingDaysPerWeek?: number;
+    workingHoursPerDay?: number;
+    overtimeDailyThresholdHours?: number;
+    overtimeMultiplierBps?: number;
+    payrollReference?: string | null;
+    notes?: string | null;
+  } | null;
 };
 
 export type UpdateTeamMemberRoleRequest = {
