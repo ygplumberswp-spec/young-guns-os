@@ -33,6 +33,7 @@ import type { XeroRateBudgetService } from '../services/xero-rate-budget.service
 import type { XeroRateBudgetProviderProbeService } from '../services/xero-rate-budget-provider-probe.service.js';
 import { XeroRateBudgetProviderProbeError } from '../services/xero-rate-budget-provider-probe.service.js';
 import { XeroError } from '../lib/xero.client.js';
+import { saveWhatsappConnectionSchema as saveWhatsappSchema } from '../lib/whatsapp-connection-schema.js';
 import type { XeroGate3ControlledQuoteService } from '../services/xero-gate3-controlled-quote.service.js';
 import { XeroGate3ControlledQuoteError } from '../services/xero-gate3-controlled-quote.service.js';
 import type { XeroGate4ControlledInvoiceService } from '../services/xero-gate4-controlled-invoice.service.js';
@@ -126,13 +127,6 @@ const saveYocoSchema = z.preprocess((raw) => {
     .refine((value) => value.length > 0, 'Secret key is required'),
   environment: z.enum(['test', 'live']).optional(),
 }));
-
-const saveWhatsappSchema = z.object({
-  accessToken: z.string().trim().max(2000).optional(),
-  phoneNumberId: z.string().trim().min(1).max(200),
-  businessAccountId: z.string().trim().min(1).max(200),
-  webhookVerifyToken: z.string().trim().max(200).optional().nullable(),
-});
 
 const createWhatsappTemplateSchema = z.object({
   name: z.string().trim().min(1).max(200),

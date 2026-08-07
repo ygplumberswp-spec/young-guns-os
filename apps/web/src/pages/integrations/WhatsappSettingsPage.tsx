@@ -166,10 +166,14 @@ export function WhatsappSettingsPage() {
     setSuccess(null);
 
     try {
+      const token = formValues.accessToken.replace(/^Bearer\s+/i, '').trim();
       const updated = await saveWhatsappConnection(accessToken, {
-        accessToken: formValues.accessToken || undefined,
-        phoneNumberId: formValues.phoneNumberId,
-        businessAccountId: formValues.businessAccountId,
+        // Omit empty token so reconnect can keep stored creds only when intentional;
+        // Owner reconnect path always pastes a fresh token into this field.
+        ...(token ? { accessToken: token } : {}),
+        phoneNumberId: formValues.phoneNumberId.trim(),
+        businessAccountId: formValues.businessAccountId.trim(),
+        // Optional — blank must not fail API validation.
         webhookVerifyToken: formValues.webhookVerifyToken.trim() || null,
       });
       setConnection(updated);
