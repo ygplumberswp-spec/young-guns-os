@@ -1261,6 +1261,13 @@
       "when": 1785868000000,
       "tag": "0184_job_profitability_engine",
       "breakpoints": true
+    },
+    {
+      "idx": 180,
+      "version": "7",
+      "when": 1785869000000,
+      "tag": "0185_job_cost_control",
+      "breakpoints": true
     }
   ]
 }

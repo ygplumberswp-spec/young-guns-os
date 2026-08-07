@@ -66,6 +66,10 @@ export const companyFinanceSettings = pgTable('company_finance_settings', {
   profitabilityWarningMarginBps: integer('profitability_warning_margin_bps')
     .notNull()
     .default(1500),
+  /** Expected vs actual margin variance threshold for cost control alerts (basis points). */
+  costControlMarginVarianceBps: integer('cost_control_margin_variance_bps')
+    .notNull()
+    .default(1000),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });

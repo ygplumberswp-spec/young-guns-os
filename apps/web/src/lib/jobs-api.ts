@@ -238,6 +238,17 @@ export async function createJobCostAdjustment(
   return data.adjustment;
 }
 
+export async function fetchJobCostChecklist(
+  accessToken: string,
+  jobId: string,
+): Promise<import('@titan/shared').JobCostChecklist> {
+  const data = await request<{ checklist: import('@titan/shared').JobCostChecklist }>(
+    `/jobs/${jobId}/cost-checklist`,
+    { accessToken },
+  );
+  return data.checklist;
+}
+
 export function newJobsClientActionId(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }

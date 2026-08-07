@@ -21,6 +21,11 @@ const secondaryItems = [
     label: 'Cashflow & Profit',
     href: '/finance-cashflow-profit',
   },
+  {
+    id: 'finance-job-cost-control',
+    label: 'Cost Control',
+    href: '/finance/job-cost-control',
+  },
   { id: 'finance-settings', label: 'Finance Settings', href: '/settings/company' },
   { id: 'numbering-rules', label: 'Numbering Rules', href: '/settings/company' },
   { id: 'archived-records', label: 'Archived Records', href: '/drafts?status=archived' },

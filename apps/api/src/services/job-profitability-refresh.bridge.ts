@@ -1,4 +1,5 @@
 import type { BusinessEvent } from '../lib/automation-events.js';
+import type { JobCostControlService } from './job-cost-control.service.js';
 import type { JobProfitabilityService } from './job-profitability.service.js';
 import type { DatabaseClient } from '@titan/db';
 import { invoices, purchaseOrders, quotes } from '@titan/db';
@@ -19,6 +20,7 @@ export class JobProfitabilityRefreshBridge {
   constructor(
     private readonly db: DatabaseClient,
     private readonly profitabilityService: JobProfitabilityService,
+    private readonly costControlService?: JobCostControlService,
   ) {}
 
   async handleBusinessEvent(event: BusinessEvent): Promise<void> {
@@ -35,6 +37,11 @@ export class JobProfitabilityRefreshBridge {
       await this.profitabilityService.recalculateJobProfitability(event.companyId, jobId, {
         includeSensitiveCosts: true,
       });
+      if (event.eventType === 'job.completed') {
+        await this.costControlService?.refreshFinancialReviewOnJobComplete(event.companyId, jobId);
+      } else {
+        await this.costControlService?.invalidateFinancialReviewIfStale(event.companyId, jobId);
+      }
     } catch (error) {
       console.error('[job-profitability-refresh] snapshot refresh failed', {
         companyId: event.companyId,

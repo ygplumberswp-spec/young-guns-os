@@ -59,7 +59,9 @@ import { MarketingEligibilityService } from './services/marketing-eligibility.se
 import { JobsService } from './services/jobs.service.js';
 import { JobCostingService } from './services/job-costing.service.js';
 import { JobProfitabilityService } from './services/job-profitability.service.js';
+import { JobCostControlService } from './services/job-cost-control.service.js';
 import { JobProfitabilityRefreshBridge } from './services/job-profitability-refresh.bridge.js';
+import { createJobCostControlRouter } from './routes/job-cost-control.js';
 import { JobDocumentPackService } from './services/job-document-pack.service.js';
 import { CompletionReportService } from './services/completion-report.service.js';
 import { ReportExportService } from './services/report-export.service.js';
@@ -890,7 +892,12 @@ const mobileSyncService = new MobileSyncService(db);
 const jobExecutionService = new JobExecutionService(db, stockMovementsService);
 const jobCostingService = new JobCostingService(db);
 const jobProfitabilityService = new JobProfitabilityService(db);
-const jobProfitabilityRefreshBridge = new JobProfitabilityRefreshBridge(db, jobProfitabilityService);
+const jobCostControlService = new JobCostControlService(db, jobProfitabilityService);
+const jobProfitabilityRefreshBridge = new JobProfitabilityRefreshBridge(
+  db,
+  jobProfitabilityService,
+  jobCostControlService,
+);
 backgroundWorkOrchestratorService.attachJobProfitabilityService(jobProfitabilityService);
 const jobDocumentPackService = new JobDocumentPackService(db);
 const technicianWorkflowService = new TechnicianWorkflowService(
@@ -1863,6 +1870,7 @@ app.use(
     jobExecutionService,
     jobCostingService,
     jobProfitabilityService,
+    jobCostControlService,
     mobileWorkforceService,
     teamService,
     db,
@@ -1889,6 +1897,15 @@ app.use(
     db,
     jobEvidenceStorage: jobEvidenceStorageService,
     financeDocumentEvidenceStorage: financeDocumentEvidenceStorageService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/finance',
+  createJobCostControlRouter({
+    jobCostControlService,
+    teamService,
     jwtSecret: env.JWT_SECRET,
     authService,
   }),

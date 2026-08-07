@@ -269,3 +269,13 @@ export async function previewFinanceDocumentPdf(
 
   return { blob, filename };
 }
+
+export async function fetchJobCostControlQueue(
+  accessToken: string,
+): Promise<import('@titan/shared').JobCostControlQueue> {
+  const data = await request<{ queue: import('@titan/shared').JobCostControlQueue }>(
+    '/finance/job-cost-control',
+    { accessToken },
+  );
+  return data.queue;
+}

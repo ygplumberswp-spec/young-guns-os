@@ -567,6 +567,10 @@ export function App() {
                           component={OwnerPages.FinanceAuraAgentPage}
                         />
                         <Route
+                          path="/finance/job-cost-control"
+                          component={OwnerPages.JobCostControlPage}
+                        />
+                        <Route
                           path="/finance-cashflow-profit"
                           component={OwnerPages.FinanceCashflowProfitPage}
                         />
