@@ -176,6 +176,8 @@ import { EnterpriseMissionControlService } from './services/enterprise-mission-c
 import { EnterpriseEvolutionService } from './services/enterprise-evolution.service.js';
 import { EnterpriseDeveloperPlatformService } from './services/enterprise-developer-platform.service.js';
 import { EnterpriseSaasPlatformService } from './services/enterprise-saas-platform.service.js';
+import { SaasOnboardingService } from './services/saas-onboarding.service.js';
+import { createSaasOnboardingRouter } from './routes/saas-onboarding.js';
 import { EnterpriseProductionReadinessService } from './services/enterprise-production-readiness.service.js';
 import { createEnterpriseProductionReadinessRouter } from './routes/enterprise-production-readiness.js';
 import { EnterpriseMobilePlatformService } from './services/enterprise-mobile-platform.service.js';
@@ -574,6 +576,12 @@ authService.setPayrollService(technicianPayrollService);
 const enterpriseSaasPlatformService = new EnterpriseSaasPlatformService({
   db,
   teamService,
+});
+const saasOnboardingService = new SaasOnboardingService({
+  db,
+  companyService,
+  teamService,
+  enterpriseSaasPlatformService,
 });
 configureSaasTenantAccessGate(enterpriseSaasPlatformService);
 teamService.setSeatGuard((companyId, roleName) =>
@@ -1907,6 +1915,7 @@ app.use(
     isProduction: env.NODE_ENV === 'production',
     logger,
     enterpriseSecurityService,
+    saasOnboardingService,
   }),
 );
 app.use(
@@ -2428,6 +2437,15 @@ app.use(
     enterpriseSaasPlatformService,
     aiOperationsService,
     aiProviderResilienceService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/onboarding',
+  createSaasOnboardingRouter({
+    saasOnboardingService,
     teamService,
     jwtSecret: env.JWT_SECRET,
     authService,

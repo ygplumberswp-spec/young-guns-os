@@ -121,6 +121,13 @@ export type SaasTenantSummary = {
   lastAccessAction?: string | null;
   lastAccessActionAt?: string | null;
   statusChip?: string | null;
+  /** Onboarding metadata for Platform Owner (not tenant business content). */
+  onboardingStatus?: string | null;
+  onboardingCurrentStep?: string | null;
+  onboardingCompletionPercent?: number | null;
+  lastOnboardingActivityAt?: string | null;
+  integrationsConnectedCount?: number | null;
+  importAttentionCount?: number | null;
 };
 
 export type SaasTenantBranchSummary = {

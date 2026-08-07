@@ -32,7 +32,7 @@ function SignupForm() {
 
     try {
       await signup({ companyName, firstName, lastName, email, password });
-      setLocation('/');
+      setLocation('/onboarding');
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : 'Unable to create workspace');
     } finally {

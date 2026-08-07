@@ -343,6 +343,24 @@ export function PlatformPage() {
                             <p>{tenant.userCount}</p>
                           </div>
                           <div>
+                            <strong>Onboarding</strong>
+                            <p>
+                              {(tenant.onboardingStatus ?? 'not_started').replace(/_/g, ' ')}
+                              {tenant.onboardingCompletionPercent != null
+                                ? ` · ${tenant.onboardingCompletionPercent}%`
+                                : ''}
+                            </p>
+                            <p className="muted-text">
+                              Step: {tenant.onboardingCurrentStep ?? '—'}
+                              {tenant.integrationsConnectedCount != null
+                                ? ` · Integrations ${tenant.integrationsConnectedCount}`
+                                : ''}
+                              {tenant.importAttentionCount
+                                ? ` · Import attention ${tenant.importAttentionCount}`
+                                : ''}
+                            </p>
+                          </div>
+                          <div>
                             <strong>Last Payment</strong>
                             <p>
                               {tenant.lastSuccessfulPaymentAt
@@ -351,6 +369,12 @@ export function PlatformPage() {
                             </p>
                           </div>
                         </div>
+                        {tenant.lastOnboardingActivityAt ? (
+                          <p className="muted-text">
+                            Last onboarding activity:{' '}
+                            {new Date(tenant.lastOnboardingActivityAt).toLocaleString()}
+                          </p>
+                        ) : null}
                         {tenant.suspensionReason ? (
                           <p className="muted-text">Reason: {tenant.suspensionReason}</p>
                         ) : null}
