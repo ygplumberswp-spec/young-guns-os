@@ -16,6 +16,8 @@ describe('YG-CUTOVER-001B Manager acceptance contracts', () => {
     assert.equal(YG_CUTOVER_001B_MANAGER_RBAC_MATRIX.canonicalRoleName, 'Manager');
     assert.equal(YG_CUTOVER_001B_MANAGER_RBAC_MATRIX.teamAndAccess.canAssignRoles, false);
     assert.equal(YG_CUTOVER_001B_MANAGER_RBAC_MATRIX.aura.privilegedDecide, false);
+    assert.equal(YG_CUTOVER_001B_MANAGER_RBAC_MATRIX.aura.dashboardPrimarySurface, true);
+    assert.equal(YG_CUTOVER_001B_MANAGER_RBAC_MATRIX.aura.ownerOnlyFinanceViaAura, false);
   });
 
   it('documents Manager finance visibility from finance:read/write', () => {

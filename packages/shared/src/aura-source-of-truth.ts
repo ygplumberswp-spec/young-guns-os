@@ -262,7 +262,17 @@ export function getAuraRoleAccessRule(roleName: string): AuraRoleAccessRule | nu
   if (normalized === 'Owner' || normalized === 'Platform Owner' || normalized === 'Company Owner') {
     return AURA_ROLE_ACCESS_MATRIX.find((r) => r.role === 'Owner') ?? null;
   }
-  if (normalized === 'Admin' || normalized === 'Office' || normalized === 'Dispatcher') {
+  /**
+   * Manager is the canonical Admin/Office invite role (YG-CUTOVER).
+   * Maps to Admin AURA policy: company finance/CRM/integrations yes;
+   * Owner-only dashboards / privileged decide remain false.
+   */
+  if (
+    normalized === 'Admin' ||
+    normalized === 'Manager' ||
+    normalized === 'Office' ||
+    normalized === 'Dispatcher'
+  ) {
     return AURA_ROLE_ACCESS_MATRIX.find((r) => r.role === 'Admin') ?? null;
   }
   if (normalized === 'Technician') {
@@ -272,6 +282,19 @@ export function getAuraRoleAccessRule(roleName: string): AuraRoleAccessRule | nu
     return AURA_ROLE_ACCESS_MATRIX.find((r) => r.role === 'Client') ?? null;
   }
   return null;
+}
+
+/** Dashboard / primary AURA chat surface — permission gate (not silent hide). */
+export function canAccessDashboardAuraSurface(input: {
+  roleName: string;
+  permissions: readonly string[];
+}): boolean {
+  const permissions = [...input.permissions];
+  if (permissions.includes('*')) return true;
+  if (permissions.includes('agents:read') || permissions.includes('intelligence:read')) {
+    return true;
+  }
+  return false;
 }
 
 /** Technician forbidden prompt themes — server policies must match. */

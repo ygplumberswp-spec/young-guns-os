@@ -117,4 +117,15 @@ describe('YG-CUTOVER-001B Manager RBAC acceptance', () => {
     assert.equal(YG_CUTOVER_001B_GOOGLE_MAPS_EVIDENCE.status, 'rendering_evidence_only');
     assert.equal(YG_CUTOVER_001B_GOOGLE_MAPS_EVIDENCE.authority.fleetGps, 'Cartrack');
   });
+
+  it('Owner and Manager dashboard AURA is a primary surface before heartbeat', () => {
+    const dash = read('features/dashboard/ExecutiveDashboard.tsx');
+    const auraIdx = dash.indexOf('exec-dashboard-region--aura');
+    const heartbeatIdx = dash.indexOf('exec-dashboard-region--heartbeat');
+    assert.ok(auraIdx >= 0 && heartbeatIdx > auraIdx);
+    assert.match(dash, /canAccessDashboardAuraSurface/);
+    assert.equal(YG_CUTOVER_001B_MANAGER_RBAC_MATRIX.aura.dashboardPrimarySurface, true);
+    assert.ok(MANAGER_PERMISSIONS.includes('agents:read'));
+    assert.ok(MANAGER_PERMISSIONS.includes('intelligence:read'));
+  });
 });

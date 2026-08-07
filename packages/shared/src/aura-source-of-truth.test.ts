@@ -3,6 +3,7 @@ import { describe, it } from 'node:test';
 import {
   AURA_ROLE_ACCESS_MATRIX,
   AURA_SOURCE_OF_TRUTH_REGISTRY,
+  canAccessDashboardAuraSurface,
   classifyAuraToolClass,
   getAuraRoleAccessRule,
   isTechnicianForbiddenAuraTopic,
@@ -42,12 +43,43 @@ describe('AURA-TRAIN-001 source-of-truth registry', () => {
 });
 
 describe('AURA-TRAIN-001 role access matrix', () => {
-  it('maps Owner/Admin/Technician/Client correctly', () => {
+  it('maps Owner/Admin/Manager/Technician/Client correctly', () => {
     assert.equal(AURA_ROLE_ACCESS_MATRIX.length, 4);
     assert.equal(getAuraRoleAccessRule('Owner')?.mayAccessCompanyFinance, true);
+    assert.equal(getAuraRoleAccessRule('Manager')?.role, 'Admin');
+    assert.equal(getAuraRoleAccessRule('Manager')?.mayAccessCompanyFinance, true);
+    assert.equal(getAuraRoleAccessRule('Manager')?.mayAccessOwnerDashboards, false);
     assert.equal(getAuraRoleAccessRule('Technician')?.mayAccessCompanyFinance, false);
     assert.equal(getAuraRoleAccessRule('Technician')?.jobScope, 'assigned_only');
     assert.equal(getAuraRoleAccessRule('Client')?.jobScope, 'own_client_only');
+  });
+
+  it('dashboard AURA surface follows agents/intelligence permissions', () => {
+    assert.equal(
+      canAccessDashboardAuraSurface({
+        roleName: 'Manager',
+        permissions: ['agents:read', 'intelligence:read', 'finance:read'],
+      }),
+      true,
+    );
+    assert.equal(
+      canAccessDashboardAuraSurface({ roleName: 'Company Owner', permissions: ['*'] }),
+      true,
+    );
+    assert.equal(
+      canAccessDashboardAuraSurface({
+        roleName: 'Technician',
+        permissions: ['mobile:read', 'jobs:read'],
+      }),
+      false,
+    );
+    assert.equal(
+      canAccessDashboardAuraSurface({
+        roleName: 'Client',
+        permissions: ['portal.dashboard:read'],
+      }),
+      false,
+    );
   });
 
   it('detects technician forbidden finance topics', () => {

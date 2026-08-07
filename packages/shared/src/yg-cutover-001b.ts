@@ -103,6 +103,13 @@ export const YG_CUTOVER_001B_MANAGER_RBAC_MATRIX = {
     chatAndAgents: true,
     commandCentreAccess: true,
     privilegedDecide: false,
+    dashboardPrimarySurface: true,
+    mobileOrder:
+      'AURA → Business Heartbeat → Attention → Jobs → Finance → Fleet → Tools',
+    inheritsTenantScope: true,
+    ownerOnlyFinanceViaAura: false,
+    rbacReason:
+      'MANAGER_PERMISSIONS includes agents:read + intelligence:read; getAuraRoleAccessRule(Manager) → Admin (company finance yes, Owner dashboards no)',
   },
   destructiveApprovals: {
     hardDeleteUsers: 'users:manage + safe-delete eligibility (not Owner elevation)',

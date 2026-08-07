@@ -1,5 +1,9 @@
-import { useEffect } from 'react';
-import { DASHBOARD_LIST_LIMITS, OPS_SNAPSHOT_FOLLOW_UP_MS } from '@titan/shared';
+import { useEffect, useMemo } from 'react';
+import {
+  canAccessDashboardAuraSurface,
+  DASHBOARD_LIST_LIMITS,
+  OPS_SNAPSHOT_FOLLOW_UP_MS,
+} from '@titan/shared';
 import { useAuth } from '../../lib/auth-context';
 import { fetchExecutiveDashboardSummary } from '../../lib/dashboard-api-client';
 import {
@@ -96,6 +100,19 @@ export function ExecutiveDashboard() {
 
   const previewJobs = liveJobs.slice(0, DASHBOARD_LIST_LIMITS.activeJobs);
 
+  /** Canonical AURA gate: agents/intelligence read (Manager + Owner). Not Technician/Client. */
+  const canAccessDashboardAura = useMemo(
+    () =>
+      Boolean(
+        user &&
+          canAccessDashboardAuraSurface({
+            roleName: user.roleName,
+            permissions: user.permissions,
+          }),
+      ),
+    [user],
+  );
+
   return (
     <div className="exec-dashboard exec-dashboard--dash001a exec-dashboard--owner001">
       <div className="exec-dashboard-region exec-dashboard-region--greeting">
@@ -121,6 +138,26 @@ export function ExecutiveDashboard() {
           </SectionErrorBoundary>
         ) : null}
       </div>
+
+      {/*
+        YG-CUTOVER-001B AURA visibility: primary surface immediately after greeting.
+        Required mobile order: AURA → Heartbeat → Attention → Jobs → Finance → Fleet → Tools.
+        DOM placement must not rely on CSS order alone (iPhone regression when AURA sat after Fleet).
+      */}
+      {canAccessDashboardAura ? (
+        <div className="exec-dashboard-row exec-dashboard-row--aura exec-dashboard-region exec-dashboard-region--aura">
+          <SectionErrorBoundary sectionName="AURA Executive" onRetry={refetchSummary}>
+            <AuraExecutiveRecommendationsPanel
+              data={dash001?.auraExecutive ?? null}
+              isLoading={isLoading}
+              error={loadError}
+            />
+          </SectionErrorBoundary>
+          <SectionErrorBoundary sectionName="AURA">
+            <AuraExecutiveChatLauncher />
+          </SectionErrorBoundary>
+        </div>
+      ) : null}
 
       <div className="exec-dashboard-region exec-dashboard-region--heartbeat">
         <SectionErrorBoundary sectionName="Business Heartbeat" onRetry={refetchSummary}>
@@ -224,19 +261,6 @@ export function ExecutiveDashboard() {
           ) : (
             <DashboardSectionSkeleton rows={2} />
           )}
-        </SectionErrorBoundary>
-      </div>
-
-      <div className="exec-dashboard-row exec-dashboard-row--aura exec-dashboard-region exec-dashboard-region--aura">
-        <SectionErrorBoundary sectionName="AURA Executive" onRetry={refetchSummary}>
-          <AuraExecutiveRecommendationsPanel
-            data={dash001?.auraExecutive ?? null}
-            isLoading={isLoading}
-            error={loadError}
-          />
-        </SectionErrorBoundary>
-        <SectionErrorBoundary sectionName="AURA">
-          <AuraExecutiveChatLauncher />
         </SectionErrorBoundary>
       </div>
 

@@ -4276,7 +4276,10 @@ a:focus-visible {
     order: 0;
   }
 
-  /* MOBILE-001 hierarchy: AURA / Owner actions first */
+  /*
+   * MOBILE-001 / YG-CUTOVER-001B hierarchy (must match DOM when possible):
+   * AURA → Heartbeat → Attention → Jobs → Finance → Fleet → Tools
+   */
   .exec-dashboard-region--aura {
     order: 1;
   }
@@ -4304,6 +4307,15 @@ a:focus-visible {
 
   .exec-dashboard-region--tools {
     order: 7;
+  }
+
+  /* Keep AURA visually primary — full-width stack, no collapse */
+  .exec-dashboard-region--aura {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    width: 100%;
+    min-width: 0;
   }
 
   .exec-dashboard-row--top,

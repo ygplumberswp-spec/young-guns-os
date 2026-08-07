@@ -89,6 +89,16 @@ describe('OWNER-001 Owner Command Centre finalisation', () => {
     assert.match(mobileBlock, /\.exec-dashboard-region--aura\s*\{\s*order:\s*1;/);
   });
 
+  it('YG-CUTOVER-001B: AURA is a primary DOM surface before heartbeat (not after fleet)', () => {
+    const auraIdx = dashboardSource.indexOf('exec-dashboard-region--aura');
+    const heartbeatIdx = dashboardSource.indexOf('exec-dashboard-region--heartbeat');
+    const fleetIdx = dashboardSource.indexOf('sectionName="Live fleet map"');
+    assert.ok(auraIdx >= 0, 'AURA region present');
+    assert.ok(heartbeatIdx > auraIdx, 'AURA must precede Business Heartbeat in DOM');
+    assert.ok(fleetIdx > auraIdx, 'AURA must precede Live Fleet Map in DOM');
+    assert.match(dashboardSource, /canAccessDashboardAuraSurface/);
+  });
+
   it('uses compact empty states for jobs panels', () => {
     assert.match(activeJobsSource, /exec-panel-empty--compact/);
     assert.match(activeJobsSource, /No active jobs/);

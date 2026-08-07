@@ -20,14 +20,14 @@ export function AuraExecutiveChatLauncher() {
   return (
     <Panel
       title="AURA"
-      description="Executive assistant"
+      description="Company assistant"
       className="exec-aura-launcher-panel"
       headerAction={<Link href="/aura">Open full AURA Chat</Link>}
     >
       <div className="exec-aura-launcher">
         <p className="exec-aura-launcher__intro">
-          Ask AURA about jobs, cash, quotes and priorities. Answers use this company&apos;s live
-          records only.
+          Ask AURA about jobs, cash, quotes and priorities for this company. Answers use live
+          tenant records only — scoped to your role permissions.
         </p>
         {error ? <p className="form-error">{error}</p> : null}
         <form className="exec-aura-launcher__form" onSubmit={handleSubmit}>
