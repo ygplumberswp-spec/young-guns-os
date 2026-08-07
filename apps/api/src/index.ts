@@ -31,6 +31,7 @@ import { BankStatementImportService } from './services/bank-statement-import.ser
 import { createErrorHandler, notFoundHandler } from './middleware/error-handler.js';
 import { requestContextMiddleware } from './middleware/request-context.js';
 import { configureRbacAudit } from './middleware/rbac.js';
+import { configureSaasTenantAccessGate } from './middleware/saas-tenant-access-gate.js';
 import { securityHeadersMiddleware } from './middleware/security-headers.js';
 import { parseCorsOriginAllowlist } from './lib/public-url.js';
 import { createAuthRouter } from './routes/auth.js';
@@ -574,6 +575,7 @@ const enterpriseSaasPlatformService = new EnterpriseSaasPlatformService({
   db,
   teamService,
 });
+configureSaasTenantAccessGate(enterpriseSaasPlatformService);
 const crmService = new CrmService(db);
 const customerDuplicateMergeService = new CustomerDuplicateMergeService(db);
 const customerValueClassificationService = new CustomerValueClassificationService(db);

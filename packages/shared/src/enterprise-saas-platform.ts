@@ -46,6 +46,21 @@ export type SaasTenantSummary = {
   userCount: number;
   provisionedAt: string | null;
   createdAt: string;
+  /** Platform Owner control-plane fields (metadata only — not tenant business content). */
+  primaryContactEmail?: string | null;
+  primaryContactName?: string | null;
+  paidThroughAt?: string | null;
+  accessState?: 'allowed' | 'suspended';
+  subscriptionDisplayStatus?: string | null;
+  paymentFailed?: boolean;
+  lastSuccessfulPaymentAt?: string | null;
+  lastPaymentFailedAt?: string | null;
+  suspensionReason?: string | null;
+  cancellationState?: 'none' | 'cancelled';
+  reactivationEligible?: boolean;
+  lastAccessAction?: string | null;
+  lastAccessActionAt?: string | null;
+  statusChip?: string | null;
 };
 
 export type SaasTenantBranchSummary = {

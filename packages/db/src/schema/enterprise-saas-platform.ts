@@ -92,6 +92,10 @@ export const saasTenantProfiles = pgTable('saas_tenant_profiles', {
   provisionedAt: timestamp('provisioned_at', { withTimezone: true }),
   suspendedAt: timestamp('suspended_at', { withTimezone: true }),
   cancelledAt: timestamp('cancelled_at', { withTimezone: true }),
+  /** Platform Owner / entitlement suspension reason (not a data purge). */
+  suspensionReason: text('suspension_reason'),
+  lastAccessAction: text('last_access_action'),
+  lastAccessActionAt: timestamp('last_access_action_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
@@ -145,9 +149,15 @@ export const saasSubscriptions = pgTable('saas_subscriptions', {
   status: saasSubscriptionStatusEnum('status').notNull().default('trial'),
   trialEndsAt: timestamp('trial_ends_at', { withTimezone: true }),
   currentPeriodStart: timestamp('current_period_start', { withTimezone: true }),
+  /** Paid-through entitlement end — access remains until this timestamp. */
   currentPeriodEnd: timestamp('current_period_end', { withTimezone: true }),
   gracePeriodEndsAt: timestamp('grace_period_ends_at', { withTimezone: true }),
   cancelledAt: timestamp('cancelled_at', { withTimezone: true }),
+  lastPaymentFailedAt: timestamp('last_payment_failed_at', { withTimezone: true }),
+  lastPaymentFailureReason: text('last_payment_failure_reason'),
+  lastSuccessfulPaymentAt: timestamp('last_successful_payment_at', { withTimezone: true }),
+  /** Provider reference for idempotent payment/renewal events. */
+  paymentProviderRef: text('payment_provider_ref'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });

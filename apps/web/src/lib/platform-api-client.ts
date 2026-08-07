@@ -43,12 +43,13 @@ export async function provisionTenant(accessToken: string, body: ProvisionSaasTe
   return data.tenant;
 }
 
-export async function suspendTenant(accessToken: string, companyId: string) {
+export async function suspendTenant(accessToken: string, companyId: string, reason?: string) {
   const data = await request<{ tenant: SaasTenantSummary }>(
     `/platform/tenants/${companyId}/suspend`,
     {
       accessToken,
       method: 'POST',
+      body: reason ? { reason } : {},
     },
   );
   return data.tenant;
@@ -63,6 +64,37 @@ export async function reactivateTenant(accessToken: string, companyId: string) {
     },
   );
   return data.tenant;
+}
+
+export async function cancelTenantAccess(accessToken: string, companyId: string, reason?: string) {
+  const data = await request<{ tenant: SaasTenantSummary }>(
+    `/platform/tenants/${companyId}/cancel-access`,
+    {
+      accessToken,
+      method: 'POST',
+      body: reason ? { reason } : {},
+    },
+  );
+  return data.tenant;
+}
+
+export type SaasCustomerAccessStatus = {
+  companyName: string;
+  accessState: 'allowed' | 'suspended';
+  allowed: boolean;
+  accountStatus: string;
+  subscriptionStatus: string | null;
+  paidThroughAt: string | null;
+  paymentFailed: boolean;
+  customerMessage: string;
+  statusChip: string;
+};
+
+export async function fetchSaasAccessStatus(accessToken: string) {
+  const data = await request<SaasCustomerAccessStatus>('/platform/access-status', {
+    accessToken,
+  });
+  return data;
 }
 
 export async function createSubscriptionPlan(

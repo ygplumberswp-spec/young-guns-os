@@ -1352,6 +1352,13 @@
       "when": 1786545600000,
       "tag": "0197_technician_payroll_terms",
       "breakpoints": true
+    },
+    {
+      "idx": 193,
+      "version": "7",
+      "when": 1786632000000,
+      "tag": "0198_saas_tenant_access_control",
+      "breakpoints": true
     }
   ]
 }
