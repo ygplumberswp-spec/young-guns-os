@@ -23,6 +23,7 @@ import { auraConversations, auraMessages, users } from '@titan/db';
 import type { CrmService } from './crm.service.js';
 import type { JobsService } from './jobs.service.js';
 import type { SchedulingService } from './scheduling.service.js';
+import type { GoogleCalendarService } from './google-calendar.service.js';
 import type { FinanceService } from './finance.service.js';
 import type { InventoryService } from './inventory.service.js';
 import type { FleetService } from './fleet.service.js';
@@ -63,6 +64,8 @@ import type { TeamService } from './team.service.js';
 import type { IntelligenceService } from './intelligence.service.js';
 import type { RecommendationsService } from './recommendations.service.js';
 import type { MemoryService } from './memory.service.js';
+import type { CompanyDayPlanService } from './company-day-plan.service.js';
+import type { CompanyBusinessRulesService } from './company-business-rules.service.js';
 import type { AnalyticsService } from './analytics.service.js';
 import type { MobileService } from './mobile.service.js';
 import type { AgentOrchestrationService } from './agent-orchestration.service.js';
@@ -107,6 +110,7 @@ type AuraServiceDeps = {
   crmService: CrmService;
   jobsService: JobsService;
   schedulingService: SchedulingService;
+  googleCalendarService: GoogleCalendarService;
   financeService: FinanceService;
   inventoryService: InventoryService;
   fleetService: FleetService;
@@ -145,6 +149,8 @@ type AuraServiceDeps = {
   intelligenceService: IntelligenceService;
   recommendationsService: RecommendationsService;
   memoryService: MemoryService;
+  businessRulesService: CompanyBusinessRulesService;
+  dayPlanService: CompanyDayPlanService;
   analyticsService: AnalyticsService;
   mobileService: MobileService;
   orchestrationService: AgentOrchestrationService;
@@ -169,6 +175,7 @@ export class AuraService {
   private readonly crmService: CrmService;
   private readonly jobsService: JobsService;
   private readonly schedulingService: SchedulingService;
+  private readonly googleCalendarService: GoogleCalendarService;
   private readonly financeService: FinanceService;
   private readonly inventoryService: InventoryService;
   private readonly fleetService: FleetService;
@@ -207,6 +214,8 @@ export class AuraService {
   private readonly intelligenceService: IntelligenceService;
   private readonly recommendationsService: RecommendationsService;
   private readonly memoryService: MemoryService;
+  private readonly businessRulesService: CompanyBusinessRulesService;
+  private readonly dayPlanService: CompanyDayPlanService;
   private readonly analyticsService: AnalyticsService;
   private readonly mobileService: MobileService;
   private readonly orchestrationService: AgentOrchestrationService;
@@ -230,6 +239,7 @@ export class AuraService {
     crmService,
     jobsService,
     schedulingService,
+    googleCalendarService,
     financeService,
     inventoryService,
     fleetService,
@@ -268,6 +278,8 @@ export class AuraService {
     intelligenceService,
     recommendationsService,
     memoryService,
+    businessRulesService,
+    dayPlanService,
     analyticsService,
     mobileService,
     orchestrationService,
@@ -290,6 +302,7 @@ export class AuraService {
     this.crmService = crmService;
     this.jobsService = jobsService;
     this.schedulingService = schedulingService;
+    this.googleCalendarService = googleCalendarService;
     this.financeService = financeService;
     this.inventoryService = inventoryService;
     this.fleetService = fleetService;
@@ -328,6 +341,8 @@ export class AuraService {
     this.intelligenceService = intelligenceService;
     this.recommendationsService = recommendationsService;
     this.memoryService = memoryService;
+    this.businessRulesService = businessRulesService;
+    this.dayPlanService = dayPlanService;
     this.analyticsService = analyticsService;
     this.mobileService = mobileService;
     this.orchestrationService = orchestrationService;
@@ -731,6 +746,7 @@ export class AuraService {
         crmService: this.crmService,
         jobsService: this.jobsService,
         schedulingService: this.schedulingService,
+        googleCalendarService: this.googleCalendarService,
         financeService: this.financeService,
         inventoryService: this.inventoryService,
         fleetService: this.fleetService,
@@ -749,6 +765,8 @@ export class AuraService {
         intelligenceService: this.intelligenceService,
         recommendationsService: this.recommendationsService,
         memoryService: this.memoryService,
+        businessRulesService: this.businessRulesService,
+        dayPlanService: this.dayPlanService,
         analyticsService: this.analyticsService,
         orchestrationService: this.orchestrationService,
         salesService: this.salesService,

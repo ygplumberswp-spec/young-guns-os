@@ -11,16 +11,16 @@ export type IntegrationCapabilityState =
   | 'temporarily_unavailable'
   | 'failed_degraded';
 
-/** Decision 4 aliases used in docs. */
+/** Decision 4 capability labels shown in UI (Title Case). */
 export type IntegrationCapabilityStateLabel =
-  | 'CONNECTED'
-  | 'SETUP REQUIRED'
-  | 'IMPLEMENTED NOT CONNECTED'
-  | 'NOT IMPLEMENTED'
-  | 'DEGRADED'
-  | 'ERROR'
-  | 'DISCONNECTED'
-  | 'TEMPORARILY UNAVAILABLE';
+  | 'Connected'
+  | 'Setup Required'
+  | 'Implemented Not Connected'
+  | 'Not Implemented'
+  | 'Degraded'
+  | 'Error'
+  | 'Disconnected'
+  | 'Temporarily Unavailable';
 
 export const INTEGRATION_CAPABILITY_STATE_OPTIONS: Array<{
   value: IntegrationCapabilityState;
@@ -29,37 +29,37 @@ export const INTEGRATION_CAPABILITY_STATE_OPTIONS: Array<{
 }> = [
   {
     value: 'connected_usable',
-    label: 'CONNECTED',
+    label: 'Connected',
     description: 'Verified usable configuration; real connector path exists.',
   },
   {
     value: 'configured_unverified',
-    label: 'SETUP REQUIRED',
+    label: 'Setup Required',
     description: 'Credentials or config present but not verified as usable.',
   },
   {
     value: 'disconnected',
-    label: 'DISCONNECTED',
+    label: 'Disconnected',
     description: 'Implemented connector exists but is not connected.',
   },
   {
     value: 'not_configured',
-    label: 'IMPLEMENTED NOT CONNECTED',
+    label: 'Implemented Not Connected',
     description: 'Backend exists; tenant has not configured the connection.',
   },
   {
     value: 'not_implemented',
-    label: 'NOT IMPLEMENTED',
+    label: 'Not Implemented',
     description: 'No backend capability — must never appear usable.',
   },
   {
     value: 'temporarily_unavailable',
-    label: 'TEMPORARILY UNAVAILABLE',
+    label: 'Temporarily Unavailable',
     description: 'Connector exists but is temporarily unavailable.',
   },
   {
     value: 'failed_degraded',
-    label: 'DEGRADED',
+    label: 'Degraded',
     description: 'Connected or configured but failing / degraded.',
   },
 ];
@@ -105,24 +105,23 @@ export function formatCapabilityStateLabel(
 ): IntegrationCapabilityStateLabel {
   return (
     INTEGRATION_CAPABILITY_STATE_OPTIONS.find((option) => option.value === state)?.label ??
-    'NOT IMPLEMENTED'
+    'Not Implemented'
   );
 }
 
 /**
  * Synthetic providers that must never claim usable without a real connector.
  * UX-J: n8n removed — real Automation-owned connector drives Integrations status.
+ * Gmail graduated to real Google OAuth under Communications Platform (no longer honesty-only).
  */
-export const HONESTY_ONLY_PROVIDERS = [
-  {
-    id: 'gmail',
-    name: 'Gmail',
-    description: 'Gmail intelligence is not implemented. Use Email (SMTP) for transactional mail.',
-    category: 'communications' as const,
-    capabilityState: 'not_implemented' as const,
-    deepLinkPath: null as string | null,
-  },
-] as const;
+export const HONESTY_ONLY_PROVIDERS: ReadonlyArray<{
+  id: string;
+  name: string;
+  description: string;
+  category: 'communications' | 'automation';
+  capabilityState: 'not_implemented';
+  deepLinkPath: string | null;
+}> = [];
 
 /** Integrations deep-link target for n8n (configuration lives under Automations). */
 export const N8N_AUTOMATIONS_PATH = '/automation/n8n' as const;

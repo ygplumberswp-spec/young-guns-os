@@ -104,13 +104,13 @@ export function PortalAcceptInvitePage() {
             <p className="text-muted">Email: {preview.email}</p>
             <form className="stack-form" onSubmit={handleSubmit}>
               <Input
-                label="First name"
+                label="First Name"
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
                 required
               />
               <Input
-                label="Last name"
+                label="Last Name"
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
                 required

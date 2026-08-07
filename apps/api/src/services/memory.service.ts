@@ -1,10 +1,12 @@
 import { and, desc, eq } from 'drizzle-orm';
+import { canWriteCompanyMemory } from '@titan/auth';
 import type {
   AuraMemoryCategory,
   AuraMemorySummary,
   CreateAuraMemoryRequest,
   UpdateAuraMemoryRequest,
 } from '@titan/shared';
+import { findDuplicateAuraMemory } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
 import { auraMemory } from '@titan/db';
 
@@ -21,7 +23,21 @@ export class MemoryError extends Error {
 type TenantScope = {
   companyId: string;
   userId: string;
+  roleName?: string;
+  permissions?: string[];
 };
+
+function assertCompanyMemoryWrite(scope: TenantScope): void {
+  if (
+    !scope.roleName ||
+    !canWriteCompanyMemory({ roleName: scope.roleName, permissions: scope.permissions ?? [] })
+  ) {
+    throw new MemoryError(
+      'FORBIDDEN',
+      'Only company owners and admins may manage permanent AURA memory rules',
+    );
+  }
+}
 
 export type AuraMemoryContext = {
   memoryCount: number;
@@ -38,7 +54,7 @@ export class MemoryService {
   async listMemories(companyId: string): Promise<AuraMemorySummary[]> {
     const rows = await this.db.query.auraMemory.findMany({
       where: eq(auraMemory.companyId, companyId),
-      orderBy: [desc(auraMemory.importance), desc(auraMemory.updatedAt)],
+      orderBy: [desc(auraMemory.updatedAt), desc(auraMemory.importance)],
     });
 
     return rows.map(toMemorySummary);
@@ -48,10 +64,21 @@ export class MemoryService {
     scope: TenantScope,
     input: CreateAuraMemoryRequest,
   ): Promise<AuraMemorySummary> {
+    assertCompanyMemoryWrite(scope);
+
     const information = input.information.trim();
 
     if (!information) {
       throw new MemoryError('VALIDATION_ERROR', 'Memory information is required');
+    }
+
+    const existing = await this.db.query.auraMemory.findMany({
+      where: eq(auraMemory.companyId, scope.companyId),
+    });
+    const duplicate = findDuplicateAuraMemory(existing, information);
+
+    if (duplicate) {
+      throw new MemoryError('DUPLICATE', 'This business rule already exists in company memory');
     }
 
     const importance = clampImportance(input.importance ?? 3);
@@ -61,9 +88,11 @@ export class MemoryService {
       .values({
         companyId: scope.companyId,
         createdByUserId: scope.userId,
+        updatedByUserId: scope.userId,
         category: input.category ?? 'business_rule',
         information,
         importance,
+        enabled: true,
       })
       .returning();
 
@@ -75,12 +104,14 @@ export class MemoryService {
   }
 
   async updateMemory(
-    companyId: string,
+    scope: TenantScope,
     memoryId: string,
     input: UpdateAuraMemoryRequest,
   ): Promise<AuraMemorySummary> {
+    assertCompanyMemoryWrite(scope);
+
     const existing = await this.db.query.auraMemory.findFirst({
-      where: and(eq(auraMemory.id, memoryId), eq(auraMemory.companyId, companyId)),
+      where: and(eq(auraMemory.id, memoryId), eq(auraMemory.companyId, scope.companyId)),
     });
 
     if (!existing) {
@@ -93,6 +124,20 @@ export class MemoryService {
       throw new MemoryError('VALIDATION_ERROR', 'Memory information is required');
     }
 
+    if (information) {
+      const siblings = await this.db.query.auraMemory.findMany({
+        where: eq(auraMemory.companyId, scope.companyId),
+      });
+      const duplicate = findDuplicateAuraMemory(
+        siblings.filter((row) => row.id !== memoryId),
+        information,
+      );
+
+      if (duplicate) {
+        throw new MemoryError('DUPLICATE', 'This business rule already exists in company memory');
+      }
+    }
+
     const [updated] = await this.db
       .update(auraMemory)
       .set({
@@ -100,9 +145,11 @@ export class MemoryService {
         information: information ?? existing.information,
         importance:
           input.importance !== undefined ? clampImportance(input.importance) : existing.importance,
+        enabled: input.enabled ?? existing.enabled,
+        updatedByUserId: scope.userId,
         updatedAt: new Date(),
       })
-      .where(and(eq(auraMemory.id, memoryId), eq(auraMemory.companyId, companyId)))
+      .where(and(eq(auraMemory.id, memoryId), eq(auraMemory.companyId, scope.companyId)))
       .returning();
 
     if (!updated) {
@@ -112,10 +159,12 @@ export class MemoryService {
     return toMemorySummary(updated);
   }
 
-  async deleteMemory(companyId: string, memoryId: string): Promise<boolean> {
+  async deleteMemory(scope: TenantScope, memoryId: string): Promise<boolean> {
+    assertCompanyMemoryWrite(scope);
+
     const [deleted] = await this.db
       .delete(auraMemory)
-      .where(and(eq(auraMemory.id, memoryId), eq(auraMemory.companyId, companyId)))
+      .where(and(eq(auraMemory.id, memoryId), eq(auraMemory.companyId, scope.companyId)))
       .returning();
 
     return Boolean(deleted);
@@ -123,7 +172,7 @@ export class MemoryService {
 
   async buildAuraContext(companyId: string): Promise<AuraMemoryContext> {
     const rows = await this.db.query.auraMemory.findMany({
-      where: eq(auraMemory.companyId, companyId),
+      where: and(eq(auraMemory.companyId, companyId), eq(auraMemory.enabled, true)),
       orderBy: [desc(auraMemory.importance), desc(auraMemory.updatedAt)],
       limit: 20,
     });
@@ -145,7 +194,9 @@ function toMemorySummary(row: typeof auraMemory.$inferSelect): AuraMemorySummary
     category: row.category,
     information: row.information,
     importance: row.importance,
+    enabled: row.enabled,
     createdByUserId: row.createdByUserId,
+    updatedByUserId: row.updatedByUserId,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };

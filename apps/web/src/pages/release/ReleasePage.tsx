@@ -1,5 +1,6 @@
+import { PageHeader } from '../../components/ux';
 import { useEffect, useMemo, useState } from 'react';
-import { Button, EmptyState, PageHeader, Panel, StatCard } from '@titan/ui';
+import { Button, EmptyState, Panel, StatCard } from '@titan/ui';
 import type { EnterpriseReleaseManagementDashboard } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import {
@@ -160,7 +161,7 @@ export function ReleasePage() {
     return (
       <div className="p-6">
         <EmptyState
-          title="Access denied"
+          title="Access Denied"
           description="You do not have permission to view the release dashboard."
         />
       </div>
@@ -171,7 +172,7 @@ export function ReleasePage() {
     return (
       <div className="p-6">
         <PageHeader
-          title="TITAN v1.0 Release"
+          title="TITAN V1.0 Release"
           description="Loading release management dashboard..."
         />
       </div>
@@ -183,7 +184,7 @@ export function ReleasePage() {
   return (
     <div className="space-y-6 p-6">
       <PageHeader
-        title="TITAN Business OS v1.0 Release"
+        title="TITAN V1.0 Release"
         description="Mobile production packaging, app store readiness, branding verification, documentation, and final launch checklist."
         actions={
           canWrite ? (
@@ -300,7 +301,7 @@ export function ReleasePage() {
             </Panel>
           ) : (
             <EmptyState
-              title="No mobile review"
+              title="No Mobile Review"
               description="Run a mobile packaging review to verify iOS/Android production builds."
             />
           )}
@@ -344,7 +345,7 @@ export function ReleasePage() {
             ))
           ) : (
             <EmptyState
-              title="No app store readiness"
+              title="No App Store Readiness"
               description="Generate Apple App Store and Google Play Store readiness checklists."
             />
           )}
@@ -380,7 +381,7 @@ export function ReleasePage() {
             </Panel>
           ) : (
             <EmptyState
-              title="No branding review"
+              title="No Branding Review"
               description="Verify logo, icons, splash screen, colors, and white-label branding."
             />
           )}
@@ -418,7 +419,7 @@ export function ReleasePage() {
             </Panel>
           ) : (
             <EmptyState
-              title="No UX review"
+              title="No UX Review"
               description="Generate UX improvement recommendations for navigation, accessibility, and responsive layouts."
             />
           )}
@@ -514,7 +515,7 @@ export function ReleasePage() {
           </Panel>
         ) : (
           <EmptyState
-            title="No audit logs"
+            title="No Audit Logs"
             description="Release management actions will appear here."
           />
         )

@@ -16,6 +16,7 @@ import type {
 import type { DatabaseClient } from '@titan/db';
 import {
   customers,
+  securityAuditLogs,
   users,
   whatsappConnections,
   whatsappMessages,
@@ -51,11 +52,16 @@ export type AuraWhatsappContext = {
   connectionStatus: string;
   isConnected: boolean;
   displayPhoneNumber: string | null;
+  featureEnabled: boolean;
+  webhooksEnabled: boolean;
+  outboundMessagesEnabled: boolean;
+  runtimeNote: string | null;
   messageCount: number;
   incomingCount: number;
   outgoingCount: number;
   draftCount: number;
   pendingReplyCount: number;
+  unmatchedInboundCount: number;
   templateCount: number;
   recentConversations: Array<{
     customerId: string | null;
@@ -80,6 +86,36 @@ export type AuraWhatsappContext = {
     occurredAt: string;
   }> | null;
   automationExamples: string[];
+  /** AURA may summarise / draft only — never auto-send. */
+  sendPolicy: {
+    autoSendEnabled: false;
+    draftApproveExecute: true;
+  };
+};
+
+export type WhatsappInboundHubIndexInput = {
+  companyId: string;
+  externalMessageId: string;
+  contactPhone: string;
+  contactName: string | null;
+  messagePreview: string;
+  customerId: string | null;
+  occurredAt: Date;
+};
+
+export type WhatsappInboundEnrichmentInput = {
+  companyId: string;
+  contactPhone: string;
+  contactName: string | null;
+  externalMessageId: string;
+  customerId: string | null;
+  messagePreview: string;
+};
+
+export type WhatsappRuntimeFlags = {
+  whatsappEnabled: boolean;
+  webhooksEnabled: boolean;
+  outboundMessagesEnabled: boolean;
 };
 
 type TenantScope = {
@@ -92,6 +128,9 @@ type WhatsappServiceDeps = {
   encryptionKey?: string;
   apiPublicUrl: string;
   hubService?: IntegrationHubService;
+  runtime?: WhatsappRuntimeFlags;
+  indexInboundMessage?: (input: WhatsappInboundHubIndexInput) => Promise<void>;
+  recordInboundEnrichment?: (input: WhatsappInboundEnrichmentInput) => Promise<void>;
 };
 
 const NOTIFICATION_BODY_DEFAULTS: Record<WhatsappTemplateCategory, string> = {
@@ -112,15 +151,53 @@ const NOTIFICATION_BODY_DEFAULTS: Record<WhatsappTemplateCategory, string> = {
 };
 
 export class WhatsappService {
+  private indexInboundMessage?: (input: WhatsappInboundHubIndexInput) => Promise<void>;
+  private recordInboundEnrichment?: (input: WhatsappInboundEnrichmentInput) => Promise<void>;
+  private runtime: WhatsappRuntimeFlags;
+
   constructor(
     private readonly db: DatabaseClient,
     private readonly encryptionKey?: string,
     private readonly apiPublicUrl?: string,
     private readonly hubService?: IntegrationHubService,
-  ) {}
+    runtime?: WhatsappRuntimeFlags,
+    indexInboundMessage?: (input: WhatsappInboundHubIndexInput) => Promise<void>,
+    recordInboundEnrichment?: (input: WhatsappInboundEnrichmentInput) => Promise<void>,
+  ) {
+    this.runtime = runtime ?? {
+      whatsappEnabled: true,
+      webhooksEnabled: true,
+      outboundMessagesEnabled: true,
+    };
+    this.indexInboundMessage = indexInboundMessage;
+    this.recordInboundEnrichment = recordInboundEnrichment;
+  }
 
   static create(deps: WhatsappServiceDeps): WhatsappService {
-    return new WhatsappService(deps.db, deps.encryptionKey, deps.apiPublicUrl, deps.hubService);
+    return new WhatsappService(
+      deps.db,
+      deps.encryptionKey,
+      deps.apiPublicUrl,
+      deps.hubService,
+      deps.runtime,
+      deps.indexInboundMessage,
+      deps.recordInboundEnrichment,
+    );
+  }
+
+  /** Wire Hub/enrichment after construction to avoid circular create order. */
+  setInboundHooks(hooks: {
+    indexInboundMessage?: (input: WhatsappInboundHubIndexInput) => Promise<void>;
+    recordInboundEnrichment?: (input: WhatsappInboundEnrichmentInput) => Promise<void>;
+  }): void {
+    if (hooks.indexInboundMessage) this.indexInboundMessage = hooks.indexInboundMessage;
+    if (hooks.recordInboundEnrichment) {
+      this.recordInboundEnrichment = hooks.recordInboundEnrichment;
+    }
+  }
+
+  getRuntimeFlags(): WhatsappRuntimeFlags {
+    return this.runtime;
   }
 
   async getConnection(companyId: string): Promise<WhatsappConnectionSummary> {
@@ -132,7 +209,9 @@ export class WhatsappService {
   async saveConnection(
     companyId: string,
     input: SaveWhatsappConnectionRequest,
+    actorUserId?: string,
   ): Promise<WhatsappConnectionSummary> {
+    this.ensureWhatsappFeatureEnabled('connect');
     this.ensureEncryptionKey();
 
     const accessToken = input.accessToken?.trim() ?? '';
@@ -193,6 +272,12 @@ export class WhatsappService {
         .where(eq(whatsappConnections.id, connection.id))
         .returning();
 
+      await this.recordAudit(companyId, actorUserId, 'whatsapp_business_connected', updated!.id, {
+        phoneNumberId,
+        businessAccountId,
+        displayPhoneNumber: updated!.displayPhoneNumber,
+      });
+
       return this.toConnectionSummary(updated!);
     } catch (error) {
       const message =
@@ -215,7 +300,7 @@ export class WhatsappService {
     }
   }
 
-  async disconnect(companyId: string): Promise<WhatsappConnectionSummary> {
+  async disconnect(companyId: string, actorUserId?: string): Promise<WhatsappConnectionSummary> {
     const connection = await this.getOrCreateConnection(companyId);
 
     const [updated] = await this.db
@@ -232,6 +317,10 @@ export class WhatsappService {
       })
       .where(eq(whatsappConnections.id, connection.id))
       .returning();
+
+    await this.recordAudit(companyId, actorUserId, 'whatsapp_business_disconnected', connection.id, {
+      previousStatus: connection.status,
+    });
 
     return this.toConnectionSummary(updated!);
   }
@@ -403,6 +492,9 @@ export class WhatsappService {
       });
     }
 
+    this.ensureWhatsappFeatureEnabled('send');
+    this.ensureOutboundEnabled();
+
     const connection = await this.requireConnectedConnection(scope.companyId);
     const client = this.createClient(connection);
 
@@ -468,6 +560,9 @@ export class WhatsappService {
     companyId: string,
     input: SendWhatsappTestMessageRequest,
   ): Promise<{ externalMessageId: string }> {
+    this.ensureWhatsappFeatureEnabled('send');
+    this.ensureOutboundEnabled();
+
     const connection = await this.requireConnectedConnection(companyId);
     const client = this.createClient(connection);
     const messageContent = input.messageContent.trim();
@@ -489,6 +584,9 @@ export class WhatsappService {
   }
 
   async approveDraft(scope: TenantScope, messageId: string): Promise<WhatsappMessageSummary> {
+    this.ensureWhatsappFeatureEnabled('send');
+    this.ensureOutboundEnabled();
+
     const draft = await this.db.query.whatsappMessages.findFirst({
       where: and(
         eq(whatsappMessages.id, messageId),
@@ -559,6 +657,15 @@ export class WhatsappService {
   }
 
   async handleWebhook(payload: WhatsappWebhookPayload): Promise<{ processed: number }> {
+    if (!this.runtime.whatsappEnabled || !this.runtime.webhooksEnabled) {
+      throw new WhatsappServiceError(
+        'FEATURE_DISABLED',
+        !this.runtime.whatsappEnabled
+          ? 'WhatsApp is disabled (WHATSAPP_ENABLED / PROVIDERS_ENABLED)'
+          : 'WhatsApp webhooks are disabled (WEBHOOKS_ENABLED)',
+      );
+    }
+
     let processed = 0;
 
     for (const incoming of parseIncomingWebhookMessages(payload)) {
@@ -582,6 +689,9 @@ export class WhatsappService {
       }
 
       const customer = await this.findCustomerByPhone(connection.companyId, incoming.from);
+      const occurredAt = incoming.timestamp
+        ? new Date(Number.parseInt(incoming.timestamp, 10) * 1000)
+        : new Date();
 
       await this.db.insert(whatsappMessages).values({
         companyId: connection.companyId,
@@ -590,9 +700,7 @@ export class WhatsappService {
         messageContent: incoming.body,
         externalMessageId: incoming.externalMessageId,
         deliveryStatus: 'delivered',
-        deliveredAt: incoming.timestamp
-          ? new Date(Number.parseInt(incoming.timestamp, 10) * 1000)
-          : new Date(),
+        deliveredAt: occurredAt,
       });
 
       emitBusinessEvent({
@@ -604,10 +712,42 @@ export class WhatsappService {
           message: {
             body: incoming.body,
             from: incoming.from,
+            contactName: incoming.contactName,
           },
           customerId: customer?.id ?? null,
         },
       });
+
+      if (this.indexInboundMessage) {
+        try {
+          await this.indexInboundMessage({
+            companyId: connection.companyId,
+            externalMessageId: incoming.externalMessageId,
+            contactPhone: incoming.from,
+            contactName: incoming.contactName,
+            messagePreview: incoming.body.slice(0, 400),
+            customerId: customer?.id ?? null,
+            occurredAt,
+          });
+        } catch {
+          // Indexing must not fail webhook ack — message is already durable.
+        }
+      }
+
+      if (this.recordInboundEnrichment) {
+        try {
+          await this.recordInboundEnrichment({
+            companyId: connection.companyId,
+            contactPhone: incoming.from,
+            contactName: incoming.contactName,
+            externalMessageId: incoming.externalMessageId,
+            customerId: customer?.id ?? null,
+            messagePreview: incoming.body.slice(0, 400),
+          });
+        } catch {
+          // Enrichment queue is best-effort; never block Meta delivery ack.
+        }
+      }
 
       processed += 1;
     }
@@ -756,6 +896,17 @@ export class WhatsappService {
   async buildAuraContext(companyId: string, customerId?: string): Promise<AuraWhatsappContext> {
     const connection = await this.getOrCreateConnection(companyId);
     const stats = await this.getStats(companyId);
+    const runtimeNote = this.buildRuntimeNote(connection.status === 'connected');
+
+    const unmatchedInbound = await this.db.query.whatsappMessages.findMany({
+      where: and(
+        eq(whatsappMessages.companyId, companyId),
+        eq(whatsappMessages.direction, 'incoming'),
+      ),
+      columns: { id: true, customerId: true },
+      limit: 500,
+    });
+    const unmatchedInboundCount = unmatchedInbound.filter((row) => !row.customerId).length;
 
     const recentRows = await this.db.query.whatsappMessages.findMany({
       where: eq(whatsappMessages.companyId, companyId),
@@ -835,11 +986,16 @@ export class WhatsappService {
       connectionStatus: connection.status,
       isConnected: connection.status === 'connected',
       displayPhoneNumber: connection.displayPhoneNumber,
+      featureEnabled: this.runtime.whatsappEnabled,
+      webhooksEnabled: this.runtime.webhooksEnabled,
+      outboundMessagesEnabled: this.runtime.outboundMessagesEnabled,
+      runtimeNote,
       messageCount: stats.totalMessages,
       incomingCount: stats.incomingCount,
       outgoingCount: stats.outgoingCount,
       draftCount: stats.draftCount,
       pendingReplyCount: stats.pendingReplyCount,
+      unmatchedInboundCount,
       templateCount: stats.templateCount,
       recentConversations: recentRows.map((message) => ({
         customerId: message.customerId,
@@ -855,7 +1011,13 @@ export class WhatsappService {
       automationExamples: [
         'Trigger job_status_changed (scheduled) → send_whatsapp_template draft for job booked confirmation',
         'Trigger invoice_overdue → send_whatsapp_draft payment reminder (requires user approval before send)',
+        'Summarise unmatched inbound WhatsApp threads for Owner review — never auto-create customers',
+        'Draft a reply for pending WhatsApp conversation — send only after explicit approve',
       ],
+      sendPolicy: {
+        autoSendEnabled: false,
+        draftApproveExecute: true,
+      },
     };
   }
 
@@ -965,6 +1127,28 @@ export class WhatsappService {
     });
   }
 
+  private async recordAudit(
+    companyId: string,
+    userId: string | undefined,
+    action: string,
+    entityId: string,
+    metadata: Record<string, unknown>,
+  ): Promise<void> {
+    try {
+      await this.db.insert(securityAuditLogs).values({
+        companyId,
+        category: 'integrations',
+        action,
+        entityType: 'whatsapp_connection',
+        entityId,
+        userId: userId ?? null,
+        metadata,
+      });
+    } catch {
+      // Audit must not block connect/disconnect.
+    }
+  }
+
   private ensureEncryptionKey() {
     if (!this.encryptionKey) {
       throw new WhatsappServiceError(
@@ -974,9 +1158,45 @@ export class WhatsappService {
     }
   }
 
+  private ensureWhatsappFeatureEnabled(action: 'connect' | 'send' | 'webhook'): void {
+    if (!this.runtime.whatsappEnabled) {
+      throw new WhatsappServiceError(
+        'FEATURE_DISABLED',
+        `WhatsApp ${action} is disabled (set WHATSAPP_ENABLED=true and PROVIDERS_ENABLED=true)`,
+      );
+    }
+  }
+
+  private ensureOutboundEnabled(): void {
+    if (!this.runtime.outboundMessagesEnabled) {
+      throw new WhatsappServiceError(
+        'FEATURE_DISABLED',
+        'Outbound WhatsApp messages are disabled (OUTBOUND_MESSAGES_ENABLED=false)',
+      );
+    }
+  }
+
+  private buildRuntimeNote(_isConnected: boolean): string | null {
+    const notes: string[] = [];
+    if (!this.runtime.whatsappEnabled) {
+      notes.push('Business WhatsApp is turned off for this environment');
+    }
+    if (!this.runtime.webhooksEnabled) {
+      notes.push('Incoming messages are paused');
+    }
+    if (!this.runtime.outboundMessagesEnabled) {
+      notes.push('Outgoing messages are paused');
+    }
+    if (notes.length === 0) {
+      return null;
+    }
+    return notes.join('. ') + '.';
+  }
+
   private toConnectionSummary(
     connection: typeof whatsappConnections.$inferSelect,
   ): WhatsappConnectionSummary {
+    const isConnected = connection.status === 'connected';
     return {
       provider: connection.provider,
       status: connection.status,
@@ -990,6 +1210,10 @@ export class WhatsappService {
       lastError: connection.lastError,
       connectedAt: connection.connectedAt?.toISOString() ?? null,
       webhookUrl: `${this.apiPublicUrl ?? 'http://localhost:3000'}/api/v1/webhooks/whatsapp`,
+      featureEnabled: this.runtime.whatsappEnabled,
+      webhooksEnabled: this.runtime.webhooksEnabled,
+      outboundMessagesEnabled: this.runtime.outboundMessagesEnabled,
+      runtimeNote: this.buildRuntimeNote(isConnected),
     };
   }
 

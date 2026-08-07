@@ -1,5 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { useEffect, useMemo, useState } from 'react';
-import { Button, EmptyState, PageHeader, Panel, StatCard } from '@titan/ui';
+import { Link } from 'wouter';
+import { Button, EmptyState, Panel, StatCard } from '@titan/ui';
 import type {
   EnterpriseGlobalSearchDashboard,
   GsSearchMode,
@@ -28,6 +30,7 @@ import {
   formatSeverity,
   formatStatus,
 } from '../../features/global-search/utils';
+import { resolveGlobalSearchEntityHref } from '../../features/global-search/entity-routes';
 
 type GlobalSearchTab =
   | 'search'
@@ -246,7 +249,7 @@ export function GlobalSearchPage() {
       {isLoading ? (
         <Panel title="Loading">Loading global search dashboard…</Panel>
       ) : !dashboard ? (
-        <EmptyState title="No data" description="Global search dashboard is unavailable." />
+        <EmptyState title="No Data" description="Global search dashboard is unavailable." />
       ) : (
         <>
           {activeTab === 'search' ? (
@@ -282,24 +285,44 @@ export function GlobalSearchPage() {
               {searchResults.length > 0 ? (
                 <Panel title={`Results (${searchResults.length})`}>
                   <div className="data-list">
-                    {searchResults.map((result) => (
-                      <div
-                        key={`${result.sourceModule}-${result.sourceEntityId}`}
-                        className="data-list-item"
-                      >
-                        <strong>{result.title}</strong>
-                        <span>
-                          {formatEntityType(result.entityType)} · {result.sourceModule} ·{' '}
-                          {formatRelevanceScore(result.relevanceScore)}
-                        </span>
-                        {result.summary ? <p>{result.summary}</p> : null}
-                      </div>
-                    ))}
+                    {searchResults.map((result) => {
+                      const href = resolveGlobalSearchEntityHref(
+                        result.entityType,
+                        result.sourceEntityId,
+                      );
+                      const content = (
+                        <>
+                          <strong>{result.title}</strong>
+                          <span>
+                            {formatEntityType(result.entityType)} · {result.sourceModule} ·{' '}
+                            {formatRelevanceScore(result.relevanceScore)}
+                          </span>
+                          {result.summary ? <p>{result.summary}</p> : null}
+                        </>
+                      );
+
+                      return href ? (
+                        <Link
+                          key={`${result.sourceModule}-${result.sourceEntityId}`}
+                          href={href}
+                          className="data-list-item data-list-item--link"
+                        >
+                          {content}
+                        </Link>
+                      ) : (
+                        <div
+                          key={`${result.sourceModule}-${result.sourceEntityId}`}
+                          className="data-list-item"
+                        >
+                          {content}
+                        </div>
+                      );
+                    })}
                   </div>
                 </Panel>
               ) : (
                 <EmptyState
-                  title="No results yet"
+                  title="No Results Yet"
                   description="Run a search to query real records across CRM, Jobs, Finance, Inventory, Fleet, Documents, OCR, and Knowledge Graph."
                 />
               )}
@@ -310,7 +333,7 @@ export function GlobalSearchPage() {
             <Panel title="Universal Timeline Preview">
               {dashboard.timelinePreview.length === 0 ? (
                 <EmptyState
-                  title="No timeline events"
+                  title="No Timeline Events"
                   description="Timeline events are derived from real CRM activities, jobs, communications, and stored timeline entries."
                 />
               ) : (
@@ -334,7 +357,7 @@ export function GlobalSearchPage() {
             <Panel title="Activity Feed">
               {dashboard.activityFeedPreview.length === 0 ? (
                 <EmptyState
-                  title="No activity feed items"
+                  title="No Activity Feed Items"
                   description="Activity feed items appear when modules emit real cross-module activity events."
                 />
               ) : (
@@ -359,7 +382,7 @@ export function GlobalSearchPage() {
             <Panel title="Saved Searches">
               {dashboard.savedSearches.length === 0 ? (
                 <EmptyState
-                  title="No saved searches"
+                  title="No Saved Searches"
                   description="Save frequently used queries from the Search tab."
                 />
               ) : (
@@ -397,7 +420,7 @@ export function GlobalSearchPage() {
             <Panel title="Relationship Intelligence">
               {dashboard.relationshipPreview.length === 0 ? (
                 <EmptyState
-                  title="No relationship links"
+                  title="No Relationship Links"
                   description="Relationships are derived from real customer-to-job, quote, invoice, and document links."
                 />
               ) : (
@@ -423,7 +446,7 @@ export function GlobalSearchPage() {
               <Panel title="AI-Assisted Search Suggestions">
                 {dashboard.searchSuggestions.length === 0 ? (
                   <EmptyState
-                    title="No suggestions"
+                    title="No Suggestions"
                     description="AI-assisted search suggestions appear when the Search Intelligence agent recommends queries."
                   />
                 ) : (
@@ -484,7 +507,7 @@ export function GlobalSearchPage() {
                   <pre>{JSON.stringify(dashboard.analytics.metrics, null, 2)}</pre>
                 ) : (
                   <EmptyState
-                    title="No analytics captured"
+                    title="No Analytics Captured"
                     description="Capture analytics to record search metrics."
                   />
                 )}
@@ -533,7 +556,7 @@ export function GlobalSearchPage() {
                 <p>Loading audit logs…</p>
               ) : auditLogs.length === 0 ? (
                 <EmptyState
-                  title="No audit entries"
+                  title="No Audit Entries"
                   description="Global search actions are fully auditable."
                 />
               ) : (

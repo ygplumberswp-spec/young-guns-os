@@ -4,6 +4,10 @@
  */
 
 import { resolveApiBase } from './runtime-env';
+import {
+  offlineFlushQueueStatusForResult,
+  tallyOfflineFlushResults,
+} from './mobile-offline-completion.js';
 
 export type OfflineQueueStatus = 'offline' | 'pending' | 'synced' | 'failed';
 
@@ -300,30 +304,24 @@ export async function flushOfflineQueue(accessToken: string): Promise<{
     };
   };
   const results = json.data?.results ?? [];
-  let synced = 0;
-  let failed = 0;
-  let duplicate = 0;
+  const tally = tallyOfflineFlushResults(
+    pending.map((action) => action.clientActionId),
+    results,
+  );
 
   for (const action of pending) {
     const result = results.find((r) => r.clientActionId === action.clientActionId);
     if (!result) {
       await updateOfflineAction(action.id, { status: 'failed', errorMessage: 'No server result' });
-      failed += 1;
       continue;
     }
-    if (result.status === 'synced' || result.status === 'duplicate') {
-      await updateOfflineAction(action.id, { status: 'synced', errorMessage: null });
-      if (result.status === 'synced') synced += 1;
-      else duplicate += 1;
-    } else {
-      await updateOfflineAction(action.id, {
-        status: 'failed',
-        errorMessage: result.error ?? 'Action failed',
-      });
-      failed += 1;
-    }
+    const queueStatus = offlineFlushQueueStatusForResult(result.status);
+    await updateOfflineAction(action.id, {
+      status: queueStatus,
+      errorMessage: queueStatus === 'failed' ? (result.error ?? 'Action failed') : null,
+    });
   }
 
   await clearSyncedAndExpiredActions();
-  return { synced, failed, duplicate };
+  return { synced: tally.synced, failed: tally.failed, duplicate: tally.duplicate };
 }

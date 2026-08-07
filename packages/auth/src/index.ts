@@ -44,6 +44,7 @@ export {
   isPlatformOwner,
   isPlatformOwnerRole,
   isCompanyOwnerRole,
+  canWriteCompanyMemory,
   isManagerRole,
   isAccountantRole,
   isDispatcherRole,
@@ -68,10 +69,19 @@ export { hashPassword, verifyPassword, validatePasswordStrength } from './passwo
 export {
   createAccessToken,
   verifyAccessToken,
+  createMfaLoginChallengeToken,
+  verifyMfaLoginChallengeToken,
   generateRefreshToken,
   hashRefreshToken,
   REFRESH_TOKEN_TTL_MS,
+  TRUSTED_DEVICE_REFRESH_TTL_MS,
+  ACCESS_TOKEN_TTL_SECONDS,
+  STEP_UP_TOKEN_TTL_SECONDS,
+  createStepUpToken,
+  verifyStepUpToken,
   type AccessTokenPayload,
+  type MfaLoginChallengePayload,
+  type StepUpTokenPayload,
 } from './tokens.js';
 export {
   createPortalAccessToken,

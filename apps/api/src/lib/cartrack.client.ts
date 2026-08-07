@@ -8,6 +8,8 @@ export class CartrackError extends Error {
   constructor(
     public readonly code: string,
     message: string,
+    /** Relative Cartrack path that failed, e.g. `/vehicles/status`. Never includes credentials. */
+    public readonly endpoint?: string,
   ) {
     super(message);
     this.name = 'CartrackError';
@@ -62,11 +64,13 @@ export class CartrackClient {
   }
 
   private async request(path: string): Promise<unknown> {
-    const url = `${this.baseUrl}${path.startsWith('/') ? path : `/${path}`}`;
+    const endpoint = path.startsWith('/') ? path : `/${path}`;
+    const url = `${this.baseUrl}${endpoint}`;
 
     let response: Response;
 
     try {
+      // AbortController via AbortSignal.timeout — cancels the provider call at the deadline.
       response = await fetch(url, {
         method: 'GET',
         headers: {
@@ -80,16 +84,22 @@ export class CartrackClient {
         throw new CartrackError(
           'TIMEOUT',
           `Cartrack request timed out after ${PROVIDER_REQUEST_TIMEOUT_MS}ms`,
+          endpoint,
         );
       }
       throw new CartrackError(
         'NETWORK_ERROR',
         error instanceof Error ? error.message : 'Unable to reach Cartrack API',
+        endpoint,
       );
     }
 
     if (response.status === 401 || response.status === 403) {
-      throw new CartrackError('AUTH_FAILED', 'Cartrack rejected the provided credentials');
+      throw new CartrackError(
+        'AUTH_FAILED',
+        'Cartrack rejected the provided credentials',
+        endpoint,
+      );
     }
 
     if (!response.ok) {
@@ -97,13 +107,18 @@ export class CartrackClient {
       throw new CartrackError(
         'API_ERROR',
         `Cartrack API returned ${response.status}${body ? `: ${body.slice(0, 200)}` : ''}`,
+        endpoint,
       );
     }
 
     const contentType = response.headers.get('content-type') ?? '';
 
     if (!contentType.includes('application/json')) {
-      throw new CartrackError('API_ERROR', 'Cartrack API returned a non-JSON response');
+      throw new CartrackError(
+        'API_ERROR',
+        'Cartrack API returned a non-JSON response',
+        endpoint,
+      );
     }
 
     return response.json();

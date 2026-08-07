@@ -25,12 +25,12 @@ export function VehicleList({ vehicles, canWrite }: VehicleListProps) {
   if (vehicles.length === 0) {
     return (
       <EmptyState
-        title="No vehicles yet"
+        title="No Vehicles Yet"
         description="Add your first vehicle to start tracking your fleet."
         action={
           canWrite ? (
             <Link href="/fleet/new">
-              <Button>Add vehicle</Button>
+              <Button>Add Vehicle</Button>
             </Link>
           ) : undefined
         }
@@ -39,7 +39,7 @@ export function VehicleList({ vehicles, canWrite }: VehicleListProps) {
   }
 
   return (
-    <Panel title="All vehicles">
+    <Panel title="All Vehicles">
       <div className="fleet-table-wrap">
         <table className="fleet-table">
           <thead>

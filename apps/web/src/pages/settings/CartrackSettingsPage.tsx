@@ -3,6 +3,8 @@ import { Link } from 'wouter';
 import { Button, Input, PageHeader, Panel } from '@titan/ui';
 import {
   INTEGRATION_CONNECTION_STATUS_OPTIONS,
+  deriveFleetConnectionDisplayState,
+  formatFleetConnectionDisplayLabel,
   type CartrackConnectionSummary,
   type IntegrationVehicleMappingSummary,
 } from '@titan/shared';
@@ -207,11 +209,26 @@ export function CartrackSettingsPage() {
       {error ? <p className="form-error">{error}</p> : null}
       {success ? <p className="form-success">{success}</p> : null}
 
-      <Panel title="Connection status">
+      <Panel title="Connection Status">
         <dl className="integration-status-list">
           <div>
-            <dt>Status</dt>
+            <dt>Provider status</dt>
             <dd>{connection ? formatConnectionStatus(connection.status) : 'Disconnected'}</dd>
+          </div>
+          <div>
+            <dt>Fleet health</dt>
+            <dd>
+              {connection
+                ? formatFleetConnectionDisplayLabel(
+                    deriveFleetConnectionDisplayState({
+                      connectionStatus: connection.status,
+                      hasCredentials: connection.hasCredentials,
+                      lastSyncAt: connection.lastSyncAt,
+                      lastError: connection.lastError,
+                    }),
+                  )
+                : 'Not configured'}
+            </dd>
           </div>
           <div>
             <dt>Base URL</dt>
@@ -222,10 +239,14 @@ export function CartrackSettingsPage() {
             <dd>{connection?.usernameHint ?? 'Not configured'}</dd>
           </div>
           <div>
-            <dt>Last sync</dt>
+            <dt>Last successful sync</dt>
             <dd>
               {connection?.lastSyncAt ? new Date(connection.lastSyncAt).toLocaleString() : 'Never'}
             </dd>
+          </div>
+          <div>
+            <dt>Credentials</dt>
+            <dd>{connection?.hasCredentials ? 'Present' : 'Missing'}</dd>
           </div>
           <div>
             <dt>Mapped vehicles</dt>
@@ -242,13 +263,17 @@ export function CartrackSettingsPage() {
             </div>
           ) : null}
         </dl>
+        <p className="page-muted">
+          Live positions on Fleet Dispatch never claim “live” when disconnected, credentials are
+          missing, sync is stale, or a position is older than two minutes.
+        </p>
       </Panel>
 
       {canManage ? (
         <Panel title="Connect Cartrack">
           <form className="settings-form" onSubmit={(event) => void handleConnect(event)}>
             <Input
-              label="API base URL"
+              label="API Base URL"
               value={baseUrl}
               onChange={(e) => setBaseUrl(e.target.value)}
               placeholder="https://fleetapi-za.cartrack.com/rest"
@@ -306,7 +331,7 @@ export function CartrackSettingsPage() {
         </Panel>
       ) : null}
 
-      <Panel title="Vehicle sync mappings">
+      <Panel title="Vehicle Sync Mappings">
         {mappings.length === 0 ? (
           <p className="page-muted">
             No Cartrack vehicles synced yet. Connect Cartrack and run a sync to import external

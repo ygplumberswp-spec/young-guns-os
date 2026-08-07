@@ -40,11 +40,11 @@ export const VOICE_SESSION_STATUS_OPTIONS: Array<{ value: VoiceSessionStatus; la
 ];
 
 export const VOICE_ENQUIRY_TYPE_OPTIONS: Array<{ value: VoiceEnquiryType; label: string }> = [
-  { value: 'new_enquiry', label: 'New enquiry' },
-  { value: 'existing_customer', label: 'Existing customer' },
-  { value: 'service_request', label: 'Service request' },
-  { value: 'quote_request', label: 'Quote request' },
-  { value: 'appointment_request', label: 'Appointment request' },
+  { value: 'new_enquiry', label: 'New Enquiry' },
+  { value: 'existing_customer', label: 'Existing Customer' },
+  { value: 'service_request', label: 'Service Request' },
+  { value: 'quote_request', label: 'Quote Request' },
+  { value: 'appointment_request', label: 'Appointment Request' },
   { value: 'other', label: 'Other' },
 ];
 

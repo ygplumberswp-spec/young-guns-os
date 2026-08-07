@@ -16,6 +16,7 @@ import {
   formatPercent as formatPercentValue,
   formatTime as formatTimeValue,
   resolveCompanyLocale,
+  resolveAuditSandboxBanner,
   type CompanyLocaleSettings,
 } from '@titan/shared';
 import { ApiClientError } from './api-client';
@@ -27,6 +28,8 @@ type CompanyLocaleContextValue = CompanyLocaleSettings & {
   isLoading: boolean;
   logoFileId: string | null;
   companyName: string | null;
+  companySlug: string | null;
+  auditSandboxBanner: string | null;
   formatMoney: (amountCents: number, currency?: string) => string;
   formatNumber: (value: number, options?: Intl.NumberFormatOptions) => string;
   formatPercent: (value: number | string | null | undefined, fractionDigits?: number) => string;
@@ -51,6 +54,8 @@ function readCachedLocale(accessToken: string | null) {
     locale: resolveCompanyLocale(profile.preferences),
     logoFileId: profile.preferences.logoFileId ?? null,
     companyName: profile.name,
+    companySlug: profile.slug,
+    auditSandboxBanner: resolveAuditSandboxBanner(profile),
   };
 }
 
@@ -66,6 +71,12 @@ export function CompanyLocaleProvider({ children }: { children: ReactNode }) {
   const [companyName, setCompanyName] = useState<string | null>(
     () => cachedLocale?.companyName ?? null,
   );
+  const [companySlug, setCompanySlug] = useState<string | null>(
+    () => cachedLocale?.companySlug ?? null,
+  );
+  const [auditSandboxBanner, setAuditSandboxBanner] = useState<string | null>(
+    () => cachedLocale?.auditSandboxBanner ?? null,
+  );
   const [isLoading, setIsLoading] = useState(() =>
     Boolean(accessToken && isAuthenticated && !cachedLocale),
   );
@@ -78,6 +89,8 @@ export function CompanyLocaleProvider({ children }: { children: ReactNode }) {
         setLocale(DEFAULT_COMPANY_LOCALE);
         setLogoFileId(null);
         setCompanyName(null);
+        setCompanySlug(null);
+        setAuditSandboxBanner(null);
         setIsLoading(false);
         return;
       }
@@ -94,6 +107,8 @@ export function CompanyLocaleProvider({ children }: { children: ReactNode }) {
           setLocale(resolveCompanyLocale(profile.preferences));
           setLogoFileId(profile.preferences.logoFileId ?? null);
           setCompanyName(profile.name);
+          setCompanySlug(profile.slug);
+          setAuditSandboxBanner(resolveAuditSandboxBanner(profile));
         }
       } catch (err) {
         if (!cancelled) {
@@ -103,6 +118,8 @@ export function CompanyLocaleProvider({ children }: { children: ReactNode }) {
           setLocale(DEFAULT_COMPANY_LOCALE);
           setLogoFileId(null);
           setCompanyName(null);
+          setCompanySlug(null);
+          setAuditSandboxBanner(null);
         }
       } finally {
         if (!cancelled) {
@@ -158,6 +175,8 @@ export function CompanyLocaleProvider({ children }: { children: ReactNode }) {
       isLoading,
       logoFileId,
       companyName,
+      companySlug,
+      auditSandboxBanner,
       formatMoney,
       formatNumber,
       formatPercent,
@@ -170,6 +189,8 @@ export function CompanyLocaleProvider({ children }: { children: ReactNode }) {
       isLoading,
       logoFileId,
       companyName,
+      companySlug,
+      auditSandboxBanner,
       formatMoney,
       formatNumber,
       formatPercent,

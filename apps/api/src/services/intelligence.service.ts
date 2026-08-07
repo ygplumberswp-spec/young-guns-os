@@ -30,6 +30,9 @@ export type AuraIntelligenceContext = {
   currency: string;
 };
 
+/** Days without customer contact before the dashboard flags a follow-up. */
+const FOLLOW_UP_STALE_DAYS = 14;
+
 type IntelligenceDeps = {
   db: DatabaseClient;
   financeService: FinanceService;
@@ -56,6 +59,7 @@ export class IntelligenceService {
       upcomingCalendar,
       outstandingInvoiceRows,
       followUpRows,
+      followUpCount,
       agentTaskCount,
       workflowStepCount,
       whatsappDraftCount,
@@ -88,6 +92,7 @@ export class IntelligenceService {
         limit: 20,
       }),
       this.findFollowUpCustomers(companyId),
+      this.countFollowUpCustomers(companyId),
       this.countPendingAgentTasks(companyId),
       this.countPendingWorkflowSteps(companyId),
       this.countWhatsappDrafts(companyId),
@@ -158,7 +163,7 @@ export class IntelligenceService {
         })),
       },
       customerFollowUps: {
-        count: followUpRows.length,
+        count: followUpCount,
         items: followUpRows,
       },
       pendingApprovals: {
@@ -255,8 +260,36 @@ export class IntelligenceService {
     };
   }
 
+  /**
+   * Every active customer overdue for contact, counted in SQL.
+   * `findFollowUpCustomers` only returns a preview page, so the count cannot be derived from it.
+   */
+  private async countFollowUpCustomers(companyId: string): Promise<number> {
+    const cutoff = new Date(Date.now() - FOLLOW_UP_STALE_DAYS * 24 * 60 * 60 * 1000);
+    // postgres-js cannot serialise a Date into an explicitly cast placeholder, so bind ISO text.
+    const cutoffIso = cutoff.toISOString();
+
+    const [row] = await this.deps.db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(customers)
+      .where(
+        and(
+          eq(customers.companyId, companyId),
+          eq(customers.status, 'active'),
+          sql`coalesce(
+            (select max(${customerActivities.createdAt})
+               from ${customerActivities}
+              where ${customerActivities.customerId} = ${customers.id}),
+            ${cutoffIso}::timestamptz
+          ) <= ${cutoffIso}::timestamptz`,
+        ),
+      );
+
+    return row?.count ?? 0;
+  }
+
   private async findFollowUpCustomers(companyId: string) {
-    const cutoff = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
+    const cutoff = new Date(Date.now() - FOLLOW_UP_STALE_DAYS * 24 * 60 * 60 * 1000);
 
     const customerRows = await this.deps.db.query.customers.findMany({
       where: and(eq(customers.companyId, companyId), eq(customers.status, 'active')),
@@ -289,6 +322,7 @@ export class IntelligenceService {
         const reference = item.lastActivityAt ? new Date(item.lastActivityAt) : cutoff;
         return reference <= cutoff;
       })
+      .sort((a, b) => b.daysSinceContact - a.daysSinceContact)
       .slice(0, 10);
 
     return items;

@@ -1,0 +1,71 @@
+{
+  "label": "207b-step1-pause-xero-sync",
+  "mode": "dry-run",
+  "generatedAt": "2026-08-03T23:11:12.492Z",
+  "pauseMethod": "UPDATE integration_sync_schedules SET enabled=false for connector_key='xero' (row preserved, never deleted); stale Xero import job moved to status=cancelled. Scheduler process itself stays running so the controlled manual re-run in STEP 6 can still be processed.",
+  "before": {
+    "xeroSchedules": [
+      {
+        "id": "4a5b8436-c759-4222-b9c8-dde31f11b97b",
+        "enabled": true,
+        "next_run_at": "2026-08-03T23:03:33.673Z",
+        "last_run_at": "2026-08-03T22:43:33.673Z",
+        "frequency_minutes": 20,
+        "sync_scope": "incremental"
+      }
+    ],
+    "openXeroImportJobs": [
+      {
+        "id": "bdec9159-0710-4f0c-a0b0-f6d6a1a23215",
+        "company_id": "095aef76-fef5-4139-af37-a42f2d7e2faf",
+        "status": "running",
+        "job_type": "manual",
+        "sync_scope": "customers",
+        "started_at": "2026-08-02T21:29:18.491Z",
+        "heartbeat_at": null,
+        "stage": null
+      }
+    ],
+    "otherProviderOpenJobs": [
+      {
+        "provider": "cartrack",
+        "status": "running",
+        "n": 6
+      },
+      {
+        "provider": "custom",
+        "status": "pending",
+        "n": 29
+      }
+    ]
+  },
+  "after": {
+    "xeroSchedules": [
+      {
+        "id": "4a5b8436-c759-4222-b9c8-dde31f11b97b",
+        "enabled": true,
+        "next_run_at": "2026-08-03T23:03:33.673Z"
+      }
+    ],
+    "openXeroJobs": 1,
+    "otherProviderSchedules": [
+      {
+        "connector_key": "cartrack",
+        "enabled": true
+      },
+      {
+        "connector_key": "yoco",
+        "enabled": true
+      }
+    ],
+    "xeroConnectionPreserved": {
+      "status": "connected",
+      "connected_at": "2026-08-01T10:20:52.209Z",
+      "last_sync_at": "2026-08-03T17:06:33.809Z",
+      "credentials_present": true,
+      "organisation_name": "Young Guns Plumbing"
+    },
+    "xeroSyncLogRowsPreserved": 63616,
+    "xeroCustomerMappingsPreserved": 678
+  }
+}
