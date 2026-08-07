@@ -52,8 +52,9 @@ export function CompletedTodayPanel({
           />
         ) : jobs.length === 0 ? (
           <EmptyState
-            title="No Jobs Completed Yet Today"
-            description="Completed jobs will appear here as technicians finish work."
+            className="titan-empty-state--compact exec-panel-empty--compact"
+            title="No jobs completed today"
+            description="Completed jobs appear here as technicians finish work."
             action={
               <Link href="/jobs?status=completed">
                 <Button size="sm" variant="secondary">

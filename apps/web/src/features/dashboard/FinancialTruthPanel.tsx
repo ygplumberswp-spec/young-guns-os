@@ -80,6 +80,13 @@ export function FinancialTruthPanel({
                 Some earlier financial records are still being imported.
               </p>
             ) : null}
+            <div className="exec-financial-truth__links">
+              <Link href="/finance/owner-command">Financial Command</Link>
+              <Link href="/finance/cash-control">Cash Control</Link>
+              <Link href="/finance/budget-control">Budget vs Actual</Link>
+              <Link href="/finance/growth-planner">Growth Planner</Link>
+              <Link href="/finance/operating-profit">Operating Profit</Link>
+            </div>
           </>
         )}
         <DashboardDetailsDisclosure>
@@ -88,8 +95,8 @@ export function FinancialTruthPanel({
             updatedAt={section?.updatedAt ?? generatedAt}
             state={financeHonesty.state === 'partial' ? 'live' : financeHonesty.state}
             note={financeHonesty.note ?? sectionHonesty.note}
-            href="/integrations/xero"
-            linkLabel="Manage Xero"
+            href="/finance/owner-command"
+            linkLabel="Open Financial Command"
           />
         </DashboardDetailsDisclosure>
       </div>

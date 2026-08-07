@@ -335,7 +335,7 @@ export function buildDash001Extensions(input: {
         { unavailable: moneyUnavailable, estimate: true, rawValue: grossProfitEstimate },
       ),
       rawValue: grossProfitEstimate,
-      href: '/finance-cashflow-profit',
+      href: '/finance/owner-command',
       comparisonLabel: null,
       trend: 'unknown',
       freshness: financeFreshness,
@@ -533,7 +533,7 @@ export function buildDash001Extensions(input: {
         currency,
         caption: 'Estimate — cost information may be incomplete',
         estimate: true,
-        href: '/finance-cashflow-profit',
+        href: '/finance/owner-command',
         displayValue: formatFinancialDisplayValue(grossProfitEstimate, currency, {
           estimate: true,
           unavailable: moneyUnavailable,

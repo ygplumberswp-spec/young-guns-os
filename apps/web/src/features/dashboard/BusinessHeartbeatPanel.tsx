@@ -128,8 +128,8 @@ export function BusinessHeartbeatPanel({
                 ? 'Some earlier financial records are still being imported.'
                 : honesty.note
             }
-            href="/finance-cashflow-profit"
-            linkLabel="Open finance"
+            href="/finance/owner-command"
+            linkLabel="Open Financial Command"
           />
         </DashboardDetailsDisclosure>
       </div>
