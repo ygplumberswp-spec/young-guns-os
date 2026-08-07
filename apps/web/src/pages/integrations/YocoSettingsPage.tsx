@@ -1,5 +1,6 @@
+import { PageHeader } from '../../components/ux';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { Button, Input, PageHeader, Panel } from '@titan/ui';
+import { Button, Input, Panel } from '@titan/ui';
 import type { YocoConnectionSummary } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import {
@@ -140,7 +141,7 @@ export function YocoSettingsPage() {
 
       {!isLoading && connection ? (
         <>
-          <Panel title="Connection status">
+          <Panel title="Connection Status">
             <dl className="integration-status-list">
               <div>
                 <dt>Status</dt>
@@ -189,7 +190,7 @@ export function YocoSettingsPage() {
                     </select>
                   </label>
                   <Input
-                    label="Secret key"
+                    label="Secret Key"
                     type="password"
                     value={secretKey}
                     onChange={(e) => setSecretKey(e.target.value)}

@@ -1,0 +1,349 @@
+{
+  "label": "198-xero-go-verdict",
+  "generatedAt": "2026-08-01T17:44:48.390Z",
+  "xeroGo": "NO",
+  "deployCommit": "8c3e7b71c6ade132d90bf21faf92b6c2bc9269fe",
+  "paymentsFixAncestry": {
+    "commit": "162cbf4",
+    "pass": true
+  },
+  "health": {
+    "endpoint": "https://young-guns-os-staging.up.railway.app/api/v1/health/ready",
+    "httpStatus": 200,
+    "schedulersEnabled": true,
+    "workersEnabled": false,
+    "checkedAt": "2026-08-01T17:44:48.389Z"
+  },
+  "importJob": {
+    "jobId": "8e6aec9b-2d99-493c-85b8-75f61d7f414b",
+    "jobStatus": "completed",
+    "errorMessage": null,
+    "checkpoint": {
+      "stage": "bank_transactions",
+      "contactsPage": 7,
+      "invoicesPage": 7,
+      "paymentsPage": 7,
+      "bankTransactionsPage": 32
+    },
+    "heartbeatAt": "2026-08-01T17:37:22.613Z",
+    "activity": "processing",
+    "resumedFromAbandoned": true,
+    "contactsPulled": 673,
+    "invoicesPulled": 5,
+    "completedStages": [
+      "contacts",
+      "invoices",
+      "payments",
+      "bank_transactions"
+    ]
+  },
+  "connection": {
+    "status": "connected",
+    "lastSyncAt": "2026-08-01T17:37:22.876Z",
+    "lastError": null
+  },
+  "mappingCounts": {
+    "customer_mappings": 673,
+    "invoice_mappings": 5,
+    "payment_mappings": 0,
+    "bank_tx_logs": 3078
+  },
+  "duplicateCustomerContactIds": 0,
+  "cv001b": {
+    "verdict": "PASS",
+    "artifacts": [
+      "diagnostic-output/185-cv-post-xero-import-complete.json",
+      "diagnostic-output/182-customer-value-classification-staging-probe.json"
+    ],
+    "probeBuckets": [
+      {
+        "classification": "verified_invoiced_customer",
+        "count": 0,
+        "valueCents": 0
+      },
+      {
+        "classification": "paying_customer",
+        "count": 0,
+        "valueCents": 0
+      },
+      {
+        "classification": "fully_paid_customer",
+        "count": 0,
+        "valueCents": 0
+      },
+      {
+        "classification": "partially_paid_customer",
+        "count": 0,
+        "valueCents": 0
+      },
+      {
+        "classification": "unpaid_debtor",
+        "count": 0,
+        "valueCents": 0
+      },
+      {
+        "classification": "overdue_debtor",
+        "count": 0,
+        "valueCents": 0
+      },
+      {
+        "classification": "prospect_contact",
+        "count": 678,
+        "valueCents": 0
+      },
+      {
+        "classification": "supplier_only_contact",
+        "count": 0,
+        "valueCents": 0
+      }
+    ],
+    "cvMetricsRefreshJobId": null,
+    "cvMetricsRefreshAt": null,
+    "classificationNote": "678 prospect_contact — consistent with 5 invoice rows (draft/cancelled, zero totals); not a duplicate-mapping regression."
+  },
+  "goChecks": {
+    "job_status_completed": true,
+    "last_sync_at_populated": true,
+    "all_stages_complete": true,
+    "duplicate_mappings_zero": true,
+    "cv_001b_executed": true,
+    "cv_auto_recalc_fired": false,
+    "health_ready_200": true
+  },
+  "monitor": {
+    "artifact": "diagnostic-output/197-xero-go-recovery-monitor.json",
+    "pollCount": 183,
+    "milestones": [
+      {
+        "at": "2026-08-01T13:01:40.827Z",
+        "status": "failed",
+        "stage": "payments",
+        "bankPage": 1,
+        "mappings": {
+          "customer_mappings": 673,
+          "invoice_mappings": 5,
+          "payment_mappings": 0,
+          "bank_tx_logs": 0
+        },
+        "dup": 0
+      },
+      {
+        "at": "2026-08-01T13:09:32Z",
+        "status": "running",
+        "stage": "contacts",
+        "bankPage": 1,
+        "mappings": {
+          "customer_mappings": 673,
+          "invoice_mappings": 5,
+          "payment_mappings": 0,
+          "bank_tx_logs": 0
+        },
+        "dup": 0
+      },
+      {
+        "at": "2026-08-01T13:19:44Z",
+        "status": "running",
+        "stage": "invoices",
+        "bankPage": 1,
+        "mappings": {
+          "customer_mappings": 673,
+          "invoice_mappings": 5,
+          "payment_mappings": 0,
+          "bank_tx_logs": 0
+        },
+        "dup": 0
+      },
+      {
+        "at": "2026-08-01T13:24:50Z",
+        "status": "failed",
+        "stage": "payments",
+        "bankPage": 1,
+        "mappings": {
+          "customer_mappings": 673,
+          "invoice_mappings": 5,
+          "payment_mappings": 0,
+          "bank_tx_logs": 0
+        },
+        "dup": 0
+      },
+      {
+        "at": "2026-08-01T13:40:08Z",
+        "status": "running",
+        "stage": "payments",
+        "bankPage": 1,
+        "mappings": {
+          "customer_mappings": 673,
+          "invoice_mappings": 5,
+          "payment_mappings": 0,
+          "bank_tx_logs": 0
+        },
+        "dup": 0
+      },
+      {
+        "at": "2026-08-01T13:42:41Z",
+        "status": "running",
+        "stage": "bank_transactions",
+        "bankPage": 2,
+        "mappings": {
+          "customer_mappings": 673,
+          "invoice_mappings": 5,
+          "payment_mappings": 0,
+          "bank_tx_logs": 153
+        },
+        "dup": 0
+      },
+      {
+        "at": "2026-08-01T13:45:25Z",
+        "jobId": "6a8304c4-753f-4994-a99d-8c4365c21aee",
+        "status": "running",
+        "stage": "bank_transactions",
+        "bankPage": 4,
+        "mappings": {
+          "customer_mappings": 673,
+          "invoice_mappings": 5,
+          "payment_mappings": 0,
+          "bank_tx_logs": 300
+        },
+        "dup": 0
+      },
+      {
+        "at": "2026-08-01T14:41:49Z",
+        "jobId": "6a8304c4-753f-4994-a99d-8c4365c21aee",
+        "status": "failed",
+        "stage": "bank_transactions",
+        "bankPage": 34,
+        "mappings": {
+          "customer_mappings": 673,
+          "invoice_mappings": 5,
+          "payment_mappings": 0,
+          "bank_tx_logs": 3078
+        },
+        "dup": 0
+      },
+      {
+        "at": "2026-08-01T14:46:28Z",
+        "jobId": "08d2da82-7fb0-4636-8c3c-32cccc60a642",
+        "status": "running",
+        "stage": "contacts",
+        "bankPage": 1,
+        "mappings": {
+          "customer_mappings": 673,
+          "invoice_mappings": 5,
+          "payment_mappings": 0,
+          "bank_tx_logs": 3078
+        },
+        "dup": 0
+      },
+      {
+        "at": "2026-08-01T14:54:12Z",
+        "jobId": "08d2da82-7fb0-4636-8c3c-32cccc60a642",
+        "status": "running",
+        "stage": "invoices",
+        "bankPage": 1,
+        "mappings": {
+          "customer_mappings": 673,
+          "invoice_mappings": 5,
+          "payment_mappings": 0,
+          "bank_tx_logs": 3078
+        },
+        "dup": 0
+      },
+      {
+        "at": "2026-08-01T15:00:38Z",
+        "jobId": "08d2da82-7fb0-4636-8c3c-32cccc60a642",
+        "status": "running",
+        "stage": "payments",
+        "bankPage": 1,
+        "mappings": {
+          "customer_mappings": 673,
+          "invoice_mappings": 5,
+          "payment_mappings": 0,
+          "bank_tx_logs": 3078
+        },
+        "dup": 0
+      },
+      {
+        "at": "2026-08-01T15:02:11Z",
+        "jobId": "08d2da82-7fb0-4636-8c3c-32cccc60a642",
+        "status": "running",
+        "stage": "bank_transactions",
+        "bankPage": 1,
+        "mappings": {
+          "customer_mappings": 673,
+          "invoice_mappings": 5,
+          "payment_mappings": 0,
+          "bank_tx_logs": 3078
+        },
+        "dup": 0
+      },
+      {
+        "at": "2026-08-01T15:57:18Z",
+        "jobId": "81c5b8d8-839b-4875-b106-2ecece11a966",
+        "status": "pending",
+        "stage": "payments",
+        "bankPage": 1,
+        "mappings": {
+          "customer_mappings": 673,
+          "invoice_mappings": 5,
+          "payment_mappings": 0,
+          "bank_tx_logs": 3078
+        },
+        "dup": 0
+      },
+      {
+        "at": "2026-08-01T15:59:21Z",
+        "jobId": "81c5b8d8-839b-4875-b106-2ecece11a966",
+        "status": "running",
+        "stage": "bank_transactions",
+        "bankPage": 2,
+        "mappings": {
+          "customer_mappings": 673,
+          "invoice_mappings": 5,
+          "payment_mappings": 0,
+          "bank_tx_logs": 3078
+        },
+        "dup": 0
+      },
+      {
+        "at": "2026-08-01T17:03:15Z",
+        "jobId": "8e6aec9b-2d99-493c-85b8-75f61d7f414b",
+        "status": "running",
+        "stage": "bank_transactions",
+        "bankPage": 1,
+        "mappings": {
+          "customer_mappings": 673,
+          "invoice_mappings": 5,
+          "payment_mappings": 0,
+          "bank_tx_logs": 3078
+        },
+        "dup": 0
+      },
+      {
+        "at": "2026-08-01T17:38:20Z",
+        "jobId": "8e6aec9b-2d99-493c-85b8-75f61d7f414b",
+        "status": "completed",
+        "stage": "bank_transactions",
+        "bankPage": 32,
+        "mappings": {
+          "customer_mappings": 673,
+          "invoice_mappings": 5,
+          "payment_mappings": 0,
+          "bank_tx_logs": 3078
+        },
+        "dup": 0
+      }
+    ]
+  },
+  "migrationsApplied": {
+    "attempted": true,
+    "script": "packages/db/scripts/migrate-staging-safe.mjs",
+    "result": "NO-GO — appliedMigrationRowCount 114 vs expectedJournalCount 115 (countsMatch false); quiescent window confirmed (0 active xero jobs)",
+    "note": "0107 whatsapp SQL not in journal tags; 0108-0110 likely already applied via prior staging scripts — do not force without journal/hash reconcile"
+  },
+  "nextPipelinePhase": "Phase 2 — resolve CV-001b cvMetricsRefreshJobId / scheduler settled hook; rerun 187 until PASS; then SPI-001",
+  "recommendation": [
+    "Import recovery on 8c3e7b7 succeeded: payments stage passed (162cbf4), job 8e6aec9b completed with last_sync_at.",
+    "Investigate why handleXeroImportJobSettled / refreshPendingCustomerValueMetrics did not set connector autoSync.cvMetricsRefreshJobId on staging (workersEnabled=false may isolate worker tick).",
+    "After CV marker set, rerun diagnostic-output/187-xero-import-recovery-verify.mjs for PASS verdict."
+  ]
+}

@@ -47,4 +47,26 @@ describe('tenant scope isolation', () => {
       (error: unknown) => error instanceof TenantScopeError && error.code === 'CROSS_TENANT_DENIED',
     );
   });
+
+  it('resolveScopedCompanyId ignores forged tenant for standard roles', () => {
+    const accountant = {
+      roleName: 'Accountant',
+      permissions: ['finance:read'],
+      companyId: 'company-a',
+    };
+    assert.equal(resolveScopedCompanyId(accountant, null), 'company-a');
+    assert.throws(
+      () => resolveScopedCompanyId(accountant, 'company-b'),
+      (error: unknown) => error instanceof TenantScopeError,
+    );
+  });
+
+  it('resolveScopedCompanyId allows platform owner to scope another tenant', () => {
+    const platformOwner = {
+      roleName: PLATFORM_OWNER_ROLE_NAME,
+      permissions: ['*', PLATFORM_CROSS_TENANT_PERMISSION],
+      companyId: 'platform-tenant',
+    };
+    assert.equal(resolveScopedCompanyId(platformOwner, 'company-b'), 'company-b');
+  });
 });

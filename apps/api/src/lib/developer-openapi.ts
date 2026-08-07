@@ -115,10 +115,10 @@ export function buildOpenApiSpec(baseUrl: string): Record<string, unknown> {
   return {
     openapi: '3.1.0',
     info: {
-      title: 'TITAN Business OS API',
+      title: 'TITAN API',
       version: '1.0.0',
       description:
-        'Enterprise REST API for TITAN Business OS. Authenticate with Bearer JWT, developer API keys, or personal access tokens.',
+        'Enterprise REST API for TITAN. Authenticate with Bearer JWT, developer API keys, or personal access tokens.',
     },
     servers: [{ url: baseUrl }],
     components: {

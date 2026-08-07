@@ -1,5 +1,6 @@
+import { PageHeader } from '../../components/ux';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { Button, EmptyState, Input, PageHeader, Panel, StatCard } from '@titan/ui';
+import { Button, EmptyState, Input, Panel, StatCard } from '@titan/ui';
 import {
   formatMoney,
   type AssetEquipmentSummary,
@@ -158,7 +159,7 @@ export function AssetEquipmentPage() {
   if (!canView) {
     return (
       <EmptyState
-        title="Asset access required"
+        title="Asset Access Required"
         description="You need asset equipment permissions to view this department."
       />
     );
@@ -202,16 +203,16 @@ export function AssetEquipmentPage() {
       {activeTab === 'dashboard' && analytics ? (
         <>
           <div className="stat-grid">
-            <StatCard label="Total assets" value={String(analytics.totalAssets)} />
-            <StatCard label="Active assets" value={String(analytics.activeAssetCount)} />
-            <StatCard label="In maintenance" value={String(analytics.maintenanceAssetCount)} />
+            <StatCard label="Total Assets" value={String(analytics.totalAssets)} />
+            <StatCard label="Active Assets" value={String(analytics.activeAssetCount)} />
+            <StatCard label="In Maintenance" value={String(analytics.maintenanceAssetCount)} />
             <StatCard
-              label="Maintenance cost"
+              label="Maintenance Cost"
               value={formatMoney(analytics.totalMaintenanceCostCents, analytics.currency)}
             />
-            <StatCard label="Total downtime (hrs)" value={String(analytics.totalDowntimeHours)} />
+            <StatCard label="Total Downtime (Hrs)" value={String(analytics.totalDowntimeHours)} />
             <StatCard
-              label="Average asset age"
+              label="Average Asset Age"
               value={
                 analytics.averageAssetAgeYears != null
                   ? `${analytics.averageAssetAgeYears} yrs`
@@ -221,7 +222,7 @@ export function AssetEquipmentPage() {
           </div>
 
           <div className="portal-grid">
-            <Panel title="Replacement recommendations">
+            <Panel title="Replacement Recommendations">
               {analytics.replacementRecommendations.length === 0 ? (
                 <p className="page-muted">No replacement recommendations yet.</p>
               ) : (
@@ -236,7 +237,7 @@ export function AssetEquipmentPage() {
               )}
             </Panel>
 
-            <Panel title="Upcoming maintenance">
+            <Panel title="Upcoming Maintenance">
               {dashboard.upcomingMaintenance.length === 0 ? (
                 <p className="page-muted">No scheduled maintenance due.</p>
               ) : (
@@ -260,25 +261,25 @@ export function AssetEquipmentPage() {
         <>
           {canManage ? (
             <Panel
-              title="Register asset"
+              title="Register Asset"
               description="Links to real fleet vehicles optionally — no demo records."
             >
               <form className="form-grid" onSubmit={(event) => void handleCreateAsset(event)}>
                 <Input
-                  label="Asset name"
+                  label="Asset Name"
                   value={assetName}
                   onChange={(event) => setAssetName(event.target.value)}
                   required
                 />
-                <Button type="submit">Register asset</Button>
+                <Button type="submit">Register Asset</Button>
               </form>
             </Panel>
           ) : null}
 
-          <Panel title="Asset register">
+          <Panel title="Asset Register">
             {assets.length === 0 ? (
               <EmptyState
-                title="No assets"
+                title="No Assets"
                 description="Assets appear when registered against real records."
               />
             ) : (
@@ -300,10 +301,10 @@ export function AssetEquipmentPage() {
       ) : null}
 
       {activeTab === 'maintenance' ? (
-        <Panel title="Maintenance records">
+        <Panel title="Maintenance Records">
           {records.length === 0 ? (
             <EmptyState
-              title="No maintenance records"
+              title="No Maintenance Records"
               description="Records require approval before execution."
             />
           ) : (
@@ -324,10 +325,10 @@ export function AssetEquipmentPage() {
       ) : null}
 
       {activeTab === 'schedules' ? (
-        <Panel title="Preventative maintenance schedules">
+        <Panel title="Preventative Maintenance Schedules">
           {schedules.length === 0 ? (
             <EmptyState
-              title="No schedules"
+              title="No Schedules"
               description="Schedules generate recommendations only."
             />
           ) : (
@@ -347,10 +348,10 @@ export function AssetEquipmentPage() {
       ) : null}
 
       {activeTab === 'inspections' ? (
-        <Panel title="Inspection history">
+        <Panel title="Inspection History">
           {inspections.length === 0 ? (
             <EmptyState
-              title="No inspections"
+              title="No Inspections"
               description="Inspections appear when recorded against real assets."
             />
           ) : (
@@ -374,7 +375,7 @@ export function AssetEquipmentPage() {
         <>
           {canManage ? (
             <Panel
-              title="Draft maintenance action"
+              title="Draft Maintenance Action"
               description="Draft → Approval → Execution. No automatic scheduling."
             >
               <form className="form-grid" onSubmit={(event) => void handleCreateAction(event)}>
@@ -390,15 +391,15 @@ export function AssetEquipmentPage() {
                   onChange={(event) => setActionRecommendation(event.target.value)}
                   required
                 />
-                <Button type="submit">Draft action</Button>
+                <Button type="submit">Draft Action</Button>
               </form>
             </Panel>
           ) : null}
 
-          <Panel title="Pending and historical actions">
+          <Panel title="Pending And Historical Actions">
             {actions.length === 0 ? (
               <EmptyState
-                title="No actions"
+                title="No Actions"
                 description="Asset actions are drafted for manager approval."
               />
             ) : (

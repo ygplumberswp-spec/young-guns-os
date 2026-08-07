@@ -1,5 +1,6 @@
+import { PageHeader } from '../../components/ux';
 import { Link } from 'wouter';
-import { PageHeader, Panel } from '@titan/ui';
+import { Panel } from '@titan/ui';
 import { fetchMobileWorkforceJobs } from '../../lib/mobile-api-client';
 import { useAuth } from '../../lib/auth-context';
 import { useStaffCachedQuery } from '../../lib/use-scoped-cached-query';
@@ -19,14 +20,14 @@ export function MobileJobsPage() {
 
   return (
     <div className="portal-page">
-      <PageHeader title="My jobs" description="Assigned jobs for today and upcoming work." />
+      <PageHeader title="My Jobs" description="Assigned jobs for today and upcoming work." />
 
       <AnalyticsTabPanel
         isLoading={jobsQuery.isLoading}
         error={jobsQuery.error}
         hasData={jobs !== undefined}
         isEmpty={jobs !== undefined && jobs.jobs.length === 0}
-        emptyTitle="No assigned jobs"
+        emptyTitle="No Assigned Jobs"
         emptyDescription="You have no jobs assigned right now."
         loadingLabel="Loading jobs…"
         onRetry={() => void jobsQuery.refetch()}

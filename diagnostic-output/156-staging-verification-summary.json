@@ -1,0 +1,46 @@
+{
+  "generatedAt": "2026-08-01T07:49:00.338Z",
+  "branch": "cursor/titan-frozen-scope-completion",
+  "head": "767b947",
+  "stagingRef": "cpkuwtaipjxeipvbssvn",
+  "forbiddenRef": "rshuiaghmtrvvilhqpwm",
+  "separation": {
+    "appsApiEnvStagingLocal": {
+      "appEnv": "staging",
+      "titanEnv": "staging",
+      "hasStagingRef": true,
+      "hasForbiddenRef": false
+    },
+    "productionEnvFilesUntouched": true
+  },
+  "backup": {
+    "pgDumpAttempted": true,
+    "result": "BLOCKED",
+    "errorCode": "28P01",
+    "pitrPath": "Supabase dashboard → Project cpkuwtaipjxeipvbssvn → Database → Backups / PITR → restore to timestamp before incident"
+  },
+  "migration": {
+    "localExpectedJournalCount": 106,
+    "pendingTags": [
+      "0105_boq_workspace",
+      "0106_job_document_packs"
+    ],
+    "migrateStagingSafeExitCode": 1,
+    "directProbeExitCode": 1,
+    "errorCode": "28P01",
+    "inferenceFromPublicApi": "Phase5/6 E2E pass implies >=0099 and >=0096 on Railway-connected DB; BOQ/packs routes 404 implies deploy behind HEAD even if migrations applied"
+  },
+  "deploy": {
+    "railwayTokenPresent": false,
+    "railwayCliWhoami": "Unauthorized",
+    "apiHealth": "https://young-guns-os-staging.up.railway.app/api/v1/health/ready",
+    "webUrl": "https://comfortable-determination-staging.up.railway.app",
+    "redeployStatus": "BLOCKED"
+  },
+  "rollback": [
+    "1. Supabase PITR restore staging project cpkuwtaipjxeipvbssvn to pre-migration timestamp",
+    "2. Railway dashboard → revert API/web service to last known-good deployment",
+    "3. Verify /api/v1/health/ready database=connected",
+    "4. Re-run staging-phase5-public-e2e.mjs and staging-phase6-public-e2e.mjs"
+  ]
+}

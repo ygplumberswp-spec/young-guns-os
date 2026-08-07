@@ -1,0 +1,20 @@
+{
+  "dumpMeta": {
+    "step": "pg_dump",
+    "ok": true,
+    "exitCode": 0,
+    "file": "staging-pg-dump-2026-08-01T08-20-02.dump",
+    "bytes": 3537847,
+    "stderrRedacted": ""
+  },
+  "journalProof": {
+    "step": "journal_before",
+    "appliedCount": 104,
+    "expectedJournalCount": 106,
+    "pending": 2,
+    "lastHashPrefix": "0209a5314f51",
+    "lastCreatedAt": "1785500562904",
+    "lastExpectedTag": "0106_job_document_packs"
+  },
+  "at": "2026-08-01T08:24:23.104Z"
+}

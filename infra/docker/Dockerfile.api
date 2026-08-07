@@ -6,6 +6,7 @@ RUN corepack enable && corepack prepare pnpm@10.12.1 --activate
 WORKDIR /app
 
 FROM base AS deps
+ENV PUPPETEER_SKIP_DOWNLOAD=true
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc* ./
 COPY apps/api/package.json apps/api/
 COPY packages/shared/package.json packages/shared/
@@ -26,11 +27,19 @@ ENV HOST=0.0.0.0
 # Railway injects PORT at runtime — do not hardcode listen port here.
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
-# Disposable/local filesystem storage defaults (override with env or mount a volume).
-# Staging can boot without a persistent Railway volume; data is ephemeral until one is attached.
+# Persistent storage defaults — mount a Railway volume at /var/lib/titan/storage.
 ENV COMPANY_MEDIA_STORAGE_PATH=/var/lib/titan/storage/company-media
 ENV JOB_EVIDENCE_STORAGE_PATH=/var/lib/titan/storage/job-evidence
-RUN corepack enable && corepack prepare pnpm@10.12.1 --activate \
+# System Chromium for finance PDF rendering (no download on container start).
+ENV PUPPETEER_SKIP_DOWNLOAD=true
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+    chromium \
+    ca-certificates \
+    fonts-liberation \
+  && rm -rf /var/lib/apt/lists/* \
+  && corepack enable && corepack prepare pnpm@10.12.1 --activate \
   && groupadd --system titan && useradd --system --gid titan --create-home titan \
   && mkdir -p \
        /var/lib/titan/storage/company-media \

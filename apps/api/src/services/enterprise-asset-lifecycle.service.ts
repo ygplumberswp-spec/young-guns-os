@@ -28,6 +28,7 @@ import type {
   UpdateAlPlatformConfigRequest,
 } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
+import { emitBusinessEvent } from '../lib/automation-events.js';
 import {
   alAnalyticsSnapshots,
   alAssetAlerts,
@@ -567,6 +568,25 @@ export class EnterpriseAssetLifecycleService {
         .returning();
 
       created.push(toMaintenanceDueSummary(row!));
+
+      emitBusinessEvent({
+        companyId: scope.companyId,
+        eventType: 'maintenance.due',
+        entityType: 'maintenance_due',
+        entityId: row!.id,
+        payload: {
+          maintenanceDue: {
+            id: row!.id,
+            assetId: row!.assetId,
+            scheduleId: row!.scheduleId,
+            title: row!.title,
+            status: row!.status,
+            dueAt: row!.dueAt?.toISOString?.() ?? row!.dueAt,
+          },
+          assetId: row!.assetId,
+        },
+        actorUserId: scope.userId,
+      });
     }
 
     await this.recordAudit(scope, 'maintenance_due_generated', undefined, undefined, {

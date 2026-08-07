@@ -246,7 +246,7 @@ export class EnterpriseReleaseManagementService {
         'version_not_finalized',
         'info',
         'Version not finalized',
-        'Finalize TITAN Business OS v1.0.0 release record.',
+        'Finalize TITAN v1.0.0 release record.',
         !readiness.versionFinalized,
       ],
       [

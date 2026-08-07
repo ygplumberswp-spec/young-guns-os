@@ -1,0 +1,453 @@
+
+> titan-aura-v1@0.0.0 test /Users/keanuventer/Downloads/Titan Aura V1
+> pnpm --filter @titan/shared run test && pnpm --filter @titan/auth run test && pnpm --filter @titan/web run test && pnpm --filter @titan/api run test
+
+
+> @titan/shared@0.0.0 test /Users/keanuventer/Downloads/Titan Aura V1/packages/shared
+> npm run build && node --test dist/tenant-capability-routing.test.js dist/cache-keys.test.js dist/role-experience-routes.test.js dist/nav-honesty.test.js dist/contact-validation.test.js dist/job-contract.test.js dist/job-execution.test.js dist/integration-capability.test.js dist/marketing-eligibility.test.js dist/young-guns-ops.test.js dist/n8n-orchestration.test.js dist/business-day-timeline.test.js dist/boq.test.js dist/quote-workflow.test.js dist/job-costing.test.js dist/job-document-pack.test.js dist/job-finance-workflow.test.js
+
+npm warn Unknown env config "recursive". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "verify-deps-before-run". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "catalog". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "_jsr-registry". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> @titan/shared@0.0.0 build
+> tsc -p tsconfig.build.json
+
+✔ parseBoqImportText reads headered CSV preserving sequence fields (0.87525ms)
+✔ parseBoqImportText accepts plain description rows without header (0.074417ms)
+✔ boqMarkupPriceCents applies basis-point markup (0.05825ms)
+▶ parseBusinessDayRange
+  ✔ returns UTC bounds for a valid ISO date (3.241875ms)
+  ✔ rejects invalid date strings (1.654ms)
+✔ parseBusinessDayRange (6.007667ms)
+▶ categoryForTimeEntry
+  ✔ maps entry types to timeline categories (0.202584ms)
+✔ categoryForTimeEntry (0.334792ms)
+▶ labelForWorkflowAction
+  ✔ returns human labels for known actions (0.356833ms)
+  ✔ falls back to spaced action name (0.097125ms)
+✔ labelForWorkflowAction (0.628583ms)
+▶ mergeBusinessDayTimelineEvents
+  ✔ sorts events newest first (0.122792ms)
+✔ mergeBusinessDayTimelineEvents (0.199166ms)
+▶ buildBusinessDayTimelineSummary
+  ✔ aggregates labour, travel and workflow counts (0.10525ms)
+✔ buildBusinessDayTimelineSummary (0.1575ms)
+▶ cache keys
+  ✔ builds tenant-scoped keys with role and filters (0.362125ms)
+  ✔ includes portal customer scope (0.116334ms)
+  ✔ falls back to legacy token key when scope is missing (0.236542ms)
+  ✔ matches scope prefixes for invalidation (0.21225ms)
+✔ cache keys (3.671833ms)
+▶ SA mobile normalisation
+  ✔ normalises local and international mobiles (1.077458ms)
+  ✔ rejects landlines and invalid mobiles (0.111ms)
+  ✔ accepts landlines via SA phone helper (0.07ms)
+✔ SA mobile normalisation (4.000125ms)
+▶ email validation and placeholders
+  ✔ validates emails (0.154291ms)
+  ✔ flags Young Guns / company placeholder emails (0.111167ms)
+✔ email validation and placeholders (0.349875ms)
+▶ deriveIntegrationCapabilityState
+  ✔ returns not_implemented when the backend does not exist (0.826083ms)
+  ✔ returns not_implemented for planned providers even when marked configured (0.207708ms)
+  ✔ returns failed_degraded when the connection is in error, regardless of config (0.18975ms)
+  ✔ returns connected_usable only when connected AND configured (0.154041ms)
+  ✔ returns configured_unverified when connected but not configured (0.130625ms)
+  ✔ returns configured_unverified when pending (0.127459ms)
+  ✔ returns configured_unverified when disconnected but has stored config (0.20725ms)
+  ✔ returns not_configured when disconnected with no config at all (0.159209ms)
+  ✔ defaults backendImplemented to true for available providers (no forced not_implemented) (0.136416ms)
+✔ deriveIntegrationCapabilityState (4.012542ms)
+▶ formatCapabilityStateLabel
+  ✔ maps every capability state to its Decision 4 label (0.136292ms)
+✔ formatCapabilityStateLabel (0.221917ms)
+▶ HONESTY_ONLY_PROVIDERS
+  ✔ never claims a usable capability state for synthetic providers (0.057833ms)
+  ✔ includes gmail only; n8n is Automation-owned (UX-J), not honesty-only (0.24225ms)
+✔ HONESTY_ONLY_PROVIDERS (0.525792ms)
+▶ job contract helpers
+  ✔ formats tenant job numbers (3.010959ms)
+  ✔ generates operational titles (0.257625ms)
+  ✔ requires complete address fields (0.368917ms)
+  ✔ supports managing-agent naming in title (0.115792ms)
+✔ job contract helpers (5.080459ms)
+▶ job costing aggregation
+  ✔ sums quote line costs by category excluding optional lines (0.768417ms)
+  ✔ uses fulfilled quantity for partially fulfilled material lines (0.822ms)
+  ✔ aggregates used material cost and source breakdown (0.928917ms)
+  ✔ tracks returned material value separately (0.195917ms)
+  ✔ computes gross profit from paid revenue when available (0.13125ms)
+  ✔ computes materials variance against quoted baseline (0.530959ms)
+✔ job costing aggregation (4.79625ms)
+✔ job document pack approval workflow transitions (1.3185ms)
+✔ canSendJobDocumentPack requires approved_for_sending (0.333166ms)
+✔ canEditJobDocumentPack blocks sent and cancelled packs (0.169167ms)
+✔ inferPackItemTypeFromDocument classifies COC and invoice filenames (0.276583ms)
+✔ portalAccessTypeForPackItem maps item types to portal access types (0.173709ms)
+▶ UX-B job execution contract
+  ✔ maps execution phases onto canonical job statuses (0.344875ms)
+  ✔ blocks complete from assigned phase via transition table (0.990833ms)
+  ✔ requires gas-specific checklist items for geyser work (0.134458ms)
+  ✔ blocks completion when evidence and declaration are missing (0.207792ms)
+  ✔ allows completion when all gates are satisfied (0.354167ms)
+✔ UX-B job execution contract (4.176667ms)
+✔ deriveJobCashChainSteps marks completed when snapshot exists (0.905166ms)
+✔ deriveJobCashChainSteps marks paid when outstanding is zero (0.284458ms)
+✔ findAcceptedQuoteForInvoicing returns accepted quote only (1.682833ms)
+✔ suggestNextInvoiceStage prefers deposit when quote has deposit percent (0.231875ms)
+✔ canInvoiceFromAcceptedQuote is true only with accepted quote (0.223625ms)
+✔ buildPaymentRecordHref encodes invoice and job prefill (0.126708ms)
+▶ classifyBuyerFromEvidence (UX-H / Decision 3)
+  ✔ does not treat contact existence as buyer proof (0.403041ms)
+  ✔ excludes draft and cancelled invoices from buyer proof (0.109ms)
+  ✔ separates unpaid ACCREC buyer from paid buyer (0.068875ms)
+  ✔ classifies paid and repeat buyers from qualifying ACCREC evidence (0.805458ms)
+  ✔ excludes supplier-only contacts (0.201458ms)
+✔ classifyBuyerFromEvidence (UX-H / Decision 3) (2.837ms)
+▶ marketing consent helpers
+  ✔ treats missing/unknown as not consent (0.261ms)
+  ✔ treats opt-out states as suppressed (0.129958ms)
+✔ marketing consent helpers (0.735458ms)
+▶ Human-Quality Content Standard
+  ✔ records Owner-approved future marketing requirements (0.103958ms)
+✔ Human-Quality Content Standard (0.177584ms)
+▶ n8n-orchestration (UX-J)
+  ✔ allows only loopback base URLs (2.255209ms)
+  ✔ never claims connected without verified status (0.084042ms)
+  ✔ strips secrets from outbound payloads (0.101583ms)
+  ✔ builds stable signature payload shape (0.049416ms)
+  ✔ sanitizes credential-like error text (0.299375ms)
+  ✔ computes retry backoff (2.206042ms)
+✔ n8n-orchestration (UX-J) (5.95025ms)
+▶ nav honesty (UX-K)
+  ✔ UX-050 — does not duplicate Finance href onto Quotes (3.963292ms)
+  ✔ UX-052 — dispatcher console is a first-class staff nav item (0.215333ms)
+  ✔ UX-048 — enterprise modules index is in Owner nav and catalogue is non-empty (0.143667ms)
+  ✔ Phase 4 — global search is a first-class owner nav item (0.116125ms)
+  ✔ Phase 4 — client portal nav does not duplicate finance or jobs hrefs (0.150333ms)
+✔ nav honesty (UX-K) (6.441917ms)
+✔ quote approval workflow transitions (0.614667ms)
+✔ canIssueQuote requires approved_for_sending (0.06675ms)
+✔ canEditQuote allows draft through approved_for_sending (0.58125ms)
+▶ technician route protection
+  ✔ blocks technicians from operational owner modules (0.331834ms)
+✔ technician route protection (1.538416ms)
+▶ dispatcher and accountant route boundaries
+  ✔ blocks dispatcher from AI, SaaS and integrations (0.26425ms)
+  ✔ blocks accountant from dispatch, staff manage and Owner AI (0.377334ms)
+✔ dispatcher and accountant route boundaries (0.899792ms)
+▶ tenant capability routing
+  ✔ matches warranty follow-up requests to customer support department (1.458875ms)
+  ✔ detects code-backed capability requests (1.716375ms)
+  ✔ detects capability creation intent in chat messages (0.088833ms)
+  ✔ scores active capability matches above threshold (0.142875ms)
+  ✔ keeps department ids aligned with capability groups (0.065ms)
+✔ tenant capability routing (4.10125ms)
+▶ young-guns-ops (UX-I)
+  ✔ builds address deep-links without inventing coordinates (0.321958ms)
+  ✔ labels maps capability honestly (0.375875ms)
+  ✔ resolves COC applicability for gas/geyser work (0.280542ms)
+  ✔ matches Cape Town service suburbs (0.326041ms)
+✔ young-guns-ops (UX-I) (1.966792ms)
+ℹ tests 91
+ℹ suites 23
+ℹ pass 91
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 167.075625
+
+> @titan/auth@0.0.0 test /Users/keanuventer/Downloads/Titan Aura V1/packages/auth
+> npm run build && node --test dist/role-experience.test.js dist/rbac-matrix.test.js dist/tokens.test.js
+
+npm warn Unknown env config "recursive". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "verify-deps-before-run". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "catalog". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "_jsr-registry". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> @titan/auth@0.0.0 build
+> tsc -p tsconfig.build.json && tsc -p tsconfig.browser.build.json
+
+▶ RBAC matrix — canonical roles
+  ✔ defines all seven canonical roles in the matrix (0.29875ms)
+  ✔ seeds company roles including legacy compatibility roles (0.069ms)
+  ✔ does not silently alias Member (0.084792ms)
+✔ RBAC matrix — canonical roles (0.90675ms)
+▶ RBAC matrix — access boundaries
+  ✔ allows Platform Owner cross-tenant and blocks Company Owner (0.14425ms)
+  ✔ treats legacy Owner as Company Owner, not Platform Owner (0.070792ms)
+  ✔ maps legacy Admin experience to Manager without remapping DB name helpers (0.048625ms)
+  ✔ enforces Manager vs Accountant vs Dispatcher permission boundaries (0.058667ms)
+  ✔ blocks technician from owner modules and finances (0.092792ms)
+  ✔ sets login home paths by role (0.059334ms)
+  ✔ blocks Owner/Admin/Member/Client/Platform Owner invites (0.06925ms)
+  ✔ restricts Legacy Member to minimal non-sensitive permissions (0.044125ms)
+  ✔ allows only Platform Owner to assign Company Owner; blocks self-serve Platform Owner (0.095292ms)
+✔ RBAC matrix — access boundaries (0.906833ms)
+▶ role experience
+  ✔ identifies Platform Owner with cross-tenant access (0.373542ms)
+  ✔ identifies Company Owner without cross-tenant access (0.065417ms)
+  ✔ maps legacy Owner to company_owner experience (0.046958ms)
+  ✔ identifies technician role and home path (0.05775ms)
+  ✔ blocks technician from owner modules while allowing mobile (0.040584ms)
+  ✔ treats manager as manager experience with permission-scoped access (0.067916ms)
+  ✔ identifies dispatcher and accountant experiences (0.047667ms)
+  ✔ normalises agent manage permission aliases (0.044375ms)
+✔ role experience (1.25875ms)
+▶ MFA login challenge tokens
+  ✔ creates and verifies a challenge token with user and company scope (2.174083ms)
+  ✔ rejects tokens with the wrong purpose (0.345334ms)
+  ✔ rejects tokens signed with a different secret (0.179541ms)
+✔ MFA login challenge tokens (3.164208ms)
+ℹ tests 23
+ℹ suites 4
+ℹ pass 23
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 78.06225
+
+> @titan/web@0.0.0 test /Users/keanuventer/Downloads/Titan Aura V1/apps/web
+> tsx --test src/lib/*.test.ts src/features/aura/*.test.ts src/features/jobs/*.test.ts src/features/dispatch/*.test.ts src/features/global-search/*.test.ts src/lib/portal-routing.test.ts src/lib/nested-routing.test.ts src/brand/*.test.ts src/lib/login-mfa.test.ts
+
+✔ TitanWordmark source is SVG-based (not plain text brand rendering) (0.565417ms)
+✔ static wordmark asset exists with accessible title (0.245ms)
+✔ Phase 3 — auth surfaces use branded AuthLayout shell (2.298458ms)
+✔ Phase 3 — owner and portal app shells use compact TitanWordmark (0.647542ms)
+✔ Phase 3 — responsive auth and owner shell CSS contracts (1.203084ms)
+✔ markdown sanitizer schema blocks script tags (0.985666ms)
+✔ markdown sanitizer schema allows safe formatting tags (0.274583ms)
+✔ buildJobCreateHref returns bare path when no params (0.805042ms)
+✔ buildJobCreateHref encodes customer, property, mobile, and source (0.109833ms)
+✔ buildJobCreateHref skips nullish fields (0.140167ms)
+▶ global search entity routes
+  ✔ maps core operational entities to detail routes (0.344417ms)
+  ✔ returns null for unsupported entity types (0.051958ms)
+✔ global search entity routes (0.903875ms)
+✔ validateCrewAssignmentDraft rejects fewer than two members (0.902ms)
+✔ validateCrewAssignmentDraft rejects duplicate users (0.162959ms)
+✔ validateCrewAssignmentDraft requires exactly one primary (0.124333ms)
+✔ membersFromExecution maps saved crew when two or more exist (0.770167ms)
+✔ membersFromExecution seeds two rows from fallback assignee (0.135708ms)
+▶ responsive New Job form contract
+  ✔ exposes Young Guns job types for the create form (0.4665ms)
+  ✔ preview title matches operational handoff pattern (0.108083ms)
+  ✔ accepts images and documents in the file picker (0.091ms)
+  ✔ maps blocked-drain.jpg selection onto documents-system metadata (0.320083ms)
+✔ responsive New Job form contract (2.155792ms)
+▶ background scheduler
+  ✔ dedupes identical background tasks (82.194833ms)
+  ✔ drops background tasks while scheduler is paused (162.64575ms)
+  ✔ cancels queued and active tasks on logout clear (101.852084ms)
+✔ background scheduler (347.471458ms)
+▶ login MFA client contract
+  ✔ detects MFA challenge responses (0.285041ms)
+  ✔ does not treat full session payloads as MFA challenges (0.070584ms)
+✔ login MFA client contract (0.792666ms)
+▶ nested routing helpers
+  ✔ escapes nest bases for app-absolute navigation (1.209291ms)
+  ✔ converts absolute mobile hrefs to nest-relative paths (0.303833ms)
+✔ nested routing helpers (3.388833ms)
+▶ portal routing nest helpers
+  ✔ escapes nest base with wouter ~ for app-absolute hrefs (0.738583ms)
+  ✔ converts absolute portal hrefs to nest-relative paths for /my and /portal (0.130542ms)
+  ✔ rewrites legacy /portal paths to canonical /my (0.076334ms)
+  ✔ matches nest-relative locations against absolute portal hrefs (0.067416ms)
+  ✔ never composes /my/my/login from the protected-route redirect (0.075417ms)
+✔ portal routing nest helpers (2.138208ms)
+▶ query cache
+  ✔ dedupes in-flight reads (32.2585ms)
+  ✔ returns stale data while revalidating in background (41.564ms)
+  ✔ clears tenant-scoped entries without touching other actors (0.328125ms)
+✔ query cache (74.988583ms)
+▶ filterOwnerStaffNav (UX-K)
+  ✔ owner sees Quotes/Invoices/Payments without Finance duplicate, plus enterprise + dispatcher (0.422459ms)
+  ✔ dispatcher sees Dispatcher console and does not see enterprise modules (0.079958ms)
+  ✔ accountant keeps finance children without Finance=Quotes alias or dispatcher console (0.060167ms)
+  ✔ technician receives no owner staff nav (0.041625ms)
+✔ filterOwnerStaffNav (UX-K) (1.135167ms)
+▶ route prefetch registry
+  ✔ allows owner priority routes (0.271542ms)
+  ✔ blocks dispatcher from aura routes (0.052958ms)
+  ✔ blocks portal routes without permission (0.052583ms)
+✔ route prefetch registry (0.769291ms)
+▶ resolveApiBaseFrom
+  ✔ uses same-origin when runtime override is empty string (0.287125ms)
+  ✔ uses Vite value when runtime override is absent (0.09675ms)
+  ✔ strips accidental /api/v1 suffix from Vite value (0.056083ms)
+✔ resolveApiBaseFrom (0.876292ms)
+ℹ tests 46
+ℹ suites 10
+ℹ pass 46
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 470.604
+
+> @titan/api@0.0.0 test /Users/keanuventer/Downloads/Titan Aura V1/apps/api
+> tsx --test src/lib/tenant-scope.test.ts src/lib/n8n-signing.test.ts src/lib/env-flags.test.ts src/lib/storage-paths.test.ts src/lib/auth-cookies.test.ts src/lib/public-url.test.ts src/middleware/security-headers.test.ts src/routes/*.test.ts src/services/*.test.ts src/services/jobs-contract.test.ts
+
+▶ buildRefreshCookieOptions
+  ✔ uses SameSite=Lax and Secure in production for same-origin proxy deploys (0.703083ms)
+  ✔ uses SameSite=Lax without Secure for local development (0.140333ms)
+✔ buildRefreshCookieOptions (1.816292ms)
+▶ parseBoolFlag
+  ✔ honours explicit true/false (5.765292ms)
+  ✔ falls back to default when unset (0.092584ms)
+✔ parseBoolFlag (8.732833ms)
+▶ n8n-signing (UX-J)
+  ✔ verifies signatures and rejects stale/invalid (2.254ms)
+✔ n8n-signing (UX-J) (3.043625ms)
+▶ public-url
+  ✔ normalizes APP_URL to origin (strips path and trailing slash) (0.677416ms)
+  ✔ detects Railway docs placeholders (0.196625ms)
+  ✔ builds CORS allowlist from APP_URL + CORS_ORIGINS (0.195625ms)
+✔ public-url (2.085708ms)
+▶ resolveStoragePath
+  ✔ uses an absolute configured override (13.882291ms)
+  ✔ falls back to the production absolute default when NODE_ENV=production (5.988583ms)
+  ✔ creates nested directories for a configured absolute path (7.992958ms)
+✔ resolveStoragePath (28.939833ms)
+▶ tenant scope isolation
+  ✔ allows Company Owner only inside their tenant (1.493ms)
+  ✔ allows Platform Owner cross-tenant access (0.242416ms)
+  ✔ blocks ID substitution for non-platform staff (0.483042ms)
+  ✔ resolveScopedCompanyId ignores forged tenant for standard roles (0.214542ms)
+  ✔ resolveScopedCompanyId allows platform owner to scope another tenant (0.122125ms)
+✔ tenant scope isolation (3.621167ms)
+▶ securityHeadersMiddleware
+  ✔ uses Cross-Origin-Resource-Policy cross-origin for split web/API hosts (0.648042ms)
+✔ securityHeadersMiddleware (1.732292ms)
+▶ auth login MFA gate
+  ✔ returns MFA challenge envelope when enrolled user signs in (40.255042ms)
+  ✔ blocks login when MFA enrollment is required but missing (7.907ms)
+  ✔ completes login after valid MFA verification (5.612625ms)
+  ✔ returns MFA_INVALID_CODE when verification fails (2.880125ms)
+  ✔ returns INVALID_CREDENTIALS for bad password without leaking MFA state (4.241667ms)
+✔ auth login MFA gate (61.569ms)
+▶ enterprise unified communications API envelope
+  ✔ wraps success responses in { data: ... } (0.333ms)
+  ✔ wraps errors in { error: { code, message } } (0.504625ms)
+✔ enterprise unified communications API envelope (2.29ms)
+✔ aiRoutingCache stores allowance summaries until TTL expires (1.081583ms)
+✔ aiRoutingCache invalidates tenant-scoped entries without affecting other tenants (0.230792ms)
+✔ buildTenantSnapshotCacheKey includes routing category (0.12025ms)
+✔ resilienceConfigVersion derives from updatedAt and policy fields (2.129916ms)
+✔ cachedTenantRead stores and returns values until invalidated (1.158041ms)
+✔ invalidateTenant clears tenant-scoped cache entries (0.154375ms)
+✔ invalidateIntegrationReadCaches clears integration namespaces only for tenant (0.143958ms)
+✔ detects general platform overview questions (0.941417ms)
+✔ routes overview questions to minimal agents context only (0.413041ms)
+✔ loads page-scoped domains when customer context is active (1.108375ms)
+✔ skips tenant capability enrichment for routine chat (0.307166ms)
+✔ calculates line VAT and costs in cents (1.07075ms)
+✔ identifies quote below configured profit floor (0.112791ms)
+✔ uses internal invoice numbers until Xero assigns one (0.074ms)
+▶ JobEvidenceStorageService.validate
+  ✔ accepts a photo within the allowed MIME set and size limit (0.811042ms)
+  ✔ rejects a photo with an unsupported MIME type (0.780458ms)
+  ✔ rejects a photo larger than the 8MB limit (0.221667ms)
+  ✔ accepts a PDF document within the 10MB limit (0.209291ms)
+  ✔ rejects a document larger than the 10MB limit (0.1915ms)
+  ✔ accepts a signature PNG within the 1.5MB limit (0.168833ms)
+  ✔ rejects a signature larger than the 1.5MB limit (0.23175ms)
+  ✔ rejects a signature with an unsupported MIME type (0.12ms)
+  ✔ rejects an empty file (0.212583ms)
+✔ JobEvidenceStorageService.validate (4.815708ms)
+▶ decodeBase64Payload
+  ✔ decodes a plain base64 string (0.374583ms)
+  ✔ strips a data-URL prefix before decoding (0.161583ms)
+✔ decodeBase64Payload (0.960584ms)
+▶ JobEvidenceStorageService.store/read
+  ✔ reports unconfigured storage when the root is null (39.083958ms)
+  ✔ stores a file and computes a stable sha256 checksum (15.262ms)
+  ✔ round-trips a stored file via read() (14.749375ms)
+  ✔ rejects reading a storage key that does not belong to the given company/job (7.901917ms)
+  ✔ rejects a storage key containing path traversal (2.603958ms)
+  ✔ rejects reading a storage key that has no metadata on disk (1.098292ms)
+✔ JobEvidenceStorageService.store/read (81.437125ms)
+▶ availableActionsForPhase
+  ✔ excludes the office-only reopen action (0.330917ms)
+  ✔ lists actions reachable from assigned (0.350334ms)
+  ✔ lists actions reachable from in_progress (0.055458ms)
+✔ availableActionsForPhase (1.265083ms)
+▶ ACTION_TARGET_PHASE
+  ✔ maps every workflow action to a resulting phase (0.073459ms)
+✔ ACTION_TARGET_PHASE (0.126083ms)
+▶ documentMatchesPhase
+  ✔ prefers explicit metadata.phase over title text (0.073167ms)
+  ✔ falls back to matching the title when metadata is absent (0.052875ms)
+  ✔ is case-insensitive (0.053625ms)
+✔ documentMatchesPhase (0.272125ms)
+▶ hasStoredPhotoEvidence
+  ✔ requires a stored binary — a placeholder photo without storageKey does not satisfy the gate (0.08425ms)
+  ✔ is satisfied once the matching phase photo has a storageKey (0.044667ms)
+  ✔ ignores stored binaries on non-photo documentation types (0.062166ms)
+✔ hasStoredPhotoEvidence (0.266ms)
+▶ hasStoredSignatureEvidence
+  ✔ is false when no customer_signature doc has a storageKey (0.065ms)
+  ✔ is true once a customer_signature doc has a storageKey (0.035917ms)
+✔ hasStoredSignatureEvidence (0.142ms)
+▶ summary mappers
+  ✔ maps a crew member row to a summary with trimmed display name (1.608792ms)
+  ✔ maps a vehicle assignment row to a summary (0.075709ms)
+  ✔ maps a variation row to a summary (0.084583ms)
+  ✔ maps a material line row to a summary (0.113958ms)
+✔ summary mappers (1.997084ms)
+▶ userHasJobAccess
+  ✔ grants access to the legacy single assignee (1.025792ms)
+  ✔ grants access to an active crew member who is not the primary assignee (0.539875ms)
+  ✔ denies access when the user is neither assignee nor active crew (0.213416ms)
+  ✔ denies access when the job does not exist (0.111791ms)
+✔ userHasJobAccess (2.201542ms)
+▶ getJobIdsForUserIncludingCrew
+  ✔ unions legacy assignee jobs with active crew jobs, de-duplicated (0.297625ms)
+  ✔ returns an empty array when the user has no jobs (0.138292ms)
+✔ getJobIdsForUserIncludingCrew (0.516166ms)
+▶ UX-A job create contract
+  ✔ requires property/address before create can succeed (1.060708ms)
+  ✔ auto title does not use a free-text Title field (0.229416ms)
+  ✔ normalises site contact mobiles (0.359917ms)
+  ✔ detects placeholder emails for verification flags (0.228333ms)
+  ✔ allocates padded job numbers (0.117625ms)
+  ✔ accepts document metadata payload for job-linked create (blocked-drain.jpg) (0.168208ms)
+✔ UX-A job create contract (3.370333ms)
+▶ UX-D lead intake contract
+  ✔ exposes canonical lifecycle statuses including intake and terminal states (1.916292ms)
+  ✔ normalises SA mobiles to E.164 for lead identity (0.4785ms)
+  ✔ treats placeholder emails as non-identity (0.329792ms)
+  ✔ keeps marketing consent conceptually separate from operational contact (0.152833ms)
+  ✔ rejects placeholder site tokens used by the old convert UI (0.139375ms)
+✔ UX-D lead intake contract (5.40725ms)
+✔ formatSchedulingCrewLabel joins up to two names and truncates the rest (0.364084ms)
+✔ formatSchedulingVehicleLabel prefers name and plate (0.064ms)
+✔ insufficient stock error code is stable for clients (0.426458ms)
+✔ issue movement uses negative quantity delta convention (0.096916ms)
+✔ receipt then partial issue leaves remaining stock (0.079292ms)
+▶ tenant capability mission control snapshots
+  ✔ includes only attention-required capabilities (0.449667ms)
+✔ tenant capability mission control snapshots (1.270542ms)
+✔ resolveImportedInvoiceNumber prefers Xero invoice number (2.170292ms)
+✔ resolveImportedInvoiceNumber falls back to stable Xero id suffix (0.178625ms)
+✔ buildXeroImportSyncMessage reports success counts (0.304208ms)
+✔ buildXeroImportSyncMessage reports partial failure (0.140792ms)
+✔ buildXeroImportSyncMessage reports failed stage without financial detail (0.213375ms)
+✔ timeout constants are finite and ordered for safe sync budgets (0.139708ms)
+✔ hashOAuthState produces stable hashed values without storing raw state (0.400875ms)
+✔ encryptXeroOAuthCredentials round-trips OAuth token payloads (2.694125ms)
+✔ legacy Xero credentials are detected separately from OAuth credentials (0.262417ms)
+✔ createDeterministicOAuthState supports predictable OAuth test fixtures (0.064167ms)
+✔ OAuth credential payloads do not include legacy client credential fields (0.08225ms)
+ℹ tests 105
+ℹ suites 23
+ℹ pass 105
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1264.955875

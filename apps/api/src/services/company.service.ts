@@ -6,7 +6,7 @@ import type {
 } from '@titan/shared';
 import { DEFAULT_COMPANY_PREFERENCES } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
-import { companies } from '@titan/db';
+import { companies, securityAuditLogs } from '@titan/db';
 
 export class CompanyError extends Error {
   constructor(
@@ -36,6 +36,7 @@ export class CompanyService {
   async updateProfile(
     companyId: string,
     input: UpdateCompanyProfileRequest,
+    options?: { updatedByUserId?: string | null },
   ): Promise<CompanyProfile> {
     const existing = await this.db.query.companies.findFirst({
       where: eq(companies.id, companyId),
@@ -44,6 +45,15 @@ export class CompanyService {
     if (!existing) {
       throw new CompanyError('NOT_FOUND', 'Company not found');
     }
+
+    const existingPreferences = {
+      ...DEFAULT_COMPANY_PREFERENCES,
+      ...(existing.preferences ?? {}),
+    };
+    const nextReviewUrl =
+      input.preferences?.googleReviewUrl !== undefined
+        ? input.preferences.googleReviewUrl
+        : undefined;
 
     const [updated] = await this.db
       .update(companies)
@@ -65,6 +75,21 @@ export class CompanyService {
 
     if (!updated) {
       throw new CompanyError('UPDATE_FAILED', 'Unable to update company profile');
+    }
+
+    if (nextReviewUrl !== undefined && nextReviewUrl !== (existingPreferences.googleReviewUrl ?? null)) {
+      await this.db.insert(securityAuditLogs).values({
+        companyId,
+        category: 'security',
+        action: 'google_review_url_updated',
+        entityType: 'company',
+        entityId: companyId,
+        userId: options?.updatedByUserId ?? null,
+        metadata: {
+          hadPreviousUrl: Boolean(existingPreferences.googleReviewUrl),
+          hasUrl: Boolean(nextReviewUrl),
+        },
+      });
     }
 
     return toCompanyProfile(updated);
