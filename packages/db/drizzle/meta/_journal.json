@@ -1303,6 +1303,13 @@
       "when": 1785874000000,
       "tag": "0190_finance_receipt_reconciliation",
       "breakpoints": true
+    },
+    {
+      "idx": 186,
+      "version": "7",
+      "when": 1785875000000,
+      "tag": "0191_finance_monthly_budget_plans",
+      "breakpoints": true
     }
   ]
 }
