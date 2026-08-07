@@ -1238,37 +1238,50 @@ export class CommunicationsPlatformService {
     const preview = input.messagePreview.slice(0, 400);
     const urgent = detectWhatsappInboundUrgency(preview);
 
-    await this.db.insert(commPlatformInboxIndex).values({
-      companyId: input.companyId,
-      accountId: account?.id ?? null,
-      accountKind: 'business_whatsapp',
-      channel: 'whatsapp',
-      externalThreadId: threadKey,
-      externalMessageId: input.externalMessageId,
-      subject: input.contactName ? `WhatsApp · ${input.contactName}` : `WhatsApp · +${threadKey}`,
-      preview,
-      participantLabel,
-      participantKind: input.customerId ? 'customer' : 'unknown',
-      folder: 'inbox',
-      unread: true,
-      urgent,
-      direction: 'inbound',
-      linkTargetType: input.customerId ? 'customer' : null,
-      linkTargetId: input.customerId,
-      assignedJobId: null,
-      attachmentCount: 0,
-      labels: urgent ? ['whatsapp', 'business', 'urgent'] : ['whatsapp', 'business'],
-      occurredAt: input.occurredAt,
-      metadata: {
-        contactPhone: threadKey,
-        contactName: input.contactName,
-        source: 'meta_cloud_api_webhook',
-        leadJobCreateReady: true,
-        autoCreateLead: false,
-        autoCreateJob: false,
-        autoSend: false,
-      },
-    });
+    // LIVE-001E: race-safe hub idempotency for Meta message.id
+    await this.db
+      .insert(commPlatformInboxIndex)
+      .values({
+        companyId: input.companyId,
+        accountId: account?.id ?? null,
+        accountKind: 'business_whatsapp',
+        channel: 'whatsapp',
+        externalThreadId: threadKey,
+        externalMessageId: input.externalMessageId,
+        subject: input.contactName
+          ? `WhatsApp · ${input.contactName}`
+          : `WhatsApp · +${threadKey}`,
+        preview,
+        participantLabel,
+        participantKind: input.customerId ? 'customer' : 'unknown',
+        folder: 'inbox',
+        unread: true,
+        urgent,
+        direction: 'inbound',
+        linkTargetType: input.customerId ? 'customer' : null,
+        linkTargetId: input.customerId,
+        assignedJobId: null,
+        attachmentCount: 0,
+        labels: urgent ? ['whatsapp', 'business', 'urgent'] : ['whatsapp', 'business'],
+        occurredAt: input.occurredAt,
+        metadata: {
+          contactPhone: threadKey,
+          contactName: input.contactName,
+          source: 'meta_cloud_api_webhook',
+          leadJobCreateReady: true,
+          autoCreateLead: false,
+          autoCreateJob: false,
+          autoSend: false,
+        },
+      })
+      .onConflictDoNothing({
+        target: [
+          commPlatformInboxIndex.companyId,
+          commPlatformInboxIndex.accountKind,
+          commPlatformInboxIndex.externalMessageId,
+        ],
+        where: sql`${commPlatformInboxIndex.externalMessageId} IS NOT NULL`,
+      });
   }
 
   async listBusinessWhatsappChats(

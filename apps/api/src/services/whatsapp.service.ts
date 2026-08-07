@@ -1,4 +1,4 @@
-import { and, desc, eq, gt } from 'drizzle-orm';
+import { and, desc, eq, gt, sql } from 'drizzle-orm';
 import type {
   CreateWhatsappTemplateRequest,
   SaveWhatsappConnectionRequest,
@@ -831,15 +831,28 @@ export class WhatsappService {
         ? new Date(Number.parseInt(incoming.timestamp, 10) * 1000)
         : new Date();
 
-      await this.db.insert(whatsappMessages).values({
-        companyId: connection.companyId,
-        customerId: customer?.id ?? null,
-        direction: 'incoming',
-        messageContent: incoming.body,
-        externalMessageId: incoming.externalMessageId,
-        deliveryStatus: 'delivered',
-        deliveredAt: occurredAt,
-      });
+      // LIVE-001E: race-safe idempotency — partial UNIQUE(company_id, external_message_id)
+      // + onConflictDoNothing so Meta webhook retries cannot double-insert.
+      const inserted = await this.db
+        .insert(whatsappMessages)
+        .values({
+          companyId: connection.companyId,
+          customerId: customer?.id ?? null,
+          direction: 'incoming',
+          messageContent: incoming.body,
+          externalMessageId: incoming.externalMessageId,
+          deliveryStatus: 'delivered',
+          deliveredAt: occurredAt,
+        })
+        .onConflictDoNothing({
+          target: [whatsappMessages.companyId, whatsappMessages.externalMessageId],
+          where: sql`${whatsappMessages.externalMessageId} IS NOT NULL`,
+        })
+        .returning({ id: whatsappMessages.id });
+
+      if (inserted.length === 0) {
+        continue;
+      }
 
       emitBusinessEvent({
         companyId: connection.companyId,

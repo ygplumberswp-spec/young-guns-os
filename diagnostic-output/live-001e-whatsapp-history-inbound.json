@@ -1,0 +1,69 @@
+{
+  "label": "LIVE-001E",
+  "title": "WhatsApp history + inbound flow integrity",
+  "generatedAt": "2026-08-07T15:20:00.000Z",
+  "branch": "cursor/live-001-integrations-663e",
+  "ownerEvidence": {
+    "whatsappTestConnection": {
+      "result": "PASS",
+      "message": "Connection verified for Test Number. Read-only Meta check — no message sent.",
+      "outbound": false
+    },
+    "liveInboundProof": {
+      "status": "PENDING_OWNER",
+      "preferredPath": "Approved test/sandbox/Owner-controlled sender → currently connected Meta number → webhook → TITAN Communications Hub",
+      "harmlessBody": "TITAN inbound verification",
+      "titanReply": false,
+      "realCustomer": false
+    }
+  },
+  "codeAudit": {
+    "inboundPath": "WhatsappService.handleWebhook → whatsapp_messages insert → indexBusinessWhatsappInbound",
+    "providerMessageId": "Meta message.id → externalMessageId",
+    "tenantResolution": "whatsapp_connections.phone_number_id from webhook metadata.phone_number_id",
+    "signature": "X-Hub-Signature-256 via whatsapp-signing (fail-closed in production)",
+    "applicationIdempotency": "pre-check (companyId, externalMessageId) + onConflictDoNothing",
+    "dbIdempotency": "0192 partial UNIQUE indexes (skipped if historical duplicate groups exist; never auto-deletes)",
+    "messagesStoreBusinessPhoneNumberId": false,
+    "historyReadableIfActiveNumberChanges": true,
+    "autoRelinkHistory": false,
+    "auraAutoSend": false,
+    "draftApproveExecute": true
+  },
+  "stagingReadOnlyAudit": {
+    "script": "packages/db/scripts/live-001e-whatsapp-history-audit.mjs",
+    "agentRanAgainstStaging": false,
+    "reason": "No apps/api/.env.staging.local / DATABASE_URL in agent environment",
+    "ownerCommand": "DATABASE_URL=<staging> node packages/db/scripts/live-001e-whatsapp-history-audit.mjs",
+    "refusesProductionRef": "rshuiaghmtrvvilhqpwm",
+    "requiresStagingRef": "cpkuwtaipjxeipvbssvn"
+  },
+  "numberIdentity": {
+    "currentMetaProofName": "Test Number",
+    "persistedFields": ["phone_number_id", "display_phone_number", "business_account_id"],
+    "verifiedNamePersisted": false,
+    "historicalMessagesCarryPhoneNumberId": false,
+    "conclusion": "Cannot assert historical messages came from the same Meta phone number using message rows alone. Run audit script for masked connection identity; do not auto-relink."
+  },
+  "fixes": [
+    "0192_whatsapp_inbound_idempotency.sql — partial unique indexes (safe skip if dupes)",
+    "WhatsappService.handleWebhook onConflictDoNothing + returning skip",
+    "CommunicationsPlatformService.indexBusinessWhatsappInbound onConflictDoNothing",
+    "Read-only staging audit script with masking",
+    "Regression tests for double webhook delivery"
+  ],
+  "verdict": "BLOCKED",
+  "verdictReason": "Code idempotency hardened and tests pass; live inbound Meta→TITAN proof and staging history counts require Owner/test-number action (agent has no staging DB credentials and must not message customers).",
+  "safety": {
+    "productionTouched": 0,
+    "historicalMessagesDeleted": 0,
+    "historicalMessagesModified": 0,
+    "realCustomerMessagesSent": 0,
+    "outboundWhatsApps": 0,
+    "credentialChanges": 0,
+    "mobile": 0,
+    "creativeStudio": 0,
+    "newAgents": 0,
+    "unrelatedWork": 0
+  }
+}

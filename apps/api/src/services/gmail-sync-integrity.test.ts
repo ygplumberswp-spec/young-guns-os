@@ -36,18 +36,22 @@ describe('Gmail sync deduplication (LIVE-001B)', () => {
     assert.ok(service.includes('Math.min(Math.max(options.maxMessages ?? 40, 1), 100)'));
   });
 
-  it('inbox table has no unique constraint yet — duplicate risk is race-only P2 debt', () => {
+  it('inbox foundation 0121 had no unique on external_message_id; LIVE-001E 0192 adds WA/hub partial unique', () => {
     const sql = read(
       join(repoRoot, 'packages/db/drizzle/0121_communications_platform_v1.sql'),
     );
     assert.ok(sql.includes('comm_platform_inbox_index'));
     assert.ok(sql.includes('external_message_id'));
-    // Documented gap: no UNIQUE(company_id, external_message_id) in foundation migration.
+    // Foundation migration itself does not declare UNIQUE — hardening is 0192.
     assert.equal(
       /UNIQUE\s*\([^)]*external_message_id/i.test(sql) ||
         /uniqueIndex\([^)]*external_message/i.test(sql),
       false,
     );
+    const live001e = read(
+      join(repoRoot, 'packages/db/drizzle/0192_whatsapp_inbound_idempotency.sql'),
+    );
+    assert.ok(live001e.includes('comm_platform_inbox_company_kind_external_uidx'));
   });
 });
 
