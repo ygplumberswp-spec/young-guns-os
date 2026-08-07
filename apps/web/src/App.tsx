@@ -4,6 +4,7 @@ import { AuthProvider } from './lib/auth-context';
 import { PreloadCoordinator } from './components/PreloadCoordinator';
 import { CompanyLocaleProvider } from './lib/company-locale-context';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { SaasAccessGate } from './components/SaasAccessGate';
 import { OwnerStaffRoute, TechnicianRoute } from './components/StaffExperienceRoute';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { PortalRouteShell } from './components/PortalRouteShell';
@@ -107,6 +108,7 @@ export function App() {
           </Route>
           <Route path="/mobile" nest>
             <ProtectedRoute>
+              <SaasAccessGate>
               <TechnicianRoute>
                 <MobileLayout>
                   {/* Nested paths are relative to `/mobile` (Wouter nest base). */}
@@ -132,10 +134,12 @@ export function App() {
                   </Suspense>
                 </MobileLayout>
               </TechnicianRoute>
+              </SaasAccessGate>
             </ProtectedRoute>
           </Route>
           <Route path="/" nest>
             <ProtectedRoute>
+              <SaasAccessGate>
               <OwnerStaffRoute>
                 <CompanyLocaleProvider>
                   <AppLayout>
@@ -702,6 +706,7 @@ export function App() {
                   </AppLayout>
                 </CompanyLocaleProvider>
               </OwnerStaffRoute>
+              </SaasAccessGate>
             </ProtectedRoute>
           </Route>
         </Switch>

@@ -289,6 +289,7 @@ export * from './enterprise-mission-control.js';
 export * from './enterprise-evolution.js';
 export * from './enterprise-developer-platform.js';
 export * from './enterprise-saas-platform.js';
+export * from './saas-tenant-access.js';
 export * from './platform-owner-ai-operations.js';
 export * from './unified-ai-orchestration.js';
 export * from './enterprise-production-readiness.js';

@@ -16,6 +16,7 @@ import {
   fetchPlatformDashboard,
   markPlatformOwner,
   provisionTenant,
+  cancelTenantAccess,
   reactivateTenant,
   suspendTenant,
   updateAiResilienceConfig,
@@ -293,44 +294,127 @@ export function PlatformPage() {
                   <div className="data-list">
                     {dashboard.tenants.map((tenant) => (
                       <div key={tenant.companyId} className="data-list-item">
-                        <strong>{tenant.companyName}</strong>
-                        <span className="status-pill">{formatStatus(tenant.lifecycleStatus)}</span>
-                        <span className="status-pill">
-                          {tenant.subscriptionStatus ?? 'no subscription'}
-                        </span>
-                        <p>
-                          {tenant.userCount} user(s) · {tenant.branchCount} branch(es)
-                          {tenant.planName ? ` · ${tenant.planName}` : ''}
-                        </p>
+                        <div
+                          style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(auto-fit, minmax(9rem, 1fr))',
+                            gap: '0.75rem',
+                            width: '100%',
+                          }}
+                        >
+                          <div>
+                            <strong>Company</strong>
+                            <p>{tenant.companyName}</p>
+                            <p className="muted-text">
+                              {tenant.primaryContactName || tenant.primaryContactEmail || 'No primary contact'}
+                            </p>
+                          </div>
+                          <div>
+                            <strong>Plan</strong>
+                            <p>{tenant.planName ?? '—'}</p>
+                          </div>
+                          <div>
+                            <strong>Subscription</strong>
+                            <p>
+                              {(tenant.subscriptionDisplayStatus ?? tenant.subscriptionStatus ?? 'none').replace(
+                                /_/g,
+                                ' ',
+                              )}
+                            </p>
+                          </div>
+                          <div>
+                            <strong>Paid Through</strong>
+                            <p>
+                              {tenant.paidThroughAt
+                                ? new Date(tenant.paidThroughAt).toLocaleDateString()
+                                : '—'}
+                            </p>
+                          </div>
+                          <div>
+                            <strong>Access</strong>
+                            <p>
+                              <span className="status-pill">{tenant.statusChip ?? '—'}</span>
+                            </p>
+                          </div>
+                          <div>
+                            <strong>Users</strong>
+                            <p>{tenant.userCount}</p>
+                          </div>
+                          <div>
+                            <strong>Last Payment</strong>
+                            <p>
+                              {tenant.lastSuccessfulPaymentAt
+                                ? new Date(tenant.lastSuccessfulPaymentAt).toLocaleDateString()
+                                : '—'}
+                            </p>
+                          </div>
+                        </div>
+                        {tenant.suspensionReason ? (
+                          <p className="muted-text">Reason: {tenant.suspensionReason}</p>
+                        ) : null}
+                        {tenant.lastAccessAction ? (
+                          <p className="muted-text">
+                            Last action: {tenant.lastAccessAction.replace(/_/g, ' ')}
+                            {tenant.lastAccessActionAt
+                              ? ` · ${new Date(tenant.lastAccessActionAt).toLocaleString()}`
+                              : ''}
+                          </p>
+                        ) : null}
                         {canPlatformWrite ? (
                           <div className="page-header-actions">
-                            {tenant.lifecycleStatus === 'active' ? (
+                            {tenant.accessState === 'allowed' || tenant.lifecycleStatus === 'active' ? (
                               <Button
                                 variant="secondary"
                                 disabled={isWorking}
                                 onClick={() =>
                                   void runAction(
-                                    () => suspendTenant(accessToken!, tenant.companyId),
-                                    'Tenant suspended.',
+                                    () =>
+                                      suspendTenant(
+                                        accessToken!,
+                                        tenant.companyId,
+                                        'Suspended by Platform Owner',
+                                      ),
+                                    'Tenant access suspended. Business data preserved.',
                                   )
                                 }
                               >
                                 Suspend
                               </Button>
-                            ) : (
+                            ) : null}
+                            {tenant.accessState === 'suspended' ||
+                            tenant.lifecycleStatus === 'suspended' ? (
                               <Button
                                 variant="secondary"
                                 disabled={isWorking}
                                 onClick={() =>
                                   void runAction(
                                     () => reactivateTenant(accessToken!, tenant.companyId),
-                                    'Tenant reactivated.',
+                                    'Tenant reactivated where entitlement allows.',
                                   )
                                 }
                               >
                                 Reactivate
                               </Button>
-                            )}
+                            ) : null}
+                            {tenant.cancellationState !== 'cancelled' ? (
+                              <Button
+                                variant="secondary"
+                                disabled={isWorking}
+                                onClick={() =>
+                                  void runAction(
+                                    () =>
+                                      cancelTenantAccess(
+                                        accessToken!,
+                                        tenant.companyId,
+                                        'Cancelled by Platform Owner',
+                                      ),
+                                    'Future subscription access cancelled. History preserved.',
+                                  )
+                                }
+                              >
+                                Cancel access
+                              </Button>
+                            ) : null}
                           </div>
                         ) : null}
                       </div>

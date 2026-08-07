@@ -85,6 +85,21 @@ const branchSchema = z.object({
   name: z.string().trim().min(1).max(200),
 });
 
+const reasonSchema = z.object({
+  reason: z.string().trim().max(2000).optional().nullable(),
+});
+
+const paymentFailureSchema = z.object({
+  reason: z.string().trim().max(2000).optional().nullable(),
+  paymentProviderRef: z.string().trim().max(200).optional().nullable(),
+});
+
+const paymentSuccessSchema = z.object({
+  paidThroughAt: z.string().trim().min(1),
+  paymentProviderRef: z.string().trim().max(200).optional().nullable(),
+  amountCents: z.number().int().min(0).optional(),
+});
+
 const resilienceConfigSchema = z.object({
   fallbackOrder: z
     .array(
@@ -127,11 +142,13 @@ function handleError(error: unknown, res: import('express').Response) {
     const status =
       error.code === 'NOT_FOUND'
         ? 404
-        : error.code === 'VALIDATION_ERROR' || error.code === 'SUBSCRIPTION_REQUIRED'
-          ? 400
-          : error.code === 'FORBIDDEN'
-            ? 403
-            : 500;
+        : error.code === 'SUBSCRIPTION_REQUIRED'
+          ? 402
+          : error.code === 'VALIDATION_ERROR'
+            ? 400
+            : error.code === 'FORBIDDEN'
+              ? 403
+              : 500;
     res.status(status).json({ error: { code: error.code, message: error.message } });
     return;
   }
@@ -210,12 +227,62 @@ export function createEnterpriseSaasPlatformRouter({
     }
   });
 
+  /** Customer locked-screen status — own company only; allowlisted from SaaS access gate. */
+  router.get('/access-status', async (req, res) => {
+    try {
+      const auth = getAuth(req);
+      const status = await enterpriseSaasPlatformService.getCustomerAccessStatus(auth.companyId);
+      res.json({
+        data: {
+          companyName: status.companyName,
+          accessState: status.decision.accessState,
+          allowed: status.decision.allowed,
+          accountStatus: status.decision.accountStatus,
+          subscriptionStatus: status.decision.subscriptionStatus,
+          paidThroughAt: status.decision.paidThroughAt,
+          paymentFailed: status.decision.paymentFailed,
+          customerMessage: status.decision.customerMessage,
+          statusChip: status.statusChip,
+        },
+      });
+    } catch (error) {
+      handleError(error, res);
+    }
+  });
+
+  router.get('/tenants/:companyId', requirePlatformManage, async (req, res) => {
+    try {
+      const auth = getAuth(req);
+      const companyId = getRouteParam(req.params.companyId);
+      if (!(await enterpriseSaasPlatformService.isPlatformOwnerTenant(auth.companyId))) {
+        res.status(403).json({
+          error: { code: 'FORBIDDEN', message: 'Platform owner access required' },
+        });
+        return;
+      }
+      const dashboard = await enterpriseSaasPlatformService.getPlatformDashboard(auth.companyId);
+      const tenant = dashboard.tenants.find((entry) => entry.companyId === companyId);
+      if (!tenant) {
+        res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Tenant not found' } });
+        return;
+      }
+      const audits = dashboard.recentAudits.filter(
+        (audit) => audit.subject === companyId || audit.details?.includes(companyId),
+      );
+      res.json({ data: { tenant, audits } });
+    } catch (error) {
+      handleError(error, res);
+    }
+  });
+
   router.post('/tenants/:companyId/suspend', requirePlatformManage, async (req, res) => {
     try {
       const auth = getAuth(req);
+      const body = reasonSchema.parse(req.body ?? {});
       const tenant = await enterpriseSaasPlatformService.suspendTenant(
         { companyId: auth.companyId, userId: auth.userId },
         getRouteParam(req.params.companyId),
+        body.reason,
       );
       res.json({ data: { tenant } });
     } catch (error) {
@@ -229,6 +296,51 @@ export function createEnterpriseSaasPlatformRouter({
       const tenant = await enterpriseSaasPlatformService.reactivateTenant(
         { companyId: auth.companyId, userId: auth.userId },
         getRouteParam(req.params.companyId),
+      );
+      res.json({ data: { tenant } });
+    } catch (error) {
+      handleError(error, res);
+    }
+  });
+
+  router.post('/tenants/:companyId/cancel-access', requirePlatformManage, async (req, res) => {
+    try {
+      const auth = getAuth(req);
+      const body = reasonSchema.parse(req.body ?? {});
+      const tenant = await enterpriseSaasPlatformService.cancelTenantAccess(
+        { companyId: auth.companyId, userId: auth.userId },
+        getRouteParam(req.params.companyId),
+        body.reason,
+      );
+      res.json({ data: { tenant } });
+    } catch (error) {
+      handleError(error, res);
+    }
+  });
+
+  router.post('/tenants/:companyId/payment-failure', requirePlatformManage, async (req, res) => {
+    try {
+      const auth = getAuth(req);
+      const body = paymentFailureSchema.parse(req.body ?? {});
+      const tenant = await enterpriseSaasPlatformService.recordPaymentFailure(
+        { companyId: auth.companyId, userId: auth.userId },
+        getRouteParam(req.params.companyId),
+        body,
+      );
+      res.json({ data: { tenant } });
+    } catch (error) {
+      handleError(error, res);
+    }
+  });
+
+  router.post('/tenants/:companyId/payment-success', requirePlatformManage, async (req, res) => {
+    try {
+      const auth = getAuth(req);
+      const body = paymentSuccessSchema.parse(req.body ?? {});
+      const tenant = await enterpriseSaasPlatformService.recordSuccessfulPayment(
+        { companyId: auth.companyId, userId: auth.userId },
+        getRouteParam(req.params.companyId),
+        body,
       );
       res.json({ data: { tenant } });
     } catch (error) {

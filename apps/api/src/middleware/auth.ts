@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from 'express';
 import { verifyAccessToken } from '@titan/auth';
 import type { AuthService } from '../services/auth.service.js';
+import { enforceSaasTenantAccessGate } from './saas-tenant-access-gate.js';
 
 export type AuthenticatedRequest = Request & {
   auth: {
@@ -16,9 +17,15 @@ export type AuthenticatedRequest = Request & {
 type AuthMiddlewareDeps = {
   jwtSecret: string;
   authService: AuthService;
+  /** When false, skip SaaS entitlement gate (default true for staff APIs). */
+  enforceSaasAccess?: boolean;
 };
 
-export function createAuthMiddleware({ jwtSecret, authService }: AuthMiddlewareDeps) {
+export function createAuthMiddleware({
+  jwtSecret,
+  authService,
+  enforceSaasAccess = true,
+}: AuthMiddlewareDeps) {
   return async (req: Request, res: Response, next: NextFunction) => {
     const header = req.headers.authorization;
 
@@ -56,6 +63,11 @@ export function createAuthMiddleware({ jwtSecret, authService }: AuthMiddlewareD
         sessionId: payload.sessionId,
         permissions: payload.permissions,
       };
+
+      if (enforceSaasAccess) {
+        await enforceSaasTenantAccessGate(req, res, next);
+        return;
+      }
 
       next();
     } catch {

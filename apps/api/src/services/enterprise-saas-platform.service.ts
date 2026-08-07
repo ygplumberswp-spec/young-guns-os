@@ -1,6 +1,12 @@
-import { and, count, desc, eq, gte, inArray } from 'drizzle-orm';
+import { and, asc, count, desc, eq, gte, inArray } from 'drizzle-orm';
 import { randomBytes } from 'node:crypto';
-import { DEFAULT_TEAM_ROLES, slugifyCompanyName, withUniqueSuffix } from '@titan/auth';
+import {
+  COMPANY_OWNER_ROLE_NAME,
+  DEFAULT_TEAM_ROLES,
+  LEGACY_OWNER_ROLE_NAME,
+  slugifyCompanyName,
+  withUniqueSuffix,
+} from '@titan/auth';
 import type {
   ChangeSaasSubscriptionPlanRequest,
   CreateSaasFeatureFlagRequest,
@@ -19,10 +25,15 @@ import type {
   SaasPlatformAuditSummary,
   SaasSubscriptionPlanSummary,
   SaasSubscriptionSummary,
+  SaasTenantAccessDecision,
   SaasTenantBranchSummary,
   SaasTenantSummary,
   SaasUsageSummary,
   UpdateSaasBrandingRequest,
+} from '@titan/shared';
+import {
+  evaluateSaasTenantAccess,
+  saasAccessStatusChip,
 } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
 import {
@@ -117,14 +128,12 @@ export class EnterpriseSaasPlatformService {
     }
 
     const subscriptionStatus = subscription?.status ?? null;
-    const subscriptionUsable =
-      subscriptionStatus != null &&
-      ['trial', 'active', 'grace_period'].includes(subscriptionStatus);
+    const access = await this.evaluateTenantAccess(companyId);
 
     return {
       isPlatformOwner,
       subscriptionStatus,
-      subscriptionUsable,
+      subscriptionUsable: access.allowed,
       monthlyTokenLimit,
     };
   }
@@ -327,9 +336,21 @@ export class EnterpriseSaasPlatformService {
     return tenant;
   }
 
-  async suspendTenant(scope: StaffScope, targetCompanyId: string): Promise<SaasTenantSummary> {
+  async suspendTenant(
+    scope: StaffScope,
+    targetCompanyId: string,
+    reason?: string | null,
+  ): Promise<SaasTenantSummary> {
     await this.requirePlatformOwner(scope.companyId);
-    await this.updateTenantLifecycle(targetCompanyId, 'suspended', { suspendedAt: new Date() });
+    await this.assertNotPlatformOwnerTarget(targetCompanyId);
+    const before = await this.evaluateTenantAccess(targetCompanyId);
+    const suspensionReason = reason?.trim() || 'Suspended by Platform Owner';
+    await this.updateTenantLifecycle(targetCompanyId, 'suspended', {
+      suspendedAt: new Date(),
+      suspensionReason,
+      lastAccessAction: 'manual_suspend',
+    });
+    // Do not erase paid-through (currentPeriodEnd) — suspension is access-only.
     await this.deps.db
       .update(saasSubscriptions)
       .set({ status: 'suspended', updatedAt: new Date() })
@@ -337,6 +358,11 @@ export class EnterpriseSaasPlatformService {
     await this.recordAudit(scope, {
       actionType: 'tenant_suspended',
       subject: targetCompanyId,
+      details: JSON.stringify({
+        reason: suspensionReason,
+        beforeAccess: before.accessState,
+        afterAccess: 'suspended',
+      }),
       targetCompanyId,
     });
     return this.getTenantSummary(targetCompanyId);
@@ -344,22 +370,312 @@ export class EnterpriseSaasPlatformService {
 
   async reactivateTenant(scope: StaffScope, targetCompanyId: string): Promise<SaasTenantSummary> {
     await this.requirePlatformOwner(scope.companyId);
-    await this.updateTenantLifecycle(targetCompanyId, 'active', { suspendedAt: null });
+    await this.assertNotPlatformOwnerTarget(targetCompanyId);
+
+    // Clear manual suspension first, then enforce entitlement truth.
+    await this.updateTenantLifecycle(targetCompanyId, 'active', {
+      suspendedAt: null,
+      suspensionReason: null,
+      lastAccessAction: 'manual_reactivate',
+    });
+
     const subscription = await this.deps.db.query.saasSubscriptions.findFirst({
       where: eq(saasSubscriptions.companyId, targetCompanyId),
     });
-    if (subscription && subscription.status === 'suspended') {
-      await this.deps.db
-        .update(saasSubscriptions)
-        .set({ status: 'active', updatedAt: new Date() })
-        .where(eq(saasSubscriptions.companyId, targetCompanyId));
+    if (subscription && (subscription.status === 'suspended' || subscription.status === 'grace_period')) {
+      const paidThroughValid =
+        subscription.currentPeriodEnd != null &&
+        subscription.currentPeriodEnd.getTime() > Date.now();
+      if (paidThroughValid || subscription.status === 'grace_period') {
+        await this.deps.db
+          .update(saasSubscriptions)
+          .set({
+            status: paidThroughValid ? 'active' : subscription.status,
+            updatedAt: new Date(),
+          })
+          .where(eq(saasSubscriptions.companyId, targetCompanyId));
+      }
     }
+
+    const decision = await this.syncAccessFromEntitlement(targetCompanyId);
+    if (!decision.allowed) {
+      throw new EnterpriseSaasPlatformError(
+        'SUBSCRIPTION_REQUIRED',
+        'Reactivation requires a valid paid-through entitlement or successful renewal',
+      );
+    }
+
     await this.recordAudit(scope, {
       actionType: 'tenant_reactivated',
       subject: targetCompanyId,
+      details: JSON.stringify({
+        afterAccess: decision.accessState,
+        paidThroughAt: decision.paidThroughAt,
+      }),
       targetCompanyId,
     });
     return this.getTenantSummary(targetCompanyId);
+  }
+
+  async cancelTenantAccess(
+    scope: StaffScope,
+    targetCompanyId: string,
+    reason?: string | null,
+  ): Promise<SaasTenantSummary> {
+    await this.requirePlatformOwner(scope.companyId);
+    await this.assertNotPlatformOwnerTarget(targetCompanyId);
+    const cancelReason = reason?.trim() || 'Cancelled by Platform Owner';
+    await this.updateTenantLifecycle(targetCompanyId, 'cancelled', {
+      cancelledAt: new Date(),
+      suspensionReason: cancelReason,
+      lastAccessAction: 'cancel_access',
+    });
+    await this.deps.db
+      .update(saasSubscriptions)
+      .set({ status: 'cancelled', cancelledAt: new Date(), updatedAt: new Date() })
+      .where(eq(saasSubscriptions.companyId, targetCompanyId));
+    await this.recordAudit(scope, {
+      actionType: 'tenant_access_cancelled',
+      subject: targetCompanyId,
+      details: cancelReason,
+      targetCompanyId,
+    });
+    return this.getTenantSummary(targetCompanyId);
+  }
+
+  /**
+   * Record a failed renewal/payment. Keeps paid-through entitlement intact.
+   * Idempotent on paymentProviderRef.
+   */
+  async recordPaymentFailure(
+    scope: StaffScope,
+    targetCompanyId: string,
+    input: { reason?: string | null; paymentProviderRef?: string | null },
+  ): Promise<SaasTenantSummary> {
+    await this.requirePlatformOwner(scope.companyId);
+    await this.assertNotPlatformOwnerTarget(targetCompanyId);
+
+    const subscription = await this.deps.db.query.saasSubscriptions.findFirst({
+      where: eq(saasSubscriptions.companyId, targetCompanyId),
+    });
+    if (!subscription) {
+      throw new EnterpriseSaasPlatformError('NOT_FOUND', 'Subscription not found');
+    }
+
+    const providerRef = input.paymentProviderRef?.trim() || null;
+    if (providerRef && subscription.paymentProviderRef === providerRef && subscription.lastPaymentFailedAt) {
+      return this.getTenantSummary(targetCompanyId);
+    }
+
+    const failedAt = new Date();
+    await this.deps.db
+      .update(saasSubscriptions)
+      .set({
+        status: 'grace_period',
+        lastPaymentFailedAt: failedAt,
+        lastPaymentFailureReason: input.reason?.trim() || 'Payment failed',
+        paymentProviderRef: providerRef ?? subscription.paymentProviderRef,
+        // CRITICAL: do not change currentPeriodEnd (paid-through).
+        updatedAt: failedAt,
+      })
+      .where(eq(saasSubscriptions.companyId, targetCompanyId));
+
+    await this.deps.db.insert(saasBillingRecords).values({
+      companyId: targetCompanyId,
+      subscriptionId: subscription.id,
+      recordType: 'renewal',
+      status: 'failed',
+      amountCents: 0,
+      description: input.reason?.trim() || 'Subscription renewal payment failed',
+      metadata: {
+        paymentProviderRef: providerRef,
+        paidThroughPreserved: subscription.currentPeriodEnd?.toISOString() ?? null,
+      },
+    });
+
+    await this.updateTenantLifecycle(targetCompanyId, 'active', {
+      lastAccessAction: 'payment_failed',
+    });
+
+    await this.recordAudit(scope, {
+      actionType: 'payment_failed',
+      subject: targetCompanyId,
+      details: JSON.stringify({
+        reason: input.reason ?? null,
+        paymentProviderRef: providerRef,
+        paidThroughAt: subscription.currentPeriodEnd?.toISOString() ?? null,
+      }),
+      targetCompanyId,
+    });
+
+    await this.syncAccessFromEntitlement(targetCompanyId);
+    return this.getTenantSummary(targetCompanyId);
+  }
+
+  /**
+   * Record a successful payment/renewal with an explicit paid-through timestamp from billing truth.
+   * Does not invent dates. Idempotent on paymentProviderRef.
+   */
+  async recordSuccessfulPayment(
+    scope: StaffScope,
+    targetCompanyId: string,
+    input: {
+      paidThroughAt: string;
+      paymentProviderRef?: string | null;
+      amountCents?: number;
+    },
+  ): Promise<SaasTenantSummary> {
+    await this.requirePlatformOwner(scope.companyId);
+    await this.assertNotPlatformOwnerTarget(targetCompanyId);
+
+    const paidThroughAt = new Date(input.paidThroughAt);
+    if (!Number.isFinite(paidThroughAt.getTime())) {
+      throw new EnterpriseSaasPlatformError('VALIDATION_ERROR', 'paidThroughAt must be a valid timestamp');
+    }
+    if (paidThroughAt.getTime() <= Date.now()) {
+      throw new EnterpriseSaasPlatformError(
+        'VALIDATION_ERROR',
+        'paidThroughAt must be in the future — refuse invented or expired entitlements',
+      );
+    }
+
+    const subscription = await this.deps.db.query.saasSubscriptions.findFirst({
+      where: eq(saasSubscriptions.companyId, targetCompanyId),
+    });
+    if (!subscription) {
+      throw new EnterpriseSaasPlatformError('NOT_FOUND', 'Subscription not found');
+    }
+
+    const providerRef = input.paymentProviderRef?.trim() || null;
+    if (
+      providerRef &&
+      subscription.paymentProviderRef === providerRef &&
+      subscription.lastSuccessfulPaymentAt &&
+      subscription.status === 'active' &&
+      subscription.currentPeriodEnd &&
+      Math.abs(subscription.currentPeriodEnd.getTime() - paidThroughAt.getTime()) < 1000
+    ) {
+      return this.getTenantSummary(targetCompanyId);
+    }
+
+    const paidAt = new Date();
+    await this.deps.db
+      .update(saasSubscriptions)
+      .set({
+        status: 'active',
+        currentPeriodStart: paidAt,
+        currentPeriodEnd: paidThroughAt,
+        lastSuccessfulPaymentAt: paidAt,
+        lastPaymentFailedAt: null,
+        lastPaymentFailureReason: null,
+        paymentProviderRef: providerRef ?? subscription.paymentProviderRef,
+        cancelledAt: null,
+        updatedAt: paidAt,
+      })
+      .where(eq(saasSubscriptions.companyId, targetCompanyId));
+
+    await this.deps.db.insert(saasBillingRecords).values({
+      companyId: targetCompanyId,
+      subscriptionId: subscription.id,
+      recordType: 'payment',
+      status: 'paid',
+      amountCents: input.amountCents ?? 0,
+      description: 'Subscription payment / renewal',
+      metadata: {
+        paymentProviderRef: providerRef,
+        paidThroughAt: paidThroughAt.toISOString(),
+      },
+    });
+
+    await this.updateTenantLifecycle(targetCompanyId, 'active', {
+      suspendedAt: null,
+      cancelledAt: null,
+      suspensionReason: null,
+      lastAccessAction: 'payment_succeeded',
+    });
+
+    await this.recordAudit(scope, {
+      actionType: 'payment_succeeded',
+      subject: targetCompanyId,
+      details: JSON.stringify({
+        paidThroughAt: paidThroughAt.toISOString(),
+        paymentProviderRef: providerRef,
+      }),
+      targetCompanyId,
+    });
+
+    return this.getTenantSummary(targetCompanyId);
+  }
+
+  async evaluateTenantAccess(companyId: string): Promise<SaasTenantAccessDecision> {
+    // Do NOT ensure/create profiles here — missing profile means not a SaaS customer tenant
+    // (e.g. Young Guns before mark-platform-owner). Never invent enrollment via the access gate.
+    const profile = await this.getTenantProfileRow(companyId);
+    if (!profile) {
+      return {
+        accessState: 'allowed',
+        allowed: true,
+        accountStatus: 'active',
+        subscriptionStatus: null,
+        paidThroughAt: null,
+        paidThroughRemaining: true,
+        paymentFailed: false,
+        blockReason: null,
+        customerMessage: 'No SaaS customer enrollment — access not subscription-gated.',
+        shouldAutoSuspend: false,
+      };
+    }
+
+    const subscription = await this.deps.db.query.saasSubscriptions.findFirst({
+      where: eq(saasSubscriptions.companyId, companyId),
+    });
+
+    return evaluateSaasTenantAccess({
+      tenantKind: profile.tenantKind,
+      lifecycleStatus: profile.lifecycleStatus,
+      subscriptionStatus: subscription?.status ?? null,
+      currentPeriodEnd: subscription?.currentPeriodEnd ?? null,
+      trialEndsAt: subscription?.trialEndsAt ?? null,
+      gracePeriodEndsAt: subscription?.gracePeriodEndsAt ?? null,
+      lastPaymentFailedAt: subscription?.lastPaymentFailedAt ?? null,
+    });
+  }
+
+  /** Auto-suspend when paid-through expired; preserves all tenant business data. */
+  async syncAccessFromEntitlement(companyId: string): Promise<SaasTenantAccessDecision> {
+    const decision = await this.evaluateTenantAccess(companyId);
+    if (decision.shouldAutoSuspend && decision.blockReason === 'entitlement_expired') {
+      const profile = await this.getTenantProfileRow(companyId);
+      if (profile && profile.tenantKind === 'customer' && profile.lifecycleStatus === 'active') {
+        await this.updateTenantLifecycle(companyId, 'suspended', {
+          suspendedAt: new Date(),
+          suspensionReason: 'Paid-through entitlement expired without renewal',
+          lastAccessAction: 'auto_suspend_entitlement_expired',
+        });
+        await this.deps.db
+          .update(saasSubscriptions)
+          .set({ status: 'suspended', updatedAt: new Date() })
+          .where(eq(saasSubscriptions.companyId, companyId));
+        return this.evaluateTenantAccess(companyId);
+      }
+    }
+    return decision;
+  }
+
+  async getCustomerAccessStatus(companyId: string): Promise<{
+    companyName: string;
+    decision: SaasTenantAccessDecision;
+    statusChip: string;
+  }> {
+    const company = await this.deps.db.query.companies.findFirst({
+      where: eq(companies.id, companyId),
+    });
+    const decision = await this.syncAccessFromEntitlement(companyId);
+    return {
+      companyName: company?.name ?? 'Your company',
+      decision,
+      statusChip: saasAccessStatusChip(decision),
+    };
   }
 
   async createPlan(
@@ -891,6 +1207,9 @@ export class EnterpriseSaasPlatformService {
         lifecycleStatus: saasTenantProfiles.lifecycleStatus,
         provisionedAt: saasTenantProfiles.provisionedAt,
         createdAt: saasTenantProfiles.createdAt,
+        suspensionReason: saasTenantProfiles.suspensionReason,
+        lastAccessAction: saasTenantProfiles.lastAccessAction,
+        lastAccessActionAt: saasTenantProfiles.lastAccessActionAt,
         companyName: companies.name,
         companySlug: companies.slug,
       })
@@ -905,7 +1224,7 @@ export class EnterpriseSaasPlatformService {
 
     const companyIds = rows.map((row) => row.companyId);
 
-    const [userCounts, branchCounts, subscriptions] = await Promise.all([
+    const [userCounts, branchCounts, subscriptions, primaryContacts] = await Promise.all([
       this.deps.db
         .select({ companyId: users.companyId, value: count() })
         .from(users)
@@ -919,6 +1238,23 @@ export class EnterpriseSaasPlatformService {
       this.deps.db.query.saasSubscriptions.findMany({
         where: inArray(saasSubscriptions.companyId, companyIds),
       }),
+      this.deps.db
+        .select({
+          companyId: users.companyId,
+          email: users.email,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          createdAt: users.createdAt,
+        })
+        .from(users)
+        .innerJoin(roles, eq(roles.id, users.roleId))
+        .where(
+          and(
+            inArray(users.companyId, companyIds),
+            inArray(roles.name, [COMPANY_OWNER_ROLE_NAME, LEGACY_OWNER_ROLE_NAME]),
+          ),
+        )
+        .orderBy(asc(users.createdAt)),
     ]);
 
     const planIds = [
@@ -938,10 +1274,29 @@ export class EnterpriseSaasPlatformService {
     const branchCountByCompany = new Map(
       branchCounts.map((row) => [row.companyId, Number(row.value)]),
     );
+    const contactByCompany = new Map<string, { email: string; name: string }>();
+    for (const contact of primaryContacts) {
+      if (!contactByCompany.has(contact.companyId)) {
+        contactByCompany.set(contact.companyId, {
+          email: contact.email,
+          name: `${contact.firstName} ${contact.lastName}`.trim(),
+        });
+      }
+    }
 
     return rows.map((row) => {
       const subscription = subscriptionByCompany.get(row.companyId);
       const plan = subscription?.planId ? planById.get(subscription.planId) : null;
+      const decision = evaluateSaasTenantAccess({
+        tenantKind: row.tenantKind ?? 'customer',
+        lifecycleStatus: row.lifecycleStatus ?? 'provisioning',
+        subscriptionStatus: subscription?.status ?? null,
+        currentPeriodEnd: subscription?.currentPeriodEnd ?? null,
+        trialEndsAt: subscription?.trialEndsAt ?? null,
+        gracePeriodEndsAt: subscription?.gracePeriodEndsAt ?? null,
+        lastPaymentFailedAt: subscription?.lastPaymentFailedAt ?? null,
+      });
+      const contact = contactByCompany.get(row.companyId);
 
       return {
         companyId: row.companyId,
@@ -955,6 +1310,20 @@ export class EnterpriseSaasPlatformService {
         userCount: userCountByCompany.get(row.companyId) ?? 0,
         provisionedAt: row.provisionedAt?.toISOString() ?? null,
         createdAt: row.createdAt.toISOString(),
+        primaryContactEmail: contact?.email ?? null,
+        primaryContactName: contact?.name ?? null,
+        paidThroughAt: decision.paidThroughAt,
+        accessState: decision.accessState,
+        subscriptionDisplayStatus: decision.subscriptionStatus,
+        paymentFailed: decision.paymentFailed,
+        lastSuccessfulPaymentAt: subscription?.lastSuccessfulPaymentAt?.toISOString() ?? null,
+        lastPaymentFailedAt: subscription?.lastPaymentFailedAt?.toISOString() ?? null,
+        suspensionReason: row.suspensionReason ?? null,
+        cancellationState: row.lifecycleStatus === 'cancelled' ? 'cancelled' : 'none',
+        reactivationEligible: !decision.allowed && decision.blockReason !== 'cancelled',
+        lastAccessAction: row.lastAccessAction ?? null,
+        lastAccessActionAt: row.lastAccessActionAt?.toISOString() ?? null,
+        statusChip: saasAccessStatusChip(decision),
       };
     });
   }
@@ -963,6 +1332,9 @@ export class EnterpriseSaasPlatformService {
     const profile = await this.getTenantProfileRow(companyId);
     const company = await this.deps.db.query.companies.findFirst({
       where: eq(companies.id, companyId),
+    });
+    const subscriptionRow = await this.deps.db.query.saasSubscriptions.findFirst({
+      where: eq(saasSubscriptions.companyId, companyId),
     });
     const subscription = await this.getSubscriptionSummary(companyId);
     const [userCountRow] = await this.deps.db
@@ -973,6 +1345,32 @@ export class EnterpriseSaasPlatformService {
       .select({ value: count() })
       .from(saasTenantBranches)
       .where(eq(saasTenantBranches.companyId, companyId));
+    const [primaryContact] = await this.deps.db
+      .select({
+        email: users.email,
+        firstName: users.firstName,
+        lastName: users.lastName,
+      })
+      .from(users)
+      .innerJoin(roles, eq(roles.id, users.roleId))
+      .where(
+        and(
+          eq(users.companyId, companyId),
+          inArray(roles.name, [COMPANY_OWNER_ROLE_NAME, LEGACY_OWNER_ROLE_NAME]),
+        ),
+      )
+      .orderBy(asc(users.createdAt))
+      .limit(1);
+
+    const decision = evaluateSaasTenantAccess({
+      tenantKind: profile?.tenantKind ?? 'customer',
+      lifecycleStatus: profile?.lifecycleStatus ?? 'provisioning',
+      subscriptionStatus: subscriptionRow?.status ?? null,
+      currentPeriodEnd: subscriptionRow?.currentPeriodEnd ?? null,
+      trialEndsAt: subscriptionRow?.trialEndsAt ?? null,
+      gracePeriodEndsAt: subscriptionRow?.gracePeriodEndsAt ?? null,
+      lastPaymentFailedAt: subscriptionRow?.lastPaymentFailedAt ?? null,
+    });
 
     return {
       companyId,
@@ -989,6 +1387,22 @@ export class EnterpriseSaasPlatformService {
         profile?.createdAt.toISOString() ??
         company?.createdAt.toISOString() ??
         new Date().toISOString(),
+      primaryContactEmail: primaryContact?.email ?? null,
+      primaryContactName: primaryContact
+        ? `${primaryContact.firstName} ${primaryContact.lastName}`.trim()
+        : null,
+      paidThroughAt: decision.paidThroughAt,
+      accessState: decision.accessState,
+      subscriptionDisplayStatus: decision.subscriptionStatus,
+      paymentFailed: decision.paymentFailed,
+      lastSuccessfulPaymentAt: subscriptionRow?.lastSuccessfulPaymentAt?.toISOString() ?? null,
+      lastPaymentFailedAt: subscriptionRow?.lastPaymentFailedAt?.toISOString() ?? null,
+      suspensionReason: profile?.suspensionReason ?? null,
+      cancellationState: profile?.lifecycleStatus === 'cancelled' ? 'cancelled' : 'none',
+      reactivationEligible: !decision.allowed && decision.blockReason !== 'cancelled',
+      lastAccessAction: profile?.lastAccessAction ?? null,
+      lastAccessActionAt: profile?.lastAccessActionAt?.toISOString() ?? null,
+      statusChip: saasAccessStatusChip(decision),
     };
   }
 
@@ -1059,6 +1473,16 @@ export class EnterpriseSaasPlatformService {
     }
   }
 
+  /** Never suspend/cancel the Young Guns / platform_owner tenant via SaaS controls. */
+  private async assertNotPlatformOwnerTarget(targetCompanyId: string) {
+    if (await this.isPlatformOwnerTenant(targetCompanyId)) {
+      throw new EnterpriseSaasPlatformError(
+        'FORBIDDEN',
+        'Platform owner tenant cannot be subscription-gated or suspended via SaaS controls',
+      );
+    }
+  }
+
   private async assertSubscriptionActive(companyId: string) {
     if (!(await this.isSubscriptionUsable(companyId))) {
       throw new EnterpriseSaasPlatformError(
@@ -1069,30 +1493,33 @@ export class EnterpriseSaasPlatformService {
   }
 
   private async isSubscriptionUsable(companyId: string): Promise<boolean> {
-    if (!(await this.shouldEnforceSubscription(companyId))) {
-      return true;
-    }
-    const subscription = await this.deps.db.query.saasSubscriptions.findFirst({
-      where: eq(saasSubscriptions.companyId, companyId),
-    });
-    if (!subscription) {
-      return false;
-    }
-    return ['trial', 'active', 'grace_period'].includes(subscription.status);
+    const decision = await this.evaluateTenantAccess(companyId);
+    return decision.allowed;
   }
 
   private async updateTenantLifecycle(
     companyId: string,
     lifecycleStatus: 'active' | 'suspended' | 'cancelled',
-    extras: { suspendedAt?: Date | null; cancelledAt?: Date | null } = {},
+    extras: {
+      suspendedAt?: Date | null;
+      cancelledAt?: Date | null;
+      suspensionReason?: string | null;
+      lastAccessAction?: string | null;
+    } = {},
   ) {
+    const now = new Date();
     await this.deps.db
       .update(saasTenantProfiles)
       .set({
         lifecycleStatus,
-        suspendedAt: extras.suspendedAt ?? null,
-        cancelledAt: extras.cancelledAt ?? null,
-        updatedAt: new Date(),
+        suspendedAt: extras.suspendedAt !== undefined ? extras.suspendedAt : undefined,
+        cancelledAt: extras.cancelledAt !== undefined ? extras.cancelledAt : undefined,
+        suspensionReason:
+          extras.suspensionReason !== undefined ? extras.suspensionReason : undefined,
+        lastAccessAction:
+          extras.lastAccessAction !== undefined ? extras.lastAccessAction : undefined,
+        lastAccessActionAt: extras.lastAccessAction !== undefined ? now : undefined,
+        updatedAt: now,
       })
       .where(eq(saasTenantProfiles.companyId, companyId));
   }
@@ -1101,11 +1528,28 @@ export class EnterpriseSaasPlatformService {
     scope: StaffScope,
     input: { actionType: string; subject: string; details?: string; targetCompanyId?: string },
   ) {
+    // Platform Owner audit trail lives on the platform-owner company (never cross-leak tenant ops data).
+    let detailPayload = input.details ?? null;
+    if (input.targetCompanyId != null) {
+      let parsed: Record<string, unknown> | null = null;
+      if (typeof input.details === 'string' && input.details.trim().startsWith('{')) {
+        try {
+          parsed = JSON.parse(input.details) as Record<string, unknown>;
+        } catch {
+          parsed = null;
+        }
+      }
+      detailPayload = JSON.stringify({
+        targetCompanyId: input.targetCompanyId,
+        ...(parsed ?? { note: input.details ?? null }),
+      });
+    }
+
     await this.deps.db.insert(saasPlatformAudits).values({
-      companyId: input.targetCompanyId ?? scope.companyId,
+      companyId: scope.companyId,
       actionType: input.actionType,
       subject: input.subject,
-      details: input.details ?? null,
+      details: detailPayload,
       performedByUserId: scope.userId,
     });
   }
