@@ -124,6 +124,7 @@ export * from './xero-financial-truth-matrix.js';
 export * from './xero-reconciliation.js';
 export * from './xero-realtime-intersync.js';
 export * from './bank-statement-import.js';
+export * from './bank-transaction-control.js';
 export * from './xero-source-of-truth.js';
 export * from './vehicle-registration.js';
 export * from './whatsapp.js';

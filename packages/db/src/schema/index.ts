@@ -81,6 +81,7 @@ export * from './xero-finance-sync-runs';
 export * from './xero-financial-history';
 export * from './xero-realtime-intersync';
 export * from './bank-statement-import';
+export * from './bank-transaction-control';
 export * from './resend-email-deliveries';
 export * from './whatsapp-connections';
 export * from './whatsapp-templates';

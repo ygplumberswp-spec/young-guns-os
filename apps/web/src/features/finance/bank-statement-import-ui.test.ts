@@ -10,7 +10,7 @@ describe('BANK-IMPORT-001 finance UI', () => {
   it('FinanceNav links to bank statement import route', () => {
     const navSource = readFileSync(join(here, 'FinanceNav.tsx'), 'utf8');
     assert.match(navSource, /\/finance\/bank-transactions\/import/);
-    assert.match(navSource, /Bank Transactions/);
+    assert.match(navSource, /Bank Import/);
   });
 
   it('import page requires preview before approval', () => {

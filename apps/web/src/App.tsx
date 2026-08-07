@@ -434,6 +434,10 @@ export function App() {
                           path="/finance/bank-transactions/import"
                           component={OwnerPages.BankStatementImportPage}
                         />
+                        <Route
+                          path="/finance/bank-control"
+                          component={OwnerPages.BankControlPage}
+                        />
                         <Route path="/scheduling" component={OwnerPages.SchedulingPage} />
                         <Route
                           path="/workforce/day-timeline"

@@ -73,6 +73,8 @@ import { SchedulingService } from './services/scheduling.service.js';
 import { FinanceService } from './services/finance.service.js';
 import { createFinanceRouter } from './routes/finance.js';
 import { createBankStatementImportRouter } from './routes/bank-statement-import.js';
+import { createBankTransactionControlRouter } from './routes/bank-transaction-control.js';
+import { BankTransactionControlService } from './services/bank-transaction-control.service.js';
 import { createLiveUpdatesRouter } from './routes/live-updates.js';
 import './lib/live-updates.js';
 import { createBoqRouter } from './routes/boq.js';
@@ -543,7 +545,6 @@ const financeDocumentEvidenceStorageService = new FinanceDocumentEvidenceStorage
   jobEvidenceStoragePath,
 );
 const bankStatementStorageService = new BankStatementStorageService(jobEvidenceStoragePath);
-const bankStatementImportService = new BankStatementImportService(db, bankStatementStorageService);
 const teamService = new TeamService(db, env.APP_URL);
 const enterpriseSaasPlatformService = new EnterpriseSaasPlatformService({
   db,
@@ -897,6 +898,16 @@ const jobExecutionService = new JobExecutionService(db, stockMovementsService);
 const jobCostingService = new JobCostingService(db);
 const jobProfitabilityService = new JobProfitabilityService(db);
 const jobCostControlService = new JobCostControlService(db, jobProfitabilityService);
+const bankTransactionControlService = new BankTransactionControlService(
+  db,
+  jobProfitabilityService,
+  jobCostControlService,
+);
+const bankStatementImportService = new BankStatementImportService(
+  db,
+  bankStatementStorageService,
+  bankTransactionControlService,
+);
 const jobLinkageControlService = new JobLinkageControlService(
   db,
   jobProfitabilityService,
@@ -1935,6 +1946,15 @@ app.use(
   '/api/v1/finance',
   createJobCostCaptureRouter({
     jobCostCaptureService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/finance',
+  createBankTransactionControlRouter({
+    bankTransactionControlService,
+    db,
     jwtSecret: env.JWT_SECRET,
     authService,
   }),

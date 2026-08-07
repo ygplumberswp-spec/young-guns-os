@@ -28,6 +28,7 @@ import {
 } from '../lib/bank-statement-csv.js';
 import type { BankStatementStorageService } from './bank-statement-storage.service.js';
 import { BankStatementStorageError } from './bank-statement-storage.service.js';
+import type { BankTransactionControlService } from './bank-transaction-control.service.js';
 
 export class BankStatementImportError extends Error {
   constructor(
@@ -101,6 +102,7 @@ export class BankStatementImportService {
   constructor(
     private readonly db: DatabaseClient,
     private readonly storage: BankStatementStorageService,
+    private readonly bankTransactionControl?: BankTransactionControlService,
   ) {}
 
   private assertView(actor: BankStatementImportActor): void {
@@ -574,8 +576,12 @@ export class BankStatementImportService {
 
     await this.audit(batchId, actor.companyId, actor.userId, 'batch_approved', {
       rowCount: batch.rowCount,
-      accountingTruth: 'rows remain imported_awaiting_review — not paid or reconciled',
+      accountingTruth: 'rows promoted to bank transaction ledger when ready',
     });
+
+    if (this.bankTransactionControl) {
+      await this.bankTransactionControl.ingestFromImportBatch(actor, batchId);
+    }
 
     const preview = await this.getBatch(actor, batchId);
     preview.status = updated?.status as BankStatementImportPreview['status'];

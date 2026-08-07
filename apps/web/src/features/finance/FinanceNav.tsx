@@ -6,7 +6,8 @@ const sectionTabs = [
   { href: '/finance/boq', label: 'BOQs' },
   { href: '/finance/invoices', label: 'Invoices' },
   { href: '/finance/payments', label: 'Payments' },
-  { href: '/finance/bank-transactions/import', label: 'Bank Transactions' },
+  { href: '/finance/bank-control', label: 'Bank Control' },
+  { href: '/finance/bank-transactions/import', label: 'Bank Import' },
 ];
 
 const secondaryItems = [
@@ -20,6 +21,11 @@ const secondaryItems = [
     id: 'finance-cashflow-profit',
     label: 'Cashflow & Profit',
     href: '/finance-cashflow-profit',
+  },
+  {
+    id: 'finance-bank-control',
+    label: 'Bank Control',
+    href: '/finance/bank-control',
   },
   {
     id: 'finance-job-cost-control',

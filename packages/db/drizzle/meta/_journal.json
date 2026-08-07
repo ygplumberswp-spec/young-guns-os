@@ -1282,6 +1282,13 @@
       "when": 1785871000000,
       "tag": "0187_job_cost_capture",
       "breakpoints": true
+    },
+    {
+      "idx": 183,
+      "version": "7",
+      "when": 1785872000000,
+      "tag": "0188_bank_transaction_control",
+      "breakpoints": true
     }
   ]
 }
