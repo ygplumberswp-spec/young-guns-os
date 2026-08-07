@@ -178,12 +178,12 @@ describe('Job 360 permanent archive + RBAC DTO', () => {
       'x',
     );
     const strict = readFileSync(
-      join(here, '../../../packages/shared/src/strict-inventory-material-flow.ts'),
+      join(here, '../../../../packages/shared/src/strict-inventory-material-flow.ts'),
       'utf8',
     );
     assert.match(strict, /material/);
     const upload = readFileSync(
-      join(here, '../../../packages/shared/src/universal-evidence-upload.ts'),
+      join(here, '../../../../packages/shared/src/universal-evidence-upload.ts'),
       'utf8',
     );
     assert.match(upload, /evidence/i);
@@ -194,7 +194,7 @@ describe('Job 360 permanent archive + RBAC DTO', () => {
 
   it('32. migration 0203 is additive only', () => {
     const sql = readFileSync(
-      join(here, '../../../packages/db/drizzle/0203_historical_import_completion.sql'),
+      join(here, '../../../../packages/db/drizzle/0203_historical_import_completion.sql'),
       'utf8',
     );
     assert.match(sql, /ADD COLUMN IF NOT EXISTS/);
