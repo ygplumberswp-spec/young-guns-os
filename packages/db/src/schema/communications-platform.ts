@@ -6,8 +6,10 @@ import {
   pgTable,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 import { companies } from './companies';
 import { users } from './users';
 import { jobs } from './jobs';
@@ -97,33 +99,45 @@ export const commPlatformAccounts = pgTable('comm_platform_accounts', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
-export const commPlatformInboxIndex = pgTable('comm_platform_inbox_index', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  companyId: uuid('company_id')
-    .notNull()
-    .references(() => companies.id, { onDelete: 'cascade' }),
-  accountId: uuid('account_id').references(() => commPlatformAccounts.id, { onDelete: 'set null' }),
-  accountKind: commPlatformAccountKindEnum('account_kind').notNull(),
-  channel: commPlatformChannelEnum('channel').notNull(),
-  externalThreadId: text('external_thread_id'),
-  externalMessageId: text('external_message_id'),
-  subject: text('subject'),
-  preview: text('preview'),
-  participantLabel: text('participant_label'),
-  participantKind: commPlatformParticipantKindEnum('participant_kind').notNull().default('unknown'),
-  folder: text('folder').notNull().default('inbox'),
-  unread: boolean('unread').notNull().default(false),
-  urgent: boolean('urgent').notNull().default(false),
-  direction: text('direction').notNull().default('inbound'),
-  linkTargetType: commPlatformLinkTargetTypeEnum('link_target_type'),
-  linkTargetId: uuid('link_target_id'),
-  assignedJobId: uuid('assigned_job_id').references(() => jobs.id, { onDelete: 'set null' }),
-  attachmentCount: integer('attachment_count').notNull().default(0),
-  labels: jsonb('labels').$type<string[]>().notNull().default([]),
-  occurredAt: timestamp('occurred_at', { withTimezone: true }).notNull().defaultNow(),
-  metadata: jsonb('metadata').$type<Record<string, unknown>>().notNull().default({}),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-});
+export const commPlatformInboxIndex = pgTable(
+  'comm_platform_inbox_index',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    companyId: uuid('company_id')
+      .notNull()
+      .references(() => companies.id, { onDelete: 'cascade' }),
+    accountId: uuid('account_id').references(() => commPlatformAccounts.id, {
+      onDelete: 'set null',
+    }),
+    accountKind: commPlatformAccountKindEnum('account_kind').notNull(),
+    channel: commPlatformChannelEnum('channel').notNull(),
+    externalThreadId: text('external_thread_id'),
+    externalMessageId: text('external_message_id'),
+    subject: text('subject'),
+    preview: text('preview'),
+    participantLabel: text('participant_label'),
+    participantKind: commPlatformParticipantKindEnum('participant_kind')
+      .notNull()
+      .default('unknown'),
+    folder: text('folder').notNull().default('inbox'),
+    unread: boolean('unread').notNull().default(false),
+    urgent: boolean('urgent').notNull().default(false),
+    direction: text('direction').notNull().default('inbound'),
+    linkTargetType: commPlatformLinkTargetTypeEnum('link_target_type'),
+    linkTargetId: uuid('link_target_id'),
+    assignedJobId: uuid('assigned_job_id').references(() => jobs.id, { onDelete: 'set null' }),
+    attachmentCount: integer('attachment_count').notNull().default(0),
+    labels: jsonb('labels').$type<string[]>().notNull().default([]),
+    occurredAt: timestamp('occurred_at', { withTimezone: true }).notNull().defaultNow(),
+    metadata: jsonb('metadata').$type<Record<string, unknown>>().notNull().default({}),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex('comm_platform_inbox_company_kind_external_uidx')
+      .on(table.companyId, table.accountKind, table.externalMessageId)
+      .where(sql`${table.externalMessageId} IS NOT NULL`),
+  ],
+);
 
 export const commPlatformPersonalThreads = pgTable('comm_platform_personal_threads', {
   id: uuid('id').primaryKey().defaultRandom(),

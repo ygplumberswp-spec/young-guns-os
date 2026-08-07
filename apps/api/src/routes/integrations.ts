@@ -33,6 +33,7 @@ import type { XeroRateBudgetService } from '../services/xero-rate-budget.service
 import type { XeroRateBudgetProviderProbeService } from '../services/xero-rate-budget-provider-probe.service.js';
 import { XeroRateBudgetProviderProbeError } from '../services/xero-rate-budget-provider-probe.service.js';
 import { XeroError } from '../lib/xero.client.js';
+import { saveWhatsappConnectionSchema as saveWhatsappSchema } from '../lib/whatsapp-connection-schema.js';
 import type { XeroGate3ControlledQuoteService } from '../services/xero-gate3-controlled-quote.service.js';
 import { XeroGate3ControlledQuoteError } from '../services/xero-gate3-controlled-quote.service.js';
 import type { XeroGate4ControlledInvoiceService } from '../services/xero-gate4-controlled-invoice.service.js';
@@ -126,13 +127,6 @@ const saveYocoSchema = z.preprocess((raw) => {
     .refine((value) => value.length > 0, 'Secret key is required'),
   environment: z.enum(['test', 'live']).optional(),
 }));
-
-const saveWhatsappSchema = z.object({
-  accessToken: z.string().trim().max(2000).optional(),
-  phoneNumberId: z.string().trim().min(1).max(200),
-  businessAccountId: z.string().trim().min(1).max(200),
-  webhookVerifyToken: z.string().trim().max(200).optional().nullable(),
-});
 
 const createWhatsappTemplateSchema = z.object({
   name: z.string().trim().min(1).max(200),
@@ -1701,6 +1695,28 @@ export function createIntegrationsRouter({
     }
   });
 
+  /**
+   * LIVE-001B — read-only Meta GET using stored credentials.
+   * Distinct from POST /whatsapp/test which sends an outbound message.
+   */
+  router.post(
+    '/whatsapp/test-connection',
+    requireAnyPermission('integrations:manage'),
+    async (req, res) => {
+      const { companyId, userId } = getAuth(req);
+
+      try {
+        const { result, connection } = await whatsappService.testStoredConnection(
+          companyId,
+          userId,
+        );
+        res.json({ data: { result, connection } });
+      } catch (error) {
+        handleWhatsappError(res, error);
+      }
+    },
+  );
+
   router.post('/whatsapp/test', requireAnyPermission('integrations:manage'), async (req, res) => {
     const { companyId } = getAuth(req);
     const parsed = sendWhatsappTestSchema.safeParse(req.body);
@@ -2300,13 +2316,23 @@ function handleWhatsappError(res: import('express').Response, error: unknown) {
     const status =
       error.code === 'NOT_FOUND'
         ? 404
-        : error.code === 'FEATURE_DISABLED' || error.code === 'ENCRYPTION_NOT_CONFIGURED'
-          ? 503
-          : error.code === 'NOT_CONNECTED' ||
-              error.code === 'VALIDATION_ERROR' ||
-              error.code === 'CONNECTION_FAILED'
-            ? 400
-            : 400;
+        : error.code === 'AUTH_EXPIRED'
+          ? 401
+          : error.code === 'FORBIDDEN'
+            ? 403
+            : error.code === 'RATE_LIMITED'
+              ? 429
+              : error.code === 'TIMEOUT' || error.code === 'PROVIDER_ERROR'
+                ? 502
+                : error.code === 'FEATURE_DISABLED' || error.code === 'ENCRYPTION_NOT_CONFIGURED'
+                  ? 503
+                  : error.code === 'CREDENTIAL_UNAVAILABLE' ||
+                      error.code === 'NOT_CONNECTED' ||
+                      error.code === 'VALIDATION_ERROR' ||
+                      error.code === 'CONNECTION_FAILED' ||
+                      error.code === 'API_ERROR'
+                    ? 400
+                    : 400;
 
     res.status(status).json({
       error: {

@@ -5,10 +5,12 @@ import {
   AUDIT_SANDBOX_SLUG,
   AUDIT_SANDBOX_USER_EMAILS,
   FORBIDDEN_PRODUCTION_PROJECT_REF,
+  REQUIRED_STAGING_PROJECT_REF,
   auditSandboxOutboundBlocked,
   defaultAuditSandboxPreferences,
   isAuditSandboxProfile,
   isForbiddenProductionDatabaseUrl,
+  isRequiredStagingDatabaseUrl,
   resolveAuditSandboxBanner,
 } from './audit-sandbox.js';
 
@@ -23,6 +25,22 @@ describe('audit sandbox guards (QA-0)', () => {
     assert.equal(
       isForbiddenProductionDatabaseUrl(
         'postgresql://postgres.staging-ref:x@aws-0-region.pooler.supabase.com:5432/postgres',
+      ),
+      false,
+    );
+  });
+
+  it('recognises required staging Supabase project ref (LIVE-001)', () => {
+    assert.equal(REQUIRED_STAGING_PROJECT_REF, 'cpkuwtaipjxeipvbssvn');
+    assert.equal(
+      isRequiredStagingDatabaseUrl(
+        `postgresql://postgres.${REQUIRED_STAGING_PROJECT_REF}:x@pooler.supabase.com:5432/postgres`,
+      ),
+      true,
+    );
+    assert.equal(
+      isRequiredStagingDatabaseUrl(
+        `postgresql://postgres.${FORBIDDEN_PRODUCTION_PROJECT_REF}:x@pooler.supabase.com:5432/postgres`,
       ),
       false,
     );

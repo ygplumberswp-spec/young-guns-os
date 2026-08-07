@@ -24,10 +24,17 @@ export const AUDIT_SANDBOX_USER_EMAILS = {
 /** Production Supabase project ref — provisioning must refuse this target. */
 export const FORBIDDEN_PRODUCTION_PROJECT_REF = 'rshuiaghmtrvvilhqpwm';
 
+/** Staging Supabase project ref — LIVE-001 / staging scripts must target only this. */
+export const REQUIRED_STAGING_PROJECT_REF = 'cpkuwtaipjxeipvbssvn';
+
 export type AuditSandboxPreferences = CompanyPreferences;
 
 export function isForbiddenProductionDatabaseUrl(databaseUrl: string): boolean {
   return databaseUrl.toLowerCase().includes(FORBIDDEN_PRODUCTION_PROJECT_REF);
+}
+
+export function isRequiredStagingDatabaseUrl(databaseUrl: string): boolean {
+  return databaseUrl.toLowerCase().includes(REQUIRED_STAGING_PROJECT_REF);
 }
 
 export function isAuditSandboxSlug(slug: string | null | undefined): boolean {

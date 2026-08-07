@@ -1,4 +1,4 @@
-import { and, desc, eq, gt } from 'drizzle-orm';
+import { and, desc, eq, gt, sql } from 'drizzle-orm';
 import type {
   CreateWhatsappTemplateRequest,
   SaveWhatsappConnectionRequest,
@@ -8,6 +8,7 @@ import type {
   WhatsappAutomationActionResult,
   WhatsappAutomationTriggerContext,
   WhatsappConnectionSummary,
+  WhatsappConnectionTestResult,
   WhatsappMessageSummary,
   WhatsappStats,
   WhatsappTemplateCategory,
@@ -31,6 +32,7 @@ import {
 import {
   parseIncomingWebhookMessages,
   parseWebhookDeliveryStatuses,
+  redactWhatsappSecretMaterial,
   WhatsappClient,
   WhatsappError,
   type WhatsappWebhookPayload,
@@ -206,6 +208,141 @@ export class WhatsappService {
     return this.toConnectionSummary(connection);
   }
 
+  /**
+   * LIVE-001B — Safe read-only Test Connection.
+   * Uses stored tenant credentials for ONE Meta GET on the phone number resource.
+   * Never calls /messages, never mutates credentials, never requires outbound flag.
+   */
+  async testStoredConnection(
+    companyId: string,
+    actorUserId?: string,
+  ): Promise<{ result: WhatsappConnectionTestResult; connection: WhatsappConnectionSummary }> {
+    this.ensureWhatsappFeatureEnabled('connect');
+
+    // Read-only proof must use stored credentials even when status is error/degraded.
+    // The UI card already treats hasCredentials as "Connected"; requiring status===connected
+    // falsely returned NOT_CONNECTED while the card still looked connected.
+    const connection = await this.requireStoredCredentialsForTest(companyId);
+
+    let client: WhatsappClient;
+    try {
+      client = this.createClient(connection);
+    } catch {
+      throw new WhatsappServiceError(
+        'CREDENTIAL_UNAVAILABLE',
+        'Stored credential unavailable — encryption or token payload cannot be read',
+      );
+    }
+
+    try {
+      const verified = await client.verifyConnection();
+
+      const [updated] = await this.db
+        .update(whatsappConnections)
+        .set({
+          status: 'connected',
+          displayPhoneNumber: verified.displayPhoneNumber ?? connection.displayPhoneNumber,
+          lastError: null,
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(whatsappConnections.id, connection.id),
+            eq(whatsappConnections.companyId, companyId),
+          ),
+        )
+        .returning();
+
+      await this.recordAudit(
+        companyId,
+        actorUserId,
+        'whatsapp_business_test_connection',
+        updated!.id,
+        {
+          phoneNumberId: connection.phoneNumberId,
+          displayPhoneNumber: verified.displayPhoneNumber,
+          verifiedName: verified.verifiedName,
+          providerWritePerformed: false,
+          outboundMessageSent: false,
+        },
+      );
+
+      const result: WhatsappConnectionTestResult = {
+        ok: true,
+        status: 'connected',
+        phoneNumberId: connection.phoneNumberId!,
+        businessAccountId: connection.businessAccountId,
+        displayPhoneNumber: verified.displayPhoneNumber,
+        verifiedName: verified.verifiedName,
+        providerWritePerformed: false,
+        outboundMessageSent: false,
+      };
+
+      return { result, connection: this.toConnectionSummary(updated!) };
+    } catch (error) {
+      const code = error instanceof WhatsappError ? error.code : 'CONNECTION_FAILED';
+      const rawMessage =
+        error instanceof Error ? error.message : 'WhatsApp test connection failed';
+      const message = redactWhatsappSecretMaterial(rawMessage);
+      const status: WhatsappConnectionTestResult['status'] =
+        code === 'RATE_LIMITED' || code === 'TIMEOUT' ? 'degraded' : 'error';
+
+      await this.db
+        .update(whatsappConnections)
+        .set({
+          // Keep credentials; mark degraded/error honestly for Operator UI.
+          status: status === 'degraded' ? 'error' : 'error',
+          lastError: message,
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(whatsappConnections.id, connection.id),
+            eq(whatsappConnections.companyId, companyId),
+          ),
+        );
+
+      await this.recordAudit(
+        companyId,
+        actorUserId,
+        'whatsapp_business_test_connection_failed',
+        connection.id,
+        {
+          phoneNumberId: connection.phoneNumberId,
+          code,
+          providerWritePerformed: false,
+          outboundMessageSent: false,
+        },
+      );
+
+      const mappedCode =
+        code === 'AUTH_EXPIRED' ||
+        code === 'FORBIDDEN' ||
+        code === 'RATE_LIMITED' ||
+        code === 'TIMEOUT' ||
+        code === 'PROVIDER_ERROR' ||
+        code === 'API_ERROR'
+          ? code
+          : 'CONNECTION_FAILED';
+
+      // Prefer operator-safe copy for common Meta auth failures.
+      const operatorMessage =
+        mappedCode === 'AUTH_EXPIRED'
+          ? 'Meta authentication expired — reconnect required'
+          : mappedCode === 'FORBIDDEN'
+            ? 'Meta phone number or token is not authorised for this app'
+            : mappedCode === 'RATE_LIMITED'
+              ? 'Meta rate limited — try again later'
+              : mappedCode === 'TIMEOUT' || mappedCode === 'PROVIDER_ERROR'
+                ? 'Provider temporarily unavailable'
+                : mappedCode === 'API_ERROR' && /not found|does not exist|unsupported get/i.test(message)
+                  ? 'Meta phone number not found'
+                  : message || 'Connection verification failed';
+
+      throw new WhatsappServiceError(mappedCode, operatorMessage);
+    }
+  }
+
   async saveConnection(
     companyId: string,
     input: SaveWhatsappConnectionRequest,
@@ -280,12 +417,13 @@ export class WhatsappService {
 
       return this.toConnectionSummary(updated!);
     } catch (error) {
-      const message =
+      const message = redactWhatsappSecretMaterial(
         error instanceof WhatsappError
           ? error.message
           : error instanceof Error
             ? error.message
-            : 'WhatsApp connection failed';
+            : 'WhatsApp connection failed',
+      );
 
       await this.db
         .update(whatsappConnections)
@@ -693,15 +831,28 @@ export class WhatsappService {
         ? new Date(Number.parseInt(incoming.timestamp, 10) * 1000)
         : new Date();
 
-      await this.db.insert(whatsappMessages).values({
-        companyId: connection.companyId,
-        customerId: customer?.id ?? null,
-        direction: 'incoming',
-        messageContent: incoming.body,
-        externalMessageId: incoming.externalMessageId,
-        deliveryStatus: 'delivered',
-        deliveredAt: occurredAt,
-      });
+      // LIVE-001E: race-safe idempotency — partial UNIQUE(company_id, external_message_id)
+      // + onConflictDoNothing so Meta webhook retries cannot double-insert.
+      const inserted = await this.db
+        .insert(whatsappMessages)
+        .values({
+          companyId: connection.companyId,
+          customerId: customer?.id ?? null,
+          direction: 'incoming',
+          messageContent: incoming.body,
+          externalMessageId: incoming.externalMessageId,
+          deliveryStatus: 'delivered',
+          deliveredAt: occurredAt,
+        })
+        .onConflictDoNothing({
+          target: [whatsappMessages.companyId, whatsappMessages.externalMessageId],
+          where: sql`${whatsappMessages.externalMessageId} IS NOT NULL`,
+        })
+        .returning({ id: whatsappMessages.id });
+
+      if (inserted.length === 0) {
+        continue;
+      }
 
       emitBusinessEvent({
         companyId: connection.companyId,
@@ -1109,6 +1260,30 @@ export class WhatsappService {
       !connection.phoneNumberId
     ) {
       throw new WhatsappServiceError('NOT_CONNECTED', 'WhatsApp is not connected');
+    }
+
+    return connection;
+  }
+
+  /**
+   * LIVE-001C — Test Connection may run when status is error/degraded as long as
+   * encrypted credentials + phoneNumberId remain stored for the tenant.
+   */
+  private async requireStoredCredentialsForTest(companyId: string) {
+    const connection = await this.getOrCreateConnection(companyId);
+
+    if (!connection.credentialsEncrypted) {
+      throw new WhatsappServiceError(
+        'CREDENTIAL_UNAVAILABLE',
+        'Stored credential unavailable — no encrypted WhatsApp token for this company',
+      );
+    }
+
+    if (!connection.phoneNumberId?.trim()) {
+      throw new WhatsappServiceError(
+        'NOT_CONNECTED',
+        'WhatsApp Phone Number ID is missing — reconnect required',
+      );
     }
 
     return connection;

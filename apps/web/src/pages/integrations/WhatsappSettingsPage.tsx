@@ -16,6 +16,7 @@ import {
   fetchWhatsappIntegration,
   saveWhatsappConnection,
   sendWhatsappTestMessage,
+  testWhatsappConnection,
   updateWhatsappTemplate,
 } from '../../lib/whatsapp-api';
 import { useAuth } from '../../lib/auth-context';
@@ -45,6 +46,38 @@ function messageHealthLabel(
   return 'Not Connected';
 }
 
+/** Map Test Connection API codes to Owner-safe banners (no raw secrets). */
+function formatWhatsappTestConnectionError(err: unknown): string {
+  if (!(err instanceof ApiClientError)) {
+    return 'Connection verification failed';
+  }
+  switch (err.code) {
+    case 'AUTH_EXPIRED':
+      return 'Meta authentication expired — reconnect required';
+    case 'FORBIDDEN':
+      return 'Meta phone number or token is not authorised for this app';
+    case 'RATE_LIMITED':
+      return 'Meta rate limited — try again later';
+    case 'TIMEOUT':
+    case 'PROVIDER_ERROR':
+      return 'Provider temporarily unavailable';
+    case 'CREDENTIAL_UNAVAILABLE':
+      return 'Stored credential unavailable';
+    case 'NOT_CONNECTED':
+      return err.message.includes('Phone Number ID')
+        ? err.message
+        : 'WhatsApp is not connected';
+    case 'API_ERROR':
+      return /not found|does not exist/i.test(err.message)
+        ? 'Meta phone number not found'
+        : err.message || 'Connection verification failed';
+    case 'FEATURE_DISABLED':
+      return err.message;
+    default:
+      return err.message || 'Connection verification failed';
+  }
+}
+
 export function WhatsappSettingsPage() {
   const { accessToken, user } = useAuth();
   const [connection, setConnection] = useState<WhatsappConnectionSummary | null>(null);
@@ -64,6 +97,7 @@ export function WhatsappSettingsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
+  const [isTestingConnection, setIsTestingConnection] = useState(false);
   const [isCreatingTemplate, setIsCreatingTemplate] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -132,10 +166,14 @@ export function WhatsappSettingsPage() {
     setSuccess(null);
 
     try {
+      const token = formValues.accessToken.replace(/^Bearer\s+/i, '').trim();
       const updated = await saveWhatsappConnection(accessToken, {
-        accessToken: formValues.accessToken || undefined,
-        phoneNumberId: formValues.phoneNumberId,
-        businessAccountId: formValues.businessAccountId,
+        // Omit empty token so reconnect can keep stored creds only when intentional;
+        // Owner reconnect path always pastes a fresh token into this field.
+        ...(token ? { accessToken: token } : {}),
+        phoneNumberId: formValues.phoneNumberId.trim(),
+        businessAccountId: formValues.businessAccountId.trim(),
+        // Optional — blank must not fail API validation.
         webhookVerifyToken: formValues.webhookVerifyToken.trim() || null,
       });
       setConnection(updated);
@@ -170,6 +208,29 @@ export function WhatsappSettingsPage() {
       setError(err instanceof ApiClientError ? err.message : 'Unable to disconnect Business WhatsApp');
     } finally {
       setIsSaving(false);
+    }
+  }
+
+  async function handleTestConnection() {
+    if (!accessToken || !canManage) return;
+
+    setIsTestingConnection(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const { result, connection: next } = await testWhatsappConnection(accessToken);
+      setConnection(next);
+      const identity =
+        result.verifiedName || result.displayPhoneNumber || result.phoneNumberId || 'WhatsApp';
+      setSuccess(
+        `Connection verified for ${identity}. Read-only Meta check — no message sent.`,
+      );
+    } catch (err) {
+      setError(formatWhatsappTestConnectionError(err));
+      await loadPageData().catch(() => undefined);
+    } finally {
+      setIsTestingConnection(false);
     }
   }
 
@@ -256,11 +317,14 @@ export function WhatsappSettingsPage() {
     return <p className="page-muted">Loading Business WhatsApp settings…</p>;
   }
 
-  const statusLabel = connection
-    ? isConnected
+  // Honest status: stored creds + error must not display as plain "Connected".
+  const statusLabel = !connection
+    ? 'Not Connected'
+    : connection.status === 'connected'
       ? 'Connected'
-      : formatWhatsappStatus(connection.status)
-    : 'Not Connected';
+      : connection.status === 'error' && connection.hasCredentials
+        ? 'Connected (verification needed)'
+        : formatWhatsappStatus(connection.status);
 
   return (
     <div className="integrations-page">
@@ -321,6 +385,14 @@ export function WhatsappSettingsPage() {
                   <div className="integration-actions" style={{ marginTop: '0.75rem' }}>
                     <Button
                       type="button"
+                      disabled={isTestingConnection || isSaving}
+                      onClick={() => void handleTestConnection()}
+                    >
+                      {isTestingConnection ? 'Testing…' : 'Test Connection'}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="secondary"
                       onClick={() => {
                         setManageOpen((open) => !open);
                         setConfirmDisconnect(false);
@@ -330,6 +402,10 @@ export function WhatsappSettingsPage() {
                       {manageOpen ? 'Close' : 'Manage'}
                     </Button>
                   </div>
+                  <p className="page-muted" style={{ marginTop: '0.5rem' }}>
+                    Test Connection performs one read-only Meta check using the stored token. It does
+                    not send a WhatsApp message.
+                  </p>
 
                   {manageOpen ? (
                     <div className="page-header-actions" style={{ marginTop: '0.75rem' }}>

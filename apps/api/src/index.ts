@@ -580,6 +580,7 @@ const financeService = new FinanceService(db);
 const documentEngineService = new DocumentEngineService({
   db,
   encryptionKey: env.INTEGRATIONS_ENCRYPTION_KEY,
+  paymentProcessingEnabled: env.runtime.paymentProcessingEnabled,
 });
 const boqService = new BoqService(db, financeService);
 const draftAutosaveService = new DraftAutosaveService(db);

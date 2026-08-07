@@ -65,6 +65,11 @@ export type DocumentActor = DocumentEditorIdentity & {
 type DocumentEngineServiceDeps = {
   db: DatabaseClient;
   encryptionKey?: string;
+  /**
+   * Runtime gate from PAYMENT_PROCESSING_ENABLED (default false).
+   * When false, payment-link create must fail closed — never call Yoco.
+   */
+  paymentProcessingEnabled?: boolean;
   /** Injected in tests; production uses the real Yoco API client. */
   paymentLinkClientFactory?: (secretKey: string) => Pick<YocoPaymentLinkClient, 'createPaymentLink'>;
   recordAudit?: (entry: DocumentAuditEntry) => Promise<void> | void;
@@ -83,6 +88,7 @@ export type DocumentAuditEntry = {
 export class DocumentEngineService {
   private readonly db: DatabaseClient;
   private readonly encryptionKey?: string;
+  private readonly paymentProcessingEnabled: boolean;
   private readonly paymentLinkClientFactory: (
     secretKey: string,
   ) => Pick<YocoPaymentLinkClient, 'createPaymentLink'>;
@@ -91,14 +97,21 @@ export class DocumentEngineService {
   constructor({
     db,
     encryptionKey,
+    paymentProcessingEnabled = false,
     paymentLinkClientFactory,
     recordAudit,
   }: DocumentEngineServiceDeps) {
     this.db = db;
     this.encryptionKey = encryptionKey;
+    this.paymentProcessingEnabled = paymentProcessingEnabled;
     this.paymentLinkClientFactory =
       paymentLinkClientFactory ?? ((secretKey) => new YocoPaymentLinkClient({ secretKey }));
     this.recordAudit = recordAudit;
+  }
+
+  /** Honest runtime gate for Integration Hub / LIVE-001 proofs. */
+  isPaymentProcessingEnabled(): boolean {
+    return this.paymentProcessingEnabled;
   }
 
   // -------------------------------------------------------------------------
@@ -476,7 +489,7 @@ export class DocumentEngineService {
       ? await this.loadCustomer(actor.companyId, invoice.customerId)
       : null;
 
-    const summary = describeApproveAndIssue({
+    let summary = describeApproveAndIssue({
       customerName: customer?.name ?? 'this customer',
       invoiceNumber: invoiceNumberOf(invoice),
       outstandingCents,
@@ -484,6 +497,22 @@ export class DocumentEngineService {
       yocoConnected: Boolean(yoco),
       eligibility,
     });
+
+    // Fail-closed honesty: never imply a link will be created when the runtime gate is off.
+    if (!this.paymentProcessingEnabled && summary.willCreatePaymentLink) {
+      const reason = 'Payment processing is disabled (PAYMENT_PROCESSING_ENABLED)';
+      summary = {
+        ...summary,
+        willCreatePaymentLink: false,
+        paymentLinkSkippedReason: reason,
+        statements: [
+          ...summary.statements.filter(
+            (s) => !/Yoco payment link|single link creation|payment URL and a scannable QR/i.test(s),
+          ),
+          `No payment link will be created: ${reason}.`,
+        ],
+      };
+    }
 
     const existing = await this.findLiveLink(actor.companyId, invoiceId);
     const documentVersion = await this.resolveInvoiceDocumentVersion(actor.companyId, invoiceId);
@@ -521,6 +550,7 @@ export class DocumentEngineService {
       documentVersion,
       eligibility,
       yocoConnected: Boolean(yoco),
+      paymentProcessingEnabled: this.paymentProcessingEnabled,
       summary,
       action,
       existingLink: stillLive ? this.presentLink(stillLive) : null,
@@ -539,6 +569,24 @@ export class DocumentEngineService {
     options: { approvedOutstandingCents: number; documentId?: string | null },
   ) {
     const correlationId = randomUUID();
+
+    // LIVE-001 / staging safety: PAYMENT_PROCESSING_ENABLED must fail closed before any
+    // Yoco call or DB payment-link insert. Default is false when unset.
+    if (!this.paymentProcessingEnabled) {
+      await this.audit(
+        actor,
+        'payment_link.create',
+        'denied',
+        'Payment processing is disabled (PAYMENT_PROCESSING_ENABLED)',
+        { invoiceId },
+        correlationId,
+      );
+      throw new DocumentEngineError(
+        'PAYMENT_PROCESSING_DISABLED',
+        'Payment processing is disabled (PAYMENT_PROCESSING_ENABLED)',
+      );
+    }
+
     const invoice = await this.loadInvoice(actor.companyId, invoiceId);
     const scope = resolveDocumentEditScope(actor, { type: 'invoice', status: 'issued' });
     if (!scope.canManagePaymentLinks) {
