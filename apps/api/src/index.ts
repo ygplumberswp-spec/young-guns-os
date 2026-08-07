@@ -75,7 +75,9 @@ import { createFinanceRouter } from './routes/finance.js';
 import { createBankStatementImportRouter } from './routes/bank-statement-import.js';
 import { createBankTransactionControlRouter } from './routes/bank-transaction-control.js';
 import { createFinanceReceiptReconciliationRouter } from './routes/finance-receipt-reconciliation.js';
+import { createCashControlRouter } from './routes/cash-control.js';
 import { BankTransactionControlService } from './services/bank-transaction-control.service.js';
+import { CashControlService } from './services/cash-control.service.js';
 import { FinanceReceiptReconciliationService } from './services/finance-receipt-reconciliation.service.js';
 import { createLiveUpdatesRouter } from './routes/live-updates.js';
 import './lib/live-updates.js';
@@ -910,6 +912,7 @@ const financeReceiptReconciliationService = new FinanceReceiptReconciliationServ
   jobProfitabilityService,
   jobCostControlService,
 );
+const cashControlService = new CashControlService(db, jobProfitabilityService);
 const bankStatementImportService = new BankStatementImportService(
   db,
   bankStatementStorageService,
@@ -1970,6 +1973,15 @@ app.use(
   '/api/v1/finance',
   createFinanceReceiptReconciliationRouter({
     financeReceiptReconciliationService,
+    db,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/finance',
+  createCashControlRouter({
+    cashControlService,
     db,
     jwtSecret: env.JWT_SECRET,
     authService,

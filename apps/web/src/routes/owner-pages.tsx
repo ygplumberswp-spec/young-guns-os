@@ -672,6 +672,10 @@ export const BankControlPage = lazyNamed(
   () => import('../pages/finance/BankControlPage'),
   'BankControlPage',
 );
+export const CashControlPage = lazyNamed(
+  () => import('../pages/finance/CashControlPage'),
+  'CashControlPage',
+);
 export const JobLinkageControlPage = lazyNamed(
   () => import('../pages/finance/JobLinkageControlPage'),
   'JobLinkageControlPage',

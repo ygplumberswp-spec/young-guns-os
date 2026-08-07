@@ -126,6 +126,49 @@ export * from './xero-realtime-intersync.js';
 export * from './bank-statement-import.js';
 export * from './bank-transaction-control.js';
 export * from './finance-receipt-reconciliation.js';
+export {
+  canViewCashControl,
+  canAccessCashControl,
+  cashControlTodayDate,
+  cashControlMonthStartDate,
+  isDateInInclusiveRange,
+  deriveEveryRandControlState,
+  classifyBankMoneyForPeriod,
+  sumCustomerCashCollectedCents,
+  resolveCustomerCashCollectedWithoutDoubleCount,
+  buildPeriodMetrics,
+  resolveEconomicCostWithoutDoubleCount,
+  resolveDirectCostSettlementView,
+  isOutstandingCustomerInvoice,
+  deriveCashTruthCompleteness,
+  buildLedgerRowFromBankTransaction,
+  paginateCashControlLedger,
+  mapJpeToCashControlJobView,
+  overheadExcludedFromJobGrossProfit,
+  allocationTypeAffectsJobCash,
+  emptyIssueTotals,
+  type EveryRandControlState,
+  type CashTruthCompleteness,
+  type CashControlSourceKind,
+  type CashControlIssueKind,
+  type CashControlPeriodKey,
+  type CashControlMoneyInBreakdown,
+  type CashControlMoneyOutBreakdown,
+  type CashControlPeriodMetrics,
+  type CashControlCompletenessReason,
+  type CashControlSummary,
+  type CashControlLedgerRow,
+  type CashControlLedgerPage,
+  type CashControlIssue,
+  type CashControlIssuesResult,
+  type CashControlDirectCostSettlement,
+  type CashControlJobView,
+  type CashControlOutstandingInvoice,
+  type CashControlPaymentInput,
+  type CashControlBankAllocationInput,
+  type CashControlBankTransactionInput,
+} from './cash-control.js';
+
 export * from './xero-source-of-truth.js';
 export * from './vehicle-registration.js';
 export * from './whatsapp.js';

@@ -438,6 +438,10 @@ export function App() {
                           path="/finance/bank-control"
                           component={OwnerPages.BankControlPage}
                         />
+                        <Route
+                          path="/finance/cash-control"
+                          component={OwnerPages.CashControlPage}
+                        />
                         <Route path="/scheduling" component={OwnerPages.SchedulingPage} />
                         <Route
                           path="/workforce/day-timeline"
