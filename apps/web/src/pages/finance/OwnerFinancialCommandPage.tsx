@@ -315,6 +315,7 @@ export function OwnerFinancialCommandPage() {
           </ul>
         )}
         <div className="owner-fin-command__links">
+          <Link href="/finance/operating-profit">Known Operating Profit</Link>
           <Link href={dashboard.drillDown.jobCostControl}>Job cost control</Link>
         </div>
       </Panel>

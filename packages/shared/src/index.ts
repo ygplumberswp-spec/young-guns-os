@@ -170,6 +170,7 @@ export {
 } from './cash-control.js';
 export * from './owner-financial-command.js';
 export * from './profit-analytics.js';
+export * from './operating-profit.js';
 
 export * from './xero-source-of-truth.js';
 export * from './vehicle-registration.js';

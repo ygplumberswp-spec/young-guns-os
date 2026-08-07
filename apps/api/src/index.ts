@@ -78,10 +78,12 @@ import { createFinanceReceiptReconciliationRouter } from './routes/finance-recei
 import { createCashControlRouter } from './routes/cash-control.js';
 import { createOwnerFinancialCommandRouter } from './routes/owner-financial-command.js';
 import { createProfitAnalyticsRouter } from './routes/profit-analytics.js';
+import { createOperatingProfitRouter } from './routes/operating-profit.js';
 import { BankTransactionControlService } from './services/bank-transaction-control.service.js';
 import { CashControlService } from './services/cash-control.service.js';
 import { OwnerFinancialCommandService } from './services/owner-financial-command.service.js';
 import { ProfitAnalyticsService } from './services/profit-analytics.service.js';
+import { OperatingProfitService } from './services/operating-profit.service.js';
 import { FinanceReceiptReconciliationService } from './services/finance-receipt-reconciliation.service.js';
 import { createLiveUpdatesRouter } from './routes/live-updates.js';
 import './lib/live-updates.js';
@@ -923,6 +925,10 @@ const ownerFinancialCommandService = new OwnerFinancialCommandService(
   jobCostControlService,
 );
 const profitAnalyticsService = new ProfitAnalyticsService(db);
+const operatingProfitService = new OperatingProfitService(
+  cashControlService,
+  profitAnalyticsService,
+);
 const bankStatementImportService = new BankStatementImportService(
   db,
   bankStatementStorageService,
@@ -2010,6 +2016,15 @@ app.use(
   '/api/v1/finance',
   createProfitAnalyticsRouter({
     profitAnalyticsService,
+    db,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/finance',
+  createOperatingProfitRouter({
+    operatingProfitService,
     db,
     jwtSecret: env.JWT_SECRET,
     authService,

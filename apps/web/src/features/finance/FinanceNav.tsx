@@ -10,6 +10,7 @@ const sectionTabs = [
   { href: '/finance/cash-control', label: 'Cash Control' },
   { href: '/finance/owner-command', label: 'Command' },
   { href: '/finance/profit-analytics', label: 'Profit Analytics' },
+  { href: '/finance/operating-profit', label: 'Operating Profit' },
   { href: '/finance/bank-transactions/import', label: 'Bank Import' },
 ];
 
@@ -44,6 +45,11 @@ const secondaryItems = [
     id: 'finance-profit-analytics',
     label: 'Profit Analytics',
     href: '/finance/profit-analytics',
+  },
+  {
+    id: 'finance-operating-profit',
+    label: 'Operating Profit',
+    href: '/finance/operating-profit',
   },
   {
     id: 'finance-job-cost-control',
