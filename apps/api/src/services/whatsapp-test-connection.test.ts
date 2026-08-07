@@ -53,6 +53,34 @@ describe('WhatsApp testStoredConnection wiring (LIVE-001B)', () => {
     assert.doesNotMatch(body, /ensureOutboundEnabled/);
   });
 
+  it('LIVE-001C: Test Connection accepts stored creds when status is error (not status===connected only)', () => {
+    const service = read('src/services/whatsapp.service.ts');
+    assert.ok(service.includes('requireStoredCredentialsForTest'));
+
+    const methodStart = service.indexOf('async testStoredConnection(');
+    assert.ok(methodStart >= 0, 'testStoredConnection method missing');
+    const methodEnd = service.indexOf('async saveConnection(', methodStart);
+    const methodBody = service.slice(methodStart, methodEnd);
+    assert.ok(methodBody.includes('requireStoredCredentialsForTest'));
+    assert.equal(methodBody.includes('requireConnectedConnection('), false);
+
+    const helperStart = service.indexOf('private async requireStoredCredentialsForTest');
+    assert.ok(helperStart >= 0, 'requireStoredCredentialsForTest helper missing');
+    const helperEnd = service.indexOf('\n  private createClient', helperStart);
+    const helper = service.slice(helperStart, helperEnd > helperStart ? helperEnd : helperStart + 1200);
+    assert.ok(helper.includes('credentialsEncrypted'));
+    assert.ok(helper.includes('phoneNumberId'));
+    // Must NOT require status === 'connected' for the read-only proof path.
+    assert.equal(helper.includes("status !== 'connected'"), false);
+  });
+
+  it('LIVE-001C: Owner UI maps AUTH_EXPIRED to reconnect guidance', () => {
+    const page = read('../web/src/pages/integrations/WhatsappSettingsPage.tsx');
+    assert.ok(page.includes('formatWhatsappTestConnectionError'));
+    assert.ok(page.includes('Meta authentication expired — reconnect required'));
+    assert.ok(page.includes('Connected (verification needed)'));
+  });
+
   it('Owner UI exposes Test Connection via read-only API helper', () => {
     const page = read('../web/src/pages/integrations/WhatsappSettingsPage.tsx');
     const api = read('../web/src/lib/whatsapp-api.ts');

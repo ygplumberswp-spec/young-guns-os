@@ -46,6 +46,38 @@ function messageHealthLabel(
   return 'Not Connected';
 }
 
+/** Map Test Connection API codes to Owner-safe banners (no raw secrets). */
+function formatWhatsappTestConnectionError(err: unknown): string {
+  if (!(err instanceof ApiClientError)) {
+    return 'Connection verification failed';
+  }
+  switch (err.code) {
+    case 'AUTH_EXPIRED':
+      return 'Meta authentication expired — reconnect required';
+    case 'FORBIDDEN':
+      return 'Meta phone number or token is not authorised for this app';
+    case 'RATE_LIMITED':
+      return 'Meta rate limited — try again later';
+    case 'TIMEOUT':
+    case 'PROVIDER_ERROR':
+      return 'Provider temporarily unavailable';
+    case 'CREDENTIAL_UNAVAILABLE':
+      return 'Stored credential unavailable';
+    case 'NOT_CONNECTED':
+      return err.message.includes('Phone Number ID')
+        ? err.message
+        : 'WhatsApp is not connected';
+    case 'API_ERROR':
+      return /not found|does not exist/i.test(err.message)
+        ? 'Meta phone number not found'
+        : err.message || 'Connection verification failed';
+    case 'FEATURE_DISABLED':
+      return err.message;
+    default:
+      return err.message || 'Connection verification failed';
+  }
+}
+
 export function WhatsappSettingsPage() {
   const { accessToken, user } = useAuth();
   const [connection, setConnection] = useState<WhatsappConnectionSummary | null>(null);
@@ -191,7 +223,7 @@ export function WhatsappSettingsPage() {
         `Connection verified for ${identity}. Read-only Meta check — no message sent.`,
       );
     } catch (err) {
-      setError(err instanceof ApiClientError ? err.message : 'Unable to test WhatsApp connection');
+      setError(formatWhatsappTestConnectionError(err));
       await loadPageData().catch(() => undefined);
     } finally {
       setIsTestingConnection(false);
@@ -281,11 +313,14 @@ export function WhatsappSettingsPage() {
     return <p className="page-muted">Loading Business WhatsApp settings…</p>;
   }
 
-  const statusLabel = connection
-    ? isConnected
+  // Honest status: stored creds + error must not display as plain "Connected".
+  const statusLabel = !connection
+    ? 'Not Connected'
+    : connection.status === 'connected'
       ? 'Connected'
-      : formatWhatsappStatus(connection.status)
-    : 'Not Connected';
+      : connection.status === 'error' && connection.hasCredentials
+        ? 'Connected (verification needed)'
+        : formatWhatsappStatus(connection.status);
 
   return (
     <div className="integrations-page">

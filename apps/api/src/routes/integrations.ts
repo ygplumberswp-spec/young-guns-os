@@ -2332,9 +2332,11 @@ function handleWhatsappError(res: import('express').Response, error: unknown) {
                 ? 502
                 : error.code === 'FEATURE_DISABLED' || error.code === 'ENCRYPTION_NOT_CONFIGURED'
                   ? 503
-                  : error.code === 'NOT_CONNECTED' ||
+                  : error.code === 'CREDENTIAL_UNAVAILABLE' ||
+                      error.code === 'NOT_CONNECTED' ||
                       error.code === 'VALIDATION_ERROR' ||
-                      error.code === 'CONNECTION_FAILED'
+                      error.code === 'CONNECTION_FAILED' ||
+                      error.code === 'API_ERROR'
                     ? 400
                     : 400;
 

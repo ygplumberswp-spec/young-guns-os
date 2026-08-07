@@ -219,8 +219,20 @@ export class WhatsappService {
   ): Promise<{ result: WhatsappConnectionTestResult; connection: WhatsappConnectionSummary }> {
     this.ensureWhatsappFeatureEnabled('connect');
 
-    const connection = await this.requireConnectedConnection(companyId);
-    const client = this.createClient(connection);
+    // Read-only proof must use stored credentials even when status is error/degraded.
+    // The UI card already treats hasCredentials as "Connected"; requiring status===connected
+    // falsely returned NOT_CONNECTED while the card still looked connected.
+    const connection = await this.requireStoredCredentialsForTest(companyId);
+
+    let client: WhatsappClient;
+    try {
+      client = this.createClient(connection);
+    } catch {
+      throw new WhatsappServiceError(
+        'CREDENTIAL_UNAVAILABLE',
+        'Stored credential unavailable — encryption or token payload cannot be read',
+      );
+    }
 
     try {
       const verified = await client.verifyConnection();
@@ -303,16 +315,31 @@ export class WhatsappService {
         },
       );
 
-      throw new WhatsappServiceError(
+      const mappedCode =
         code === 'AUTH_EXPIRED' ||
-          code === 'FORBIDDEN' ||
-          code === 'RATE_LIMITED' ||
-          code === 'TIMEOUT' ||
-          code === 'PROVIDER_ERROR'
+        code === 'FORBIDDEN' ||
+        code === 'RATE_LIMITED' ||
+        code === 'TIMEOUT' ||
+        code === 'PROVIDER_ERROR' ||
+        code === 'API_ERROR'
           ? code
-          : 'CONNECTION_FAILED',
-        message,
-      );
+          : 'CONNECTION_FAILED';
+
+      // Prefer operator-safe copy for common Meta auth failures.
+      const operatorMessage =
+        mappedCode === 'AUTH_EXPIRED'
+          ? 'Meta authentication expired — reconnect required'
+          : mappedCode === 'FORBIDDEN'
+            ? 'Meta phone number or token is not authorised for this app'
+            : mappedCode === 'RATE_LIMITED'
+              ? 'Meta rate limited — try again later'
+              : mappedCode === 'TIMEOUT' || mappedCode === 'PROVIDER_ERROR'
+                ? 'Provider temporarily unavailable'
+                : mappedCode === 'API_ERROR' && /not found|does not exist|unsupported get/i.test(message)
+                  ? 'Meta phone number not found'
+                  : message || 'Connection verification failed';
+
+      throw new WhatsappServiceError(mappedCode, operatorMessage);
     }
   }
 
@@ -1220,6 +1247,30 @@ export class WhatsappService {
       !connection.phoneNumberId
     ) {
       throw new WhatsappServiceError('NOT_CONNECTED', 'WhatsApp is not connected');
+    }
+
+    return connection;
+  }
+
+  /**
+   * LIVE-001C — Test Connection may run when status is error/degraded as long as
+   * encrypted credentials + phoneNumberId remain stored for the tenant.
+   */
+  private async requireStoredCredentialsForTest(companyId: string) {
+    const connection = await this.getOrCreateConnection(companyId);
+
+    if (!connection.credentialsEncrypted) {
+      throw new WhatsappServiceError(
+        'CREDENTIAL_UNAVAILABLE',
+        'Stored credential unavailable — no encrypted WhatsApp token for this company',
+      );
+    }
+
+    if (!connection.phoneNumberId?.trim()) {
+      throw new WhatsappServiceError(
+        'NOT_CONNECTED',
+        'WhatsApp Phone Number ID is missing — reconnect required',
+      );
     }
 
     return connection;
