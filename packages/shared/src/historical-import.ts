@@ -381,3 +381,275 @@ export const HISTORICAL_IMPORT_UNSUPPORTED_MESSAGE =
 export function mapDmFormatToHistoricalProvider(sourceFormat: string): HistoricalSourceProvider {
   return normalizeHistoricalSourceProvider(null, sourceFormat);
 }
+
+/** Normalise supplier names for duplicate matching (formatting-tolerant, not silent merge). */
+export function normalizeSupplierNameForMatch(value: string | null | undefined): string {
+  return (value ?? '')
+    .toLowerCase()
+    .replace(/&/g, ' and ')
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\b(pty|ltd|limited|cc|inc|co)\b/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+const NON_PHYSICAL_STOCK_PATTERNS: RegExp[] = [
+  /\blabou?r\b/i,
+  /\bcall[-\s]?out\b/i,
+  /\bservice\b/i,
+  /\bsub.?contract/i,
+  /\btransport\b/i,
+  /\bdelivery\s*(fee|charge)\b/i,
+  /\bmileage\b/i,
+  /\btravel\b/i,
+  /\bconsultation\b/i,
+  /\bcall\s*out\s*fee\b/i,
+  /\bhourly\b/i,
+  /\bwage\b/i,
+];
+
+/** Physical stock only — labour/services/expenses must not become inventory qty. */
+export function isPhysicalStockImportCandidate(input: {
+  name?: string | null;
+  description?: string | null;
+  category?: string | null;
+  itemType?: string | null;
+}): { accepted: boolean; reason?: string } {
+  const haystack = [input.name, input.description, input.category, input.itemType]
+    .filter(Boolean)
+    .join(' ');
+  if (!haystack.trim()) {
+    return { accepted: false, reason: 'Inventory name/description required for physical stock.' };
+  }
+  for (const pattern of NON_PHYSICAL_STOCK_PATTERNS) {
+    if (pattern.test(haystack)) {
+      return {
+        accepted: false,
+        reason: `Not physical stock — matches non-stock pattern (${pattern.source}). Use Price Book or reject.`,
+      };
+    }
+  }
+  return { accepted: true };
+}
+
+export type InventoryStockImportAction = 'set_new_only' | 'skip_existing_qty' | 'replace_requires_review';
+
+export type InventoryStockImpactPreview = {
+  sku: string;
+  itemExists: boolean;
+  existingQuantityOnHand: number | null;
+  proposedQuantityOnHand: number | null;
+  locationName: string | null;
+  action: InventoryStockImportAction;
+  willWriteStock: boolean;
+  warning: string | null;
+};
+
+/** Preview stock effect before commit — never invents negative stock. */
+export function previewInventoryStockImpact(input: {
+  sku: string;
+  itemExists: boolean;
+  existingQuantityOnHand?: number | null;
+  proposedQuantity?: number | null;
+  locationName?: string | null;
+  overwriteResolved?: boolean;
+}): InventoryStockImpactPreview {
+  const proposed =
+    input.proposedQuantity == null || Number.isNaN(input.proposedQuantity)
+      ? null
+      : Math.trunc(input.proposedQuantity);
+
+  if (proposed != null && proposed < 0) {
+    return {
+      sku: input.sku,
+      itemExists: input.itemExists,
+      existingQuantityOnHand: input.existingQuantityOnHand ?? null,
+      proposedQuantityOnHand: proposed,
+      locationName: input.locationName ?? null,
+      action: 'skip_existing_qty',
+      willWriteStock: false,
+      warning: 'Negative stock is refused.',
+    };
+  }
+
+  if (proposed == null) {
+    return {
+      sku: input.sku,
+      itemExists: input.itemExists,
+      existingQuantityOnHand: input.existingQuantityOnHand ?? null,
+      proposedQuantityOnHand: null,
+      locationName: input.locationName ?? null,
+      action: 'skip_existing_qty',
+      willWriteStock: false,
+      warning: 'No quantity mapped — catalogue row only; stock unchanged.',
+    };
+  }
+
+  if (!input.itemExists) {
+    return {
+      sku: input.sku,
+      itemExists: false,
+      existingQuantityOnHand: null,
+      proposedQuantityOnHand: proposed,
+      locationName: input.locationName ?? null,
+      action: 'set_new_only',
+      willWriteStock: Boolean(input.locationName),
+      warning: input.locationName
+        ? null
+        : 'Quantity provided but no location — stock write skipped until location is resolved.',
+    };
+  }
+
+  if (input.overwriteResolved) {
+    return {
+      sku: input.sku,
+      itemExists: true,
+      existingQuantityOnHand: input.existingQuantityOnHand ?? 0,
+      proposedQuantityOnHand: proposed,
+      locationName: input.locationName ?? null,
+      action: 'replace_requires_review',
+      willWriteStock: Boolean(input.locationName),
+      warning: 'Replace approved — existing stock will be overwritten with proposed quantity.',
+    };
+  }
+
+  return {
+    sku: input.sku,
+    itemExists: true,
+    existingQuantityOnHand: input.existingQuantityOnHand ?? 0,
+    proposedQuantityOnHand: proposed,
+    locationName: input.locationName ?? null,
+    action: 'skip_existing_qty',
+    willWriteStock: false,
+    warning: 'Existing item matched — current stock is not overwritten without explicit replace review.',
+  };
+}
+
+export function scoreEquipmentHistoricalMatch(input: {
+  externalIdMatch?: boolean;
+  serialMatch?: boolean;
+  customerMatch?: boolean;
+  propertyMatch?: boolean;
+  typeMatch?: boolean;
+  manufacturerModelMatch?: boolean;
+}): { confidence: HistoricalMatchConfidence; score: number; requiresHumanReview: boolean } {
+  return scoreHistoricalRecordMatch({
+    signals: {
+      externalIdMatch: input.externalIdMatch,
+      numberMatch: input.serialMatch,
+      customerMatch: input.customerMatch,
+      propertyMatch: input.propertyMatch,
+      amountMatch: input.manufacturerModelMatch,
+      dateMatch: input.typeMatch,
+    },
+  });
+}
+
+/** Permanent Job 360 archive is never deleted by completion/payment/warranty expiry. */
+export function job360RemainsSearchable(input: {
+  status: string;
+  invoicePaid?: boolean;
+  warrantyExpired?: boolean;
+  customerInactive?: boolean;
+  technicianRemoved?: boolean;
+}): boolean {
+  void input.invoicePaid;
+  void input.warrantyExpired;
+  void input.customerInactive;
+  void input.technicianRemoved;
+  // Archive is not deletion — every status remains discoverable under RBAC.
+  return true;
+}
+
+export type Job360DigitalFileSectionAvailability =
+  | 'available'
+  | 'empty'
+  | 'partial'
+  | 'unavailable';
+
+export type Job360DigitalFileRollup = {
+  core: Job360DigitalFileSectionAvailability;
+  commercial: Job360DigitalFileSectionAvailability;
+  payments: Job360DigitalFileSectionAvailability;
+  fieldWork: Job360DigitalFileSectionAvailability;
+  materials: Job360DigitalFileSectionAvailability;
+  evidence: Job360DigitalFileSectionAvailability;
+  quality: Job360DigitalFileSectionAvailability;
+  financial: Job360DigitalFileSectionAvailability;
+  communications: Job360DigitalFileSectionAvailability;
+  history: Job360DigitalFileSectionAvailability;
+  equipment: Job360DigitalFileSectionAvailability;
+  counts: {
+    quotes: number;
+    invoices: number;
+    payments: number;
+    paymentProofDocuments: number;
+    photos: number;
+    documents: number;
+    visits: number;
+    materialLines: number;
+    equipmentAssets: number;
+    timelineEvents: number;
+  };
+  qualityModuleImplemented: false;
+  retention: {
+    completedSearchable: true;
+    paidSearchable: true;
+    archiveIsNotDeletion: true;
+  };
+};
+
+export function buildJob360DigitalFileRollup(input: {
+  hasCustomer: boolean;
+  hasProperty: boolean;
+  quoteCount: number;
+  invoiceCount: number;
+  paymentCount: number;
+  paymentProofCount: number;
+  photoCount: number;
+  documentCount: number;
+  visitCount: number;
+  materialLineCount: number;
+  equipmentCount: number;
+  timelineEventCount: number;
+  hasJobCard?: boolean;
+  canViewFinance: boolean;
+}): Job360DigitalFileRollup {
+  const section = (count: number, present = true): Job360DigitalFileSectionAvailability => {
+    if (!present) return 'unavailable';
+    if (count > 0) return 'available';
+    return 'empty';
+  };
+
+  return {
+    core: input.hasCustomer ? (input.hasProperty ? 'available' : 'partial') : 'partial',
+    commercial: section(input.quoteCount + input.invoiceCount),
+    payments: section(input.paymentCount + input.paymentProofCount),
+    fieldWork: section(input.visitCount + (input.hasJobCard ? 1 : 0)),
+    materials: section(input.materialLineCount),
+    evidence: section(input.photoCount + input.documentCount),
+    quality: 'unavailable',
+    financial: input.canViewFinance ? section(input.quoteCount + input.invoiceCount + input.paymentCount) : 'unavailable',
+    communications: 'empty',
+    history: section(input.timelineEventCount),
+    equipment: section(input.equipmentCount),
+    counts: {
+      quotes: input.quoteCount,
+      invoices: input.invoiceCount,
+      payments: input.paymentCount,
+      paymentProofDocuments: input.paymentProofCount,
+      photos: input.photoCount,
+      documents: input.documentCount,
+      visits: input.visitCount,
+      materialLines: input.materialLineCount,
+      equipmentAssets: input.equipmentCount,
+      timelineEvents: input.timelineEventCount,
+    },
+    qualityModuleImplemented: false,
+    retention: {
+      completedSearchable: true,
+      paidSearchable: true,
+      archiveIsNotDeletion: true,
+    },
+  };
+}

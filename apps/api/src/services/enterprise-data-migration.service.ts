@@ -65,6 +65,8 @@ import type { ProcurementService } from './procurement.service.js';
 import type { FleetService } from './fleet.service.js';
 import type { EnterpriseMissionControlService } from './enterprise-mission-control.service.js';
 import type { DocumentsService } from './documents.service.js';
+import type { AssetEquipmentIntelligenceService } from './asset-equipment-intelligence.service.js';
+import type { EnterpriseAssetLifecycleService } from './enterprise-asset-lifecycle.service.js';
 import { EnterpriseDataMigrationMappingService } from './enterprise-data-migration-mapping.service.js';
 import {
   buildDuplicateKey,
@@ -98,6 +100,8 @@ type MigrationDeps = {
   fleetService: FleetService;
   enterpriseMissionControlService: EnterpriseMissionControlService;
   documentsService: DocumentsService;
+  assetEquipmentIntelligenceService: AssetEquipmentIntelligenceService;
+  enterpriseAssetLifecycleService: EnterpriseAssetLifecycleService;
 };
 
 export class EnterpriseDataMigrationService {
@@ -115,6 +119,8 @@ export class EnterpriseDataMigrationService {
       procurementService: deps.procurementService,
       inventoryService: deps.inventoryService,
       documentsService: deps.documentsService,
+      assetEquipmentIntelligenceService: deps.assetEquipmentIntelligenceService,
+      enterpriseAssetLifecycleService: deps.enterpriseAssetLifecycleService,
     });
     this.exportService = new EnterpriseDataMigrationExportService({
       crmService: deps.crmService,
@@ -482,11 +488,17 @@ export class EnterpriseDataMigrationService {
     });
     const skipRows = new Set<number>();
     const linkRows = new Map<number, string>();
+    const replaceStockRows = new Set<number>();
     for (const review of duplicateReviews) {
       const action = review.resolvedAction ?? review.proposedAction;
       // Unresolved or explicit skip — never silently create a duplicate historical record.
       if (!review.resolvedAction || action === 'skip' || action === 'pending') {
         skipRows.add(review.rowNumber);
+        continue;
+      }
+      if (action === 'replace' && job.entityType === 'inventory') {
+        // Explicit replace review allows stock overwrite; importer must run (not early-link).
+        replaceStockRows.add(review.rowNumber);
         continue;
       }
       if (
@@ -508,6 +520,7 @@ export class EnterpriseDataMigrationService {
         importJobId,
         sourceFormat: job.sourceFormat,
         linkRows,
+        replaceStockRows,
       },
     );
 
@@ -1188,11 +1201,39 @@ export class EnterpriseDataMigrationService {
       case 'supplier':
         for (const supplier of await this.deps.procurementService.listSuppliers(companyId)) {
           remember(
-            buildDuplicateKey('supplier', { name: supplier.name, email: supplier.email ?? '' }),
+            buildDuplicateKey('supplier', {
+              name: supplier.name,
+              email: supplier.email ?? '',
+              supplierCode: supplier.supplierCode ?? '',
+              sourceExternalId: supplier.sourceExternalId ?? '',
+            }),
             supplier.id,
+          );
+          if (supplier.supplierCode) {
+            remember(
+              buildDuplicateKey('supplier', {
+                supplierCode: supplier.supplierCode,
+                name: '',
+                email: '',
+              }),
+              supplier.id,
+            );
+          }
+        }
+        break;
+      case 'asset': {
+        const assets = await this.deps.assetEquipmentIntelligenceService.listAssets(companyId);
+        for (const asset of assets) {
+          remember(
+            buildDuplicateKey('asset', {
+              serialNumber: asset.serialNumber ?? '',
+              name: asset.name,
+            }),
+            asset.id,
           );
         }
         break;
+      }
       case 'inventory':
       case 'price_book':
         for (const item of await this.deps.inventoryService.listItems(companyId)) {

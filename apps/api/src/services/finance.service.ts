@@ -27,6 +27,7 @@ import {
   displayOfficialQuoteNumber,
   deriveJobPaymentLedger,
   deriveJob360HistoricalCompleteness,
+  buildJob360DigitalFileRollup,
   formatInternalInvoiceNumber,
   formatMoney,
   inventoryItemToFinanceCatalogue,
@@ -55,11 +56,13 @@ import {
   companyFinanceSettings,
   companies,
   customers,
+  alAssetRegistryProfiles,
   documents,
   invoiceLineItems,
   invoices,
   inventoryItems,
   jobs,
+  jobMaterialLines,
   jobVisits,
   paymentReceipts,
   payments,
@@ -762,7 +765,7 @@ export class FinanceService {
   }
 
   async getJobFinanceSummary(companyId: string, jobId: string, options: { includeProfit?: boolean } = {}): Promise<JobFinanceSummary> {
-    const [quoteRows, invoiceRows, paymentRows, jobRow, documentRows] = await Promise.all([
+    const [quoteRows, invoiceRows, paymentRows, jobRow, documentRows, visitRows, materialRows] = await Promise.all([
       this.db.query.quotes.findMany({ where: and(eq(quotes.companyId, companyId), eq(quotes.jobId, jobId)), with: { customer: true, job: true } }),
       this.db.query.invoices.findMany({ where: and(eq(invoices.companyId, companyId), eq(invoices.jobId, jobId)), with: { customer: true, job: true, quote: true } }),
       this.db.query.payments.findMany({ where: and(eq(payments.companyId, companyId), sql`exists (select 1 from invoices where invoices.id = ${payments.invoiceId} and invoices.job_id = ${jobId})`), with: { invoice: { with: { customer: true } } } }),
@@ -770,6 +773,14 @@ export class FinanceService {
       this.db.query.documents.findMany({
         where: and(eq(documents.companyId, companyId), eq(documents.jobId, jobId)),
         limit: 200,
+      }),
+      this.db.query.jobVisits.findMany({
+        where: and(eq(jobVisits.companyId, companyId), eq(jobVisits.jobId, jobId)),
+        limit: 200,
+      }),
+      this.db.query.jobMaterialLines.findMany({
+        where: and(eq(jobMaterialLines.companyId, companyId), eq(jobMaterialLines.jobId, jobId)),
+        limit: 500,
       }),
     ]);
     const quotesOut = quoteRows.map(row => toQuoteSummary(row, options.includeProfit ? profitFromQuote(row) : null));
@@ -805,6 +816,49 @@ export class FinanceService {
       hasJobCard,
       hasReport,
       hasSignature,
+    });
+    const equipmentCount = jobRow?.customerId
+      ? (
+          await this.db.query.alAssetRegistryProfiles.findMany({
+            where: and(
+              eq(alAssetRegistryProfiles.companyId, companyId),
+              eq(alAssetRegistryProfiles.customerId, jobRow.customerId),
+              ...(jobRow.propertyId
+                ? [eq(alAssetRegistryProfiles.propertyId, jobRow.propertyId)]
+                : []),
+            ),
+            limit: 100,
+          })
+        ).length
+      : 0;
+    const paymentProofCount = docText.filter(
+      (text) =>
+        text.includes('proof of payment') ||
+        text.includes('payment_proof') ||
+        text.includes('pop-') ||
+        /\bpop\b/.test(text),
+    ).length;
+    const digitalFile = buildJob360DigitalFileRollup({
+      hasCustomer: Boolean(jobRow?.customerId),
+      hasProperty: Boolean(jobRow?.propertyId),
+      quoteCount: quotesOut.length,
+      invoiceCount: invoicesOut.length,
+      paymentCount: paymentsOut.length,
+      paymentProofCount,
+      photoCount,
+      documentCount: documentRows.length,
+      visitCount: visitRows.length,
+      materialLineCount: materialRows.length,
+      equipmentCount,
+      timelineEventCount:
+        (jobRow ? 1 : 0) +
+        quotesOut.length +
+        invoicesOut.length +
+        paymentsOut.length +
+        visitRows.length +
+        documentRows.length,
+      hasJobCard,
+      canViewFinance: options.includeProfit !== false,
     });
     const chips: JobFinanceChip[] = [
       {
@@ -873,6 +927,7 @@ export class FinanceService {
         currency,
       }),
       historicalCompleteness,
+      digitalFile,
     };
   }
 

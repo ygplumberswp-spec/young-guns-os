@@ -1507,6 +1507,8 @@ const enterpriseDataMigrationService = new EnterpriseDataMigrationService({
   fleetService,
   enterpriseMissionControlService,
   documentsService,
+  assetEquipmentIntelligenceService,
+  enterpriseAssetLifecycleService,
 });
 const enterpriseNotificationsService = new EnterpriseNotificationsService({
   db,

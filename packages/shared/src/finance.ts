@@ -313,6 +313,8 @@ export type JobFinanceSummary = {
   ledger: JobPaymentLedger;
   /** Honest historical/partial archive states for Job 360 — never invents missing evidence. */
   historicalCompleteness?: import('./historical-import.js').Job360HistoricalCompleteness;
+  /** Permanent Digital Job File section rollup — archive is not deletion. */
+  digitalFile?: import('./historical-import.js').Job360DigitalFileRollup;
 };
 
 export type CreateQuoteRequest = {

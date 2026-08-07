@@ -3,15 +3,21 @@ import { describe, it } from 'node:test';
 import {
   buildHistoricalDocumentMatchProposal,
   buildHistoricalIdempotencyKey,
+  buildJob360DigitalFileRollup,
   decideHistoricalMatchAction,
   deriveJob360HistoricalCompleteness,
   extractDocumentNumberHint,
   filterHistoricalInternalFinanceForClient,
   historicalQuoteRetainsOriginalNumber,
+  isPhysicalStockImportCandidate,
+  job360RemainsSearchable,
   normalizeHistoricalSourceProvider,
+  normalizeSupplierNameForMatch,
   parseHistoricalAmountToCents,
   paymentImportCreatesLedgerEntry,
   preferXeroCanonicalRecord,
+  previewInventoryStockImpact,
+  scoreEquipmentHistoricalMatch,
   scoreHistoricalRecordMatch,
   toDbSourceProvider,
 } from './historical-import.js';
@@ -176,5 +182,93 @@ describe('historical import provenance + matching', () => {
     assert.equal('estimatedCostCents' in filtered, false);
     assert.equal('jpe' in filtered, false);
     assert.equal('internalNotes' in filtered, false);
+  });
+
+  it('rejects labour/service as physical stock; accepts fittings', () => {
+    assert.equal(isPhysicalStockImportCandidate({ name: 'Call-out fee' }).accepted, false);
+    assert.equal(isPhysicalStockImportCandidate({ name: 'Labour hourly' }).accepted, false);
+    assert.equal(isPhysicalStockImportCandidate({ name: '15mm copper fitting' }).accepted, true);
+  });
+
+  it('inventory stock preview never overwrites existing qty without replace', () => {
+    const preview = previewInventoryStockImpact({
+      sku: 'FIT-1',
+      itemExists: true,
+      existingQuantityOnHand: 12,
+      proposedQuantity: 40,
+      locationName: 'Main Warehouse',
+    });
+    assert.equal(preview.willWriteStock, false);
+    assert.equal(preview.action, 'skip_existing_qty');
+    assert.equal(
+      previewInventoryStockImpact({
+        sku: 'FIT-1',
+        itemExists: true,
+        existingQuantityOnHand: 12,
+        proposedQuantity: -1,
+      }).warning?.includes('Negative'),
+      true,
+    );
+  });
+
+  it('price-book style catalogue create does not imply stock write', () => {
+    const preview = previewInventoryStockImpact({
+      sku: 'PB-1',
+      itemExists: false,
+      proposedQuantity: null,
+    });
+    assert.equal(preview.willWriteStock, false);
+  });
+
+  it('supplier name normalisation tolerates Pty/Ltd formatting', () => {
+    assert.equal(
+      normalizeSupplierNameForMatch('Plumblink (Pty) Ltd'),
+      normalizeSupplierNameForMatch('Plumblink'),
+    );
+  });
+
+  it('equipment low-confidence match requires review', () => {
+    const scored = scoreEquipmentHistoricalMatch({ customerMatch: true });
+    assert.equal(scored.requiresHumanReview, true);
+    assert.equal(decideHistoricalMatchAction(scored.confidence, true), 'REVIEW');
+  });
+
+  it('completed/paid/archived jobs remain searchable', () => {
+    assert.equal(job360RemainsSearchable({ status: 'completed', invoicePaid: true }), true);
+    assert.equal(job360RemainsSearchable({ status: 'cancelled', warrantyExpired: true }), true);
+    assert.equal(
+      job360RemainsSearchable({
+        status: 'completed',
+        customerInactive: true,
+        technicianRemoved: true,
+      }),
+      true,
+    );
+  });
+
+  it('Job 360 digital file preserves multi quote/invoice/payment and quality unavailable', () => {
+    const rollup = buildJob360DigitalFileRollup({
+      hasCustomer: true,
+      hasProperty: true,
+      quoteCount: 2,
+      invoiceCount: 3,
+      paymentCount: 2,
+      paymentProofCount: 1,
+      photoCount: 4,
+      documentCount: 5,
+      visitCount: 2,
+      materialLineCount: 6,
+      equipmentCount: 1,
+      timelineEventCount: 10,
+      hasJobCard: true,
+      canViewFinance: true,
+    });
+    assert.equal(rollup.counts.quotes, 2);
+    assert.equal(rollup.counts.invoices, 3);
+    assert.equal(rollup.counts.payments, 2);
+    assert.equal(rollup.counts.paymentProofDocuments, 1);
+    assert.equal(rollup.quality, 'unavailable');
+    assert.equal(rollup.qualityModuleImplemented, false);
+    assert.equal(rollup.retention.archiveIsNotDeletion, true);
   });
 });

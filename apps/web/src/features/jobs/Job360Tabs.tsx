@@ -138,6 +138,49 @@ export function Job360Tabs({
         </p>
       ) : null}
 
+      {financeSummary?.digitalFile ? (
+        <Panel title="Digital Job File">
+          <p className="page-muted">
+            Permanent Job 360 rollup — completed/paid/cancelled jobs remain searchable. Archive is
+            not deletion. Quality/Inspector modules show unavailable until implemented.
+          </p>
+          <dl className="crm-detail-list job-finance-ledger">
+            {(
+              [
+                ['Core', financeSummary.digitalFile.core],
+                ['Commercial', financeSummary.digitalFile.commercial],
+                ['Payments', financeSummary.digitalFile.payments],
+                ['Field work', financeSummary.digitalFile.fieldWork],
+                ['Materials', financeSummary.digitalFile.materials],
+                ['Evidence', financeSummary.digitalFile.evidence],
+                ['Equipment', financeSummary.digitalFile.equipment],
+                ['Quality', financeSummary.digitalFile.quality],
+                ['Financial', canViewFinance ? financeSummary.digitalFile.financial : 'unavailable'],
+                ['History', financeSummary.digitalFile.history],
+              ] as const
+            ).map(([label, state]) => (
+              <div key={label}>
+                <dt>{label}</dt>
+                <dd>{state.replace(/_/g, ' ')}</dd>
+              </div>
+            ))}
+            <div>
+              <dt>Chain counts</dt>
+              <dd>
+                {financeSummary.digitalFile.counts.quotes} quotes ·{' '}
+                {financeSummary.digitalFile.counts.invoices} invoices ·{' '}
+                {financeSummary.digitalFile.counts.payments} payments ·{' '}
+                {financeSummary.digitalFile.counts.paymentProofDocuments} payment proofs ·{' '}
+                {financeSummary.digitalFile.counts.photos} photos ·{' '}
+                {financeSummary.digitalFile.counts.visits} visits ·{' '}
+                {financeSummary.digitalFile.counts.materialLines} materials ·{' '}
+                {financeSummary.digitalFile.counts.equipmentAssets} equipment
+              </dd>
+            </div>
+          </dl>
+        </Panel>
+      ) : null}
+
       <nav className="customer-360__tabs" aria-label="Job 360 Sections">
         {JOB_360_TABS.map((tab) => (
           <button

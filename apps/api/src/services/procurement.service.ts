@@ -121,6 +121,10 @@ export class ProcurementService {
         address: input.address?.trim() || null,
         notes: input.notes?.trim() || null,
         status: input.status ?? 'active',
+        supplierCode: input.supplierCode?.trim() || null,
+        category: input.category?.trim() || null,
+        sourceProvider: input.sourceProvider?.trim() || null,
+        sourceExternalId: input.sourceExternalId?.trim() || null,
       })
       .returning();
 
@@ -1097,6 +1101,10 @@ function toSupplierSummary(
     address: row.address,
     notes: row.notes,
     status: row.status,
+    supplierCode: row.supplierCode ?? null,
+    category: row.category ?? null,
+    sourceProvider: row.sourceProvider ?? null,
+    sourceExternalId: row.sourceExternalId ?? null,
     productCount: row.products.length,
     purchaseOrderCount: row.purchaseOrders.length,
     completedOrderCount: row.purchaseOrders.filter((order) => order.status === 'completed').length,
