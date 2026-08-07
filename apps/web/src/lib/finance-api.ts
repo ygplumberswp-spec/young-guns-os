@@ -279,3 +279,13 @@ export async function fetchJobCostControlQueue(
   );
   return data.queue;
 }
+
+export async function fetchJobLinkageControlQueue(
+  accessToken: string,
+): Promise<import('@titan/shared').JobLinkageControlQueue> {
+  const data = await request<{ queue: import('@titan/shared').JobLinkageControlQueue }>(
+    '/finance/job-linkage-control',
+    { accessToken },
+  );
+  return data.queue;
+}

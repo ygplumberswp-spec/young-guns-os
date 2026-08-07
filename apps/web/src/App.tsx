@@ -571,6 +571,10 @@ export function App() {
                           component={OwnerPages.JobCostControlPage}
                         />
                         <Route
+                          path="/finance/job-linkage-control"
+                          component={OwnerPages.JobLinkageControlPage}
+                        />
+                        <Route
                           path="/finance-cashflow-profit"
                           component={OwnerPages.FinanceCashflowProfitPage}
                         />

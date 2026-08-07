@@ -26,6 +26,11 @@ const secondaryItems = [
     label: 'Cost Control',
     href: '/finance/job-cost-control',
   },
+  {
+    id: 'finance-job-linkage-control',
+    label: 'Job Linkage',
+    href: '/finance/job-linkage-control',
+  },
   { id: 'finance-settings', label: 'Finance Settings', href: '/settings/company' },
   { id: 'numbering-rules', label: 'Numbering Rules', href: '/settings/company' },
   { id: 'archived-records', label: 'Archived Records', href: '/drafts?status=archived' },

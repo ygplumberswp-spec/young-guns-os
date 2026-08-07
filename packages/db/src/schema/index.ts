@@ -20,6 +20,7 @@ export * from './jobs';
 export * from './scheduling';
 export * from './job-execution';
 export * from './job-profitability';
+export * from './job-financial-linkage';
 export * from './quotes';
 export * from './boq';
 export * from './draft-workspace';
