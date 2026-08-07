@@ -395,9 +395,19 @@ export class AuthService {
         eq(sessions.userId, userId),
         isNull(sessions.revokedAt),
       ),
+      with: { user: true },
     });
 
-    return Boolean(session && session.expiresAt >= new Date());
+    if (!session || session.expiresAt < new Date()) {
+      return false;
+    }
+
+    // Suspended / deactivated accounts lose API access even if a JWT remains.
+    if (!session.user?.isActive) {
+      return false;
+    }
+
+    return true;
   }
 
   private async findActiveInvite(token: string) {
