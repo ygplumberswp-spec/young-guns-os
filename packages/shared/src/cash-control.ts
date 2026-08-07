@@ -223,7 +223,7 @@ export type CashControlJobView = {
   unpaidDirectCostsCents: number;
   customerBalanceOutstandingCents: number;
   completeness: string;
-  confidence: string | null;
+  confidence: ProfitabilityConfidence | null;
   directCostSettlements: CashControlDirectCostSettlement[];
   bankAllocations: Array<{
     allocationId: string;
