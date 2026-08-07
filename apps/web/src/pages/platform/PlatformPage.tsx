@@ -18,9 +18,11 @@ import {
   provisionTenant,
   cancelTenantAccess,
   reactivateTenant,
+  seedCanonicalPlans,
   suspendTenant,
   updateAiResilienceConfig,
   updateBranding,
+  updateSubscriptionPlan,
   upgradeSubscription,
 } from '../../lib/platform-api-client';
 import { useAuth } from '../../lib/auth-context';
@@ -440,45 +442,143 @@ export function PlatformPage() {
           {activeTab === 'plans' ? (
             <Panel title="Subscription Plans">
               {dashboard.isPlatformOwner && canPlatformWrite ? (
-                <Button
-                  variant="secondary"
-                  disabled={isWorking}
-                  onClick={() =>
-                    void runAction(
-                      () =>
-                        createSubscriptionPlan(accessToken!, {
-                          planKey: `plan_${Date.now()}`,
-                          name: 'Custom Plan',
-                          description: 'Tenant-defined subscription plan',
-                          tier: 'professional',
-                          priceCents: 9900,
-                          features: ['crm', 'jobs', 'finance'],
-                          limits: { users: 25, storageMb: 5120 },
-                        }),
-                      'Subscription plan created.',
-                    )
-                  }
-                >
-                  Create Plan
-                </Button>
+                <div className="page-header-actions">
+                  <Button
+                    variant="secondary"
+                    disabled={isWorking}
+                    onClick={() =>
+                      void runAction(
+                        () => seedCanonicalPlans(accessToken!),
+                        'Canonical TITAN Starter / Business / Pro / Enterprise plans seeded (configurable staging defaults — not final launch pricing).',
+                      )
+                    }
+                  >
+                    Seed TITAN Packages
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    disabled={isWorking}
+                    onClick={() =>
+                      void runAction(
+                        () =>
+                          createSubscriptionPlan(accessToken!, {
+                            planKey: `custom_${Date.now()}`,
+                            name: 'Custom Plan',
+                            description: 'Configurable custom plan — pricing not locked.',
+                            tier: 'business',
+                            priceCents: 0,
+                            currency: 'ZAR',
+                            pricingConfigurable: true,
+                            features: ['core_customers', 'core_jobs', 'core_scheduling'],
+                            limits: {
+                              users: 10,
+                              storageMb: 10240,
+                              seats: { adminOffice: 2, technician: 5, total: 10 },
+                              fairUse: { aiTokensMonthly: 500000, storageMb: 10240 },
+                            },
+                            commercialConfig: {
+                              pricingConfigurable: true,
+                              pricingLocked: false,
+                              notes: 'Custom staging plan — not a launch price commitment.',
+                            },
+                          }),
+                        'Custom subscription plan created.',
+                      )
+                    }
+                  >
+                    Create Custom Plan
+                  </Button>
+                </div>
               ) : null}
 
               {dashboard.plans.length === 0 ? (
                 <EmptyState
                   title="No Plans"
-                  description="Platform owner creates subscription plans for customer tenants."
+                  description="Seed the canonical TITAN packages or create configurable plans. Pricing remains editable until launch validation."
                 />
               ) : (
                 <div className="data-list">
                   {dashboard.plans.map((plan) => (
                     <div key={plan.id} className="data-list-item">
-                      <strong>{plan.name}</strong>
-                      <span className="status-pill">{formatStatus(plan.tier)}</span>
-                      <p>{plan.description}</p>
-                      <span>
-                        {formatCents(plan.priceCents)} / {plan.billingInterval} ·{' '}
-                        {plan.features.length} feature(s)
-                      </span>
+                      <div
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: 'repeat(auto-fit, minmax(8rem, 1fr))',
+                          gap: '0.75rem',
+                          width: '100%',
+                        }}
+                      >
+                        <div>
+                          <strong>Plan</strong>
+                          <p>{plan.name}</p>
+                          <span className="status-pill">{formatStatus(plan.tier)}</span>
+                        </div>
+                        <div>
+                          <strong>Status</strong>
+                          <p>
+                            <span className="status-pill">
+                              {plan.isActive ? 'ACTIVE' : 'INACTIVE'}
+                            </span>
+                          </p>
+                        </div>
+                        <div>
+                          <strong>Base price / config</strong>
+                          <p>
+                            {formatCents(plan.priceCents, plan.currency ?? 'ZAR')} /{' '}
+                            {plan.billingInterval}
+                          </p>
+                          <p className="muted-text">
+                            {plan.pricingConfigurable !== false
+                              ? 'Configurable — not final launch pricing'
+                              : 'Pricing locked'}
+                          </p>
+                        </div>
+                        <div>
+                          <strong>Included seats</strong>
+                          <p>
+                            Admin/Office: {plan.limits.seats?.adminOffice ?? '—'}
+                            <br />
+                            Technicians: {plan.limits.seats?.technician ?? '—'}
+                          </p>
+                        </div>
+                        <div>
+                          <strong>Key entitlements</strong>
+                          <p>{plan.features.length} feature key(s)</p>
+                        </div>
+                        <div>
+                          <strong>Usage allowances</strong>
+                          <p>
+                            AI:{' '}
+                            {plan.limits.fairUse?.aiTokensMonthly ?? plan.limits.aiTokens ?? '—'}
+                            <br />
+                            Storage MB:{' '}
+                            {plan.limits.fairUse?.storageMb ?? plan.limits.storageMb ?? '—'}
+                          </p>
+                        </div>
+                        <div>
+                          <strong>Active tenants</strong>
+                          <p>{plan.activeTenantCount ?? 0}</p>
+                        </div>
+                      </div>
+                      {dashboard.isPlatformOwner && canPlatformWrite ? (
+                        <div className="page-header-actions">
+                          <Button
+                            variant="secondary"
+                            disabled={isWorking}
+                            onClick={() =>
+                              void runAction(
+                                () =>
+                                  updateSubscriptionPlan(accessToken!, plan.id, {
+                                    isActive: !plan.isActive,
+                                  }),
+                                plan.isActive ? 'Plan deactivated.' : 'Plan activated.',
+                              )
+                            }
+                          >
+                            {plan.isActive ? 'Deactivate' : 'Activate'}
+                          </Button>
+                        </div>
+                      ) : null}
                       {!dashboard.isPlatformOwner && canSaasWrite ? (
                         <Button
                           variant="secondary"
@@ -486,7 +586,7 @@ export function PlatformPage() {
                           onClick={() =>
                             void runAction(
                               () => upgradeSubscription(accessToken!, plan.id),
-                              `Upgraded to ${plan.name}.`,
+                              `Upgraded to ${plan.name}. Existing data preserved.`,
                             )
                           }
                         >

@@ -373,7 +373,7 @@ function handleTeamError(res: import('express').Response, error: unknown) {
                 error.code === 'SELF_DELETE' ||
                 error.code === 'ROLE_ASSIGN_FORBIDDEN'
               ? 403
-              : error.code === 'HARD_DELETE_REFUSED'
+              : error.code === 'HARD_DELETE_REFUSED' || error.code === 'SEAT_LIMIT_REACHED'
                 ? 409
                 : error.code === 'CONFIRMATION_MISMATCH'
                   ? 400
