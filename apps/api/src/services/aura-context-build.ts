@@ -1,7 +1,16 @@
 import { hasAnyPermission } from '@titan/auth';
 import type { AuraGenerateContext } from '@titan/aura';
-import type { AuraPageContext } from '@titan/shared';
+import {
+  canViewOwnerFinancialCommand,
+  extractAuraEntityQuery,
+  resolveAuraEntityMatches,
+  type AuraEntityMatch,
+  type AuraPageContext,
+} from '@titan/shared';
 import { resolveAuraContextDomains, type AuraContextDomain } from './aura-context-routing.js';
+import { buildAuraOwnerFinanceTruthContext } from './aura-owner-finance-truth.js';
+import type { OwnerFinancialCommandService } from './owner-financial-command.service.js';
+import type { GrowthPlannerService } from './growth-planner.service.js';
 import type { AgentsService } from './agents.service.js';
 import type { AnalyticsService } from './analytics.service.js';
 import type { AutomationService } from './automation.service.js';
@@ -40,6 +49,8 @@ import type { KnowledgeService } from './knowledge.service.js';
 import type { LeadsService } from './leads.service.js';
 import type { MarketingService } from './marketing.service.js';
 import type { MemoryService } from './memory.service.js';
+import type { CompanyDayPlanService } from './company-day-plan.service.js';
+import type { CompanyBusinessRulesService } from './company-business-rules.service.js';
 import type { MobileService } from './mobile.service.js';
 import type { MobileWorkforceService } from './mobile-workforce.service.js';
 import type { PersonalCommunicationsIntelligenceService } from './personal-communications-intelligence.service.js';
@@ -51,6 +62,7 @@ import type { RecruitingService } from './recruiting.service.js';
 import type { RecommendationsService } from './recommendations.service.js';
 import type { SalesService } from './sales.service.js';
 import type { SchedulingService } from './scheduling.service.js';
+import type { GoogleCalendarService } from './google-calendar.service.js';
 import type { TeamService } from './team.service.js';
 import type { VoiceService } from './voice.service.js';
 import type { WhatsappService } from './whatsapp.service.js';
@@ -62,6 +74,7 @@ export type AuraContextBuildDeps = {
   crmService: CrmService;
   jobsService: JobsService;
   schedulingService: SchedulingService;
+  googleCalendarService: GoogleCalendarService;
   financeService: FinanceService;
   inventoryService: InventoryService;
   fleetService: FleetService;
@@ -80,6 +93,8 @@ export type AuraContextBuildDeps = {
   intelligenceService: IntelligenceService;
   recommendationsService: RecommendationsService;
   memoryService: MemoryService;
+  businessRulesService: CompanyBusinessRulesService;
+  dayPlanService: CompanyDayPlanService;
   analyticsService: AnalyticsService;
   orchestrationService: AgentOrchestrationService;
   salesService: SalesService;
@@ -112,6 +127,8 @@ export type AuraContextBuildDeps = {
   personalCommunicationsIntelligenceService: PersonalCommunicationsIntelligenceService;
   enterpriseSecurityService: EnterpriseSecurityService;
   integrationPlatformService: IntegrationPlatformService;
+  ownerFinancialCommandService: OwnerFinancialCommandService;
+  growthPlannerService: GrowthPlannerService;
 };
 
 type ContextLoader = {
@@ -129,10 +146,12 @@ export async function buildSelectedAuraContext(
   message: string,
   pageContext: AuraPageContext | undefined,
   loadedDomains: string[],
+  roleName = 'Owner',
 ): Promise<{ context: AuraGenerateContext; agentsMinimal: boolean }> {
   await deps.teamService.ensureDefaultRoles(companyId);
 
   const { domains, agentsMinimal } = resolveAuraContextDomains(message, pageContext);
+  const actor = { companyId, userId, roleName, permissions };
   const loaders: ContextLoader[] = [
     {
       domain: 'crm',
@@ -151,9 +170,13 @@ export async function buildSelectedAuraContext(
     {
       domain: 'scheduling',
       enabled: hasAnyPermission(permissions, ['dispatch:read', 'dispatch:write']),
-      load: async () => ({
-        scheduling: await deps.schedulingService.buildAuraContext(companyId),
-      }),
+      load: async () => {
+        const [scheduling, googleCalendar] = await Promise.all([
+          deps.schedulingService.buildAuraContext(companyId),
+          deps.googleCalendarService.buildAuraContext(companyId, permissions),
+        ]);
+        return { scheduling: { ...scheduling, googleCalendar } };
+      },
     },
     {
       domain: 'finance',
@@ -161,6 +184,19 @@ export async function buildSelectedAuraContext(
       load: async () => ({
         finance: await deps.financeService.buildAuraContext(companyId),
       }),
+    },
+    {
+      domain: 'ownerFinance',
+      // AURA-TRAIN-001: FIN/CASH/JPE/GROWTH — Owner/Admin only (never Technician/Client).
+      enabled: canViewOwnerFinancialCommand(actor),
+      load: async () => {
+        const ownerFinanceTruth = await buildAuraOwnerFinanceTruthContext({
+          actor,
+          ownerFinancialCommandService: deps.ownerFinancialCommandService,
+          growthPlannerService: deps.growthPlannerService,
+        });
+        return ownerFinanceTruth ? { ownerFinanceTruth } : {};
+      },
     },
     {
       domain: 'inventory',
@@ -689,6 +725,76 @@ export async function buildSelectedAuraContext(
     (accumulator, partial) => ({ ...accumulator, ...partial }),
     baseContext,
   );
+
+  if (
+    hasAnyPermission(permissions, [
+      'intelligence:read',
+      'executive:read',
+      'executive:write',
+      'agents:read',
+    ])
+  ) {
+    const auraDayPlan = await deps.dayPlanService.buildAuraContext(companyId);
+    context.dayPlanning = {
+      planDate: auraDayPlan.planDate,
+      planCount: auraDayPlan.priorityCount,
+      plans: auraDayPlan.priorities.map((entry) => ({
+        content: entry.priorityText,
+        category: entry.department,
+        status: entry.status,
+        planDate: entry.planDate,
+      })),
+    };
+    context.businessRules = await deps.businessRulesService.buildAuraContext(companyId);
+    loadedDomains.push('dayPlanning', 'businessRules');
+  }
+
+  // AURA-TRAIN-001: resolve named customer/job probes without guessing.
+  const entityQuery = extractAuraEntityQuery(message);
+  if (
+    entityQuery &&
+    hasAnyPermission(permissions, ['customers:read', 'customers:write', 'jobs:read', 'jobs:write'])
+  ) {
+    try {
+      const [customers, jobs] = await Promise.all([
+        hasAnyPermission(permissions, ['customers:read', 'customers:write'])
+          ? deps.crmService.listCustomers(companyId, entityQuery)
+          : Promise.resolve([]),
+        hasAnyPermission(permissions, ['jobs:read', 'jobs:write'])
+          ? deps.jobsService.listJobs(companyId, entityQuery)
+          : Promise.resolve([]),
+      ]);
+      const matches: AuraEntityMatch[] = [
+        ...customers.slice(0, 8).map((c) => ({
+          id: c.id,
+          label: c.name,
+          kind: 'customer' as const,
+        })),
+        ...jobs.slice(0, 8).map((j) => ({
+          id: j.id,
+          label: `${j.jobNumber ?? j.id} · ${j.customerName ?? 'customer'}`,
+          kind: 'job' as const,
+        })),
+      ];
+      const resolution = resolveAuraEntityMatches(entityQuery, matches);
+      context.entityResolution = {
+        ...resolution,
+        guidance:
+          resolution.status === 'ambiguous'
+            ? 'Multiple matches — ask the user which record. Do not guess.'
+            : resolution.status === 'none'
+              ? 'No matching customer/job found in TITAN. Say you cannot find it. Never invent records.'
+              : 'Unique match found — use only this authorised TITAN record.',
+      };
+    } catch {
+      context.entityResolution = {
+        status: 'none',
+        query: entityQuery,
+        guidance:
+          'Entity lookup unavailable. Do not invent a customer/job. Report that resolution failed.',
+      };
+    }
+  }
 
   return { context, agentsMinimal };
 }

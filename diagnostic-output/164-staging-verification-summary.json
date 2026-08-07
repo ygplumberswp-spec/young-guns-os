@@ -1,0 +1,52 @@
+{
+  "sprint": "018",
+  "branch": "cursor/titan-frozen-scope-completion",
+  "stagingProjectRef": "cpkuwtaipjxeipvbssvn",
+  "finishedAt": "2026-08-01T08:25:00.000Z",
+  "backup": {
+    "ok": true,
+    "file": "diagnostic-output/staging-pg-dump-2026-08-01T08-20-02.dump",
+    "bytes": 3537847
+  },
+  "journal": {
+    "before": 104,
+    "after": 106,
+    "expected": 106,
+    "match": true
+  },
+  "migrate": {
+    "migrateStagingSafeExitCode": 4,
+    "drizzleKitExitCode": 0,
+    "drizzleKitApplied0105_0106": false,
+    "controlledApply0105_0106": {
+      "ok": true,
+      "artifact": "diagnostic-output/159-staging-apply-0105-0106.json"
+    }
+  },
+  "deploy": {
+    "railwayTokenPresent": false,
+    "railwayCliInstalled": false,
+    "redeploy": "BLOCKED"
+  },
+  "healthReady": {
+    "url": "https://young-guns-os-staging.up.railway.app/api/v1/health/ready",
+    "httpStatus": 503,
+    "code": "DB_UNAVAILABLE",
+    "detailReason": "28P01",
+    "artifact": "diagnostic-output/160-staging-health-ready.json"
+  },
+  "smokes": {
+    "phase5": { "verdict": "NO-GO", "artifact": "diagnostic-output/140-staging-phase5-e2e.json", "blocker": "staging_api_ready DB_UNAVAILABLE" },
+    "phase6": { "verdict": "NO-GO", "artifact": "diagnostic-output/141-staging-phase6-e2e.json", "blocker": "staging_api_ready DB_UNAVAILABLE" },
+    "phase8_12": { "verdict": "NO-GO", "artifact": "diagnostic-output/142-staging-phase8-12-e2e.json", "blocker": "staging_api_ready DB_UNAVAILABLE" }
+  },
+  "localGates": {
+    "typecheck": "PASS",
+    "test": { "pass": 105, "fail": 0 },
+    "build": "PASS"
+  },
+  "blockers": [
+    "Railway staging API DATABASE_URL still rejects pooler auth (28P01) — update Railway service env + redeploy",
+    "RAILWAY_TOKEN unset — CLI redeploy blocked"
+  ]
+}

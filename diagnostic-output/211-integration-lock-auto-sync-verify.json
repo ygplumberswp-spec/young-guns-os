@@ -1,0 +1,76 @@
+{
+  "generatedAt": "2026-08-01T20:10:00.000Z",
+  "branch": "cursor/integration-lock-auto-sync",
+  "commitPending": true,
+  "stagingApi": "https://young-guns-os-staging.up.railway.app",
+  "stagingWeb": "https://comfortable-determination-staging.up.railway.app",
+  "visualPolishReconciliation": {
+    "subagent95ca7eb4": "Responsive grid absorbed from Titan-Aura-Visual-Polish layout-grid.css into this branch; duplicate ux-summary-grid rules removed from index.css. No separate visual-polish merge required.",
+    "skippedDuplicateWork": ["InlineSaveIndicator", "StatusBadgeDropdown", "MultiStatusFilter component files — not duplicated; filter pills CSS added for unified comms only"]
+  },
+  "rootCause": {
+    "cartrackCredentialOverwrite": "Editable credential form remained visible when connected with browser autofill (username/current-password). Owner email could appear in username field. Failed replace set status=error without replacing encrypted credentials, breaking UX.",
+    "autoMapGap": "Registration match used trim+lowercase only; separator variants (CF-172047) missed. Auto-map only ran on manual sync, not reliably on connect when scheduler gate off."
+  },
+  "responsiveLayout": {
+    "status": "implemented",
+    "cssFile": "apps/web/src/styles/layout-grid.css",
+    "breakpoints": {
+      "mobile_lt_768": "1 card per row",
+      "tablet_768_1023": "2 cards per row",
+      "laptop_1024_1439": "2 cards per row",
+      "desktop_1200_1439": "3 cards per row (cols-4 grids)",
+      "large_gte_1440": "4 cards per row"
+    }
+  },
+  "cartrack": {
+    "autoMapNormalization": "packages/shared/src/vehicle-registration.ts",
+    "expectedStaging": {
+      "CF172047": "auto_matched",
+      "CF77263": "auto_matched",
+      "mappedCount": 2
+    },
+    "liveDispatchPollMs": 3000,
+    "hiddenPollMs": 60000,
+    "stalePositionMs": 120000,
+    "trackingEndpoint": "GET /api/v1/integrations/cartrack/tracking"
+  },
+  "credentialSecurity": {
+    "passwordNeverReturned": true,
+    "validateBeforeReplace": true,
+    "ownerOnlyReplace": "PUT /integrations/cartrack/credentials",
+    "verifyStored": "POST /integrations/cartrack/verify-stored",
+    "autofillDisabled": true
+  },
+  "autoSyncSchedules": {
+    "cartrack": { "minutes": 15, "entities": ["vehicles", "positions", "trips", "events", "geofences", "drivers"] },
+    "xero": { "minutes": 20 },
+    "email": { "minutes": 60 },
+    "whatsapp": { "notes": "webhook + message indexing; send requires approval" }
+  },
+  "whatsappBusiness": {
+    "connectionLock": true,
+    "backgroundSync": "existing whatsapp service + orchestrator partial",
+    "sendApproval": "existing RBAC + draft flows"
+  },
+  "personalWhatsapp": {
+    "status": "blocked_unsupported",
+    "reason": "No personal session pairing architecture — intelligence page documents blocked status; never simulated"
+  },
+  "email": {
+    "smtpConnectionLock": true,
+    "gmailM365OAuth": "documented as roadmap — not faked"
+  },
+  "unifiedCommunications": {
+    "page": "/communications-intelligence",
+    "channelFilters": ["whatsapp", "personal_whatsapp", "email", "sms", "phone", "portal", "support", "system"],
+    "entityLinking": "timeline entries expose entityType/entityId when present"
+  },
+  "verification": {
+    "typecheck": "PASS",
+    "sharedTests": "135 pass",
+    "apiTests": "356 pass",
+    "build": "PASS",
+    "stagingDeploy": "pending-after-push"
+  }
+}

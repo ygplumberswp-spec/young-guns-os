@@ -1,9 +1,11 @@
+import { PageHeader } from '../../components/ux';
 import { useEffect, useState } from 'react';
 import { Link } from 'wouter';
-import { EmptyState, PageHeader, Panel } from '@titan/ui';
+import { EmptyState, Panel } from '@titan/ui';
 import { PortalApiClientError, fetchPortalJobs } from '../../lib/portal-api-client';
 import { usePortalAuth } from '../../lib/portal-auth-context';
 import { toPortalNestedHref } from '../../lib/portal-routing';
+import { formatPortalWhen } from '../../lib/portal-datetime';
 
 export function PortalJobsPage() {
   const { accessToken } = usePortalAuth();
@@ -25,16 +27,16 @@ export function PortalJobsPage() {
   return (
     <div className="portal-page">
       <PageHeader
-        title="Job tracking"
+        title="Job Tracking"
         description="Open a job for live status, scheduled time, and technician ETA."
       />
       {error ? <p className="form-error">{error}</p> : null}
-      <Panel title="Your jobs">
+      <Panel title="Your Jobs">
         {loading ? <p className="page-muted">Loading jobs…</p> : null}
         {!loading && jobs.length === 0 ? (
           <EmptyState
             className="titan-empty-state--compact"
-            title="No jobs yet"
+            title="No Jobs Yet"
             description="Jobs linked to your account will appear here."
           />
         ) : null}
@@ -51,6 +53,10 @@ export function PortalJobsPage() {
                       Scheduled {new Date(job.scheduledAt).toLocaleString()}
                     </span>
                   ) : null}
+                  {job.etaAt ? (
+                    <span className="tabular-nums">ETA {formatPortalWhen(job.etaAt)}</span>
+                  ) : null}
+
                 </Link>
               </li>
             ))}

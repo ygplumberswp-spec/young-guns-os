@@ -1,0 +1,325 @@
+{
+  "label": "206-xero-live-staging-verify",
+  "generatedAt": "2026-08-03T22:56:45.751Z",
+  "appliedMigrationRows": 121,
+  "historyTables": {
+    "xero_history_contacts": false,
+    "xero_history_invoices": false,
+    "xero_history_credit_notes": false,
+    "xero_history_payments": false,
+    "xero_history_bank_transactions": false,
+    "xero_history_accounts": false,
+    "xero_history_tracking_categories": false,
+    "xero_history_tracking_options": false,
+    "xero_history_attachments": false,
+    "xero_history_quotes": false,
+    "xero_sync_entity_status": false
+  },
+  "companies": [
+    {
+      "id": "095aef76-fef5-4139-af37-a42f2d7e2faf",
+      "name": "Young Guns Plumbing"
+    },
+    {
+      "id": "e5fc40b3-50e0-49cd-932e-ee8d2c1f7f04",
+      "name": "STAGING-P5 Young Guns 51144398"
+    },
+    {
+      "id": "4463b456-5400-4534-8b9e-81f03880df76",
+      "name": "STAGING-P5 Foreign 51144398"
+    },
+    {
+      "id": "c4063072-7444-4afb-9668-b6ecbb23be2c",
+      "name": "STAGING-P5 Young Guns b0c31ff6"
+    },
+    {
+      "id": "6c51eac8-432a-437b-ae06-29198ba37c9f",
+      "name": "STAGING-P5 Foreign b0c31ff6"
+    },
+    {
+      "id": "a9437e19-3d45-41a0-ab1e-8525d1b78c45",
+      "name": "STAGING-P5 Young Guns dc2d65ca"
+    },
+    {
+      "id": "306a3979-fb98-4fa9-a49d-046008832cfa",
+      "name": "STAGING-P5 Foreign dc2d65ca"
+    },
+    {
+      "id": "3369b37b-93fd-49f4-8999-51f281014dbe",
+      "name": "STAGING-P5 Young Guns 00caaefc"
+    },
+    {
+      "id": "2525824e-bee7-4242-ab6a-21e5d3582c8e",
+      "name": "STAGING-P5 Foreign 00caaefc"
+    },
+    {
+      "id": "ece4b766-44bb-4a1e-9ecc-0b7c4c455238",
+      "name": "STAGING-P6 Crew Co c4ac1bf6"
+    }
+  ],
+  "integrationConnectionColumns": [
+    "id",
+    "company_id",
+    "provider",
+    "status",
+    "credentials_encrypted",
+    "config",
+    "last_sync_at",
+    "last_error",
+    "connected_at",
+    "created_at",
+    "updated_at"
+  ],
+  "xeroConnections": [
+    {
+      "id": "47e21496-c15e-4686-9928-0e3f3fe6f4b4",
+      "company_id": "7cfbefa5-0d13-4bcf-839a-65f8e64c5bdd",
+      "provider": "xero",
+      "status": "disconnected",
+      "config": {},
+      "last_sync_at": null,
+      "last_error": null,
+      "connected_at": null,
+      "created_at": "2026-08-01T09:49:03.393Z",
+      "updated_at": "2026-08-01T09:49:03.393Z",
+      "credentials_encrypted_present": false
+    },
+    {
+      "id": "f3da2233-9c55-4c9e-a9dd-0504fdb7ca8b",
+      "company_id": "cb91697e-5bb6-42e1-a224-4103136375c7",
+      "provider": "xero",
+      "status": "pending",
+      "config": {},
+      "last_sync_at": null,
+      "last_error": null,
+      "connected_at": null,
+      "created_at": "2026-08-01T10:22:33.007Z",
+      "updated_at": "2026-08-01T10:22:34.412Z",
+      "credentials_encrypted_present": false
+    },
+    {
+      "id": "a41ab234-a6bc-4500-83a9-d9b795b3b48c",
+      "company_id": "34b6ec66-46de-4b4f-b3d6-79d87278e2fb",
+      "provider": "xero",
+      "status": "pending",
+      "config": {},
+      "last_sync_at": null,
+      "last_error": null,
+      "connected_at": null,
+      "created_at": "2026-08-01T10:23:15.520Z",
+      "updated_at": "2026-08-01T10:23:16.910Z",
+      "credentials_encrypted_present": false
+    },
+    {
+      "id": "aa13ba30-0631-4776-830b-907987c099b1",
+      "company_id": "e776846c-7e98-4ea0-b425-0d6a2cfd5bed",
+      "provider": "xero",
+      "status": "disconnected",
+      "config": {},
+      "last_sync_at": null,
+      "last_error": null,
+      "connected_at": null,
+      "created_at": "2026-08-01T10:23:24.509Z",
+      "updated_at": "2026-08-01T10:23:24.509Z",
+      "credentials_encrypted_present": false
+    },
+    {
+      "id": "fad2142e-c544-46c1-84e1-712261595858",
+      "company_id": "92eef2db-ec5f-4d0d-8adb-cf353fc11882",
+      "provider": "xero",
+      "status": "disconnected",
+      "config": {},
+      "last_sync_at": null,
+      "last_error": null,
+      "connected_at": null,
+      "created_at": "2026-08-01T10:27:17.608Z",
+      "updated_at": "2026-08-01T10:27:17.608Z",
+      "credentials_encrypted_present": false
+    },
+    {
+      "id": "a5c7ca68-c875-4c87-a905-b429a5470d82",
+      "company_id": "d23e5c76-f26a-4de7-87dd-02f080654943",
+      "provider": "xero",
+      "status": "disconnected",
+      "config": {},
+      "last_sync_at": null,
+      "last_error": null,
+      "connected_at": null,
+      "created_at": "2026-08-01T10:27:24.130Z",
+      "updated_at": "2026-08-01T10:27:24.130Z",
+      "credentials_encrypted_present": false
+    },
+    {
+      "id": "2bf6889d-b480-43d1-b7c1-e1694837b254",
+      "company_id": "1006a5d7-5a0c-4acb-8f2d-db79279bb3d2",
+      "provider": "xero",
+      "status": "disconnected",
+      "config": {},
+      "last_sync_at": null,
+      "last_error": null,
+      "connected_at": null,
+      "created_at": "2026-08-01T10:28:34.115Z",
+      "updated_at": "2026-08-01T10:28:34.115Z",
+      "credentials_encrypted_present": false
+    },
+    {
+      "id": "fec01464-f9ed-4e6a-834f-0ba0045b5b2f",
+      "company_id": "a77dc7a8-0a52-4c3d-ba1e-f2733b3f47d6",
+      "provider": "xero",
+      "status": "disconnected",
+      "config": {},
+      "last_sync_at": null,
+      "last_error": null,
+      "connected_at": null,
+      "created_at": "2026-08-01T10:28:40.548Z",
+      "updated_at": "2026-08-01T10:28:40.548Z",
+      "credentials_encrypted_present": false
+    },
+    {
+      "id": "f3d4144f-43b0-4a5f-bd13-570b0bbc0992",
+      "company_id": "26c082a5-a83e-4346-9736-190b85abf1f9",
+      "provider": "xero",
+      "status": "disconnected",
+      "config": {},
+      "last_sync_at": null,
+      "last_error": null,
+      "connected_at": null,
+      "created_at": "2026-08-01T10:29:54.765Z",
+      "updated_at": "2026-08-01T10:29:54.765Z",
+      "credentials_encrypted_present": false
+    },
+    {
+      "id": "85eac8c7-d7ee-4b45-84d0-653dc7a572f1",
+      "company_id": "6f56e3fe-9d9a-4afc-a00d-544a2ed85406",
+      "provider": "xero",
+      "status": "disconnected",
+      "config": {},
+      "last_sync_at": null,
+      "last_error": null,
+      "connected_at": null,
+      "created_at": "2026-08-01T10:30:01.335Z",
+      "updated_at": "2026-08-01T10:30:01.335Z",
+      "credentials_encrypted_present": false
+    },
+    {
+      "id": "02ebce0d-5270-41ec-8d73-ef367b0455bc",
+      "company_id": "8b77c238-1445-4e60-89a1-4b2b74388c49",
+      "provider": "xero",
+      "status": "disconnected",
+      "config": {},
+      "last_sync_at": null,
+      "last_error": null,
+      "connected_at": null,
+      "created_at": "2026-08-01T10:31:32.500Z",
+      "updated_at": "2026-08-01T10:31:32.500Z",
+      "credentials_encrypted_present": false
+    },
+    {
+      "id": "3ea82e78-372c-421b-8dd6-e7039e663e4a",
+      "company_id": "095aef76-fef5-4139-af37-a42f2d7e2faf",
+      "provider": "xero",
+      "status": "connected",
+      "config": {
+        "tenantId": "20176b90-a093-4da1-a04e-8ae616f89fef",
+        "authMethod": "oauth",
+        "baseCurrency": "ZAR",
+        "lastVerifiedAt": "2026-08-01T10:20:52.209Z",
+        "organisationId": "20176b90-a093-4da1-a04e-8ae616f89fef",
+        "organisationName": "Young Guns Plumbing"
+      },
+      "last_sync_at": "2026-08-03T17:06:33.809Z",
+      "last_error": null,
+      "connected_at": "2026-08-01T10:20:52.209Z",
+      "created_at": "2026-08-01T10:19:39.255Z",
+      "updated_at": "2026-08-03T22:44:28.754Z",
+      "credentials_encrypted_present": true
+    },
+    {
+      "id": "c2619601-0280-4a69-9631-69988d2ee18a",
+      "company_id": "05369a63-00ab-4bef-8d97-03822b81b1ca",
+      "provider": "xero",
+      "status": "disconnected",
+      "config": {},
+      "last_sync_at": null,
+      "last_error": null,
+      "connected_at": null,
+      "created_at": "2026-08-01T10:48:21.875Z",
+      "updated_at": "2026-08-01T10:48:21.875Z",
+      "credentials_encrypted_present": false
+    },
+    {
+      "id": "e16b8669-5f65-46f1-b8ea-b29782ac48dd",
+      "company_id": "f01fa030-56c6-4eb5-9857-6f99c14be961",
+      "provider": "xero",
+      "status": "disconnected",
+      "config": {},
+      "last_sync_at": null,
+      "last_error": null,
+      "connected_at": null,
+      "created_at": "2026-08-01T10:58:40.817Z",
+      "updated_at": "2026-08-01T10:58:40.817Z",
+      "credentials_encrypted_present": false
+    },
+    {
+      "id": "abff7f97-1bc1-40dd-9d32-6b26490f7390",
+      "company_id": "bb27f344-16a8-418c-9ea3-2785f3f52805",
+      "provider": "xero",
+      "status": "disconnected",
+      "config": {},
+      "last_sync_at": null,
+      "last_error": null,
+      "connected_at": null,
+      "created_at": "2026-08-03T07:16:37.128Z",
+      "updated_at": "2026-08-03T07:16:37.128Z",
+      "credentials_encrypted_present": false
+    },
+    {
+      "id": "1151814e-11af-4b44-93b9-dd63843a4ac6",
+      "company_id": "9099e692-eacb-40ab-b517-c65ea40bddf2",
+      "provider": "xero",
+      "status": "disconnected",
+      "config": {},
+      "last_sync_at": null,
+      "last_error": null,
+      "connected_at": null,
+      "created_at": "2026-08-02T22:37:14.230Z",
+      "updated_at": "2026-08-02T22:37:14.230Z",
+      "credentials_encrypted_present": false
+    },
+    {
+      "id": "c4ff6366-fa68-4a55-b771-f278f784af22",
+      "company_id": "9c716a5e-5e7d-47ae-bf15-f9733b88d7d7",
+      "provider": "xero",
+      "status": "disconnected",
+      "config": {},
+      "last_sync_at": null,
+      "last_error": null,
+      "connected_at": null,
+      "created_at": "2026-08-03T07:30:28.134Z",
+      "updated_at": "2026-08-03T07:30:28.134Z",
+      "credentials_encrypted_present": false
+    },
+    {
+      "id": "4756f210-8e12-4e28-bd76-0873963e4725",
+      "company_id": "626e2662-c75d-4d56-ba56-279244fb04c2",
+      "provider": "xero",
+      "status": "disconnected",
+      "config": {},
+      "last_sync_at": null,
+      "last_error": null,
+      "connected_at": null,
+      "created_at": "2026-08-03T07:31:40.030Z",
+      "updated_at": "2026-08-03T07:31:40.030Z",
+      "credentials_encrypted_present": false
+    }
+  ],
+  "importJobs": "table_absent",
+  "mappingCounts": {
+    "xero_customer_mappings": 678,
+    "xero_invoice_mappings": 5,
+    "xero_payment_mappings": 0,
+    "xero_quote_mappings": 0,
+    "xero_sync_logs": 63223
+  },
+  "historyCounts": {}
+}

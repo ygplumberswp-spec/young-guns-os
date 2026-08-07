@@ -14,6 +14,14 @@ const updateMemberRoleSchema = z.object({
   roleId: z.string().uuid(),
 });
 
+const updateMemberStatusSchema = z.object({
+  isActive: z.boolean(),
+});
+
+const hardDeleteMemberSchema = z.object({
+  confirmation: z.string().trim().min(1),
+});
+
 type TeamRouterDeps = {
   teamService: TeamService;
   jwtSecret: string;
@@ -31,8 +39,13 @@ export function createTeamRouter({ teamService, jwtSecret, authService }: TeamRo
   router.use(requireAuth);
 
   router.get('/members', requireAnyPermission('users:read', 'users:manage'), async (req, res) => {
-    const { companyId } = getAuth(req);
-    const members = await teamService.listMembers(companyId);
+    const auth = getAuth(req);
+    const members = await teamService.listMembers(auth.companyId, {
+      companyId: auth.companyId,
+      userId: auth.userId,
+      roleName: auth.roleName,
+      permissions: auth.permissions,
+    });
     res.json({ data: { members } });
   });
 
@@ -100,10 +113,6 @@ export function createTeamRouter({ teamService, jwtSecret, authService }: TeamRo
     }
   });
 
-  const updateMemberStatusSchema = z.object({
-    isActive: z.boolean(),
-  });
-
   router.patch(
     '/members/:memberId/status',
     requireAnyPermission('users:manage'),
@@ -129,6 +138,73 @@ export function createTeamRouter({ teamService, jwtSecret, authService }: TeamRo
           parsed.data.isActive,
         );
         res.json({ data: { member } });
+      } catch (error) {
+        handleTeamError(res, error);
+      }
+    },
+  );
+
+  router.post(
+    '/members/:memberId/remove-access',
+    requireAnyPermission('users:manage'),
+    async (req, res) => {
+      const auth = getAuth(req);
+
+      try {
+        const member = await teamService.removeMemberAccess(
+          { companyId: auth.companyId, userId: auth.userId },
+          req.params.memberId as string,
+        );
+        res.json({ data: { member } });
+      } catch (error) {
+        handleTeamError(res, error);
+      }
+    },
+  );
+
+  router.get(
+    '/members/:memberId/delete-eligibility',
+    requireAnyPermission('users:manage'),
+    async (req, res) => {
+      const auth = getAuth(req);
+
+      try {
+        const eligibility = await teamService.getMemberDeleteEligibility(
+          { companyId: auth.companyId, userId: auth.userId },
+          req.params.memberId as string,
+        );
+        res.json({ data: { eligibility } });
+      } catch (error) {
+        handleTeamError(res, error);
+      }
+    },
+  );
+
+  router.delete(
+    '/members/:memberId',
+    requireAnyPermission('users:manage'),
+    async (req, res) => {
+      const auth = getAuth(req);
+      const parsed = hardDeleteMemberSchema.safeParse(req.body);
+
+      if (!parsed.success) {
+        res.status(400).json({
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Confirmation is required to permanently delete a user',
+            details: parsed.error.flatten(),
+          },
+        });
+        return;
+      }
+
+      try {
+        const result = await teamService.hardDeleteMember(
+          { companyId: auth.companyId, userId: auth.userId },
+          req.params.memberId as string,
+          parsed.data.confirmation,
+        );
+        res.json({ data: result });
       } catch (error) {
         handleTeamError(res, error);
       }
@@ -186,9 +262,14 @@ function handleTeamError(res: import('express').Response, error: unknown) {
             : error.code === 'SELF_LOCKOUT' ||
                 error.code === 'LAST_OWNER' ||
                 error.code === 'SELF_PROMOTION' ||
+                error.code === 'SELF_DELETE' ||
                 error.code === 'ROLE_ASSIGN_FORBIDDEN'
               ? 403
-              : 400;
+              : error.code === 'HARD_DELETE_REFUSED'
+                ? 409
+                : error.code === 'CONFIRMATION_MISMATCH'
+                  ? 400
+                  : 400;
 
     res.status(status).json({
       error: {

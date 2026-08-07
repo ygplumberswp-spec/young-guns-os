@@ -1,0 +1,91 @@
+{
+  "phase": "YG-LIVE-001",
+  "title": "Young Guns Owner Acceptance Checklist",
+  "audience": "Non-technical Owner",
+  "instructions": [
+    "Use staging first: https://comfortable-determination-staging.up.railway.app",
+    "One action at a time. Tick only what you personally verified.",
+    "Do not send customer WhatsApps or emails during acceptance.",
+    "Do not migrate the real WhatsApp number in this checklist.",
+    "Do not enable live card payments."
+  ],
+  "steps": [
+    {
+      "id": "owner-dashboard",
+      "role": "Owner",
+      "action": "Open Home / Dashboard",
+      "passIf": "AURA near top; real jobs/cash/alerts visible",
+      "failIf": "Demo/fake finance or wrong company"
+    },
+    {
+      "id": "owner-aura",
+      "role": "Owner",
+      "action": "Ask AURA: What needs my attention today?",
+      "passIf": "Concise factual answer; incompleteness stated if sources incomplete",
+      "failIf": "Invented invoices/jobs/profit"
+    },
+    {
+      "id": "owner-finance",
+      "role": "Owner",
+      "action": "Open Owner Financial Command / Cash / Profit",
+      "passIf": "Known cash/profit from live modules",
+      "failIf": "Missing bank shown as zero spend"
+    },
+    {
+      "id": "owner-dispatch",
+      "role": "Owner",
+      "action": "Open Dispatch / Schedule for today",
+      "passIf": "Today’s jobs and assignments visible",
+      "failIf": "Cannot see job status"
+    },
+    {
+      "id": "owner-comms",
+      "role": "Owner",
+      "action": "Open Communications Hub",
+      "passIf": "Gmail and WhatsApp channels distinguishable",
+      "failIf": "You send a customer message during this check"
+    },
+    {
+      "id": "owner-fleet",
+      "role": "Owner",
+      "action": "Open Fleet",
+      "passIf": "Vehicles mapped; GPS freshness honest (live/synced/stale/unavailable)",
+      "failIf": "Made-up GPS locations"
+    },
+    {
+      "id": "owner-integrations",
+      "role": "Owner",
+      "action": "Open Integrations",
+      "passIf": "Xero = Young Guns Plumbing; WhatsApp still Test Number unless later approved",
+      "failIf": "Wrong Xero organisation"
+    },
+    {
+      "id": "admin-flow",
+      "role": "Admin",
+      "action": "Admin login → find/create customer → property → booking/job → schedule",
+      "passIf": "Office can operate without Owner login",
+      "failIf": "Admin blocked from normal office work"
+    },
+    {
+      "id": "tech-flow",
+      "role": "Technician",
+      "action": "Technician mobile login → open assigned Job Card path",
+      "passIf": "Only assigned field work tools",
+      "failIf": "Can see company finance, payroll, CRM list, or Owner dashboard"
+    },
+    {
+      "id": "client-flow",
+      "role": "Client",
+      "action": "Client portal → own jobs/quotes/invoices/documents",
+      "passIf": "Only that client’s records",
+      "failIf": "Other clients or internal costs visible"
+    }
+  ],
+  "signOff": {
+    "ownerName": "",
+    "date": "",
+    "stagingAccepted": null,
+    "productionGoApproved": null,
+    "notes": ""
+  }
+}

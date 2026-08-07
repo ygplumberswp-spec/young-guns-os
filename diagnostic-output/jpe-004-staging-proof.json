@@ -1,0 +1,130 @@
+{
+  "label": "jpe-004-staging-proof",
+  "generatedAt": "2026-08-07T09:38:58.526Z",
+  "branch": "cursor/jpe-004-live-cost-capture-998f",
+  "expectedCommit": "557cf86",
+  "stagingRef": "cpkuwtaipjxeipvbssvn",
+  "apiBase": "https://young-guns-os-staging.up.railway.app",
+  "webBase": "https://comfortable-determination-staging.up.railway.app",
+  "results": [
+    {
+      "name": "health_live",
+      "status": "PASS",
+      "detail": "status=200 body=live"
+    },
+    {
+      "name": "health_ready",
+      "status": "PASS",
+      "detail": "status=200 body=ready"
+    },
+    {
+      "name": "migration_0187_audit",
+      "status": "PASS",
+      "detail": "additive, client_action_id present"
+    },
+    {
+      "name": "migration_0187_schema",
+      "status": "PASS",
+      "detail": "applied=true entries=0"
+    },
+    {
+      "name": "route_POST_time_start",
+      "status": "PASS",
+      "detail": "status=401"
+    },
+    {
+      "name": "route_POST_00000000-0000-4000-8000-000000000001_stop",
+      "status": "PASS",
+      "detail": "status=401"
+    },
+    {
+      "name": "route_POST_00000000-0000-4000-8000-000000000001_material-lines",
+      "status": "PASS",
+      "detail": "status=401"
+    },
+    {
+      "name": "route_POST_00000000-0000-4000-8000-000000000002_return",
+      "status": "PASS",
+      "detail": "status=401"
+    },
+    {
+      "name": "route_POST_00000000-0000-4000-8000-000000000001_direct-costs",
+      "status": "PASS",
+      "detail": "status=401"
+    },
+    {
+      "name": "route_GET_00000000-0000-4000-8000-000000000001_capture-checklist",
+      "status": "PASS",
+      "detail": "status=401"
+    },
+    {
+      "name": "route_GET_cost-capture_daily-summary",
+      "status": "PASS",
+      "detail": "status=401"
+    },
+    {
+      "name": "route_GET_00000000-0000-4000-8000-000000000001_capture-status",
+      "status": "PASS",
+      "detail": "status=401"
+    },
+    {
+      "name": "empty_state_jobs_readable",
+      "status": "PASS",
+      "detail": "1 Young Guns jobs sampled"
+    },
+    {
+      "name": "capture_counts_tenant_scoped",
+      "status": "PASS",
+      "detail": "{\"timeEntries\":0,\"materialLines\":0,\"directCosts\":0}"
+    },
+    {
+      "name": "daily_summary_auth_envelope",
+      "status": "PASS",
+      "detail": "status=401"
+    },
+    {
+      "name": "web_shell_reachable",
+      "status": "PASS",
+      "detail": "status=200"
+    },
+    {
+      "name": "branch_commit_local",
+      "status": "PASS",
+      "detail": "557cf86"
+    }
+  ],
+  "safety": {
+    "xeroCalls": 0,
+    "productionTouched": false,
+    "fakeStagingFinanceWritten": 0
+  },
+  "deployedVersion": "0.2.0",
+  "migration": {
+    "tag": "0187_job_cost_capture",
+    "hashPrefix": "f057a93c5bb9",
+    "additiveOnly": true,
+    "hasClientActionId": true,
+    "applied": true,
+    "journalCount": 181,
+    "clientActionColumn": true,
+    "idempotencyIndex": true,
+    "timeEntryCount": 0
+  },
+  "staging": {
+    "youngGunsJobSample": 1,
+    "jobs": [
+      {
+        "id": "ef4468a7-db62-4147-be73-301f8c5e508a",
+        "status": "new",
+        "jobNumber": "JOB-000001"
+      }
+    ],
+    "captureCounts": {
+      "timeEntries": 0,
+      "materialLines": 0,
+      "directCosts": 0
+    }
+  },
+  "localHead": "557cf86",
+  "verdict": "PASS — JPE-004 CLOSED"
+}

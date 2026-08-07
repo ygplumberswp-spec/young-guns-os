@@ -1,0 +1,70 @@
+{
+  "label": "XERO-002-gate3-controlled-quote",
+  "ownerApproval": "XERO-002 GATE 3 GO",
+  "startedAt": "2026-08-06T16:39:07.748Z",
+  "completedAt": "2026-08-06T16:47:22.114Z",
+  "startingHead": "e8f8c7b3b2cee52904d45a7decf697ccb93c106f",
+  "endingHead": "e8f8c7b3b2cee52904d45a7decf697ccb93c106f",
+  "testLabel": "TITAN XERO E2E TEST — 2026-08-06T16:39:07.748Z",
+  "mode": "staging-sync-quotes-fallback",
+  "precheck": {
+    "organisationName": "Young Guns Plumbing",
+    "connectionStatus": "connected"
+  },
+  "selectionClassification": "confirmed_linked",
+  "quote": {
+    "idMasked": "934ffe5c…",
+    "quoteNumber": "Q-0253",
+    "status": "draft",
+    "amountCents": 0,
+    "currency": "ZAR",
+    "titleSet": "TITAN XERO E2E TEST — 2026-08-06T16:39:07.748Z"
+  },
+  "mapping": {
+    "afterFirst": {
+      "xeroQuoteIdMasked": "7fb5147d…",
+      "syncStatus": "synced",
+      "hasXeroQuoteId": true
+    },
+    "afterRetry": {
+      "xeroQuoteIdMasked": "7fb5147d…",
+      "syncStatus": "synced",
+      "hasXeroQuoteId": true
+    }
+  },
+  "syncLogs": [
+    {
+      "action": "push",
+      "status": "success",
+      "message": "Pushed quote Q-0253 to Xero"
+    },
+    {
+      "action": "pull",
+      "status": "success",
+      "message": "Imported quote Q-0253 from Xero"
+    },
+    {
+      "action": "update",
+      "status": "success",
+      "message": "Quote Q-0253 already linked in Xero"
+    }
+  ],
+  "idempotency": {
+    "sameXeroQuoteIdAfterRetry": true,
+    "mappingRowsForXeroQuote": 1,
+    "retryWasIdempotent": true,
+    "firstWasIdempotent": false
+  },
+  "confirmations": {
+    "draftQuoteCreatedInTitan": true,
+    "xeroQuoteIdStored": true,
+    "retryDidNotDuplicate": true,
+    "quoteNotSent": true,
+    "noInvoiceWrite": true,
+    "noPaymentWrite": true,
+    "noSecretLeakage": true,
+    "productionUntouched": true,
+    "gate4NotExecuted": true
+  },
+  "verdict": "PASS"
+}

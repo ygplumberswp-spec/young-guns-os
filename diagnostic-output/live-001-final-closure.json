@@ -1,0 +1,143 @@
+{
+  "label": "LIVE-001",
+  "title": "Live Integrations Verification & Activation — FINAL CLOSURE",
+  "generatedAt": "2026-08-07T15:30:00.000Z",
+  "branch": "cursor/live-001-integrations-663e",
+  "baseBranch": "cursor/sys-001-full-system-testing-663e",
+  "pr": "https://github.com/ygplumberswp-spec/young-guns-os/pull/41",
+  "stagingApi": "https://young-guns-os-staging.up.railway.app",
+  "stagingWeb": "https://comfortable-determination-staging.up.railway.app",
+  "stagingDbRef": "cpkuwtaipjxeipvbssvn",
+  "productionForbiddenRef": "rshuiaghmtrvvilhqpwm",
+  "verdict": "PASS — LIVE-001 Live Integrations closed",
+  "verdictReason": "Owner staging proofs complete for Xero, Gmail, Cartrack, WhatsApp (Meta Test Number read-only), and Yoco. Confirmed code defects fixed (payment processing gate; WhatsApp Test Connection / reconnect validation; inbound idempotency). Remaining items are non-blocking P1/P2 debt, not P0.",
+  "providerMatrix": {
+    "xero": {
+      "result": "PASS",
+      "evidence": "Fresh staging Test Connection PASS; organisation Young Guns Plumbing verified",
+      "syncNow": false,
+      "providerWrite": false
+    },
+    "gmail": {
+      "result": "PASS",
+      "evidence": "Connected; fresh Sync Now PASS; inbox 40→80 confirmed unique messages (not duplication); no email sent",
+      "automaticBackgroundSync": false,
+      "automaticSyncDebt": "P2"
+    },
+    "cartrack": {
+      "result": "PASS",
+      "evidence": "Connected; fresh staging sync PASS; 2 mapped vehicles; 377 GPS positions; no provider write",
+      "providerWrite": false
+    },
+    "whatsapp": {
+      "result": "PASS — test-number staging proof",
+      "evidence": "Fresh Meta token connected; Test Connection PASS: \"Connection verified for Test Number. Read-only Meta check — no message sent.\"",
+      "connectionKind": "meta_cloud_api_test_number",
+      "isFinalYoungGunsBusinessNumber": false,
+      "outbound": false,
+      "templatesCreated": false,
+      "customerCommunication": false,
+      "note": "Staging Meta connection is a TEST NUMBER. Real-number migration/coexistence/history capture belongs to Young Guns Live Implementation / Communications later."
+    },
+    "yoco": {
+      "result": "PASS",
+      "evidence": "Connected; test environment; fresh provider state; no invoice payment link; no card charge",
+      "paymentProcessingEnabledGate": "fail-closed when disabled (LIVE-001 fix)",
+      "paymentLinkCreated": false,
+      "cardCharge": false
+    }
+  },
+  "nonBlockingDebt": [
+    {
+      "id": "gmail-automatic-background-sync",
+      "priority": "P2",
+      "blocksLive001": false,
+      "summary": "Gmail remains manual Sync Now only; no users.watch / push / scheduler auto-pull"
+    },
+    {
+      "id": "whatsapp-real-yg-number-onboarding",
+      "priority": "P1",
+      "blocksLive001": false,
+      "summary": "Onboard real Young Guns WhatsApp business number (current staging proof is Meta Test Number only)"
+    },
+    {
+      "id": "whatsapp-business-app-api-coexistence",
+      "priority": "P2",
+      "blocksLive001": false,
+      "summary": "Feasibility of WhatsApp Business App / Cloud API coexistence for Young Guns Live Implementation"
+    },
+    {
+      "id": "whatsapp-historical-business-chat-migration",
+      "priority": "P2",
+      "blocksLive001": false,
+      "summary": "Historical WhatsApp business-chat migration where provider-supported; do not bulk re-import or delete existing TITAN history"
+    },
+    {
+      "id": "optional-maps-meta-social-n8n-reproofs",
+      "priority": "P2",
+      "blocksLive001": false,
+      "summary": "Optional Maps / Meta / social / n8n re-proofs when Owner requests"
+    },
+    {
+      "id": "claude-gemini-credentials",
+      "priority": "P2",
+      "blocksLive001": false,
+      "summary": "Claude/Gemini credentials where absent — configure when needed; not a LIVE-001 P0 gate"
+    },
+    {
+      "id": "live-fnb",
+      "priority": "out_of_scope",
+      "blocksLive001": false,
+      "summary": "Live FNB banking integration out of current LIVE-001 scope"
+    },
+    {
+      "id": "telephony",
+      "priority": "not_configured",
+      "blocksLive001": false,
+      "summary": "Telephony not configured"
+    }
+  ],
+  "codeFixesShippedOnBranch": [
+    "PAYMENT_PROCESSING_ENABLED enforced fail-closed on DocumentEngine payment-link create",
+    "WhatsApp read-only Test Connection endpoint + UI",
+    "Test Connection allows stored creds when status=error (LIVE-001C)",
+    "Reconnect accepts long Meta tokens + blank webhook (LIVE-001D)",
+    "Inbound webhook/hub idempotency partial UNIQUE + onConflictDoNothing (LIVE-001E)",
+    "REQUIRED_STAGING_PROJECT_REF / production refuse guards"
+  ],
+  "explicitlyNotStarted": [
+    "MOBILE-001",
+    "Creative Studio",
+    "personal WhatsApp workflow build-out",
+    "Young Guns Live Implementation WhatsApp real-number work",
+    "new AI agents",
+    "production"
+  ],
+  "gates": {
+    "sharedTests": { "pass": 1428, "fail": 0 },
+    "authTests": { "pass": 24, "fail": 0 },
+    "apiTests": { "pass": 1441, "fail": 0 },
+    "dbTests": { "pass": 8, "fail": 0 },
+    "webTests": { "pass": 446, "fail": 0 },
+    "whatsappProviderWebhookSecSysSubset": { "pass": 98, "fail": 0 },
+    "sec001Regression": { "pass": 21, "fail": 0 },
+    "sys001Regression": { "pass": 10, "fail": 0 },
+    "webTypecheck": "pass",
+    "monorepoTypecheck": "pass",
+    "webProductionBuild": "pass"
+  },
+  "safety": {
+    "productionTouched": 0,
+    "productionWrites": 0,
+    "xeroWrites": 0,
+    "realCustomerWhatsApps": 0,
+    "realCustomerEmails": 0,
+    "publicSocialPosts": 0,
+    "cardCharges": 0,
+    "bankWrites": 0,
+    "creativeStudioWork": 0,
+    "mobileWork": 0,
+    "newAiAgents": 0,
+    "unrelatedWork": 0
+  }
+}

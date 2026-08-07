@@ -224,7 +224,7 @@ function formatFinanceContext(context: AuraGenerateContext): string | null {
 
     for (const quote of finance.recentQuotes) {
       lines.push(
-        `  - ${quote.quoteNumber} ${quote.title} (${quote.status}) · ${quote.customerName} · ${formatMoney(quote.amountCents, quote.currency)}`,
+        `  - ${quote.quoteNumber} (${quote.status}) · ${quote.customerName} · ${formatMoney(quote.amountCents, quote.currency)}`,
       );
     }
   } else {
@@ -236,7 +236,7 @@ function formatFinanceContext(context: AuraGenerateContext): string | null {
 
     for (const invoice of finance.recentInvoices) {
       lines.push(
-        `  - ${invoice.invoiceNumber} ${invoice.title} (${invoice.status}) · ${invoice.customerName} · ${formatMoney(invoice.amountCents, invoice.currency)} paid ${formatMoney(invoice.amountPaidCents, invoice.currency)}`,
+        `  - ${invoice.invoiceNumber} (${invoice.status}) · ${invoice.customerName} · ${formatMoney(invoice.amountCents, invoice.currency)} paid ${formatMoney(invoice.amountPaidCents, invoice.currency)}`,
       );
     }
   } else {
@@ -253,6 +253,58 @@ function formatFinanceContext(context: AuraGenerateContext): string | null {
     }
   } else {
     lines.push('- No payments have been recorded yet.');
+  }
+
+  return lines.join('\n');
+}
+
+function formatEntityResolutionContext(context: AuraGenerateContext): string | null {
+  const resolution = context.entityResolution;
+  if (!resolution) return null;
+
+  const lines = [
+    `- Status: ${resolution.status}`,
+    `- Query: ${resolution.query}`,
+    `- Guidance: ${resolution.guidance}`,
+  ];
+  if (resolution.match) {
+    lines.push(`- Match: ${resolution.match.kind} ${resolution.match.label} (${resolution.match.id})`);
+  }
+  if (resolution.candidates?.length) {
+    lines.push('- Candidates:');
+    for (const candidate of resolution.candidates.slice(0, 8)) {
+      lines.push(`  - ${candidate.kind}: ${candidate.label} (${candidate.id})`);
+    }
+  }
+  return lines.join('\n');
+}
+
+function formatOwnerFinanceTruthContext(context: AuraGenerateContext): string | null {
+  const truth = context.ownerFinanceTruth;
+  if (!truth) return null;
+
+  const lines = [
+    `- Authority: ${truth.authority}`,
+    `- Completeness: ${truth.completeness}`,
+    `- Period: ${truth.period}`,
+    `- Summary: ${truth.summary}`,
+    `- Invoiced revenue cents: ${truth.invoicedRevenueCents}`,
+    `- Customer cash collected cents: ${truth.customerCashCollectedCents}`,
+    `- Known gross profit cents: ${truth.knownGrossProfitCents ?? 'null (unavailable — not zero)'}`,
+    `- Known realised cash profit cents: ${truth.knownRealisedCashProfitCents}`,
+    `- Outstanding customer cash cents: ${truth.outstandingCustomerCashCents}`,
+    `- Money in cents: ${truth.moneyInCents}`,
+    `- Money out cents: ${truth.moneyOutCents}`,
+    `- Unexplained debit cents: ${truth.unexplainedDebitCents}`,
+    `- Loss jobs: ${truth.lossJobsCount}`,
+    `- Overdue receivables cents: ${truth.overdueReceivableCents}`,
+    `- Growth jobs required: ${truth.growthJobsRequired ?? 'unavailable'}`,
+    `- Growth status: ${truth.growthStatus ?? 'unavailable'}`,
+    `- Note: ${truth.note}`,
+  ];
+
+  if (truth.completenessReasons.length > 0) {
+    lines.push(`- Completeness reasons: ${truth.completenessReasons.slice(0, 8).join('; ')}`);
   }
 
   return lines.join('\n');
@@ -1693,6 +1745,65 @@ function formatMemoryContext(context: AuraGenerateContext): string | null {
   return lines.join('\n');
 }
 
+function formatDayPlanContext(context: AuraGenerateContext): string | null {
+  const dayPlan = context.dayPlan;
+  const dayPlanning = context.dayPlanning;
+
+  if (dayPlan && dayPlan.priorities.length > 0) {
+    const lines = [
+      `- Owner daily priorities for ${dayPlan.planDate}: ${dayPlan.priorityCount} active item(s)`,
+      `- Use only these stored priorities — never invent daily focus items or mark them complete`,
+    ];
+
+    for (const entry of dayPlan.priorities) {
+      const department = entry.department ? `, ${entry.department}` : '';
+      lines.push(`  - [${entry.status}${department}] ${entry.priorityText}`);
+    }
+
+    return lines.join('\n');
+  }
+
+  if (!dayPlanning || dayPlanning.plans.length === 0) {
+    return null;
+  }
+
+  const lines = [
+    `- Owner daily priorities for ${dayPlanning.planDate}: ${dayPlanning.planCount} active item(s)`,
+    `- Use only these stored priorities — never invent daily focus items or mark them complete`,
+  ];
+
+  for (const entry of dayPlanning.plans) {
+    const category = entry.category ? `, ${entry.category}` : '';
+    lines.push(`  - [${entry.status}${category}] ${entry.content}`);
+  }
+
+  return lines.join('\n');
+}
+
+function formatBusinessRulesContext(context: AuraGenerateContext): string | null {
+  const businessRules = context.businessRules;
+
+  if (!businessRules || businessRules.rules.length === 0) {
+    return null;
+  }
+
+  const lines = [
+    `- Active company business rules: ${businessRules.ruleCount}`,
+    `- Follow these rules when relevant — agents cannot modify rules without owner approval`,
+    `- Scheduled and approval rules never auto-pay or auto-send communications`,
+  ];
+
+  for (const rule of businessRules.rules) {
+    const department = rule.department ? `, ${rule.department}` : '';
+    const agent = rule.assignedAgentRole ? ` → ${rule.assignedAgentRole}` : '';
+    lines.push(
+      `  - [${rule.ruleType}/${rule.category}${department}] ${rule.name}: ${rule.instruction}${agent}`,
+    );
+  }
+
+  return lines.join('\n');
+}
+
 function formatRecommendationsContext(context: AuraGenerateContext): string | null {
   const recommendations = context.recommendations;
 
@@ -2084,8 +2195,10 @@ export function buildSystemPrompt(context: AuraGenerateContext): string {
 
   const crmSection = formatCrmContext(context);
   const jobsSection = formatJobsContext(context);
+  const entityResolutionSection = formatEntityResolutionContext(context);
   const schedulingSection = formatSchedulingContext(context);
   const financeSection = formatFinanceContext(context);
+  const ownerFinanceTruthSection = formatOwnerFinanceTruthContext(context);
   const financeIntelligenceSection = formatFinanceIntelligenceContext(context);
   const knowledgeSection = formatKnowledgeContext(context);
   const businessIntelligenceSection = formatBusinessIntelligenceContext(context);
@@ -2133,6 +2246,8 @@ export function buildSystemPrompt(context: AuraGenerateContext): string {
   const recruitingSection = formatRecruitingContext(context);
   const intelligenceSection = formatIntelligenceContext(context);
   const memorySection = formatMemoryContext(context);
+  const businessRulesSection = formatBusinessRulesContext(context);
+  const dayPlanSection = formatDayPlanContext(context);
   const recommendationsSection = formatRecommendationsContext(context);
   const analyticsSection = formatAnalyticsContext(context);
   const mobileSection = formatMobileContext(context);
@@ -2151,6 +2266,7 @@ export function buildSystemPrompt(context: AuraGenerateContext): string {
     jobsSection ? 'Jobs' : null,
     schedulingSection ? 'Scheduling' : null,
     financeSection ? 'Finance' : null,
+    ownerFinanceTruthSection ? 'Owner Finance Truth (FIN/CASH/JPE/GROWTH)' : null,
     financeIntelligenceSection ? 'Finance Intelligence' : null,
     knowledgeSection ? 'Knowledge & Learning' : null,
     businessIntelligenceSection ? 'Business Intelligence' : null,
@@ -2237,7 +2353,7 @@ export function buildSystemPrompt(context: AuraGenerateContext): string {
       `If Cartrack is disconnected, do not invent live GPS locations. ` +
       `Document records include metadata only — do not claim to read file contents, perform OCR, or run AI document processing unless that capability is explicitly listed. ` +
       `When automation context shows engineActive, workflows execute on business events via the TITAN automation engine. Actions that send messages or modify financial/customer/job data create approval drafts — never claim messages were sent or records were changed without explicit approval. AURA may propose workflow drafts for user review in /automation. ` +
-      `When Intelligence context is present, AURA acts as a business intelligence command centre — use the greeting, KPIs, and recommendations shown below. Propose actions but never execute mutating changes without approval. Company memory records are saved business rules — follow them when relevant. ` +
+      `When Intelligence context is present, AURA acts as a business intelligence command centre — use the greeting, KPIs, and recommendations shown below. Propose actions but never execute mutating changes without approval. Company memory records are saved business rules — follow them when relevant. Today's plan priorities are owner-set operational focus for the day — reference them when relevant but never invent priorities or change their status. ` +
       `When Analytics context is present, use only the real performance metrics shown below for revenue, jobs, customers, and outstanding balances. For profitability, technician workload, and detailed reports, explain that users can view /analytics or ask you to load analytics tools. Never invent metrics or scores. ` +
       `When Mobile context is present, AURA is assisting a mobile user in owner, technician, or customer mode — use only the mobile summary and details shown below. For owners, provide business updates from real data. For technicians, answer schedule and next-job questions from assigned job data only. For customers, explain repair status from their job records only. Never invent mobile actions or claim uploads, messages, or payments were completed without confirmation. ` +
       `When Agent Orchestration context is present, use only the active orchestration, run, and approval counts shown below. Multi-agent workflows coordinate specialist agents sequentially or in parallel — steps requiring approval pause until a human approves. Never claim orchestrations ran, agents collaborated, or approvals were granted without confirmation. Users can manage orchestrations and review the approval queue in agent orchestration settings. ` +
@@ -2249,7 +2365,11 @@ export function buildSystemPrompt(context: AuraGenerateContext): string {
       `When Workforce Intelligence context is present, use only the real candidate pipeline, skill gap, staffing insight, and recommendation data shown below. The Workforce Intelligence Agent analyzes hiring, technician performance, and capacity — never invent candidates, employees, skills, or performance records. All recruitment communications, interview requests, hiring recommendations, and training plans require explicit user approval before execution. No autonomous hiring or employment decisions. ` +
       `When Procurement Intelligence context is present, use only the real stock signal, supplier insight, purchase order, and recommendation data shown below. The Procurement Intelligence Agent analyzes inventory and purchasing needs — never invent products, suppliers, purchase orders, or stock levels. All purchase order drafts and procurement actions require explicit user approval before execution. No autonomous ordering or stock modifications. ` +
       `When Executive Command context is present, use only the real business health score, alert, recommendation, and summary data shown below. The Executive Command Agent analyzes company-wide performance across finance, operations, sales, workforce, and procurement — never invent KPIs, dashboards, or metrics. All executive action drafts require explicit user approval before execution. No autonomous financial decisions, pricing changes, or business modifications. ` +
+      `When Owner Finance Truth (FIN/CASH/JPE/GROWTH) context is present, treat it as the authoritative financial heartbeat for Owner/Admin questions about invoiced revenue, cash collected, known gross/cash profit, outstanding receivables, unexplained cash, and growth jobs required. Completeness verified/provisional/incomplete/unavailable must be stated honestly — incomplete or unavailable is never zero. Do not invent alternative accounting math. ` +
+      `When Entity resolution context is present, follow its status exactly: unique → use that record; ambiguous → ask which match; none → say you cannot find it. Never invent customers, jobs, invoices, payments, or vehicles. ` +
+      `Company preferences (tone/notes) are stable brand/company context groundwork only — not live financial truth and not Creative Studio campaign generation. ` +
       `When Finance Intelligence context is present, use only the real cash flow, profitability, receivables, expense, budget, forecast, and risk data shown below. The Finance Controller Agent analyzes invoices, payments, jobs, and procurement data — never invent financial records, balances, or forecasts. All finance action drafts and recommendations require explicit user approval before execution. No automatic payments, refunds, reminders, or accounting changes. ` +
+      `Communications remain Draft → Approve → Execute — never claim a customer message was sent without approval. ` +
       `When Knowledge & Learning context is present, use only user-created knowledge articles, SOPs, training courses, and policies shown below — never invent documentation, SOPs, training material, or policies. All knowledge article drafts require explicit user approval before publish. No autonomous knowledge publishing. Permission-aware search applies to restricted content. ` +
       `When Business Intelligence context is present, use only the real KPI, dashboard, report metadata, insight, and forecast data shown below — never invent analytics, KPIs, dashboards, reports, or predictions. Business reports follow Draft → Approval → Generate; no autonomous report generation. Insights and forecasts are generated only on explicit API requests from historical tenant data. ` +
       `Agent profiles and operational agents can analyze business data, score candidates, and draft recommendations — never claim agents run autonomously, hire candidates, send messages, or modify records without explicit user approval. ` +
@@ -2270,8 +2390,14 @@ export function buildSystemPrompt(context: AuraGenerateContext): string {
     `Company profile:\n${profileLines.join('\n')}\n\n` +
     (crmSection ? `CRM context:\n${crmSection}\n\n` : '') +
     (jobsSection ? `Jobs context:\n${jobsSection}\n\n` : '') +
+    (entityResolutionSection
+      ? `Entity resolution (never invent records):\n${entityResolutionSection}\n\n`
+      : '') +
     (schedulingSection ? `Scheduling context:\n${schedulingSection}\n\n` : '') +
     (financeSection ? `Finance context:\n${financeSection}\n\n` : '') +
+    (ownerFinanceTruthSection
+      ? `Owner finance truth (FIN/CASH/JPE/GROWTH):\n${ownerFinanceTruthSection}\n\n`
+      : '') +
     (financeIntelligenceSection ? `Finance intelligence:\n${financeIntelligenceSection}\n\n` : '') +
     (knowledgeSection ? `Knowledge & learning:\n${knowledgeSection}\n\n` : '') +
     (businessIntelligenceSection
@@ -2371,6 +2497,8 @@ export function buildSystemPrompt(context: AuraGenerateContext): string {
     (recruitingSection ? `Recruiting context:\n${recruitingSection}\n\n` : '') +
     (intelligenceSection ? `Business intelligence:\n${intelligenceSection}\n\n` : '') +
     (memorySection ? `Company memory:\n${memorySection}\n\n` : '') +
+    (businessRulesSection ? `Business rules:\n${businessRulesSection}\n\n` : '') +
+    (dayPlanSection ? `Today's plan:\n${dayPlanSection}\n\n` : '') +
     (recommendationsSection ? `Recommendations:\n${recommendationsSection}\n\n` : '') +
     (analyticsSection ? `Analytics:\n${analyticsSection}\n\n` : '') +
     (mobileSection ? `Mobile context:\n${mobileSection}\n\n` : '') +

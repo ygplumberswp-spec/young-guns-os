@@ -114,7 +114,7 @@ export function ScheduleJobForm({ accessToken, jobs, onScheduled }: ScheduleJobF
       />
 
       <Input
-        label="End (optional)"
+        label="End (Optional)"
         type="datetime-local"
         value={scheduledEndAt}
         onChange={(event) => setScheduledEndAt(event.target.value)}

@@ -1,16 +1,29 @@
 import { FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { useParams } from 'wouter';
 import { Button, EmptyState, Input, PageHeader, Panel } from '@titan/ui';
-import type { JobWorkflowAction, MobileJobExecutionWorkspace } from '@titan/shared';
+import type {
+  JobMaterialSource,
+  JobWorkflowAction,
+  MobileJobExecutionWorkspace,
+  MobileTimeEntrySummary,
+  MobileWorkforceInventoryCentre,
+  TechnicianCompletionChecklist,
+} from '@titan/shared';
 import { requiredChecklistForJobType } from '@titan/shared';
 import {
   MobileApiClientError,
   completeMobileJobGated,
+  createMobileDirectCost,
   createMobileJobVariation,
-  createMobileTimeEntry,
+  fetchActiveMobileTimeEntries,
+  fetchMobileCaptureChecklist,
+  startMobileTimedEntry,
+  stopMobileTimeEntry,
+  fetchMobileInventory,
   fetchMobileJobWorkspace,
   newClientActionId,
   recordMobileMaterialLine,
+  returnMobileMaterialLine,
   transitionMobileJob,
   uploadMobileJobEvidence,
 } from '../../lib/mobile-api-client';
@@ -24,8 +37,10 @@ import {
   readCachedMobileWorkspace,
   type OfflineQueuedAction,
 } from '../../lib/mobile-offline-queue';
+import { evaluateMobileCompletionSubmit } from '../../lib/mobile-offline-completion';
 import { SignaturePad } from '../../features/jobs/SignaturePad';
 import { useAuth } from '../../lib/auth-context';
+import { ReportExportActions } from '../../features/reports/ReportExportActions';
 
 async function fileToBase64(file: File): Promise<string> {
   const buffer = await file.arrayBuffer();
@@ -72,6 +87,10 @@ export function MobileJobDetailPage() {
   const [note, setNote] = useState('');
   const [materialDesc, setMaterialDesc] = useState('');
   const [materialQty, setMaterialQty] = useState('1');
+  const [materialItemId, setMaterialItemId] = useState('');
+  const [materialLocationId, setMaterialLocationId] = useState('');
+  const [materialSource, setMaterialSource] = useState<JobMaterialSource>('vehicle_stock');
+  const [inventoryCentre, setInventoryCentre] = useState<MobileWorkforceInventoryCentre | null>(null);
   const [variationTitle, setVariationTitle] = useState('');
   const [variationCondition, setVariationCondition] = useState('');
   const [variationExplanation, setVariationExplanation] = useState('');
@@ -93,6 +112,13 @@ export function MobileJobDetailPage() {
   const [isOnline, setIsOnline] = useState(
     typeof navigator === 'undefined' ? true : navigator.onLine,
   );
+  const [activeJobTimeId, setActiveJobTimeId] = useState<string | null>(null);
+  const [captureChecklist, setCaptureChecklist] = useState<TechnicianCompletionChecklist | null>(null);
+  const [expenseCategory, setExpenseCategory] = useState('consumables');
+  const [expenseDesc, setExpenseDesc] = useState('');
+  const [expenseNotes, setExpenseNotes] = useState('');
+  const [returnQtyByLine, setReturnQtyByLine] = useState<Record<string, string>>({});
+  const [returnReasonByLine, setReturnReasonByLine] = useState<Record<string, string>>({});
   const [offlineActions, setOfflineActions] = useState<OfflineQueuedAction[]>([]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const pendingPhaseRef = useRef<'before' | 'during' | 'after' | 'document'>('before');
@@ -105,8 +131,21 @@ export function MobileJobDetailPage() {
   const reload = useCallback(async () => {
     if (!accessToken || !jobId) return;
     try {
-      const data = await fetchMobileJobWorkspace(accessToken, jobId);
+      const [data, inventory] = await Promise.all([
+        fetchMobileJobWorkspace(accessToken, jobId),
+        fetchMobileInventory(accessToken).catch(() => null),
+      ]);
       setWorkspace(data);
+      if (inventory) setInventoryCentre(inventory);
+      const activeEntries = await fetchActiveMobileTimeEntries(accessToken).catch(
+        (): MobileTimeEntrySummary[] => [],
+      );
+      const openForJob = activeEntries.find(
+        (entry) => entry.entryType === 'job_time' && entry.jobId === jobId,
+      );
+      setActiveJobTimeId(openForJob?.id ?? null);
+      const checklistData = await fetchMobileCaptureChecklist(accessToken, jobId).catch(() => null);
+      setCaptureChecklist(checklistData);
       await cacheMobileWorkspaceSnapshot(jobId, data as unknown as Record<string, unknown>);
       const keys = requiredChecklistForJobType(data.jobType);
       setChecklist((prev) => {
@@ -231,22 +270,47 @@ export function MobileJobDetailPage() {
     setBusy(true);
     setError(null);
     try {
+      const clientActionId = newClientActionId('time-start');
       if (!navigator.onLine) {
         await enqueueOfflineAction({
-          clientActionId: newOfflineClientActionId('time'),
+          clientActionId,
           actionType: 'time_entry',
           jobId,
-          payload: { entryType: 'job_time', notes: 'On-site labour' },
+          payload: { entryType: 'job_time', notes: 'On-site labour', clientActionId, start: true },
         });
         await refreshOffline();
-        setMessage('Labour entry queued offline');
+        setMessage('Labour start queued offline');
         return;
       }
-      await createMobileTimeEntry(accessToken, { entryType: 'job_time', jobId, notes: 'On-site labour' });
+      const entry = await startMobileTimedEntry(accessToken, {
+        entryType: 'job_time',
+        jobId,
+        notes: 'On-site labour',
+        clientActionId,
+      });
+      setActiveJobTimeId(entry.id);
       await reload();
       setMessage('Labour timer started');
     } catch (err) {
       setError(err instanceof MobileApiClientError ? err.message : 'Unable to start labour');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleStopLabour() {
+    if (!accessToken || !activeJobTimeId || busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await stopMobileTimeEntry(accessToken, activeJobTimeId, {
+        clientActionId: newClientActionId('time-stop'),
+      });
+      setActiveJobTimeId(null);
+      await reload();
+      setMessage('Labour timer stopped and locked');
+    } catch (err) {
+      setError(err instanceof MobileApiClientError ? err.message : 'Unable to stop labour');
     } finally {
       setBusy(false);
     }
@@ -393,6 +457,23 @@ export function MobileJobDetailPage() {
   async function handleMaterial(event: FormEvent) {
     event.preventDefault();
     if (!accessToken || !jobId || busy) return;
+
+    const needsStock = materialSource === 'vehicle_stock' || materialSource === 'warehouse_stock';
+    if (needsStock && (!materialItemId || !materialLocationId)) {
+      setError('Select an inventory item and stock location for vehicle/warehouse use');
+      return;
+    }
+
+    const payload = {
+      description: materialDesc.trim(),
+      quantity: Number(materialQty) || 1,
+      unit: 'ea',
+      materialSource,
+      inventoryItemId: materialItemId || null,
+      locationId: materialLocationId || null,
+      requestOnly: true,
+    };
+
     setBusy(true);
     setError(null);
     try {
@@ -401,29 +482,123 @@ export function MobileJobDetailPage() {
           clientActionId: newOfflineClientActionId('material'),
           actionType: 'material_line',
           jobId,
-          payload: {
-            description: materialDesc.trim(),
-            quantity: Number(materialQty) || 1,
-            unit: 'ea',
-            materialSource: 'vehicle_stock',
-          },
+          payload,
         });
         setMaterialDesc('');
+        setMaterialItemId('');
+        setMaterialLocationId('');
         await refreshOffline();
-        setMessage('Material recorded offline — pending sync');
+        setMessage('Material requested offline — pending sync and office approval');
         return;
       }
-      await recordMobileMaterialLine(accessToken, jobId, {
-        description: materialDesc.trim(),
-        quantity: Number(materialQty) || 1,
-        unit: 'ea',
-        materialSource: 'vehicle_stock',
-      });
+      await recordMobileMaterialLine(accessToken, jobId, payload);
       setMaterialDesc('');
+      setMaterialItemId('');
+      setMaterialLocationId('');
       await reload();
-      setMessage('Material recorded (stock decrement deferred to INV-008)');
+      setMessage('Material requested — stock decrements when office approves');
     } catch (err) {
       setError(err instanceof MobileApiClientError ? err.message : 'Unable to record material');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleExpense(event: FormEvent) {
+    event.preventDefault();
+    if (!accessToken || !jobId || busy) return;
+    const description = expenseDesc.trim();
+    if (!description) {
+      setError('Expense description is required');
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      await createMobileDirectCost(accessToken, jobId, {
+        category: expenseCategory,
+        description,
+        amountCents: null,
+        notes: expenseNotes.trim() || 'Cost pending finance review',
+      });
+      setExpenseDesc('');
+      setExpenseNotes('');
+      await reload();
+      setMessage('Expense recorded — finance will confirm cost if needed');
+    } catch (err) {
+      setError(err instanceof MobileApiClientError ? err.message : 'Unable to record expense');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleExpenseReceipt(file: File | null) {
+    if (!accessToken || !jobId || !file || busy) return;
+    const description = expenseDesc.trim() || file.name;
+    setBusy(true);
+    setError(null);
+    setUploadProgress(`Uploading receipt ${file.name}…`);
+    try {
+      const dataBase64 = await fileToBase64(file);
+      const clientActionId = newClientActionId('expense-receipt');
+      const documentation = await uploadMobileJobEvidence(accessToken, jobId, {
+        documentationType: 'document',
+        title: `Receipt — ${description}`,
+        mimeType: file.type || 'application/pdf',
+        dataBase64,
+        fileName: file.name,
+        evidencePhase: 'document',
+        metadata: {
+          kind: 'expense_receipt',
+          capturedAt: new Date().toISOString(),
+          originalName: file.name,
+          sizeBytes: file.size,
+        },
+        clientActionId,
+      });
+      await createMobileDirectCost(accessToken, jobId, {
+        category: expenseCategory,
+        description,
+        amountCents: null,
+        receiptDocumentId: documentation.id,
+        notes: expenseNotes.trim() || null,
+        clientActionId: `${clientActionId}-cost`,
+      });
+      setExpenseDesc('');
+      setExpenseNotes('');
+      setUploadProgress(null);
+      await reload();
+      setMessage('Expense and receipt captured');
+    } catch (err) {
+      setUploadProgress(null);
+      setError(err instanceof MobileApiClientError ? err.message : 'Unable to upload receipt');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleMaterialReturn(materialLineId: string) {
+    if (!accessToken || !jobId || busy) return;
+    const quantity = Number(returnQtyByLine[materialLineId]);
+    const reason = (returnReasonByLine[materialLineId] ?? '').trim();
+    if (!quantity || quantity <= 0) {
+      setError('Enter a valid return quantity');
+      return;
+    }
+    if (!reason) {
+      setError('Return reason is required');
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      await returnMobileMaterialLine(accessToken, jobId, materialLineId, { quantity, reason });
+      setReturnQtyByLine((prev) => ({ ...prev, [materialLineId]: '' }));
+      setReturnReasonByLine((prev) => ({ ...prev, [materialLineId]: '' }));
+      await reload();
+      setMessage('Material return recorded');
+    } catch (err) {
+      setError(err instanceof MobileApiClientError ? err.message : 'Unable to return material');
     } finally {
       setBusy(false);
     }
@@ -455,18 +630,23 @@ export function MobileJobDetailPage() {
   async function handleComplete(event: FormEvent) {
     event.preventDefault();
     if (!accessToken || !jobId || busy || !workspace) return;
-    if (hasUnsyncedEvidence(offlineActions, jobId)) {
-      setError(
-        'Required evidence is still Offline/Pending/Failed. Sync must succeed before completion can appear successful.',
-      );
-      return;
-    }
-    if (!signatureDocId && !completeForm.signatureUnavailableReason.trim()) {
-      setError('Capture a signature or provide a mandatory unavailable reason');
-      return;
-    }
-    if (!navigator.onLine) {
-      setError('Final completion requires a live connection after required evidence is synced');
+    const gate = evaluateMobileCompletionSubmit({
+      jobId,
+      offlineActions,
+      signatureDocId,
+      signatureUnavailableReason: completeForm.signatureUnavailableReason,
+      isOnline: navigator.onLine,
+    });
+    if (!gate.allowed) {
+      if (gate.reason === 'unsynced_evidence') {
+        setError(
+          'Required evidence is still Offline/Pending/Failed. Sync must succeed before completion can appear successful.',
+        );
+      } else if (gate.reason === 'missing_signature') {
+        setError('Capture a signature or provide a mandatory unavailable reason');
+      } else {
+        setError('Final completion requires a live connection after required evidence is synced');
+      }
       return;
     }
     setBusy(true);
@@ -515,7 +695,7 @@ export function MobileJobDetailPage() {
   if (isLoading) return <p className="page-muted">Loading job workspace…</p>;
   if (error && !workspace) return <p className="form-error">{error}</p>;
   if (!workspace) {
-    return <EmptyState title="Job not found" description="This job is not assigned to you." />;
+    return <EmptyState title="Job Not Found" description="This job is not assigned to you." />;
   }
 
   const primaryActions = workspace.availableActions.filter((a) =>
@@ -616,7 +796,7 @@ export function MobileJobDetailPage() {
         ) : null}
       </Panel>
 
-      <Panel title="Work description">
+      <Panel title="Work Description">
         <p>{workspace.workInstructions ?? '—'}</p>
         {workspace.customerVisibleNotes ? (
           <p className="page-muted">Customer-visible: {workspace.customerVisibleNotes}</p>
@@ -624,7 +804,7 @@ export function MobileJobDetailPage() {
         {workspace.internalNotes ? <p className="page-muted">Internal: {workspace.internalNotes}</p> : null}
       </Panel>
 
-      <Panel title="Crew & vehicle">
+      <Panel title="Crew & Vehicle">
         <ul className="portal-list">
           {workspace.crew.map((member) => (
             <li key={member.id}>
@@ -655,6 +835,19 @@ export function MobileJobDetailPage() {
               <li key={item}>{item.replace(/_/g, ' ')}</li>
             ))}
           </ul>
+        </Panel>
+      ) : null}
+
+      {accessToken && jobId ? (
+        <Panel title="Job report">
+          <ReportExportActions
+            accessToken={accessToken}
+            kind="job"
+            resourceId={jobId}
+            label="Assigned job report"
+            reportNumber={workspace.jobNumber}
+            disabled={busy}
+          />
         </Panel>
       ) : null}
 
@@ -734,9 +927,15 @@ export function MobileJobDetailPage() {
       </Panel>
 
       <Panel title="Labour" description={`Crew total ${labourTotal} min`}>
-        <Button type="button" disabled={busy} onClick={() => void handleStartLabour()}>
-          Start my labour
-        </Button>
+        {activeJobTimeId ? (
+          <Button type="button" disabled={busy} onClick={() => void handleStopLabour()}>
+            Stop my labour
+          </Button>
+        ) : (
+          <Button type="button" disabled={busy} onClick={() => void handleStartLabour()}>
+            Start my labour
+          </Button>
+        )}
         <ul className="portal-list" style={{ marginTop: '0.75rem' }}>
           {workspace.laborTimeEntries.map((entry) => (
             <li key={entry.id}>
@@ -764,8 +963,58 @@ export function MobileJobDetailPage() {
             onChange={(e) => setMaterialQty(e.target.value)}
             required
           />
+          <label className="titan-input-group">
+            <span className="titan-input-label">Source</span>
+            <select
+              className="titan-input"
+              value={materialSource}
+              onChange={(e) => setMaterialSource(e.target.value as JobMaterialSource)}
+            >
+              <option value="vehicle_stock">Vehicle stock</option>
+              <option value="warehouse_stock">Warehouse stock</option>
+              <option value="supplier_purchase">Other material / supplier purchase</option>
+              <option value="customer_supplied">Customer supplied</option>
+            </select>
+          </label>
+          {materialSource === 'vehicle_stock' || materialSource === 'warehouse_stock' ? (
+            <>
+              <label className="titan-input-group">
+                <span className="titan-input-label">Inventory item</span>
+                <select
+                  className="titan-input"
+                  value={materialItemId}
+                  onChange={(e) => setMaterialItemId(e.target.value)}
+                  required
+                >
+                  <option value="">Select item</option>
+                  {(inventoryCentre?.catalogItems ?? []).map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.sku ? `${item.sku} — ` : ''}
+                      {item.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="titan-input-group">
+                <span className="titan-input-label">Stock location</span>
+                <select
+                  className="titan-input"
+                  value={materialLocationId}
+                  onChange={(e) => setMaterialLocationId(e.target.value)}
+                  required
+                >
+                  <option value="">Select location</option>
+                  {(inventoryCentre?.locations ?? []).map((location) => (
+                    <option key={location.id} value={location.id}>
+                      {location.name} ({location.locationType})
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </>
+          ) : null}
           <Button type="submit" disabled={busy}>
-            Record vehicle stock use
+            Request material use
           </Button>
         </form>
         <ul className="portal-list">
@@ -775,14 +1024,37 @@ export function MobileJobDetailPage() {
               <span>
                 {line.quantity} {line.unit} · {line.materialSource.replace(/_/g, ' ')} ·{' '}
                 {line.status.replace(/_/g, ' ')}
+                {line.inventoryItemName ? ` · ${line.inventoryItemName}` : ''}
+                {line.locationName ? ` @ ${line.locationName}` : ''}
                 {line.rejectionReason ? ` · ${line.rejectionReason}` : ''}
               </span>
+              {['used', 'partially_fulfilled', 'approved'].includes(line.status) ? (
+                <div className="jobs-form" style={{ marginTop: '0.5rem' }}>
+                  <Input
+                    label="Return qty"
+                    value={returnQtyByLine[line.id] ?? ''}
+                    onChange={(e) =>
+                      setReturnQtyByLine((prev) => ({ ...prev, [line.id]: e.target.value }))
+                    }
+                  />
+                  <Input
+                    label="Return reason"
+                    value={returnReasonByLine[line.id] ?? ''}
+                    onChange={(e) =>
+                      setReturnReasonByLine((prev) => ({ ...prev, [line.id]: e.target.value }))
+                    }
+                  />
+                  <Button type="button" disabled={busy} onClick={() => void handleMaterialReturn(line.id)}>
+                    Return material
+                  </Button>
+                </div>
+              ) : null}
             </li>
           ))}
         </ul>
       </Panel>
 
-      <Panel title="Variation (pending approval)">
+      <Panel title="Variation (Pending Approval)">
         <form className="jobs-form" onSubmit={(e) => void handleVariation(e)}>
           <Input
             label="Title"
@@ -791,7 +1063,7 @@ export function MobileJobDetailPage() {
             required
           />
           <Input
-            label="Site condition"
+            label="Site Condition"
             value={variationCondition}
             onChange={(e) => setVariationCondition(e.target.value)}
             required
@@ -820,7 +1092,81 @@ export function MobileJobDetailPage() {
         </ul>
       </Panel>
 
-      <Panel title="Completion gate">
+      <Panel title="Expenses / Receipts" description="Job-specific costs with optional receipt evidence">
+        <form className="jobs-form" onSubmit={(e) => void handleExpense(e)}>
+          <label className="titan-input-group">
+            <span className="titan-input-label">Category</span>
+            <select
+              className="titan-input"
+              value={expenseCategory}
+              onChange={(e) => setExpenseCategory(e.target.value)}
+            >
+              <option value="consumables">Consumables</option>
+              <option value="fuel">Fuel</option>
+              <option value="parking">Parking</option>
+              <option value="toll">Toll</option>
+              <option value="delivery">Delivery</option>
+              <option value="equipment_hire">Equipment hire</option>
+              <option value="subcontractor">Subcontractor</option>
+              <option value="other">Other</option>
+            </select>
+          </label>
+          <Input
+            label="Description"
+            value={expenseDesc}
+            onChange={(e) => setExpenseDesc(e.target.value)}
+            required
+          />
+          <Input
+            label="Notes (optional)"
+            value={expenseNotes}
+            onChange={(e) => setExpenseNotes(e.target.value)}
+          />
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <Button type="submit" disabled={busy}>
+              Add expense
+            </Button>
+            <label className="titan-button titan-button--secondary" style={{ cursor: busy ? 'not-allowed' : 'pointer' }}>
+              Upload receipt
+              <input
+                type="file"
+                accept="image/*,application/pdf"
+                hidden
+                disabled={busy}
+                onChange={(e) => {
+                  const file = e.target.files?.[0] ?? null;
+                  e.target.value = '';
+                  void handleExpenseReceipt(file);
+                }}
+              />
+            </label>
+          </div>
+        </form>
+      </Panel>
+
+      <Panel title="Financial capture checklist" description="Operational readiness before completion">
+        {captureChecklist ? (
+          <ul className="portal-list">
+            {captureChecklist.items.map((item) => (
+              <li key={item.key}>
+                <strong>
+                  {item.status === 'ok' ? '✓' : item.status === 'not_applicable' ? '—' : '⚠'} {item.label}
+                </strong>
+                <span>{item.detail}</span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="page-muted">Loading capture status…</p>
+        )}
+        {captureChecklist && captureChecklist.warningCount > 0 ? (
+          <p className="page-muted">
+            {captureChecklist.warningCount} item(s) need attention — you can still complete the job.
+          </p>
+        ) : null}
+      </Panel>
+
+      <Panel title="Completion Gate">
         <p className="page-muted">
           {workspace.completionGate.canComplete
             ? 'Evidence looks ready — fill declaration to complete.'
@@ -850,13 +1196,13 @@ export function MobileJobDetailPage() {
             />
           </label>
           <Input
-            label="Site condition"
+            label="Site Condition"
             value={completeForm.siteCondition}
             onChange={(e) => setCompleteForm((prev) => ({ ...prev, siteCondition: e.target.value }))}
             required
           />
           <Input
-            label="Customer / site representative"
+            label="Customer / Site Representative"
             value={completeForm.customerRepName}
             onChange={(e) =>
               setCompleteForm((prev) => ({ ...prev, customerRepName: e.target.value }))
@@ -864,7 +1210,7 @@ export function MobileJobDetailPage() {
             required
           />
           <Input
-            label="Signer role / relationship"
+            label="Signer Role / Relationship"
             value={completeForm.signerRole}
             onChange={(e) => setCompleteForm((prev) => ({ ...prev, signerRole: e.target.value }))}
           />
@@ -887,7 +1233,7 @@ export function MobileJobDetailPage() {
             {signatureDocId ? 'Signature stored' : 'Save signature evidence'}
           </Button>
           <Input
-            label="Signature unavailable reason (mandatory if no signature)"
+            label="Signature Unavailable Reason (Mandatory If No Signature)"
             value={completeForm.signatureUnavailableReason}
             onChange={(e) =>
               setCompleteForm((prev) => ({
@@ -925,7 +1271,7 @@ export function MobileJobDetailPage() {
             </p>
           </label>
           <Input
-            label="Outstanding defect / follow-up"
+            label="Outstanding Defect / Follow-Up"
             value={completeForm.outstandingDefects}
             onChange={(e) =>
               setCompleteForm((prev) => ({ ...prev, outstandingDefects: e.target.value }))
@@ -960,7 +1306,7 @@ export function MobileJobDetailPage() {
       </Panel>
 
       {workspace.propertyHistory.length > 0 ? (
-        <Panel title="Property history">
+        <Panel title="Property History">
           <ul className="portal-list">
             {workspace.propertyHistory.map((item) => (
               <li key={item.id}>

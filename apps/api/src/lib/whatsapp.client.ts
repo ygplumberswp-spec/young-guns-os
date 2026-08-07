@@ -10,10 +10,27 @@ export class WhatsappError extends Error {
   constructor(
     public readonly code: string,
     message: string,
+    public readonly httpStatus?: number,
   ) {
     super(message);
     this.name = 'WhatsappError';
   }
+}
+
+/** Strip bearer tokens / long opaque secrets from provider error text. */
+export function redactWhatsappSecretMaterial(message: string): string {
+  return message
+    .replace(/Bearer\s+[A-Za-z0-9._\-]+/gi, 'Bearer [REDACTED]')
+    .replace(/\bEA[A-Za-z0-9]{20,}\b/g, '[REDACTED_TOKEN]')
+    .replace(/\baccess_token=[^&\s]+/gi, 'access_token=[REDACTED]');
+}
+
+export function mapWhatsappHttpStatusToErrorCode(status: number): string {
+  if (status === 401) return 'AUTH_EXPIRED';
+  if (status === 403) return 'FORBIDDEN';
+  if (status === 429) return 'RATE_LIMITED';
+  if (status >= 500) return 'PROVIDER_ERROR';
+  return 'API_ERROR';
 }
 
 type WhatsappClientConfig = {
@@ -163,9 +180,12 @@ export class WhatsappClient {
     };
 
     if (!response.ok) {
+      const raw =
+        payload.error?.message ?? `WhatsApp API request failed (${response.status})`;
       throw new WhatsappError(
-        'API_ERROR',
-        payload.error?.message ?? `WhatsApp API request failed (${response.status})`,
+        mapWhatsappHttpStatusToErrorCode(response.status),
+        redactWhatsappSecretMaterial(raw),
+        response.status,
       );
     }
 

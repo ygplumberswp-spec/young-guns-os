@@ -1,0 +1,87 @@
+{
+  "label": "YG-CUTOVER-001A",
+  "title": "Safe user removal + test account cleanup controls",
+  "verdict": "PASS — safe user lifecycle management complete",
+  "branch": "cursor/yg-cutover-001a-user-lifecycle-663e",
+  "pr": "https://github.com/ygplumberswp-spec/young-guns-os/pull/46",
+  "completedAt": "2026-08-07T16:55:00.000Z",
+  "scope": {
+    "invite": true,
+    "changeRole": true,
+    "suspendDeactivate": true,
+    "reactivate": true,
+    "removeAccess": true,
+    "hardDeleteWhenSafe": true
+  },
+  "architecture": {
+    "sharedContract": "packages/shared/src/team-user-lifecycle.ts",
+    "safeDeleteChecker": "apps/api/src/services/user-safe-delete.ts",
+    "teamService": "apps/api/src/services/team.service.ts",
+    "routes": [
+      "PATCH /team/members/:id/status",
+      "POST /team/members/:id/remove-access",
+      "GET /team/members/:id/delete-eligibility",
+      "DELETE /team/members/:id"
+    ],
+    "ui": "apps/web/src/pages/settings/TeamSettingsPage.tsx Actions menu",
+    "sessionGate": "AuthService.validateSession requires users.isActive"
+  },
+  "safeDeleteRule": {
+    "refusalMessage": "This user has business history and cannot be permanently deleted. Deactivate access instead.",
+    "checks": [
+      "ASSIGNED_OR_COMPLETED_JOBS",
+      "TIME_ENTRIES",
+      "JOB_CARDS_OR_DOCUMENTATION",
+      "DOCUMENTS",
+      "COMMUNICATIONS",
+      "FINANCIAL_RECORDS",
+      "APPROVALS",
+      "AUDIT_SENSITIVE_HISTORY",
+      "WORKFORCE_PROFILE_HISTORY"
+    ],
+    "confirmation": "email_or_display_name"
+  },
+  "ownerProtection": [
+    "self-suspend/self-delete denied",
+    "last active Company Owner cannot be suspended/removed/deleted",
+    "Technician/Client lack users:manage",
+    "cross-tenant denied via companyId-scoped member lookup"
+  ],
+  "stagingTestUserInventory": {
+    "autoDeletePerformed": 0,
+    "status": "blocked_no_credentials_advisory_only",
+    "artifact": "diagnostic-output/yg-cutover-001a-user-lifecycle-inventory.json",
+    "script": "packages/db/scripts/yg-cutover-001a-user-lifecycle-inventory.mjs",
+    "classifications": {
+      "canonical Company Owner": "REQUIRED_FOR_TEST_HARNESS",
+      "RBAC Accountant-251": "UNKNOWN",
+      "RBAC Dispatcher-251": "UNKNOWN",
+      "Owner Smoke": "UNKNOWN",
+      "Tech Smoke": "UNKNOWN",
+      "Owner Test": "UNKNOWN",
+      "Tech Test": "UNKNOWN",
+      "Client Test": "UNKNOWN"
+    },
+    "note": "UNKNOWN accounts become SAFE_TO_DELETE or MUST_DEACTIVATE only after Owner-approved live dependency audit. Never auto-deleted."
+  },
+  "gates": {
+    "sharedLifecycleTests": "3 pass",
+    "apiLifecycleTests": "11 pass",
+    "authTests": "24 pass",
+    "apiTypecheck": "pass",
+    "webTypecheck": "pass",
+    "sharedTypecheck": "pass",
+    "apiBuild": "pass",
+    "webBuild": "pass"
+  },
+  "productionCleanlinessRequirement": "Production must contain 0 dummy/smoke/RBAC test accounts. This phase does not touch production.",
+  "safety": {
+    "productionTouched": 0,
+    "productionMigrationDeploy": 0,
+    "usersAutoDeleted": 0,
+    "canonicalOwnerDeleted": 0,
+    "financeModified": 0,
+    "fakeUsersCreated": 0,
+    "businessHistoryDeleted": 0
+  }
+}

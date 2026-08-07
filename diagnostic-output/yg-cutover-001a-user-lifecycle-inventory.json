@@ -1,0 +1,72 @@
+{
+  "label": "YG-CUTOVER-001A-user-lifecycle-inventory",
+  "status": "blocked_no_credentials",
+  "companyId": "095aef76-fef5-4139-af37-a42f2d7e2faf",
+  "auditedAt": null,
+  "note": "DATABASE_URL unavailable — advisory classification only. No users deleted. Owner must run packages/db/scripts/yg-cutover-001a-user-lifecycle-inventory.mjs against staging to promote UNKNOWN → SAFE_TO_DELETE or MUST_DEACTIVATE.",
+  "advisoryInventory": [
+    {
+      "displayName": "canonical Company Owner",
+      "classification": "REQUIRED_FOR_TEST_HARNESS",
+      "rationale": "Canonical Young Guns Company Owner — protected. Never hard-delete; required for tenant ownership and cutover.",
+      "autoDeleteAllowed": false,
+      "ownerApprovalRequired": false
+    },
+    {
+      "displayName": "RBAC Accountant-251",
+      "classification": "UNKNOWN",
+      "rationale": "Staging RBAC smoke label. Candidate for hard delete only after Owner approval and a passing safe-delete dependency check; otherwise deactivate.",
+      "autoDeleteAllowed": false,
+      "ownerApprovalRequired": true
+    },
+    {
+      "displayName": "RBAC Dispatcher-251",
+      "classification": "UNKNOWN",
+      "rationale": "Staging RBAC smoke label. Candidate for hard delete only after Owner approval and a passing safe-delete dependency check; otherwise deactivate.",
+      "autoDeleteAllowed": false,
+      "ownerApprovalRequired": true
+    },
+    {
+      "displayName": "Owner Smoke",
+      "classification": "UNKNOWN",
+      "rationale": "Smoke Owner account. If it is not the last/canonical Owner and has zero business history, SAFE_TO_DELETE after Owner approval; else MUST_DEACTIVATE.",
+      "autoDeleteAllowed": false,
+      "ownerApprovalRequired": true
+    },
+    {
+      "displayName": "Tech Smoke",
+      "classification": "UNKNOWN",
+      "rationale": "Smoke Technician. Hard delete only when dependency checks pass; otherwise deactivate to preserve attribution.",
+      "autoDeleteAllowed": false,
+      "ownerApprovalRequired": true
+    },
+    {
+      "displayName": "Owner Test",
+      "classification": "UNKNOWN",
+      "rationale": "Test Owner account. Protect if it is the last active Company Owner; otherwise audit history before any delete.",
+      "autoDeleteAllowed": false,
+      "ownerApprovalRequired": true
+    },
+    {
+      "displayName": "Tech Test",
+      "classification": "UNKNOWN",
+      "rationale": "Test Technician. Likely has Job Card / time history in staging — expect MUST_DEACTIVATE until proven clean.",
+      "autoDeleteAllowed": false,
+      "ownerApprovalRequired": true
+    },
+    {
+      "displayName": "Client Test",
+      "classification": "UNKNOWN",
+      "rationale": "Test Client. Portal/customer linkage may block hard delete; deactivate when history exists.",
+      "autoDeleteAllowed": false,
+      "ownerApprovalRequired": true
+    }
+  ],
+  "liveMatches": [],
+  "autoDeletePerformed": 0,
+  "safety": {
+    "productionTouched": 0,
+    "mutations": 0,
+    "usersDeleted": 0
+  }
+}

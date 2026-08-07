@@ -471,7 +471,7 @@ async function main() {
       hub.status === 200 &&
       gmail?.capabilityState === 'not_implemented' &&
       typeof gmail?.capabilityLabel === 'string' &&
-      gmail.capabilityLabel.includes('NOT IMPLEMENTED') &&
+      /not implemented/i.test(gmail.capabilityLabel) &&
       gmail.canConnect === false &&
       gmail.canSend === false
     ) {
@@ -483,7 +483,7 @@ async function main() {
     if (
       n8n?.capabilityState === 'not_implemented' &&
       typeof n8n?.capabilityLabel === 'string' &&
-      n8n.capabilityLabel.includes('NOT IMPLEMENTED') &&
+      /not implemented/i.test(n8n.capabilityLabel) &&
       n8n.canConnect === false &&
       n8n.canSend === false
     ) {

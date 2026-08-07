@@ -94,16 +94,16 @@ export type AuraGenerateContext = {
     invoiceCount: number;
     paymentCount: number;
     recentQuotes: Array<{
+      id: string;
       quoteNumber: string;
-      title: string;
       status: string;
       customerName: string;
       amountCents: number;
       currency: string;
     }>;
     recentInvoices: Array<{
+      id: string;
       invoiceNumber: string;
-      title: string;
       status: string;
       customerName: string;
       amountCents: number;
@@ -742,6 +742,38 @@ export type AuraGenerateContext = {
       importance: number;
     }>;
   };
+  dayPlanning?: {
+    planDate: string;
+    planCount: number;
+    plans: Array<{
+      content: string;
+      category: string | null;
+      status: string;
+      planDate: string;
+    }>;
+  };
+  dayPlan?: {
+    planDate: string;
+    priorityCount: number;
+    priorities: Array<{
+      priorityText: string;
+      department: string | null;
+      status: string;
+      planDate: string;
+    }>;
+  };
+  businessRules?: {
+    ruleCount: number;
+    rules: Array<{
+      name: string;
+      instruction: string;
+      ruleType: string;
+      category: string;
+      department: string | null;
+      assignedAgentRole: string | null;
+      approvalRequired: boolean;
+    }>;
+  };
   recommendations?: {
     count: number;
     items: Array<{
@@ -940,6 +972,47 @@ export type AuraGenerateContext = {
       highlights: string[];
     };
     summary: string;
+  };
+  /**
+   * AURA-TRAIN-001 — Entity resolution result (never guess when ambiguous/none).
+   */
+  entityResolution?: {
+    status: 'none' | 'unique' | 'ambiguous';
+    query: string;
+    match?: { id: string; label: string; kind: 'customer' | 'job' | 'invoice' | 'vehicle' | 'payment' };
+    candidates?: Array<{
+      id: string;
+      label: string;
+      kind: 'customer' | 'job' | 'invoice' | 'vehicle' | 'payment';
+    }>;
+    guidance: string;
+  };
+  /**
+   * AURA-TRAIN-001 — FIN-001/CASH/JPE/GROWTH compact truth.
+   * Prefer this over invented finance narratives when present.
+   */
+  ownerFinanceTruth?: {
+    authority: 'FIN-001/CASH-001/JPE/GROWTH-001';
+    completeness: 'verified' | 'provisional' | 'incomplete' | 'unavailable';
+    completenessReasons: string[];
+    period: string;
+    currency: string;
+    invoicedRevenueCents: number;
+    customerCashCollectedCents: number;
+    knownGrossProfitCents: number | null;
+    knownRealisedCashProfitCents: number;
+    outstandingCustomerCashCents: number;
+    moneyInCents: number;
+    moneyOutCents: number;
+    unexplainedDebitCents: number;
+    lossJobsCount: number;
+    overdueReceivableCents: number;
+    growthJobsRequired: number | null;
+    growthStatus: string | null;
+    profitableJobsCount: number | null;
+    summary: string;
+    sourceTrace: string[];
+    note: string;
   };
   financeIntelligence?: {
     cashFlow: {

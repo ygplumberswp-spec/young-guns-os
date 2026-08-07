@@ -1,0 +1,104 @@
+{
+  "label": "MOBILE-001",
+  "generatedAt": "2026-08-07T15:35:34.294Z",
+  "outDir": "/opt/cursor/artifacts/mobile-001",
+  "results": [
+    {
+      "surface": "harness",
+      "name": "desktop-1920",
+      "width": 1920,
+      "height": 1080,
+      "file": "harness-desktop-1920.png",
+      "innerWidth": 1920,
+      "scrollWidth": 1920,
+      "overflow": false
+    },
+    {
+      "surface": "harness",
+      "name": "laptop-1366",
+      "width": 1366,
+      "height": 768,
+      "file": "harness-laptop-1366.png",
+      "innerWidth": 1366,
+      "scrollWidth": 1366,
+      "overflow": false
+    },
+    {
+      "surface": "harness",
+      "name": "tablet-landscape-1024",
+      "width": 1024,
+      "height": 768,
+      "file": "harness-tablet-landscape-1024.png",
+      "innerWidth": 1024,
+      "scrollWidth": 1024,
+      "overflow": false
+    },
+    {
+      "surface": "harness",
+      "name": "tablet-portrait-768",
+      "width": 768,
+      "height": 1024,
+      "file": "harness-tablet-portrait-768.png",
+      "innerWidth": 768,
+      "scrollWidth": 768,
+      "overflow": false
+    },
+    {
+      "surface": "harness",
+      "name": "mobile-large-430",
+      "width": 430,
+      "height": 932,
+      "file": "harness-mobile-large-430.png",
+      "innerWidth": 430,
+      "scrollWidth": 430,
+      "overflow": false
+    },
+    {
+      "surface": "harness",
+      "name": "mobile-standard-390",
+      "width": 390,
+      "height": 844,
+      "file": "harness-mobile-standard-390.png",
+      "innerWidth": 390,
+      "scrollWidth": 390,
+      "overflow": false
+    },
+    {
+      "surface": "harness",
+      "name": "mobile-narrow-360",
+      "width": 360,
+      "height": 800,
+      "file": "harness-mobile-narrow-360.png",
+      "innerWidth": 360,
+      "scrollWidth": 360,
+      "overflow": false
+    },
+    {
+      "surface": "harness-nav-open",
+      "width": 390,
+      "height": 844,
+      "file": "harness-mobile-nav-open.png"
+    },
+    {
+      "surface": "staging-login",
+      "name": "staging-login-desktop",
+      "width": 1440,
+      "height": 900,
+      "file": "staging-login-desktop.png",
+      "ok": true
+    },
+    {
+      "surface": "staging-login",
+      "name": "staging-login-phone",
+      "width": 390,
+      "height": 844,
+      "file": "staging-login-phone.png",
+      "ok": true
+    },
+    {
+      "surface": "harness-pixel5",
+      "file": "harness-pixel5.png"
+    }
+  ],
+  "note": "Harness proves phone order (AURA=1), menu drawer, no horizontal overflow, sticky composer. Authenticated product screenshots require Owner session."
+}

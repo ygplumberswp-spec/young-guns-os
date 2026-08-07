@@ -1,5 +1,6 @@
+import { PageHeader } from '../../components/ux';
 import { useEffect, useMemo, useState } from 'react';
-import { Button, EmptyState, PageHeader, Panel, StatCard } from '@titan/ui';
+import { Button, EmptyState, Panel, StatCard } from '@titan/ui';
 import type { EnterpriseProductionReadinessDashboard } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import {
@@ -188,7 +189,7 @@ export function OperationsPage() {
       {isLoading ? (
         <Panel title="Loading">Loading operations dashboard…</Panel>
       ) : !dashboard ? (
-        <EmptyState title="No data" description="Operations dashboard is unavailable." />
+        <EmptyState title="No Data" description="Operations dashboard is unavailable." />
       ) : (
         <>
           <Panel title="Operations Summary">
@@ -260,13 +261,13 @@ export function OperationsPage() {
                     value={String(dashboard.performance.memoryUsageMb ?? '—')}
                   />
                   <StatCard
-                    label="AI Latency (ms)"
+                    label="AI Latency (Ms)"
                     value={String(dashboard.performance.aiProviderLatencyMs ?? '—')}
                   />
                 </div>
               ) : (
                 <EmptyState
-                  title="No performance snapshot"
+                  title="No Performance Snapshot"
                   description="Capture a performance snapshot to record real metrics."
                 />
               )}
@@ -304,7 +305,7 @@ export function OperationsPage() {
             <Panel title="Multi-AI Provider Operations">
               {dashboard.aiProviders.length === 0 ? (
                 <EmptyState
-                  title="No configured providers"
+                  title="No Configured Providers"
                   description="Configure AI providers in AI Orchestration."
                 />
               ) : (
@@ -368,7 +369,7 @@ export function OperationsPage() {
               ) : null}
               {dashboard.recentLogs.length === 0 ? (
                 <EmptyState
-                  title="No log entries"
+                  title="No Log Entries"
                   description="Sync logs to index failover events and workflow failures."
                 />
               ) : (
@@ -408,7 +409,7 @@ export function OperationsPage() {
                 ) : null}
                 {dashboard.backupPolicies.length === 0 ? (
                   <EmptyState
-                    title="No backup policies"
+                    title="No Backup Policies"
                     description="Create backup policies — no demo backups are seeded."
                   />
                 ) : (
@@ -432,11 +433,11 @@ export function OperationsPage() {
               <Panel title="Recovery Objectives">
                 <div className="stat-grid">
                   <StatCard
-                    label="RPO (minutes)"
+                    label="RPO (Minutes)"
                     value={String(dashboard.platformConfig.recoveryPointObjectiveMinutes ?? '—')}
                   />
                   <StatCard
-                    label="RTO (minutes)"
+                    label="RTO (Minutes)"
                     value={String(dashboard.platformConfig.recoveryTimeObjectiveMinutes ?? '—')}
                   />
                   <StatCard
@@ -460,7 +461,7 @@ export function OperationsPage() {
                 </p>
                 {dashboard.recentBackupRuns.length === 0 ? (
                   <EmptyState
-                    title="No backup runs"
+                    title="No Backup Runs"
                     description="Backup runs appear here after policies are enabled and executed."
                   />
                 ) : (
@@ -535,7 +536,7 @@ export function OperationsPage() {
               ) : null}
               {!dashboard.latestReadinessRun ? (
                 <EmptyState
-                  title="No readiness run"
+                  title="No Readiness Run"
                   description="Run readiness checks to evaluate production configuration."
                 />
               ) : (
@@ -583,7 +584,7 @@ export function OperationsPage() {
               ) : null}
               {dashboard.maintenanceActions.length === 0 ? (
                 <EmptyState
-                  title="No maintenance actions"
+                  title="No Maintenance Actions"
                   description="Maintenance follows Draft → Approval → Execution."
                 />
               ) : (

@@ -31,17 +31,17 @@ export const SALES_OPPORTUNITY_STATUS_OPTIONS: Array<{
   { value: 'open', label: 'Open' },
   { value: 'won', label: 'Won' },
   { value: 'lost', label: 'Lost' },
-  { value: 'on_hold', label: 'On hold' },
+  { value: 'on_hold', label: 'On Hold' },
 ];
 
 export const SALES_OPPORTUNITY_TYPE_OPTIONS: Array<{ value: SalesOpportunityType; label: string }> =
   [
-    { value: 'recurring_service', label: 'Recurring service' },
-    { value: 'unconverted_quote', label: 'Unconverted quote' },
-    { value: 'incomplete_work', label: 'Incomplete work' },
-    { value: 'maintenance_due', label: 'Maintenance due' },
-    { value: 'high_value_customer', label: 'High value customer' },
-    { value: 'follow_up', label: 'Follow-up' },
+    { value: 'recurring_service', label: 'Recurring Service' },
+    { value: 'unconverted_quote', label: 'Unconverted Quote' },
+    { value: 'incomplete_work', label: 'Incomplete Work' },
+    { value: 'maintenance_due', label: 'Maintenance Due' },
+    { value: 'high_value_customer', label: 'High Value Customer' },
+    { value: 'follow_up', label: 'Follow-Up' },
     { value: 'custom', label: 'Custom' },
   ];
 
@@ -49,8 +49,8 @@ export const SALES_ACTIVITY_TYPE_OPTIONS: Array<{ value: SalesActivityType; labe
   { value: 'call', label: 'Call' },
   { value: 'email', label: 'Email' },
   { value: 'meeting', label: 'Meeting' },
-  { value: 'follow_up', label: 'Follow-up' },
-  { value: 'quote_sent', label: 'Quote sent' },
+  { value: 'follow_up', label: 'Follow-Up' },
+  { value: 'quote_sent', label: 'Quote Sent' },
   { value: 'note', label: 'Note' },
   { value: 'other', label: 'Other' },
 ];

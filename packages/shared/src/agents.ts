@@ -130,6 +130,10 @@ export const AGENT_REGISTRY: AgentRegistryEntry[] = [
       'read_intelligence_dashboard',
       'read_analytics_dashboard',
       'read_analytics_profitability',
+      'read_owner_financial_command',
+      'read_cash_control',
+      'read_profit_analytics',
+      'read_growth_planner',
       'read_customer_analytics',
       'read_business_kpis',
       'read_business_dashboard',
@@ -277,6 +281,10 @@ export const AGENT_REGISTRY: AgentRegistryEntry[] = [
       'read_payments',
       'read_recommendations',
       'analyze_cash_flow',
+      'read_owner_financial_command',
+      'read_cash_control',
+      'read_profit_analytics',
+      'read_growth_planner',
       'read_analytics_dashboard',
       'read_analytics_profitability',
       'read_cashflow_context',
@@ -3316,6 +3324,44 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
     description: 'Execute an active workflow manually; approval-gated steps pause until approved.',
     category: 'automation',
     requiredPermissions: ['automation:write'],
+    executable: true,
+    // AURA-TRAIN-001: consequential execute must never auto-run from model tool selection.
+    requiresApproval: true,
+  },
+  {
+    toolKey: 'read_owner_financial_command',
+    name: 'Read Owner Financial Command (FIN-001)',
+    description:
+      'Read FIN-001 Owner Financial Command heartbeat/cash/receivables from CASH+JPE authorities. Never invent figures. Technician/Client forbidden.',
+    category: 'finance',
+    requiredPermissions: ['finance:read'],
+    executable: true,
+  },
+  {
+    toolKey: 'read_cash_control',
+    name: 'Read Cash Control (CASH-001)',
+    description:
+      'Read CASH-001 money in/out and completeness. No bank connection ≠ zero spending. Technician/Client forbidden.',
+    category: 'finance',
+    requiredPermissions: ['finance:read'],
+    executable: true,
+  },
+  {
+    toolKey: 'read_profit_analytics',
+    name: 'Read Job Profit Analytics (JPE)',
+    description:
+      'Read JPE known job profitability. Missing costs ≠ 100% profit. Technician/Client forbidden.',
+    category: 'finance',
+    requiredPermissions: ['finance:read'],
+    executable: true,
+  },
+  {
+    toolKey: 'read_growth_planner',
+    name: 'Read Growth Planner (GROWTH-001)',
+    description:
+      'Read GROWTH-001 target/jobs-required status from live planner authority. Technician/Client forbidden.',
+    category: 'finance',
+    requiredPermissions: ['finance:read'],
     executable: true,
   },
   {

@@ -116,6 +116,8 @@ export class AgentRuntimeError extends Error {
 type TenantScope = {
   companyId: string;
   userId: string;
+  roleName?: string;
+  permissions?: string[];
 };
 
 type AgentRuntimeDeps = {
@@ -202,6 +204,10 @@ type AgentRuntimeDeps = {
   enterpriseReleaseManagementService: import('./enterprise-release-management.service.js').EnterpriseReleaseManagementService;
   aiProviderResilienceService: AiProviderResilienceService;
   automationService: AutomationService;
+  ownerFinancialCommandService?: import('./owner-financial-command.service.js').OwnerFinancialCommandService;
+  growthPlannerService?: import('./growth-planner.service.js').GrowthPlannerService;
+  cashControlService?: import('./cash-control.service.js').CashControlService;
+  profitAnalyticsService?: import('./profit-analytics.service.js').ProfitAnalyticsService;
 };
 
 type ResolvedAgent = {
@@ -766,6 +772,157 @@ export class AgentRuntimeService {
             totalOutstandingCents: dashboard.outstandingInvoices.totalOutstandingCents,
           },
         };
+      }
+      case 'read_owner_financial_command': {
+        if (!this.deps.ownerFinancialCommandService) {
+          return {
+            toolKey,
+            success: false,
+            summary: 'Owner Financial Command service is unavailable.',
+            data: { completeness: 'unavailable' },
+          };
+        }
+        const actor = {
+          companyId: scope.companyId,
+          userId: scope.userId,
+          roleName: scope.roleName ?? 'Owner',
+          permissions: userPermissions,
+        };
+        const { buildAuraOwnerFinanceTruthContext } = await import('./aura-owner-finance-truth.js');
+        const truth = await buildAuraOwnerFinanceTruthContext({
+          actor,
+          ownerFinancialCommandService: this.deps.ownerFinancialCommandService,
+          growthPlannerService:
+            this.deps.growthPlannerService ??
+            ({
+              getPlan: async () => {
+                throw new Error('growth unavailable');
+              },
+            } as never),
+        });
+        if (!truth) {
+          return {
+            toolKey,
+            success: false,
+            summary: 'Owner finance truth denied for this role (Technician/Client blocked).',
+            data: { completeness: 'unavailable', denied: true },
+          };
+        }
+        return {
+          toolKey,
+          success: true,
+          summary: truth.summary,
+          data: truth,
+        };
+      }
+      case 'read_cash_control': {
+        if (!this.deps.cashControlService) {
+          return {
+            toolKey,
+            success: false,
+            summary: 'Cash Control service is unavailable.',
+            data: { completeness: 'unavailable' },
+          };
+        }
+        const actor = {
+          companyId: scope.companyId,
+          userId: scope.userId,
+          roleName: scope.roleName ?? 'Owner',
+          permissions: userPermissions,
+        };
+        try {
+          const summary = await this.deps.cashControlService.getSummary(actor);
+          const moneyInCents =
+            summary.monthToDate.moneyIn.customerCashCollectedCents +
+            summary.monthToDate.moneyIn.otherClassifiedMoneyInCents;
+          const moneyOutCents =
+            summary.monthToDate.moneyOut.directJobCashOutCents +
+            summary.monthToDate.moneyOut.overheadCashOutCents +
+            summary.monthToDate.moneyOut.otherClassifiedMoneyOutCents;
+          return {
+            toolKey,
+            success: true,
+            summary: `Cash control ${summary.completeness}; known money in ${(moneyInCents / 100).toFixed(2)}; known money out ${(moneyOutCents / 100).toFixed(2)}. No bank connection is not zero spending.`,
+            data: summary,
+          };
+        } catch (error) {
+          return {
+            toolKey,
+            success: false,
+            summary:
+              error instanceof Error ? error.message : 'Cash Control denied or unavailable.',
+            data: { completeness: 'unavailable' },
+          };
+        }
+      }
+      case 'read_profit_analytics': {
+        if (!this.deps.profitAnalyticsService) {
+          return {
+            toolKey,
+            success: false,
+            summary: 'Profit Analytics service is unavailable.',
+            data: { completeness: 'unavailable' },
+          };
+        }
+        const actor = {
+          companyId: scope.companyId,
+          userId: scope.userId,
+          roleName: scope.roleName ?? 'Owner',
+          permissions: userPermissions,
+        };
+        try {
+          const dashboard = await this.deps.profitAnalyticsService.getDashboard(actor, {
+            period: 'month',
+          });
+          return {
+            toolKey,
+            success: true,
+            summary: `JPE profit analytics loaded for ${dashboard.overview.period}. Missing costs ≠ 100% profit.`,
+            data: dashboard,
+          };
+        } catch (error) {
+          return {
+            toolKey,
+            success: false,
+            summary:
+              error instanceof Error ? error.message : 'Profit analytics denied or unavailable.',
+            data: { completeness: 'unavailable' },
+          };
+        }
+      }
+      case 'read_growth_planner': {
+        if (!this.deps.growthPlannerService) {
+          return {
+            toolKey,
+            success: false,
+            summary: 'Growth Planner service is unavailable.',
+            data: { completeness: 'unavailable' },
+          };
+        }
+        const actor = {
+          companyId: scope.companyId,
+          userId: scope.userId,
+          roleName: scope.roleName ?? 'Owner',
+          permissions: userPermissions,
+        };
+        try {
+          const monthKey = new Date().toISOString().slice(0, 7);
+          const plan = await this.deps.growthPlannerService.getPlan(actor, monthKey);
+          return {
+            toolKey,
+            success: true,
+            summary: `Growth planner ${plan.status}; jobs required ${plan.requiredOutput.jobsRequired ?? 'unavailable'}.`,
+            data: plan,
+          };
+        } catch (error) {
+          return {
+            toolKey,
+            success: false,
+            summary:
+              error instanceof Error ? error.message : 'Growth planner denied or unavailable.',
+            data: { completeness: 'unavailable' },
+          };
+        }
       }
       case 'read_analytics_dashboard': {
         const dashboard = await this.deps.analyticsService.getDashboard(scope.companyId, {
@@ -8411,7 +8568,11 @@ export class AgentRuntimeService {
 function detectAgentKey(request: string): AgentKey {
   const lower = request.toLowerCase();
 
-  if (/invoice|payment|owe|revenue|finance|xero|unpaid|balance/.test(lower)) {
+  if (
+    /invoice|payment|owe|revenue|finance|xero|unpaid|balance|cash|budget|operating profit|gross profit|growth planner|on track/.test(
+      lower,
+    )
+  ) {
     return 'finance';
   }
 

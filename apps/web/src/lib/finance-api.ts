@@ -4,6 +4,10 @@ import type {
   CreatePaymentRequest,
   CreateQuoteRequest,
   CreateQuoteVersionRequest,
+  FinanceCatalogueItemSearchResult,
+  FinanceCustomerSearchResult,
+  FinanceDocumentPreviewInput,
+  FinanceDocumentPreviewModel,
   FinanceListQuery,
   FinanceStats,
   InvoiceDetail,
@@ -13,9 +17,10 @@ import type {
   PaymentSummary,
   QuoteDetail,
   QuoteSummary,
+  UpdateInvoiceRequest,
   UpdateQuoteRequest,
 } from '@titan/shared';
-import { request } from './api-client';
+import { request, requestBlob } from './api-client';
 
 function toQuery(query?: FinanceListQuery): string {
   if (!query) return '';
@@ -30,6 +35,30 @@ function toQuery(query?: FinanceListQuery): string {
 
 export async function fetchFinanceStats(accessToken: string): Promise<FinanceStats> {
   return request<FinanceStats>('/finance/stats', { accessToken });
+}
+
+export async function searchFinanceCustomers(
+  accessToken: string,
+  query: string,
+): Promise<FinanceCustomerSearchResult[]> {
+  const params = new URLSearchParams({ q: query });
+  const data = await request<{ customers: FinanceCustomerSearchResult[] }>(
+    `/finance/customers/search?${params.toString()}`,
+    { accessToken },
+  );
+  return data.customers;
+}
+
+export async function searchFinanceCatalogue(
+  accessToken: string,
+  query: string,
+): Promise<FinanceCatalogueItemSearchResult[]> {
+  const params = new URLSearchParams({ q: query });
+  const data = await request<{ items: FinanceCatalogueItemSearchResult[] }>(
+    `/finance/catalogue/search?${params.toString()}`,
+    { accessToken },
+  );
+  return data.items;
 }
 
 export async function fetchQuotes(
@@ -107,6 +136,19 @@ export async function createInvoiceFromQuote(
   return data.invoice;
 }
 
+export async function createInvoiceFromJob(
+  accessToken: string,
+  jobId: string,
+  body: CreateInvoiceFromQuoteRequest,
+): Promise<InvoiceSummary> {
+  const data = await request<{ invoice: InvoiceSummary }>(`/finance/jobs/${jobId}/invoices`, {
+    method: 'POST',
+    accessToken,
+    body,
+  });
+  return data.invoice;
+}
+
 export async function fetchInvoices(
   accessToken: string,
   query?: FinanceListQuery,
@@ -130,6 +172,19 @@ export async function createInvoice(
 ): Promise<InvoiceSummary> {
   const data = await request<{ invoice: InvoiceSummary }>('/finance/invoices', {
     method: 'POST',
+    accessToken,
+    body,
+  });
+  return data.invoice;
+}
+
+export async function updateInvoice(
+  accessToken: string,
+  invoiceId: string,
+  body: UpdateInvoiceRequest,
+): Promise<InvoiceDetail> {
+  const data = await request<{ invoice: InvoiceDetail }>(`/finance/invoices/${invoiceId}`, {
+    method: 'PATCH',
     accessToken,
     body,
   });
@@ -174,4 +229,63 @@ export async function fetchJobFinanceSummary(
     { accessToken },
   );
   return data.summary;
+}
+
+export async function previewFinanceDocument(
+  accessToken: string,
+  body: FinanceDocumentPreviewInput,
+): Promise<FinanceDocumentPreviewModel> {
+  const data = await request<{ preview: FinanceDocumentPreviewModel }>('/finance/documents/preview', {
+    method: 'POST',
+    accessToken,
+    body,
+  });
+  return data.preview;
+}
+
+export type FinanceDocumentPdfPreview = {
+  blob: Blob;
+  filename: string;
+};
+
+export async function previewFinanceDocumentPdf(
+  accessToken: string,
+  body: FinanceDocumentPreviewInput,
+): Promise<FinanceDocumentPdfPreview> {
+  const blob = await requestBlob('/finance/documents/preview/pdf', {
+    method: 'POST',
+    accessToken,
+    body,
+    timeoutMs: 60_000,
+    headers: { 'Content-Type': 'application/json', Accept: 'application/pdf' },
+  });
+
+  if (blob.type && blob.type !== 'application/pdf') {
+    throw new Error('Preview did not return a PDF document');
+  }
+
+  const filename =
+    body.kind === 'quote' ? 'YGP-Draft-Quote.pdf' : 'YGP-Draft-Invoice.pdf';
+
+  return { blob, filename };
+}
+
+export async function fetchJobCostControlQueue(
+  accessToken: string,
+): Promise<import('@titan/shared').JobCostControlQueue> {
+  const data = await request<{ queue: import('@titan/shared').JobCostControlQueue }>(
+    '/finance/job-cost-control',
+    { accessToken },
+  );
+  return data.queue;
+}
+
+export async function fetchJobLinkageControlQueue(
+  accessToken: string,
+): Promise<import('@titan/shared').JobLinkageControlQueue> {
+  const data = await request<{ queue: import('@titan/shared').JobLinkageControlQueue }>(
+    '/finance/job-linkage-control',
+    { accessToken },
+  );
+  return data.queue;
 }

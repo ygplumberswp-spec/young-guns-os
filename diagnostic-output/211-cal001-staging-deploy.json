@@ -1,0 +1,73 @@
+{
+  "label": "CAL-001-211-staging-deploy",
+  "generatedAt": "2026-08-01T16:44:00.000Z",
+  "environment": "staging",
+  "productionTouched": false,
+  "frozenBaselineBranch": "cursor/titan-frozen-scope-completion",
+  "frozenBaselineSha": "60b482995b4d6298afccdc3047308ce83d1322e7",
+  "frozenBaselineMerged": false,
+  "targetBranch": "cursor/cal-001-scheduling-calendar",
+  "branchPushVerified": {
+    "requiredSha": "d3252dde4f0d27f5a08e3a2b7c7e1538a8ebd3a3",
+    "originHeadAtVerify": "d3252dde4f0d27f5a08e3a2b7c7e1538a8ebd3a3",
+    "pushed": true
+  },
+  "cal001FeatureCommit": "d3252dde4f0d27f5a08e3a2b7c7e1538a8ebd3a3",
+  "deploySha": "020c2f1743302c02f16a66cd10b50e6a624f039c",
+  "deployShaNote": "Railway GitHub autodeploy picked branch HEAD (includes d3252dd CAL-001); not frozen baseline.",
+  "migration": {
+    "applied": true,
+    "stagingOnly": true,
+    "tag": "0117_scheduling_calendar",
+    "file": "packages/db/drizzle/0117_scheduling_calendar.sql",
+    "hash": "2bb00dee20d6756daae04fab113b800dbeb8d8f5eb46a9fe15a2a3263e8ca15c",
+    "status": "applied",
+    "tablesVerified": {
+      "company_scheduling_settings": true,
+      "scheduling_override_audits": true
+    },
+    "excludedMigrations": ["0107_whatsapp_contact_enrichment", "0109_xero_two_way_sync_scaffolding", "0110_supplier_price_intelligence"]
+  },
+  "deploy": {
+    "railwayAccount": "ygplumberswp@gmail.com",
+    "railwayProject": "sweet-victory",
+    "railwayEnvironment": "staging",
+    "services": [
+      {
+        "name": "young-guns-os",
+        "role": "api",
+        "url": "https://young-guns-os-staging.up.railway.app",
+        "branch": "cursor/cal-001-scheduling-calendar",
+        "commit": "020c2f1743302c02f16a66cd10b50e6a624f039c",
+        "deploymentId": "e4422c91-2cd8-47d1-aea6-2939d00abb02",
+        "status": "SUCCESS"
+      },
+      {
+        "name": "comfortable-determination",
+        "role": "web",
+        "url": "https://comfortable-determination-staging.up.railway.app",
+        "branch": "cursor/cal-001-scheduling-calendar",
+        "commit": "020c2f1743302c02f16a66cd10b50e6a624f039c",
+        "deploymentId": "97fcf53e-f010-490b-850e-4346f717bca8",
+        "status": "SUCCESS"
+      }
+    ]
+  },
+  "verify": {
+    "api_health_ready": {
+      "url": "https://young-guns-os-staging.up.railway.app/api/v1/health/ready",
+      "status": 200,
+      "database": "connected"
+    },
+    "web_scheduling": {
+      "url": "https://comfortable-determination-staging.up.railway.app/scheduling",
+      "status": 200
+    },
+    "scheduling_calendar_unauthenticated": {
+      "url": "https://young-guns-os-staging.up.railway.app/api/v1/scheduling/calendar",
+      "status": 401,
+      "expected": true
+    }
+  },
+  "overall": "PASS"
+}

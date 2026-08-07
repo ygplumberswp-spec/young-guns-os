@@ -71,16 +71,14 @@ export class EnterpriseDataMigrationExportService {
         }));
       case 'quote':
         return (await this.deps.financeService.listQuotes(companyId)).map((q) => ({
-          quoteNumber: q.quoteNumber,
-          title: q.title,
+          quoteNumber: q.displayQuoteNumber,
           customerName: q.customerName,
           amountCents: q.amountCents,
           status: q.status,
         }));
       case 'invoice':
         return (await this.deps.financeService.listInvoices(companyId)).map((i) => ({
-          invoiceNumber: i.invoiceNumber,
-          title: i.title,
+          invoiceNumber: i.displayOfficialInvoiceNumber,
           customerName: i.customerName,
           amountCents: i.amountCents,
           status: i.status,

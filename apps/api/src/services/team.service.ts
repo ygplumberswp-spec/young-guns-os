@@ -16,9 +16,44 @@ import {
   PLATFORM_OWNER_ROLE_NAME,
   type StaffIdentity,
 } from '@titan/auth';
-import type { CreateTeamInviteResponse, TeamInvite, TeamMember, TeamRole } from '@titan/shared';
+import {
+  matchesUserDeleteConfirmation,
+  USER_HARD_DELETE_REFUSED_MESSAGE,
+  type CreateTeamInviteResponse,
+  type TeamInvite,
+  type TeamMember,
+  type TeamRole,
+  type UserHardDeleteEligibility,
+} from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
-import { roles, securityAuditLogs, userInvites, users } from '@titan/db';
+import { roles, securityAuditLogs, sessions, userInvites, users } from '@titan/db';
+import { evaluateUserHardDeleteEligibility } from './user-safe-delete.js';
+
+function toTeamMember(
+  user: {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    roleId: string;
+    isActive: boolean;
+    lastLoginAt: Date | null;
+    createdAt: Date;
+  },
+  roleName: string,
+): TeamMember {
+  return {
+    id: user.id,
+    email: user.email,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    roleId: user.roleId,
+    roleName,
+    isActive: user.isActive,
+    lastLoginAt: user.lastLoginAt ? user.lastLoginAt.toISOString() : null,
+    createdAt: user.createdAt.toISOString(),
+  };
+}
 
 export class TeamError extends Error {
   constructor(
@@ -43,7 +78,7 @@ export class TeamService {
     private readonly appUrl: string,
   ) {}
 
-  async listMembers(companyId: string): Promise<TeamMember[]> {
+  async listMembers(companyId: string, actor?: ActorScope): Promise<TeamMember[]> {
     await this.ensureDefaultRoles(companyId);
 
     const members = await this.db.query.users.findMany({
@@ -52,17 +87,39 @@ export class TeamService {
       orderBy: [asc(users.createdAt)],
     });
 
-    return members.map((member) => ({
-      id: member.id,
-      email: member.email,
-      firstName: member.firstName,
-      lastName: member.lastName,
-      roleId: member.roleId,
-      roleName: member.role?.name ?? 'Unknown',
-      isActive: member.isActive,
-      lastLoginAt: member.lastLoginAt ? member.lastLoginAt.toISOString() : null,
-      createdAt: member.createdAt.toISOString(),
-    }));
+    const canManageLifecycle = Boolean(
+      actor &&
+        (actor.permissions.includes('users:manage') ||
+          actor.permissions.includes('*') ||
+          isCompanyOwnerRole(actor) ||
+          isPlatformOwnerRole(actor)),
+    );
+    const canAssignRoles = Boolean(
+      actor && (isCompanyOwnerRole(actor) || isPlatformOwnerRole(actor)),
+    );
+
+    return members.map((member) => {
+      const base = toTeamMember(member, member.role?.name ?? 'Unknown');
+      if (!canManageLifecycle || !actor) {
+        return base;
+      }
+
+      const isSelf = member.id === actor.userId;
+      return {
+        ...base,
+        lifecycle: {
+          canSuspend: !isSelf && member.isActive,
+          canReactivate: !isSelf && !member.isActive,
+          canRemoveAccess: !isSelf && member.isActive,
+          canEditRole: canAssignRoles && !isSelf,
+          // Hard-delete safety is resolved via DELETE eligibility endpoint / Actions menu.
+          canHardDelete: !isSelf,
+          hardDeleteRefusalMessage: isSelf
+            ? 'You cannot permanently delete your own account'
+            : null,
+        },
+      };
+    });
   }
 
   async listRoles(companyId: string): Promise<TeamRole[]> {
@@ -188,6 +245,18 @@ export class TeamService {
       createdAt: invite.createdAt.toISOString(),
     };
 
+    await this.writeLifecycleAudit({
+      companyId: scope.companyId,
+      actorUserId: scope.userId,
+      action: 'user_invited',
+      entityId: invite.id,
+      metadata: {
+        inviteEmail: normalizedEmail,
+        roleName: role.name,
+        roleId,
+      },
+    });
+
     return {
       invite: teamInvite,
       inviteUrl: `${this.appUrl.replace(/\/$/, '')}/auth/accept-invite?token=${token}`,
@@ -270,24 +339,10 @@ export class TeamService {
       throw new TeamError('SELF_LOCKOUT', 'You cannot suspend your own account');
     }
 
-    const member = await this.db.query.users.findFirst({
-      where: and(eq(users.id, memberId), eq(users.companyId, scope.companyId)),
-      with: { role: true },
-    });
-
-    if (!member) {
-      throw new TeamError('MEMBER_NOT_FOUND', 'Team member not found');
-    }
+    const member = await this.requireTenantMember(scope.companyId, memberId);
 
     if (!isActive && member.role?.name && isCompanyOwnerRoleName(member.role.name)) {
-      const activeOwners = await this.db.query.users.findMany({
-        where: and(eq(users.companyId, scope.companyId), eq(users.isActive, true)),
-        with: { role: true },
-      });
-
-      const ownerCount = activeOwners.filter(
-        (user) => user.role?.name && isCompanyOwnerRoleName(user.role.name),
-      ).length;
+      const ownerCount = await this.countActiveCompanyOwners(scope.companyId);
       if (ownerCount <= 1) {
         throw new TeamError('LAST_OWNER', 'Cannot suspend the last active Company Owner');
       }
@@ -295,7 +350,7 @@ export class TeamService {
 
     const [updated] = await this.db
       .update(users)
-      .set({ isActive })
+      .set({ isActive, updatedAt: new Date() })
       .where(eq(users.id, memberId))
       .returning();
 
@@ -303,17 +358,184 @@ export class TeamService {
       throw new TeamError('UPDATE_FAILED', 'Unable to update member status');
     }
 
-    return {
-      id: updated.id,
-      email: updated.email,
-      firstName: updated.firstName,
-      lastName: updated.lastName,
-      roleId: updated.roleId,
-      roleName: member.role?.name ?? 'Unknown',
-      isActive: updated.isActive,
-      lastLoginAt: updated.lastLoginAt ? updated.lastLoginAt.toISOString() : null,
-      createdAt: updated.createdAt.toISOString(),
-    };
+    if (!isActive) {
+      await this.revokeAllSessions(memberId, 'account_suspended');
+    }
+
+    await this.writeLifecycleAudit({
+      companyId: scope.companyId,
+      actorUserId: scope.userId,
+      action: isActive ? 'user_reactivated' : 'user_suspended',
+      entityId: memberId,
+      metadata: {
+        targetUserId: memberId,
+        targetEmail: member.email,
+        previousIsActive: member.isActive,
+        nextIsActive: isActive,
+      },
+    });
+
+    return this.toTeamMember(updated, member.role?.name ?? 'Unknown');
+  }
+
+  /**
+   * Remove access = deactivate + revoke sessions (offboarding language).
+   * Preserves the user row and all historical attribution.
+   */
+  async removeMemberAccess(scope: TenantScope, memberId: string): Promise<TeamMember> {
+    if (memberId === scope.userId) {
+      throw new TeamError('SELF_LOCKOUT', 'You cannot remove access from your own account');
+    }
+
+    const member = await this.requireTenantMember(scope.companyId, memberId);
+
+    if (member.role?.name && isCompanyOwnerRoleName(member.role.name)) {
+      const ownerCount = await this.countActiveCompanyOwners(scope.companyId);
+      if (ownerCount <= 1) {
+        throw new TeamError('LAST_OWNER', 'Cannot remove access from the last active Company Owner');
+      }
+    }
+
+    const [updated] = await this.db
+      .update(users)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(eq(users.id, memberId))
+      .returning();
+
+    if (!updated) {
+      throw new TeamError('UPDATE_FAILED', 'Unable to remove member access');
+    }
+
+    await this.revokeAllSessions(memberId, 'access_removed');
+
+    await this.writeLifecycleAudit({
+      companyId: scope.companyId,
+      actorUserId: scope.userId,
+      action: 'user_access_removed',
+      entityId: memberId,
+      metadata: {
+        targetUserId: memberId,
+        targetEmail: member.email,
+        previousIsActive: member.isActive,
+      },
+    });
+
+    return this.toTeamMember(updated, member.role?.name ?? 'Unknown');
+  }
+
+  async getMemberDeleteEligibility(
+    scope: TenantScope,
+    memberId: string,
+  ): Promise<UserHardDeleteEligibility> {
+    await this.requireTenantMember(scope.companyId, memberId);
+
+    if (memberId === scope.userId) {
+      return {
+        memberId,
+        companyId: scope.companyId,
+        canHardDelete: false,
+        blockers: [{ code: 'SELF_DELETE', label: 'Self-delete denied', count: 1 }],
+        refusalMessage: 'You cannot permanently delete your own account',
+        confirmationHint: 'email_or_display_name',
+      };
+    }
+
+    const member = await this.requireTenantMember(scope.companyId, memberId);
+    if (member.role?.name && isCompanyOwnerRoleName(member.role.name)) {
+      const ownerCount = await this.countActiveCompanyOwners(scope.companyId);
+      if (ownerCount <= 1) {
+        return {
+          memberId,
+          companyId: scope.companyId,
+          canHardDelete: false,
+          blockers: [{ code: 'LAST_OWNER', label: 'Last active Company Owner', count: 1 }],
+          refusalMessage: 'Cannot delete the last active Company Owner',
+          confirmationHint: 'email_or_display_name',
+        };
+      }
+    }
+
+    return evaluateUserHardDeleteEligibility(this.db, scope.companyId, memberId);
+  }
+
+  /**
+   * Permanent delete — only when demonstrably safe.
+   * Cross-tenant denied via companyId scoping on member lookup.
+   */
+  async hardDeleteMember(
+    scope: TenantScope,
+    memberId: string,
+    confirmation: string,
+  ): Promise<{ deleted: true; memberId: string }> {
+    if (memberId === scope.userId) {
+      throw new TeamError('SELF_DELETE', 'You cannot permanently delete your own account');
+    }
+
+    const member = await this.requireTenantMember(scope.companyId, memberId);
+
+    if (
+      !matchesUserDeleteConfirmation({
+        confirmation,
+        email: member.email,
+        firstName: member.firstName,
+        lastName: member.lastName,
+      })
+    ) {
+      throw new TeamError(
+        'CONFIRMATION_MISMATCH',
+        'Confirmation must match the user email or displayed name exactly',
+      );
+    }
+
+    if (member.role?.name && isCompanyOwnerRoleName(member.role.name)) {
+      const ownerCount = await this.countActiveCompanyOwners(scope.companyId);
+      if (ownerCount <= 1) {
+        throw new TeamError('LAST_OWNER', 'Cannot delete the last active Company Owner');
+      }
+    }
+
+    const eligibility = await evaluateUserHardDeleteEligibility(
+      this.db,
+      scope.companyId,
+      memberId,
+    );
+
+    if (!eligibility.canHardDelete) {
+      await this.writeLifecycleAudit({
+        companyId: scope.companyId,
+        actorUserId: scope.userId,
+        action: 'user_hard_delete_refused',
+        entityId: memberId,
+        metadata: {
+          targetUserId: memberId,
+          targetEmail: member.email,
+          blockers: eligibility.blockers.filter((b) => b.count > 0),
+        },
+      });
+      throw new TeamError(
+        'HARD_DELETE_REFUSED',
+        eligibility.refusalMessage ?? USER_HARD_DELETE_REFUSED_MESSAGE,
+      );
+    }
+
+    await this.revokeAllSessions(memberId, 'account_hard_deleted');
+
+    await this.writeLifecycleAudit({
+      companyId: scope.companyId,
+      actorUserId: scope.userId,
+      action: 'user_hard_deleted',
+      entityId: memberId,
+      metadata: {
+        targetUserId: memberId,
+        targetEmail: member.email,
+        targetName: `${member.firstName} ${member.lastName}`.trim(),
+        targetRoleName: member.role?.name ?? null,
+      },
+    });
+
+    await this.db.delete(users).where(and(eq(users.id, memberId), eq(users.companyId, scope.companyId)));
+
+    return { deleted: true, memberId };
   }
 
   /**
@@ -334,14 +556,7 @@ export class TeamService {
       );
     }
 
-    const member = await this.db.query.users.findFirst({
-      where: and(eq(users.id, memberId), eq(users.companyId, actor.companyId)),
-      with: { role: true },
-    });
-
-    if (!member) {
-      throw new TeamError('MEMBER_NOT_FOUND', 'Team member not found');
-    }
+    const member = await this.requireTenantMember(actor.companyId, memberId);
 
     const targetRole = await this.db.query.roles.findFirst({
       where: and(eq(roles.id, roleId), eq(roles.companyId, actor.companyId)),
@@ -362,13 +577,7 @@ export class TeamService {
       targetRole.name !== COMPANY_OWNER_ROLE_NAME &&
       targetRole.name !== PLATFORM_OWNER_ROLE_NAME
     ) {
-      const activeOwners = await this.db.query.users.findMany({
-        where: and(eq(users.companyId, actor.companyId), eq(users.isActive, true)),
-        with: { role: true },
-      });
-      const ownerCount = activeOwners.filter(
-        (user) => user.role?.name && isCompanyOwnerRoleName(user.role.name),
-      ).length;
+      const ownerCount = await this.countActiveCompanyOwners(actor.companyId);
       if (ownerCount <= 1) {
         throw new TeamError(
           'LAST_OWNER',
@@ -378,17 +587,7 @@ export class TeamService {
     }
 
     if (member.roleId === targetRole.id) {
-      return {
-        id: member.id,
-        email: member.email,
-        firstName: member.firstName,
-        lastName: member.lastName,
-        roleId: member.roleId,
-        roleName: member.role?.name ?? 'Unknown',
-        isActive: member.isActive,
-        lastLoginAt: member.lastLoginAt ? member.lastLoginAt.toISOString() : null,
-        createdAt: member.createdAt.toISOString(),
-      };
+      return this.toTeamMember(member, member.role?.name ?? 'Unknown');
     }
 
     const [updated] = await this.db
@@ -420,18 +619,58 @@ export class TeamService {
       },
     });
 
-    return {
-      id: updated.id,
-      email: updated.email,
-      firstName: updated.firstName,
-      lastName: updated.lastName,
-      roleId: updated.roleId,
-      roleName: targetRole.name,
-      isActive: updated.isActive,
-      lastLoginAt: updated.lastLoginAt ? updated.lastLoginAt.toISOString() : null,
-      createdAt: updated.createdAt.toISOString(),
-    };
+    return this.toTeamMember(updated, targetRole.name);
   }
+
+  private async requireTenantMember(companyId: string, memberId: string) {
+    const member = await this.db.query.users.findFirst({
+      where: and(eq(users.id, memberId), eq(users.companyId, companyId)),
+      with: { role: true },
+    });
+
+    if (!member) {
+      throw new TeamError('MEMBER_NOT_FOUND', 'Team member not found');
+    }
+
+    return member;
+  }
+
+  private async countActiveCompanyOwners(companyId: string): Promise<number> {
+    const activeOwners = await this.db.query.users.findMany({
+      where: and(eq(users.companyId, companyId), eq(users.isActive, true)),
+      with: { role: true },
+    });
+    return activeOwners.filter(
+      (user) => user.role?.name && isCompanyOwnerRoleName(user.role.name),
+    ).length;
+  }
+
+  private async revokeAllSessions(userId: string, reason: string): Promise<void> {
+    await this.db
+      .update(sessions)
+      .set({ revokedAt: new Date(), revokedReason: reason })
+      .where(and(eq(sessions.userId, userId), isNull(sessions.revokedAt)));
+  }
+
+  private async writeLifecycleAudit(input: {
+    companyId: string;
+    actorUserId: string;
+    action: string;
+    entityId: string;
+    metadata: Record<string, unknown>;
+  }): Promise<void> {
+    await this.db.insert(securityAuditLogs).values({
+      companyId: input.companyId,
+      category: 'authorization',
+      action: input.action,
+      entityType: 'user',
+      entityId: input.entityId,
+      userId: input.actorUserId,
+      metadata: input.metadata,
+    });
+  }
+
+  private toTeamMember = toTeamMember;
 }
 
 export { ADMIN_ROLE_NAME, MEMBER_ROLE_NAME, OWNER_ROLE_NAME };

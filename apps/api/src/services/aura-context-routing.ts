@@ -5,6 +5,7 @@ export type AuraContextDomain =
   | 'jobs'
   | 'scheduling'
   | 'finance'
+  | 'ownerFinance'
   | 'inventory'
   | 'fleet'
   | 'communications'
@@ -17,6 +18,7 @@ export type AuraContextDomain =
   | 'integrations'
   | 'intelligence'
   | 'memory'
+  | 'dayPlan'
   | 'analytics'
   | 'orchestration'
   | 'sales'
@@ -55,6 +57,7 @@ const ALL_DOMAINS: AuraContextDomain[] = [
   'jobs',
   'scheduling',
   'finance',
+  'ownerFinance',
   'inventory',
   'fleet',
   'communications',
@@ -67,6 +70,7 @@ const ALL_DOMAINS: AuraContextDomain[] = [
   'integrations',
   'intelligence',
   'memory',
+  'dayPlan',
   'analytics',
   'orchestration',
   'sales',
@@ -108,8 +112,19 @@ const KEYWORD_DOMAINS: Array<{ pattern: RegExp; domains: AuraContextDomain[] }> 
     domains: ['jobs', 'scheduling', 'dispatchIntelligence'],
   },
   {
-    pattern: /\b(invoice|payment|finance|accounting|xero|revenue|expense|profit)\b/i,
-    domains: ['finance', 'financeIntelligence', 'integrations'],
+    /** Calendar questions need the schedule plus the Google connection state to answer honestly. */
+    pattern: /\b(calendar|google calendar|diary|availability|free.?busy|double.?book|clash)\b/i,
+    domains: ['scheduling', 'jobs', 'integrations'],
+  },
+  {
+    pattern:
+      /\b(invoice|payment|finance|accounting|xero|revenue|expense|profit|cash|budget|growth planner|operating profit|gross profit|owe|outstanding|on track|revenue target)\b/i,
+    domains: ['finance', 'financeIntelligence', 'ownerFinance', 'integrations'],
+  },
+  {
+    pattern:
+      /\b(what needs my attention|how is the business|what happened today|biggest problems|are we on target)\b/i,
+    domains: ['ownerFinance', 'finance', 'jobs', 'executive', 'sales', 'fleet'],
   },
   { pattern: /\b(inventory|stock|parts|warehouse)\b/i, domains: ['inventory', 'procurement'] },
   {
@@ -155,6 +170,10 @@ const KEYWORD_DOMAINS: Array<{ pattern: RegExp; domains: AuraContextDomain[] }> 
   { pattern: /\b(quality|inspection|compliance)\b/i, domains: ['qualityAssurance'] },
   { pattern: /\b(asset|equipment|maintenance)\b/i, domains: ['assetEquipment'] },
   { pattern: /\b(recommend|insight|intelligence|memory)\b/i, domains: ['intelligence', 'memory'] },
+  {
+    pattern: /\b(today'?s plan|day plan|daily priorit|today'?s focus|today'?s priorit)\b/i,
+    domains: ['dayPlan', 'executive'],
+  },
   { pattern: /\b(procurement|purchase order|supplier|vendor)\b/i, domains: ['procurement'] },
   {
     pattern: /\b(saas|platform|developer)\b/i,

@@ -1,19 +1,22 @@
+import { PageHeader } from '../../components/ux';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useRoute } from 'wouter';
-import { Button, LoadingState, PageHeader, Panel } from '@titan/ui';
+import { Button, LoadingState, Panel } from '@titan/ui';
 import type { InvoiceStage, QuoteDetail } from '@titan/shared';
-import { formatMoney, INVOICE_STAGE_OPTIONS, QUOTE_STATUS_OPTIONS } from '@titan/shared';
+import { formatMoney, INVOICE_STAGE_OPTIONS, QUOTE_STATUS_OPTIONS, canEditQuote, canIssueQuote, nextQuoteApprovalAction } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import {
   createInvoiceFromQuote,
   createQuoteVersion,
   fetchQuote,
   issueQuote,
+  updateQuote,
 } from '../../lib/finance-api';
 import { useAuth } from '../../lib/auth-context';
 import { useStaffMutationInvalidation } from '../../lib/cache-invalidation';
 import { FinanceNav } from '../../features/finance/FinanceNav';
 import { canAccessFinance, canManageFinance, newFinanceClientActionId } from '../../features/finance/utils';
+import { useRecordRecentView } from '../../hooks/useRecordRecentView';
 
 function formatStatus(status: QuoteDetail['status']): string {
   return QUOTE_STATUS_OPTIONS.find((option) => option.value === status)?.label ?? status;
@@ -46,8 +49,21 @@ export function QuoteDetailPage() {
   const [invoiceNotes, setInvoiceNotes] = useState('');
   const [isConverting, setIsConverting] = useState(false);
 
+  const [isAdvancing, setIsAdvancing] = useState(false);
+
   const canView = useMemo(() => (user ? canAccessFinance(user.permissions) : false), [user]);
   const canWrite = useMemo(() => (user ? canManageFinance(user.permissions) : false), [user]);
+
+  useRecordRecentView(
+    quote
+      ? {
+          id: quote.id,
+          kind: 'quote',
+          title: quote.displayQuoteNumber,
+          href: `/finance/quotes/${quote.id}`,
+        }
+      : null,
+  );
 
   const loadQuote = useCallback(async () => {
     if (!accessToken || !quoteId) return;
@@ -90,7 +106,12 @@ export function QuoteDetailPage() {
   }
 
   if (isLoading) {
-    return <LoadingState label="Loading quote…" />;
+    return (
+      <div className="page-shell">
+        <PageHeader title="Quote" description="Quote detail" />
+        <LoadingState label="Loading Quote…" />
+      </div>
+    );
   }
 
   if (error && !quote) {
@@ -98,9 +119,6 @@ export function QuoteDetailPage() {
       <div className="finance-page">
         <PageHeader title="Quote" description="Quote detail" />
         <p className="form-error">{error}</p>
-        <Link href="/finance/quotes">
-          <Button variant="secondary">Back to quotes</Button>
-        </Link>
       </div>
     );
   }
@@ -110,10 +128,31 @@ export function QuoteDetailPage() {
   }
 
   const activeQuote = quote;
-  const canIssue = canWrite && !activeQuote.isImmutable && DRAFT_STATUSES.has(activeQuote.status);
+  const approvalAction = nextQuoteApprovalAction(activeQuote.status);
+  const showEdit = canWrite && canEditQuote(activeQuote);
+  const canIssue = canWrite && canIssueQuote(activeQuote);
   const canCreateVersion =
     canWrite && (activeQuote.isImmutable || !DRAFT_STATUSES.has(activeQuote.status));
   const canConvertToInvoice = canWrite && activeQuote.status === 'accepted';
+
+  async function handleAdvanceApproval() {
+    if (!accessToken || !approvalAction) return;
+    setIsAdvancing(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const updated = await updateQuote(accessToken, activeQuote.id, {
+        status: approvalAction.nextStatus,
+      });
+      setQuote(updated);
+      invalidateQuotes();
+      setSuccess(`${approvalAction.label} complete.`);
+    } catch (err) {
+      setError(err instanceof ApiClientError ? err.message : 'Unable to advance quote approval');
+    } finally {
+      setIsAdvancing(false);
+    }
+  }
 
   async function handleIssue() {
     if (!accessToken || !canIssue) return;
@@ -174,14 +213,18 @@ export function QuoteDetailPage() {
   }
 
   return (
-    <div className="finance-page">
+    <div className="finance-page finance-page--workspace">
       <PageHeader
-        title={`${quote.quoteNumber} · ${quote.title}`}
-        description={`Version ${quote.versionNumber}${quote.isImmutable ? ' · issued (immutable)' : ' · editable'}`}
+        title={quote.displayQuoteNumber}
+        description={`${quote.customerName} · Version ${quote.versionNumber}${quote.isImmutable ? ' · issued (immutable)' : ' · editable'}`}
         actions={
-          <Link href="/finance/quotes">
-            <Button variant="ghost">Back to quotes</Button>
-          </Link>
+          <div className="finance-panel-actions">
+            {showEdit ? (
+              <Link href={`/finance/quotes/${quote.id}/edit`}>
+                <Button variant="secondary">Edit Quote</Button>
+              </Link>
+            ) : null}
+          </div>
         }
       />
       <FinanceNav />
@@ -189,7 +232,7 @@ export function QuoteDetailPage() {
       {error ? <p className="form-error">{error}</p> : null}
       {success ? <p className="form-success">{success}</p> : null}
 
-      <div className="finance-detail">
+      <div className="finance-detail finance-detail--workspace">
         <Panel title="Summary">
           <dl className="finance-detail-list">
             <div>
@@ -248,6 +291,16 @@ export function QuoteDetailPage() {
 
           {canWrite ? (
             <div className="finance-panel-actions">
+              {approvalAction ? (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  disabled={isAdvancing}
+                  onClick={() => void handleAdvanceApproval()}
+                >
+                  {isAdvancing ? 'Updating…' : approvalAction.label}
+                </Button>
+              ) : null}
               {canIssue ? (
                 <Button type="button" disabled={isIssuing} onClick={() => void handleIssue()}>
                   {isIssuing ? 'Issuing…' : 'Issue quote'}
@@ -261,7 +314,7 @@ export function QuoteDetailPage() {
         </Panel>
 
         {(quote.scopeOfWork || quote.exclusions || quote.paymentTerms) ? (
-          <Panel title="Scope & terms">
+          <Panel title="Scope & Terms">
             <dl className="finance-detail-list">
               {quote.scopeOfWork ? (
                 <div>
@@ -285,9 +338,9 @@ export function QuoteDetailPage() {
           </Panel>
         ) : null}
 
-        <Panel title="Line items">
-          <div className="finance-table-wrap">
-            <table className="finance-table">
+        <Panel title="Line Items" className="finance-detail-panel--lines">
+          <div className="finance-table-wrap finance-table-wrap--workspace">
+            <table className="finance-table finance-table--workspace">
               <thead>
                 <tr>
                   <th>Description</th>
@@ -331,7 +384,7 @@ export function QuoteDetailPage() {
 
         {quote.profit ? (
           <Panel
-            title="Internal profit (not visible to customer)"
+            title="Internal Profit (Not Visible To Customer)"
             description={quote.profit.missingCostWarning ? 'Cost data is incomplete for this quote.' : undefined}
           >
             <dl className="finance-detail-list">
@@ -370,7 +423,7 @@ export function QuoteDetailPage() {
         ) : null}
 
         {quote.acceptance ? (
-          <Panel title="Acceptance evidence">
+          <Panel title="Acceptance Evidence">
             <dl className="finance-detail-list">
               <div>
                 <dt>Decision</dt>
@@ -406,7 +459,7 @@ export function QuoteDetailPage() {
 
         {canWrite && canCreateVersion ? (
           <Panel
-            title="Create new version"
+            title="Create New Version"
             description="Issued quotes are immutable. Create a new version to make changes."
           >
             <label className="titan-input-group">
@@ -432,7 +485,7 @@ export function QuoteDetailPage() {
         ) : null}
 
         {canConvertToInvoice ? (
-          <Panel title="Convert to invoice" description="Create an invoice from this accepted quote.">
+          <Panel title="Convert To Invoice" description="Create an invoice from this accepted quote.">
             <label className="titan-input-group">
               <span className="titan-input-label">Invoice stage</span>
               <select

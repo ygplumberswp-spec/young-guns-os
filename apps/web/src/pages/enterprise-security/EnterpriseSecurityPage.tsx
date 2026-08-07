@@ -1,14 +1,6 @@
+import { PageHeader } from '../../components/ux';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
-import {
-  Button,
-  EmptyState,
-  Input,
-  LoadingState,
-  PageHeader,
-  Panel,
-  StatCard,
-  TabNav,
-} from '@titan/ui';
+import { Button, EmptyState, Input, LoadingState, Panel, StatCard, TabNav } from '@titan/ui';
 import { useAuth } from '../../lib/auth-context';
 import { buildQueryKey, invalidateQueryCachePrefix } from '../../lib/query-cache';
 import { useCachedQuery } from '../../lib/use-cached-query';
@@ -254,7 +246,7 @@ export function EnterpriseSecurityPage() {
           description="Enterprise security, zero-trust, and compliance platform."
         />
         <EmptyState
-          title="Access denied"
+          title="Access Denied"
           description="You do not have permission to view the security platform."
         />
       </div>
@@ -291,7 +283,7 @@ export function EnterpriseSecurityPage() {
 
       {activeTab === 'dashboard' ? (
         dashboardQuery.isLoading ? (
-          <LoadingState label="Loading security dashboard…" />
+          <LoadingState label="Loading Security Dashboard…" />
         ) : dashboard ? (
           <div className="stack gap-lg">
             <div className="stat-grid">
@@ -314,7 +306,7 @@ export function EnterpriseSecurityPage() {
                 }
               />
             </div>
-            <Panel title="Score calculation">
+            <Panel title="Score Calculation">
               {dashboard.securityScore == null ? (
                 <p className="page-muted">
                   Not assessed — insufficient security evidence to calculate a score.
@@ -354,16 +346,16 @@ export function EnterpriseSecurityPage() {
             </Panel>
           </div>
         ) : (
-          <EmptyState title="No dashboard data" description="Security dashboard is unavailable." />
+          <EmptyState title="No Dashboard Data" description="Security dashboard is unavailable." />
         )
       ) : activeTab === 'audit' ? (
         auditQuery.isLoading ? (
-          <LoadingState label="Loading audit logs…" />
+          <LoadingState label="Loading Audit Logs…" />
         ) : (
           <Panel title="Audit Logs">
             {auditLogs.length === 0 ? (
               <EmptyState
-                title="No audit events yet"
+                title="No Audit Events Yet"
                 description="Audit logs appear from real tenant activity only."
               />
             ) : (
@@ -380,7 +372,7 @@ export function EnterpriseSecurityPage() {
         )
       ) : activeTab === 'sessions' ? (
         sessionsQuery.isLoading ? (
-          <LoadingState label="Loading active sessions…" />
+          <LoadingState label="Loading Active Sessions…" />
         ) : (
           <Panel title="Active Sessions">
             <p className="page-muted">
@@ -456,7 +448,7 @@ export function EnterpriseSecurityPage() {
             ) : null}
             {sessions.length === 0 ? (
               <EmptyState
-                title="No active sessions"
+                title="No Active Sessions"
                 description="Sessions appear when users authenticate."
               />
             ) : (
@@ -543,12 +535,12 @@ export function EnterpriseSecurityPage() {
         )
       ) : activeTab === 'devices' ? (
         devicesQuery.isLoading ? (
-          <LoadingState label="Loading trusted devices…" />
+          <LoadingState label="Loading Trusted Devices…" />
         ) : (
           <Panel title="Trusted Devices">
             {trustedDevices.length === 0 ? (
               <EmptyState
-                title="No trusted devices"
+                title="No Trusted Devices"
                 description="Register devices from authenticated clients."
               />
             ) : (
@@ -565,12 +557,12 @@ export function EnterpriseSecurityPage() {
         )
       ) : activeTab === 'alerts' ? (
         alertsQuery.isLoading ? (
-          <LoadingState label="Loading risk alerts…" />
+          <LoadingState label="Loading Risk Alerts…" />
         ) : (
           <Panel title="Risk Alerts">
             {riskAlerts.length === 0 ? (
               <EmptyState
-                title="No risk alerts"
+                title="No Risk Alerts"
                 description="Alerts are created from real suspicious activity only."
               />
             ) : (
@@ -598,13 +590,13 @@ export function EnterpriseSecurityPage() {
         )
       ) : activeTab === 'actions' ? (
         actionsQuery.isLoading ? (
-          <LoadingState label="Loading security actions…" />
+          <LoadingState label="Loading Security Actions…" />
         ) : (
           <div className="stack gap-lg">
             <Panel title="Pending Security Actions">
               {actions.length === 0 ? (
                 <EmptyState
-                  title="No security actions"
+                  title="No Security Actions"
                   description="Draft recommendations follow approval workflow."
                 />
               ) : (
@@ -630,7 +622,7 @@ export function EnterpriseSecurityPage() {
                     onChange={(event) => setActionRecommendation(event.target.value)}
                     placeholder="Recommendation"
                   />
-                  <Button type="submit">Draft for approval</Button>
+                  <Button type="submit">Draft For Approval</Button>
                 </form>
               </Panel>
             ) : null}
@@ -638,13 +630,13 @@ export function EnterpriseSecurityPage() {
         )
       ) : activeTab === 'privacy' ? (
         privacyQuery.isLoading ? (
-          <LoadingState label="Loading privacy requests…" />
+          <LoadingState label="Loading Privacy Requests…" />
         ) : (
           <div className="stack gap-lg">
             <Panel title="Privacy Requests">
               {privacyRequests.length === 0 ? (
                 <EmptyState
-                  title="No privacy requests"
+                  title="No Privacy Requests"
                   description="POPIA/GDPR export and deletion workflows start here."
                 />
               ) : (
@@ -665,14 +657,14 @@ export function EnterpriseSecurityPage() {
                     onChange={(event) => setPrivacySubject(event.target.value)}
                     placeholder="Subject"
                   />
-                  <Button type="submit">Submit data export request</Button>
+                  <Button type="submit">Submit Data Export Request</Button>
                 </form>
               </Panel>
             ) : null}
           </div>
         )
       ) : policyQuery.isLoading ? (
-        <LoadingState label="Loading security policy…" />
+        <LoadingState label="Loading Security Policy…" />
       ) : (
         <Panel title="Tenant Security Policy">
           <label className="checkbox-row">
@@ -684,7 +676,7 @@ export function EnterpriseSecurityPage() {
             />
             Require MFA for all users
           </label>
-          {canManage ? <Button onClick={handleSavePolicy}>Save policy</Button> : null}
+          {canManage ? <Button onClick={handleSavePolicy}>Save Policy</Button> : null}
         </Panel>
       )}
     </div>

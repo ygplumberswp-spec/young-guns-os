@@ -1,0 +1,700 @@
+{
+  "label": "209-step4-migration-safety-review",
+  "generatedAt": "2026-08-03T23:18:51.034Z",
+  "journalCount": 168,
+  "appliedCount": 121,
+  "pendingCount": 52,
+  "pendingTags": [
+    "0104_n8n_hybrid_orchestration",
+    "0105_boq_workspace",
+    "0106_job_document_packs",
+    "0111_aura_memory_quick_entry",
+    "0117_scheduling_calendar",
+    "0124_resend_email_deliveries",
+    "0125_email_centre_communication_timeline",
+    "0126_completion_reports",
+    "0127_personal_whatsapp_intelligence",
+    "0128_technician_intelligence",
+    "0129_workflow_automation_engine",
+    "0130_recurring_maintenance_engine",
+    "0131_personal_whatsapp_connection_layer",
+    "0132_communication_aura_intelligence",
+    "0133_aura_command_centre",
+    "0134_aura_agent_network",
+    "0135_aura_evolution",
+    "0136_marketing_agent_foundation",
+    "0137_social_media_integrations",
+    "0138_content_reputation_intelligence",
+    "0139_finance_aura_agent_foundation",
+    "0140_finance_cashflow_profit_intelligence",
+    "0141_finance_reporting_forecast",
+    "0142_inventory_intelligence",
+    "0143_procurement_intelligence",
+    "0145_xero_finance_foundation_repair",
+    "0146_portal_expansion",
+    "0151_hr_employee_intelligence",
+    "0150_vehicle_intelligence",
+    "0144_stock_forecasting",
+    "0149_payroll_timesheet_intelligence",
+    "0148_homeshield_experience",
+    "0153_voice_ai_receptionist",
+    "0154_fleet_ai_recommendations",
+    "0152_recruitment_performance_intelligence",
+    "0147_customer_engagement_intelligence",
+    "0155_driver_intelligence",
+    "0156_call_intelligence",
+    "0157_sales_intelligence_agent_foundation",
+    "0159_sales_followup_intelligence",
+    "0158_sales_analytics_intelligence",
+    "0165_hr_employee_intelligence_compliance",
+    "0160_customer_360_intelligence",
+    "0161_property_intelligence",
+    "0163_document_intelligence",
+    "0164_compliance_intelligence",
+    "0166_executive_command_centre",
+    "0167_smart_notification_intelligence",
+    "0168_market_intelligence",
+    "0169_security_monitoring",
+    "0170_industry_templates",
+    "0171_xero_complete_historical_sync"
+  ],
+  "lastPendingTag": "0171_xero_complete_historical_sync",
+  "chainReaches0171": true,
+  "populatedTableCount": 82,
+  "top10PopulatedTables": [
+    "xero_sync_logs=63615",
+    "sessions=1809",
+    "roles=1296",
+    "automation_queue_jobs=1112",
+    "customers=874",
+    "xero_customer_mappings=678",
+    "security_audit_logs=303",
+    "integration_sync_jobs=294",
+    "gps_positions=218",
+    "users=193"
+  ],
+  "findings": [
+    {
+      "tag": "0104_n8n_hybrid_orchestration",
+      "rule": "create_index_non_concurrent",
+      "severity": "long_running_possible",
+      "occurrences": 5,
+      "sample": [
+        "CREATE INDEX IF NOT EXISTS n8n_workflow_registrations_company_status_idx",
+        "CREATE INDEX IF NOT EXISTS n8n_executions_company_status_idx",
+        "CREATE INDEX IF NOT EXISTS n8n_executions_company_retry_idx"
+      ],
+      "touchesPopulatedTables": []
+    },
+    {
+      "tag": "0105_boq_workspace",
+      "rule": "create_index_non_concurrent",
+      "severity": "long_running_possible",
+      "occurrences": 3,
+      "sample": [
+        "CREATE INDEX IF NOT EXISTS boq_documents_company_id_idx ON boq_documents(company_id);",
+        "CREATE INDEX IF NOT EXISTS boq_documents_quote_id_idx ON boq_documents(quote_id);",
+        "CREATE INDEX IF NOT EXISTS boq_line_items_document_id_idx ON boq_line_items(boq_document_id);"
+      ],
+      "touchesPopulatedTables": [
+        "boq_documents(3 rows)",
+        "boq_line_items(3 rows)"
+      ]
+    },
+    {
+      "tag": "0106_job_document_packs",
+      "rule": "create_index_non_concurrent",
+      "severity": "long_running_possible",
+      "occurrences": 4,
+      "sample": [
+        "CREATE INDEX IF NOT EXISTS job_document_packs_company_id_idx ON job_document_packs(company_id);",
+        "CREATE INDEX IF NOT EXISTS job_document_packs_job_id_idx ON job_document_packs(job_id);",
+        "CREATE UNIQUE INDEX IF NOT EXISTS job_document_packs_client_action_uidx"
+      ],
+      "touchesPopulatedTables": []
+    },
+    {
+      "tag": "0117_scheduling_calendar",
+      "rule": "create_index_non_concurrent",
+      "severity": "long_running_possible",
+      "occurrences": 1,
+      "sample": [
+        "CREATE INDEX IF NOT EXISTS scheduling_override_audits_company_job_idx"
+      ],
+      "touchesPopulatedTables": []
+    },
+    {
+      "tag": "0124_resend_email_deliveries",
+      "rule": "create_index_non_concurrent",
+      "severity": "long_running_possible",
+      "occurrences": 5,
+      "sample": [
+        "CREATE UNIQUE INDEX IF NOT EXISTS resend_email_deliveries_company_resend_uidx",
+        "CREATE INDEX IF NOT EXISTS resend_email_deliveries_company_created_idx",
+        "CREATE INDEX IF NOT EXISTS resend_email_deliveries_company_communication_idx"
+      ],
+      "touchesPopulatedTables": []
+    },
+    {
+      "tag": "0125_email_centre_communication_timeline",
+      "rule": "create_index_non_concurrent",
+      "severity": "long_running_possible",
+      "occurrences": 9,
+      "sample": [
+        "CREATE INDEX IF NOT EXISTS uc_timeline_index_company_job_idx",
+        "CREATE INDEX IF NOT EXISTS uc_timeline_index_company_source_idx",
+        "CREATE INDEX IF NOT EXISTS comm_attachment_links_company_anchor_idx"
+      ],
+      "touchesPopulatedTables": []
+    },
+    {
+      "tag": "0126_completion_reports",
+      "rule": "create_index_non_concurrent",
+      "severity": "long_running_possible",
+      "occurrences": 6,
+      "sample": [
+        "CREATE INDEX IF NOT EXISTS completion_reports_company_id_idx ON completion_reports(company_id);",
+        "CREATE INDEX IF NOT EXISTS completion_reports_job_id_idx ON completion_reports(job_id);",
+        "CREATE INDEX IF NOT EXISTS completion_reports_customer_id_idx ON completion_reports(customer_id);"
+      ],
+      "touchesPopulatedTables": []
+    },
+    {
+      "tag": "0127_personal_whatsapp_intelligence",
+      "rule": "create_index_non_concurrent",
+      "severity": "long_running_possible",
+      "occurrences": 4,
+      "sample": [
+        "CREATE INDEX IF NOT EXISTS personal_wa_intel_classifications_company_owner_idx",
+        "CREATE INDEX IF NOT EXISTS personal_wa_intel_classifications_classification_idx",
+        "CREATE INDEX IF NOT EXISTS personal_wa_intel_link_proposals_queue_idx"
+      ],
+      "touchesPopulatedTables": []
+    },
+    {
+      "tag": "0128_technician_intelligence",
+      "rule": "create_index_non_concurrent",
+      "severity": "long_running_possible",
+      "occurrences": 3,
+      "sample": [
+        "CREATE INDEX IF NOT EXISTS ti_aura_insights_company_status_idx",
+        "CREATE INDEX IF NOT EXISTS ti_aura_insights_company_technician_idx",
+        "CREATE INDEX IF NOT EXISTS ti_aura_insights_company_created_idx"
+      ],
+      "touchesPopulatedTables": []
+    },
+    {
+      "tag": "0129_workflow_automation_engine",
+      "rule": "create_index_non_concurrent",
+      "severity": "long_running_possible",
+      "occurrences": 6,
+      "sample": [
+        "CREATE INDEX IF NOT EXISTS ops_workflow_tasks_company_status_idx",
+        "CREATE INDEX IF NOT EXISTS ops_workflow_tasks_company_run_idx",
+        "CREATE INDEX IF NOT EXISTS ops_workflow_follow_ups_company_status_idx"
+      ],
+      "touchesPopulatedTables": []
+    },
+    {
+      "tag": "0130_recurring_maintenance_engine",
+      "rule": "create_index_non_concurrent",
+      "severity": "long_running_possible",
+      "occurrences": 8,
+      "sample": [
+        "CREATE INDEX IF NOT EXISTS ops_recurring_maintenance_plans_company_status_idx",
+        "CREATE INDEX IF NOT EXISTS ops_recurring_maintenance_plans_company_due_idx",
+        "CREATE INDEX IF NOT EXISTS ops_recurring_maintenance_plans_company_asset_idx"
+      ],
+      "touchesPopulatedTables": []
+    },
+    {
+      "tag": "0131_personal_whatsapp_connection_layer",
+      "rule": "create_index_non_concurrent",
+      "severity": "long_running_possible",
+      "occurrences": 4,
+      "sample": [
+        "CREATE INDEX IF NOT EXISTS personal_wa_connections_company_owner_idx",
+        "CREATE INDEX IF NOT EXISTS personal_wa_connections_status_idx",
+        "CREATE INDEX IF NOT EXISTS personal_wa_connection_events_connection_idx"
+      ],
+      "touchesPopulatedTables": []
+    },
+    {
+      "tag": "0132_communication_aura_intelligence",
+      "rule": "create_index_non_concurrent",
+      "severity": "long_running_possible",
+      "occurrences": 6,
+      "sample": [
+        "CREATE INDEX IF NOT EXISTS comm_aura_message_scores_company_priority_idx",
+        "CREATE INDEX IF NOT EXISTS comm_aura_message_scores_customer_idx",
+        "CREATE INDEX IF NOT EXISTS comm_aura_drafts_queue_idx"
+      ],
+      "touchesPopulatedTables": []
+    },
+    {
+      "tag": "0133_aura_command_centre",
+      "rule": "create_index_non_concurrent",
+      "severity": "long_running_possible",
+      "occurrences": 6,
+      "sample": [
+        "CREATE INDEX IF NOT EXISTS aura_command_memory_company_idx",
+        "CREATE INDEX IF NOT EXISTS aura_command_memory_company_updated_idx",
+        "CREATE INDEX IF NOT EXISTS aura_command_agent_registry_company_idx"
+      ],
+      "touchesPopulatedTables": []
+    },
+    {
+      "tag": "0134_aura_agent_network",
+      "rule": "create_index_non_concurrent",
+      "severity": "long_running_possible",
+      "occurrences": 3,
+      "sample": [
+        "CREATE INDEX IF NOT EXISTS aura_network_agents_company_idx ON aura_network_agents(company_id, status);",
+        "CREATE INDEX IF NOT EXISTS aura_network_messages_company_idx ON aura_network_messages(company_id, created_at DESC);",
+        "CREATE INDEX IF NOT EXISTS aura_network_approvals_company_idx ON aura_network_approvals(company_id, status, created_at DESC);"
+      ],
+      "touchesPopulatedTables": []
+    },
+    {
+      "tag": "0135_aura_evolution",
+      "rule": "create_index_non_concurrent",
+      "severity": "long_running_possible",
+      "occurrences": 8,
+      "sample": [
+        "CREATE INDEX IF NOT EXISTS aura_evolution_decisions_company_idx",
+        "CREATE INDEX IF NOT EXISTS aura_evolution_decisions_source_idx",
+        "CREATE INDEX IF NOT EXISTS aura_evolution_patterns_company_idx"
+      ],
+      "touchesPopulatedTables": []
+    },
+    {
+      "tag": "0136_marketing_agent_foundation",
+      "rule": "create_index_non_concurrent",
+      "severity": "long_running_possible",
+      "occurrences": 7,
+      "sample": [
+        "CREATE INDEX IF NOT EXISTS mkt_agent_campaigns_company_idx",
+        "CREATE INDEX IF NOT EXISTS mkt_agent_campaigns_company_status_idx",
+        "CREATE INDEX IF NOT EXISTS mkt_agent_content_drafts_company_idx"
+      ],
+      "touchesPopulatedTables": []
+    },
+    {
+      "tag": "0137_social_media_integrations",
+      "rule": "create_index_non_concurrent",
+      "severity": "long_running_possible",
+      "occurrences": 8,
+      "sample": [
+        "CREATE INDEX IF NOT EXISTS social_media_connections_company_idx",
+        "CREATE INDEX IF NOT EXISTS social_media_connections_company_status_idx",
+        "CREATE INDEX IF NOT EXISTS social_media_connection_events_company_idx"
+      ],
+      "touchesPopulatedTables": []
+    },
+    {
+      "tag": "0138_content_reputation_intelligence",
+      "rule": "drop_constraint",
+      "severity": "constraint",
+      "occurrences": 1,
+      "sample": [
+        "DROP CONSTRAINT IF EXISTS cri_reviews_social_item_id_fkey;"
+      ],
+      "touchesPopulatedTables": []
+    },
+    {
+      "tag": "0138_content_reputation_intelligence",
+      "rule": "create_index_non_concurrent",
+      "severity": "long_running_possible",
+      "occurrences": 7,
+      "sample": [
+        "CREATE INDEX IF NOT EXISTS cri_content_suggestions_company_idx",
+        "CREATE INDEX IF NOT EXISTS cri_content_suggestions_status_idx",
+        "CREATE INDEX IF NOT EXISTS cri_reviews_company_idx"
+      ],
+      "touchesPopulatedTables": []
+    },
+    {
+      "tag": "0139_finance_aura_agent_foundation",
+      "rule": "create_index_non_concurrent",
+      "severity": "long_running_possible",
+      "occurrences": 6,
+      "sample": [
+        "CREATE INDEX IF NOT EXISTS fin_aura_recommendations_company_idx",
+        "CREATE INDEX IF NOT EXISTS fin_aura_recommendations_company_status_idx",
+        "CREATE INDEX IF NOT EXISTS fin_aura_insights_company_idx"
+      ],
+      "touchesPopulatedTables": []
+    },
+    {
+      "tag": "0140_finance_cashflow_profit_intelligence",
+      "rule": "create_index_non_concurrent",
+      "severity": "long_running_possible",
+      "occurrences": 4,
+      "sample": [
+        "CREATE INDEX IF NOT EXISTS fcp_insights_company_idx",
+        "CREATE INDEX IF NOT EXISTS fcp_insights_company_status_idx",
+        "CREATE INDEX IF NOT EXISTS fcp_action_recommendations_company_idx"
+      ],
+      "touchesPopulatedTables": []
+    },
+    {
+      "tag": "0141_finance_reporting_forecast",
+      "rule": "create_index_non_concurrent",
+      "severity": "long_running_possible",
+      "occurrences": 9,
+      "sample": [
+        "CREATE INDEX IF NOT EXISTS frf_report_snapshots_company_idx",
+        "CREATE INDEX IF NOT EXISTS frf_report_snapshots_company_kind_idx",
+        "CREATE INDEX IF NOT EXISTS frf_forecast_snapshots_company_idx"
+      ],
+      "touchesPopulatedTables": []
+    },
+    {
+      "tag": "0142_inventory_intelligence",
+      "rule": "create_index_non_concurrent",
+      "severity": "long_running_possible",
+      "occurrences": 5,
+      "sample": [
+        "CREATE UNIQUE INDEX IF NOT EXISTS ii_settings_company_uidx",
+        "CREATE INDEX IF NOT EXISTS ii_alert_drafts_company_idx",
+        "CREATE INDEX IF NOT EXISTS ii_alert_drafts_status_idx"
+      ],
+      "touchesPopulatedTables": []
+    },
+    {
+      "tag": "0143_procurement_intelligence",
+      "rule": "create_index_non_concurrent",
+      "severity": "long_running_possible",
+      "occurrences": 4,
+      "sample": [
+        "CREATE UNIQUE INDEX IF NOT EXISTS pi_settings_company_uidx",
+        "CREATE INDEX IF NOT EXISTS pi_cost_comparisons_company_created_idx",
+        "CREATE INDEX IF NOT EXISTS pi_purchase_recommendations_company_status_idx"
+      ],
+      "touchesPopulatedTables": []
+    },
+    {
+      "tag": "0145_xero_finance_foundation_repair",
+      "rule": "create_index_non_concurrent",
+      "severity": "long_running_possible",
+      "occurrences": 9,
+      "sample": [
+        "CREATE INDEX IF NOT EXISTS invoices_company_source_external_idx",
+        "CREATE INDEX IF NOT EXISTS quotes_company_source_external_idx",
+        "CREATE INDEX IF NOT EXISTS payments_company_source_external_idx"
+      ],
+      "touchesPopulatedTables": []
+    },
+    {
+      "tag": "0146_portal_expansion",
+      "rule": "create_index_non_concurrent",
+      "severity": "long_running_possible",
+      "occurrences": 3,
+      "sample": [
+        "CREATE UNIQUE INDEX IF NOT EXISTS cpe_document_shares_company_customer_doc_uidx",
+        "CREATE INDEX IF NOT EXISTS cpe_document_shares_company_customer_active_idx",
+        "CREATE INDEX IF NOT EXISTS cpe_document_shares_document_idx"
+      ],
+      "touchesPopulatedTables": []
+    },
+    {
+      "tag": "0151_hr_employee_intelligence",
+      "rule": "create_index_non_concurrent",
+      "severity": "long_running_possible",
+      "occurrences": 5,
+      "sample": [
+        "CREATE UNIQUE INDEX IF NOT EXISTS hei_settings_company_uidx",
+        "CREATE INDEX IF NOT EXISTS hei_aura_insights_company_idx",
+        "CREATE INDEX IF NOT EXISTS hei_aura_insights_status_idx"
+      ],
+      "touchesPopulatedTables": []
+    },
+    {
+      "tag": "0150_vehicle_intelligence",
+      "rule": "create_index_non_concurrent",
+      "severity": "long_running_possible",
+      "occurrences": 4,
+      "sample": [
+        "CREATE UNIQUE INDEX IF NOT EXISTS vi_settings_company_uidx",
+        "CREATE INDEX IF NOT EXISTS vi_insight_drafts_company_idx",
+        "CREATE INDEX IF NOT EXISTS vi_insight_drafts_status_idx"
+      ],
+      "touchesPopulatedTables": []
+    },
+    {
+      "tag": "0144_stock_forecasting",
+      "rule": "create_index_non_concurrent",
+      "severity": "long_running_possible",
+      "occurrences": 6,
+      "sample": [
+        "CREATE UNIQUE INDEX IF NOT EXISTS sf_settings_company_uidx",
+        "CREATE INDEX IF NOT EXISTS sf_item_forecasts_company_idx",
+        "CREATE INDEX IF NOT EXISTS sf_item_forecasts_item_idx"
+      ],
+      "touchesPopulatedTables": []
+    },
+    {
+      "tag": "0149_payroll_timesheet_intelligence",
+      "rule": "create_index_non_concurrent",
+      "severity": "long_running_possible",
+      "occurrences": 5,
+      "sample": [
+        "CREATE UNIQUE INDEX IF NOT EXISTS pti_settings_company_uidx",
+        "CREATE INDEX IF NOT EXISTS pti_insight_drafts_company_idx",
+        "CREATE INDEX IF NOT EXISTS pti_insight_drafts_status_idx"
+      ],
+      "touchesPopulatedTables": []
+    },
+    {
+      "tag": "0148_homeshield_experience",
+      "rule": "create_index_non_concurrent",
+      "severity": "long_running_possible",
+      "occurrences": 10,
+      "sample": [
+        "CREATE UNIQUE INDEX IF NOT EXISTS hs_settings_company_uidx",
+        "CREATE INDEX IF NOT EXISTS hs_membership_plans_company_idx",
+        "CREATE INDEX IF NOT EXISTS hs_subscriptions_company_idx"
+      ],
+      "touchesPopulatedTables": []
+    },
+    {
+      "tag": "0153_voice_ai_receptionist",
+      "rule": "create_index_non_concurrent",
+      "severity": "long_running_possible",
+      "occurrences": 9,
+      "sample": [
+        "CREATE UNIQUE INDEX IF NOT EXISTS vair_settings_company_uidx ON vair_settings (company_id);",
+        "CREATE INDEX IF NOT EXISTS vair_call_sessions_company_started_idx",
+        "CREATE INDEX IF NOT EXISTS vair_call_sessions_company_status_idx"
+      ],
+      "touchesPopulatedTables": []
+    },
+    {
+      "tag": "0154_fleet_ai_recommendations",
+      "rule": "create_index_non_concurrent",
+      "severity": "long_running_possible",
+      "occurrences": 4,
+      "sample": [
+        "CREATE UNIQUE INDEX IF NOT EXISTS far_settings_company_uidx",
+        "CREATE INDEX IF NOT EXISTS far_recommendation_drafts_company_idx",
+        "CREATE INDEX IF NOT EXISTS far_recommendation_drafts_status_idx"
+      ],
+      "touchesPopulatedTables": []
+    },
+    {
+      "tag": "0152_recruitment_performance_intelligence",
+      "rule": "create_index_non_concurrent",
+      "severity": "long_running_possible",
+      "occurrences": 9,
+      "sample": [
+        "CREATE UNIQUE INDEX IF NOT EXISTS rpi_settings_company_uidx",
+        "CREATE INDEX IF NOT EXISTS rpi_interview_drafts_company_idx",
+        "CREATE INDEX IF NOT EXISTS rpi_interview_drafts_status_idx"
+      ],
+      "touchesPopulatedTables": []
+    },
+    {
+      "tag": "0147_customer_engagement_intelligence",
+      "rule": "create_index_non_concurrent",
+      "severity": "long_running_possible",
+      "occurrences": 1,
+      "sample": [
+        "CREATE INDEX IF NOT EXISTS cei_outreach_drafts_queue_idx ON cei_outreach_drafts (company_id, status, created_at DESC);"
+      ],
+      "touchesPopulatedTables": []
+    },
+    {
+      "tag": "0155_driver_intelligence",
+      "rule": "create_index_non_concurrent",
+      "severity": "long_running_possible",
+      "occurrences": 4,
+      "sample": [
+        "CREATE UNIQUE INDEX IF NOT EXISTS dri_settings_company_uidx",
+        "CREATE INDEX IF NOT EXISTS dri_recommendation_drafts_company_idx",
+        "CREATE INDEX IF NOT EXISTS dri_recommendation_drafts_status_idx"
+      ],
+      "touchesPopulatedTables": []
+    },
+    {
+      "tag": "0156_call_intelligence",
+      "rule": "create_index_non_concurrent",
+      "severity": "long_running_possible",
+      "occurrences": 5,
+      "sample": [
+        "CREATE UNIQUE INDEX IF NOT EXISTS ci_settings_company_uidx",
+        "CREATE INDEX IF NOT EXISTS ci_call_analyses_company_created_idx",
+        "CREATE INDEX IF NOT EXISTS ci_call_analyses_company_session_idx"
+      ],
+      "touchesPopulatedTables": []
+    },
+    {
+      "tag": "0157_sales_intelligence_agent_foundation",
+      "rule": "create_index_non_concurrent",
+      "severity": "long_running_possible",
+      "occurrences": 6,
+      "sample": [
+        "CREATE INDEX IF NOT EXISTS sia_recommendations_company_idx",
+        "CREATE INDEX IF NOT EXISTS sia_recommendations_company_status_idx",
+        "CREATE INDEX IF NOT EXISTS sia_insights_company_idx"
+      ],
+      "touchesPopulatedTables": []
+    },
+    {
+      "tag": "0159_sales_followup_intelligence",
+      "rule": "create_index_non_concurrent",
+      "severity": "long_running_possible",
+      "occurrences": 4,
+      "sample": [
+        "CREATE INDEX IF NOT EXISTS sfi_outreach_drafts_queue_idx",
+        "CREATE INDEX IF NOT EXISTS sfi_outreach_drafts_customer_idx",
+        "CREATE INDEX IF NOT EXISTS sfi_outreach_drafts_quote_idx"
+      ],
+      "touchesPopulatedTables": []
+    },
+    {
+      "tag": "0158_sales_analytics_intelligence",
+      "rule": "create_index_non_concurrent",
+      "severity": "long_running_possible",
+      "occurrences": 5,
+      "sample": [
+        "CREATE UNIQUE INDEX IF NOT EXISTS sai_settings_company_uidx",
+        "CREATE INDEX IF NOT EXISTS sai_analytics_snapshots_company_idx",
+        "CREATE INDEX IF NOT EXISTS sai_insight_drafts_company_idx"
+      ],
+      "touchesPopulatedTables": []
+    },
+    {
+      "tag": "0160_customer_360_intelligence",
+      "rule": "create_index_non_concurrent",
+      "severity": "long_running_possible",
+      "occurrences": 6,
+      "sample": [
+        "CREATE UNIQUE INDEX IF NOT EXISTS c360_settings_company_uidx",
+        "CREATE INDEX IF NOT EXISTS c360_insight_drafts_company_idx",
+        "CREATE INDEX IF NOT EXISTS c360_insight_drafts_customer_idx"
+      ],
+      "touchesPopulatedTables": []
+    },
+    {
+      "tag": "0161_property_intelligence",
+      "rule": "create_index_non_concurrent",
+      "severity": "long_running_possible",
+      "occurrences": 4,
+      "sample": [
+        "CREATE UNIQUE INDEX IF NOT EXISTS pri_settings_company_uidx",
+        "CREATE INDEX IF NOT EXISTS pri_insight_drafts_company_idx",
+        "CREATE INDEX IF NOT EXISTS pri_insight_drafts_status_idx"
+      ],
+      "touchesPopulatedTables": []
+    },
+    {
+      "tag": "0163_document_intelligence",
+      "rule": "create_index_non_concurrent",
+      "severity": "long_running_possible",
+      "occurrences": 10,
+      "sample": [
+        "CREATE UNIQUE INDEX IF NOT EXISTS di_settings_company_uidx ON di_settings (company_id);",
+        "CREATE UNIQUE INDEX IF NOT EXISTS di_document_profiles_document_uidx",
+        "CREATE INDEX IF NOT EXISTS di_document_profiles_type_idx"
+      ],
+      "touchesPopulatedTables": []
+    },
+    {
+      "tag": "0164_compliance_intelligence",
+      "rule": "create_index_non_concurrent",
+      "severity": "long_running_possible",
+      "occurrences": 9,
+      "sample": [
+        "CREATE UNIQUE INDEX IF NOT EXISTS cmi_settings_company_uidx ON cmi_settings (company_id);",
+        "CREATE UNIQUE INDEX IF NOT EXISTS cmi_sans_standards_code_uidx",
+        "CREATE INDEX IF NOT EXISTS cmi_coc_workflows_company_status_idx"
+      ],
+      "touchesPopulatedTables": []
+    },
+    {
+      "tag": "0166_executive_command_centre",
+      "rule": "create_index_non_concurrent",
+      "severity": "long_running_possible",
+      "occurrences": 3,
+      "sample": [
+        "CREATE UNIQUE INDEX IF NOT EXISTS ec_settings_company_uidx ON ec_settings (company_id);",
+        "CREATE INDEX IF NOT EXISTS ec_action_drafts_queue_idx",
+        "CREATE INDEX IF NOT EXISTS ec_insights_company_idx"
+      ],
+      "touchesPopulatedTables": []
+    },
+    {
+      "tag": "0167_smart_notification_intelligence",
+      "rule": "create_index_non_concurrent",
+      "severity": "long_running_possible",
+      "occurrences": 6,
+      "sample": [
+        "CREATE UNIQUE INDEX IF NOT EXISTS sn_settings_company_uidx ON sn_settings (company_id);",
+        "CREATE UNIQUE INDEX IF NOT EXISTS sn_category_controls_company_category_uidx",
+        "CREATE UNIQUE INDEX IF NOT EXISTS sn_signal_states_scope_uidx"
+      ],
+      "touchesPopulatedTables": []
+    },
+    {
+      "tag": "0168_market_intelligence",
+      "rule": "create_index_non_concurrent",
+      "severity": "long_running_possible",
+      "occurrences": 6,
+      "sample": [
+        "CREATE UNIQUE INDEX IF NOT EXISTS mkt_settings_company_uidx ON mkt_settings (company_id);",
+        "CREATE UNIQUE INDEX IF NOT EXISTS mkt_sources_company_key_uidx",
+        "CREATE UNIQUE INDEX IF NOT EXISTS mkt_insight_states_scope_uidx"
+      ],
+      "touchesPopulatedTables": []
+    },
+    {
+      "tag": "0169_security_monitoring",
+      "rule": "create_index_non_concurrent",
+      "severity": "long_running_possible",
+      "occurrences": 9,
+      "sample": [
+        "CREATE UNIQUE INDEX IF NOT EXISTS secmon_settings_company_uidx ON secmon_settings (company_id);",
+        "CREATE UNIQUE INDEX IF NOT EXISTS secmon_signal_states_company_key_uidx",
+        "CREATE INDEX IF NOT EXISTS secmon_signal_states_company_triage_idx"
+      ],
+      "touchesPopulatedTables": []
+    },
+    {
+      "tag": "0170_industry_templates",
+      "rule": "create_index_non_concurrent",
+      "severity": "long_running_possible",
+      "occurrences": 10,
+      "sample": [
+        "CREATE UNIQUE INDEX IF NOT EXISTS itpl_settings_company_uidx ON itpl_settings (company_id);",
+        "CREATE UNIQUE INDEX IF NOT EXISTS itpl_templates_company_key_uidx",
+        "CREATE UNIQUE INDEX IF NOT EXISTS itpl_templates_company_active_uidx"
+      ],
+      "touchesPopulatedTables": []
+    },
+    {
+      "tag": "0171_xero_complete_historical_sync",
+      "rule": "create_index_non_concurrent",
+      "severity": "long_running_possible",
+      "occurrences": 9,
+      "sample": [
+        "CREATE INDEX IF NOT EXISTS \"xero_accounts_company_code_idx\" ON \"xero_accounts\" (\"company_id\",\"code\");",
+        "CREATE INDEX IF NOT EXISTS \"xero_bills_company_issue_date_idx\" ON \"xero_bills\" (\"company_id\",\"issue_date\");",
+        "CREATE INDEX IF NOT EXISTS \"xero_bills_company_contact_idx\" ON \"xero_bills\" (\"company_id\",\"xero_contact_id\");"
+      ],
+      "touchesPopulatedTables": []
+    }
+  ],
+  "blockers": [],
+  "blockerCount": 0,
+  "severityCounts": {
+    "long_running_possible": 50,
+    "constraint": 1
+  },
+  "migration0171": {
+    "bytes": 10759,
+    "createTableCount": 10,
+    "createIndexCount": 9,
+    "foreignKeyCount": 0,
+    "dropStatements": []
+  }
+}

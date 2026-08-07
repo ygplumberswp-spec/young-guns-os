@@ -1,0 +1,95 @@
+{
+  "generatedAt": "2026-08-01T18:15:28.353Z",
+  "label": "218-cartrack-fleet-seed-verify",
+  "branch": "cursor/integration-lock-auto-sync",
+  "stagingRef": "cpkuwtaipjxeipvbssvn",
+  "companyId": "095aef76-fef5-4139-af37-a42f2d7e2faf",
+  "stagingApi": "https://young-guns-os-staging.up.railway.app",
+  "seed": {
+    "performed": true,
+    "seeded": [],
+    "skipped": [
+      {
+        "licensePlate": "CF172047",
+        "id": "1a19a54b-6f52-44a1-bc15-b8d26ae7eb8c",
+        "action": "already_present"
+      },
+      {
+        "licensePlate": "CF77263",
+        "id": "1aab5139-5b16-4a89-9152-cee153d17034",
+        "action": "already_present"
+      }
+    ],
+    "vehicleIds": [
+      {
+        "licensePlate": "CF172047",
+        "id": "1a19a54b-6f52-44a1-bc15-b8d26ae7eb8c"
+      },
+      {
+        "licensePlate": "CF77263",
+        "id": "1aab5139-5b16-4a89-9152-cee153d17034"
+      }
+    ]
+  },
+  "sync": {
+    "attempted": false,
+    "method": null,
+    "result": null,
+    "error": null,
+    "liveApiSync": {
+      "attempted": false,
+      "reason": "No OWNER_ACCESS_TOKEN; railway sync runner ESM import failure"
+    }
+  },
+  "verify": {
+    "mappedCount": 2,
+    "registrations": {
+      "CF172047": {
+        "status": "auto_matched",
+        "mappingId": "af990ce9-cfa3-4d8c-b977-e7c41654b416",
+        "vehicleId": "1a19a54b-6f52-44a1-bc15-b8d26ae7eb8c",
+        "titanLicensePlate": "CF172047",
+        "externalRegistration": "CF172047",
+        "externalVehicleId": "609838677"
+      },
+      "CF77263": {
+        "status": "auto_matched",
+        "mappingId": "a979153c-35a7-4b1a-b27f-da4a24738748",
+        "vehicleId": "1aab5139-5b16-4a89-9152-cee153d17034",
+        "titanLicensePlate": "CF77263",
+        "externalRegistration": "CF77263",
+        "externalVehicleId": "609838290"
+      }
+    },
+    "fleetVehicleCount": 2,
+    "fleetVehicleCountBefore": 2,
+    "registrationsBeforeSync": {
+      "CF172047": {
+        "status": "auto_matched",
+        "mappingId": "af990ce9-cfa3-4d8c-b977-e7c41654b416",
+        "vehicleId": "1a19a54b-6f52-44a1-bc15-b8d26ae7eb8c",
+        "titanLicensePlate": "CF172047",
+        "externalRegistration": "CF172047",
+        "externalVehicleId": "609838677"
+      },
+      "CF77263": {
+        "status": "auto_matched",
+        "mappingId": "a979153c-35a7-4b1a-b27f-da4a24738748",
+        "vehicleId": "1aab5139-5b16-4a89-9152-cee153d17034",
+        "titanLicensePlate": "CF77263",
+        "externalRegistration": "CF77263",
+        "externalVehicleId": "609838290"
+      }
+    },
+    "mappedCountBeforeSync": 2
+  },
+  "blockers": [],
+  "pass": true,
+  "healthReady": 200,
+  "notes": [
+    "Fleet seed used staging DATABASE_URL from apps/api/.env.staging.local (cpkuwtaipjxeipvbssvn only).",
+    "Auto-map applied via reconcileAutoMap (same matchVehicleByRegistration rules as syncCartrack) after seed; first run updated 2 unmapped rows.",
+    "railway run syncCartrack runner failed locally (ERR_MODULE_NOT_FOUND on packages/db/dist ESM imports). Re-run POST /api/v1/integrations/cartrack/sync from staging UI or fix runner for live Cartrack GPS refresh.",
+    "POST verify-stored skipped: OWNER_ACCESS_TOKEN not available in this session."
+  ]
+}
