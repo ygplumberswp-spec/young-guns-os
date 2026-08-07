@@ -168,6 +168,7 @@ export {
   type CashControlBankAllocationInput,
   type CashControlBankTransactionInput,
 } from './cash-control.js';
+export * from './owner-financial-command.js';
 
 export * from './xero-source-of-truth.js';
 export * from './vehicle-registration.js';
