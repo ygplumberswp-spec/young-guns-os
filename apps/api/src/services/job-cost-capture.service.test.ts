@@ -8,11 +8,11 @@ import { describe, it } from 'node:test';
 import {
   buildLabourRateLockMetadata,
   computeDurationMinutes,
-  computeJobFinancialSourceFingerprintFromSources,
   detectActiveTimeConflict,
   redactProfitabilityForTechnician,
   assessJobCostControl,
 } from '@titan/shared';
+import { computeJobFinancialSourceFingerprintFromSources } from '@titan/shared/job-financial-fingerprint-hash';
 import { computeJobProfitability } from '@titan/shared';
 import { MobileWorkforceError } from './mobile-workforce.service.js';
 

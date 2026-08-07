@@ -9,7 +9,7 @@ import {
   materialLinesNeedingCostReview,
   redactProfitabilityForTechnician,
 } from './job-cost-capture.js';
-import { computeJobFinancialSourceFingerprintFromSources } from './job-financial-fingerprint.js';
+import { computeJobFinancialSourceFingerprintFromSources } from './job-financial-fingerprint-hash.js';
 import { computeJobProfitability } from './job-profitability.js';
 import { isFinancialReviewStale } from './job-cost-control.js';
 import { isFinanciallyAuthoritativeTimeEntry } from './job-profitability-source-integrity.js';

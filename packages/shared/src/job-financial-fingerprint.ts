@@ -1,11 +1,9 @@
 /**
- * JPE-002A — Deterministic financial-source fingerprint for review staleness.
+ * JPE-002A / JPE-004B — Browser-safe financial fingerprint types and canonicalisation.
  *
- * Replaces max-timestamp fingerprinting with a stable SHA-256 hash of
- * profitability-driving source state (add/update/delete/allocation safe).
+ * SHA-256 hashing lives in `./job-financial-fingerprint-hash.ts` (server-only).
  */
 
-import { createHash } from 'node:crypto';
 import { JPE_CALCULATION_VERSION } from './job-profitability.js';
 
 /** Bump when canonical fingerprint input shape or hashing rules change. */
@@ -185,14 +183,6 @@ export function buildJobFinancialFingerprintCanonical(input: JobFinancialFingerp
   return JSON.stringify(payload);
 }
 
-export function sha256HexCanonical(canonical: string): string {
-  return createHash('sha256').update(canonical, 'utf8').digest('hex');
-}
-
-export function computeJobFinancialSourceFingerprint(input: JobFinancialFingerprintInput): string {
-  return sha256HexCanonical(buildJobFinancialFingerprintCanonical(input));
-}
-
 export type BuildFingerprintFromProfitabilitySourcesInput = {
   jobId: string;
   invoices: JobFinancialFingerprintInvoice[];
@@ -268,12 +258,6 @@ export function buildJobFinancialFingerprintFromSources(
     directCosts: input.directCosts,
     payments: input.payments,
   };
-}
-
-export function computeJobFinancialSourceFingerprintFromSources(
-  input: BuildFingerprintFromProfitabilitySourcesInput,
-): string {
-  return computeJobFinancialSourceFingerprint(buildJobFinancialFingerprintFromSources(input));
 }
 
 /**

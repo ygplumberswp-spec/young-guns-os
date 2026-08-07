@@ -7,7 +7,7 @@ import {
   isReceiptRequiredForDirectCost,
   mapProfitabilityConfidenceToCompleteness,
 } from './job-cost-control.js';
-import { computeJobFinancialSourceFingerprintFromSources } from './job-financial-fingerprint.js';
+import { computeJobFinancialSourceFingerprintFromSources } from './job-financial-fingerprint-hash.js';
 import { computeJobProfitability } from './job-profitability.js';
 import { buildLabourRateLockMetadata } from './job-profitability-source-integrity.js';
 

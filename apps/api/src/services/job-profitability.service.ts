@@ -7,12 +7,12 @@ import type {
 import {
   applyAuditedLabourRateCorrection,
   assessLabourRateConfidence,
-  computeJobFinancialSourceFingerprintFromSources,
   computeJobProfitability,
   isFinanciallyAuthoritativeTimeEntry,
   JPE_CALCULATION_VERSION,
   resolveProvisionalLabourHourlyCostCents,
 } from '@titan/shared';
+import { computeJobFinancialSourceFingerprintFromSources } from '@titan/shared/job-financial-fingerprint-hash';
 import type { DatabaseClient } from '@titan/db';
 import {
   companyFinanceSettings,
