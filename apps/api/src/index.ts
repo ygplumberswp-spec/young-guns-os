@@ -297,6 +297,7 @@ import { PortalService } from './services/portal.service.js';
 import { PortalExperienceService } from './services/portal-experience.service.js';
 import { PortalExpansionService } from './services/portal-expansion.service.js';
 import { MobileWorkforceService } from './services/mobile-workforce.service.js';
+import { PaperlessFieldCashService } from './services/paperless-field-cash.service.js';
 import { QualityAssuranceService } from './services/quality-assurance.service.js';
 import { CommunicationsIntelligenceService } from './services/communications-intelligence.service.js';
 import { AssetEquipmentIntelligenceService } from './services/asset-equipment-intelligence.service.js';
@@ -994,6 +995,11 @@ const mobileWorkforceService = new MobileWorkforceService(
   jobExecutionService,
   jobEvidenceStorageService,
   technicianWorkflowService,
+);
+const paperlessFieldCashService = new PaperlessFieldCashService(
+  db,
+  financeService,
+  notificationService,
 );
 const qualityAssuranceService = new QualityAssuranceService(
   db,
@@ -2519,6 +2525,7 @@ app.use(
     mobileWorkforceService,
     jobExecutionService,
     jobCostCaptureService,
+    paperlessFieldCashService,
     recommendationsService,
     teamService,
     portalAuthService,

@@ -37,6 +37,8 @@ export * from './yg-cutover-001b.js';
 export * from './yg-cutover-001d.js';
 export * from './technician-field-truth.js';
 export * from './yg-cutover-001e.js';
+export * from './yg-cutover-001f.js';
+export * from './paperless-field-cash.js';
 export * from './technician-field-messages.js';
 export * from './technician-field-performance.js';
 export * from './universal-phone-compat.js';

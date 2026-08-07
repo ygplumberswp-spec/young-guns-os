@@ -238,6 +238,7 @@ type MobileRouterDeps = {
   mobileWorkforceService: MobileWorkforceService;
   jobExecutionService: JobExecutionService;
   jobCostCaptureService: import('../services/job-cost-capture.service.js').JobCostCaptureService;
+  paperlessFieldCashService: import('../services/paperless-field-cash.service.js').PaperlessFieldCashService;
   recommendationsService: RecommendationsService;
   teamService: TeamService;
   portalAuthService: PortalAuthService;
@@ -266,6 +267,7 @@ export function createMobileRouter({
   mobileWorkforceService,
   jobExecutionService,
   jobCostCaptureService,
+  paperlessFieldCashService,
   recommendationsService,
   teamService,
   portalAuthService,
@@ -530,6 +532,32 @@ export function createMobileRouter({
         auth,
         getRouteParam(req.params.timeEntryId),
         parsed.data,
+      );
+      res.json({ data: { entry } });
+    } catch (error) {
+      handleWorkforceError(res, error);
+    }
+  });
+
+  technicianRouter.post('/workforce/time/:timeEntryId/pause', requireMobileWrite, async (req, res) => {
+    try {
+      const auth = getAuth(req);
+      const entry = await mobileWorkforceService.pauseTimedEntry(
+        auth,
+        getRouteParam(req.params.timeEntryId),
+      );
+      res.json({ data: { entry } });
+    } catch (error) {
+      handleWorkforceError(res, error);
+    }
+  });
+
+  technicianRouter.post('/workforce/time/:timeEntryId/resume', requireMobileWrite, async (req, res) => {
+    try {
+      const auth = getAuth(req);
+      const entry = await mobileWorkforceService.resumeTimedEntry(
+        auth,
+        getRouteParam(req.params.timeEntryId),
       );
       res.json({ data: { entry } });
     } catch (error) {
@@ -986,14 +1014,124 @@ export function createMobileRouter({
     }
     try {
       const auth = getAuth(req);
-      const job = await jobExecutionService.completeGated(
-        auth,
-        getRouteParam(req.params.id),
-        parsed.data,
-      );
-      res.json({ data: { job } });
+      const jobId = getRouteParam(req.params.id);
+      const job = await jobExecutionService.completeGated(auth, jobId, parsed.data);
+      // YG-CUTOVER-001F — AURA Finance pack validation + DRAFT invoice for owner approval
+      const paperless = await paperlessFieldCashService.afterSignedCompletion({
+        companyId: auth.companyId,
+        jobId,
+        actorUserId: auth.userId,
+      });
+      res.json({
+        data: {
+          job,
+          paperless: {
+            issues: paperless.issues,
+            readyForDraftInvoice: paperless.readyForDraftInvoice,
+            draftInvoice: paperless.draftInvoice,
+            ownerNotifyMessage: paperless.ownerNotifyMessage,
+          },
+        },
+      });
     } catch (error) {
       handleJobExecutionError(res, error);
+    }
+  });
+
+  technicianRouter.get(
+    '/jobs/:id/payment-strip',
+    requireTechnicianAccess,
+    requireAssignedJob,
+    async (req, res) => {
+      try {
+        const auth = getAuth(req);
+        const strip = await paperlessFieldCashService.getTechnicianPaymentStrip(
+          auth.companyId,
+          getRouteParam(req.params.id),
+        );
+        res.json({ data: { strip } });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Payment strip failed';
+        res.status(400).json({ error: { code: 'VALIDATION_ERROR', message } });
+      }
+    },
+  );
+
+  technicianRouter.post(
+    '/jobs/:id/on-site-payment',
+    requireMobileWrite,
+    requireAssignedJob,
+    async (req, res) => {
+      const schema = z.object({
+        invoiceId: z.string().uuid(),
+        customerId: z.string().uuid(),
+        amountCents: z.number().int().positive(),
+        method: z.enum(['card_terminal', 'payment_link_qr', 'other_authorised']),
+        providerTerminal: z.string().trim().max(200).nullable().optional(),
+        paymentReference: z.string().trim().min(1).max(200),
+        paidAt: z.string().optional(),
+      });
+      const parsed = schema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid payment evidence' } });
+        return;
+      }
+      try {
+        const auth = getAuth(req);
+        const payment = await paperlessFieldCashService.recordOnSitePaymentEvidence({
+          companyId: auth.companyId,
+          actorUserId: auth.userId,
+          jobId: getRouteParam(req.params.id),
+          invoiceId: parsed.data.invoiceId,
+          customerId: parsed.data.customerId,
+          amountCents: parsed.data.amountCents,
+          method: parsed.data.method,
+          providerTerminal: parsed.data.providerTerminal ?? null,
+          paymentReference: parsed.data.paymentReference,
+          paidAt: parsed.data.paidAt ?? new Date().toISOString(),
+        });
+        res.status(201).json({ data: { payment } });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Payment failed';
+        res.status(400).json({ error: { code: 'VALIDATION_ERROR', message } });
+      }
+    },
+  );
+
+  technicianRouter.get(
+    '/jobs/:id/arrival-prompt',
+    requireTechnicianAccess,
+    requireAssignedJob,
+    async (req, res) => {
+      const auth = getAuth(req);
+      const jobId = getRouteParam(req.params.id);
+      // Cartrack proximity is evaluated by ops; this endpoint never auto-starts labour.
+      const cartrackAvailable = String(req.query.cartrackAvailable ?? 'false') === 'true';
+      const proximityMatch = String(req.query.proximityMatch ?? 'false') === 'true';
+      const ignitionOff = String(req.query.ignitionOff ?? 'false') === 'true';
+      const jobNumber = typeof req.query.jobNumber === 'string' ? req.query.jobNumber : null;
+      const prompt = paperlessFieldCashService.buildArrivalPrompt({
+        cartrackAvailable,
+        proximityMatch,
+        ignitionOff,
+        jobId,
+        jobNumber,
+      });
+      res.json({ data: { prompt, technicianUserId: auth.userId } });
+    },
+  );
+
+  ownerRouter.get('/completion-pack/:jobId', requireOwnerAccess, async (req, res) => {
+    try {
+      const auth = getAuth(req);
+      const pack = await paperlessFieldCashService.getOwnerCompletionPack(
+        auth.companyId,
+        getRouteParam(req.params.jobId),
+      );
+      res.json({ data: { pack } });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Completion pack failed';
+      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message } });
     }
   });
 
