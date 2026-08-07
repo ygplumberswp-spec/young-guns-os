@@ -56,6 +56,9 @@ describe('YG-CUTOVER-001E Technician mobile RBAC + data truth', () => {
     assert.match(dash, /Parts Used/);
     assert.doesNotMatch(dash, /Inventory Alerts/);
     assert.doesNotMatch(dash, /unpaid/i);
+    // Summary line is greeting.message only — no finance / time-of-day salutation copy.
+    assert.match(dash, /dashboard\?\.greeting\.message/);
+    assert.doesNotMatch(dash, /Good morning|Good afternoon|Good evening|unpaid invoice/i);
 
     const inventory = read('pages/mobile/MobileInventoryPage.tsx');
     assert.match(inventory, /Parts Used/);
@@ -72,7 +75,9 @@ describe('YG-CUTOVER-001E Technician mobile RBAC + data truth', () => {
     const active = countTechnicianActiveAssignedJobs(jobs);
     assert.equal(active, 2);
     const greeting = buildTechnicianFieldGreeting({ activeAssignedJobCount: active });
-    assert.match(greeting.message, /2 assigned jobs/);
+    assert.equal(greeting.message, 'You have 2 jobs today.');
+    assert.doesNotMatch(greeting.message, /good (morning|afternoon|evening)/i);
+    assert.doesNotMatch(greeting.message, /unpaid|invoice|revenue|finance/i);
     assert.equal(technicianFieldCopyLeaksFinance(greeting.message), false);
     assert.equal(
       technicianFieldCopyLeaksFinance('You have 1 job today, 3 unpaid invoices.'),

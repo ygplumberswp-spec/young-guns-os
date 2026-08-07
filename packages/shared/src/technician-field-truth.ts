@@ -29,19 +29,19 @@ export function countTechnicianActiveAssignedJobs(
   return jobs.filter((job) => isTechnicianActiveJobStatus(job.status)).length;
 }
 
+/**
+ * Technician Today summary line — job count only.
+ * Count must be the canonical active assigned-job total for this technician
+ * (same universe as Assigned Jobs / route). Never invent a second counter.
+ */
 export function buildTechnicianFieldGreeting(input: {
   activeAssignedJobCount: number;
   now?: Date;
 }): { message: string; generatedAt: string } {
   const now = input.now ?? new Date();
-  const hour = now.getHours();
-  const salutation = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
-  const count = Math.max(0, input.activeAssignedJobCount);
-
-  const message =
-    count === 0
-      ? `${salutation}. No jobs are assigned to you right now.`
-      : `${salutation}. You have ${count} assigned job${count === 1 ? '' : 's'}.`;
+  const count = Math.max(0, Math.floor(input.activeAssignedJobCount));
+  const jobWord = count === 1 ? 'job' : 'jobs';
+  const message = `You have ${count} ${jobWord} today.`;
 
   return {
     message,

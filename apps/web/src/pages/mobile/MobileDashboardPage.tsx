@@ -26,10 +26,7 @@ export function MobileDashboardPage() {
     <div className="portal-page">
       <PageHeader
         title={`Welcome, ${user?.firstName ?? 'Technician'}`}
-        description={
-          dashboard?.greeting.message ??
-          'Your technician workspace loads assigned jobs, route and field tools here.'
-        }
+        description={dashboard?.greeting.message ?? ''}
       />
 
       <AnalyticsTabPanel
