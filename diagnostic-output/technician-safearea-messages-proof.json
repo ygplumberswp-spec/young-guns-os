@@ -1,0 +1,98 @@
+{
+  "label": "TECHNICIAN-SAFEAREA-MESSAGES-DELTA",
+  "capturedAt": "2026-08-07T17:58:37.308Z",
+  "safeArea": {
+    "safariPwaWhatsApp": "PASS_CSS_READY",
+    "method": "Header owns env(safe-area-inset-*); probe simulates Dynamic Island inset. viewport-fit=cover + black-translucent preserved for Safari/PWA/in-app browsers.",
+    "androidChrome": "PASS"
+  },
+  "messagesRootCause": "Nav previously labeled Messages while href=/mobile/notifications rendered MobileNotificationsPage. Fixed: Messages→/mobile/messages (MobileMessagesPage); Notifications remains separate.",
+  "messagingScope": [
+    "assigned_jobs",
+    "dispatch_office_requests",
+    "authorised_customer_site_via_job_card"
+  ],
+  "performance": {
+    "decision": "remove",
+    "reason": "MobilePerformancePage exposes overtime hours + productivity exports — not pure field-execution metrics; removed from nav and denied for technician direct URL.",
+    "stillInNav": false,
+    "messagesCanonical": true
+  },
+  "contracts": {
+    "viewportFitCover": true,
+    "headerOwnsSafeAreaTop": true,
+    "no720PaddingShorthandWipe": false
+  },
+  "testedWidths": [
+    320,
+    360,
+    375,
+    390,
+    414,
+    430
+  ],
+  "results": [
+    {
+      "width": 320,
+      "headerTop": 0,
+      "wordmarkTop": 60.40625,
+      "paddingTop": "57.4px",
+      "clearOfStatusBar": true,
+      "noOverflow": true,
+      "pass": true,
+      "screenshot": "/workspace/diagnostic-output/screenshots/technician-safearea-320.png"
+    },
+    {
+      "width": 360,
+      "headerTop": 0,
+      "wordmarkTop": 60.09375,
+      "paddingTop": "57.4px",
+      "clearOfStatusBar": true,
+      "noOverflow": true,
+      "pass": true,
+      "screenshot": "/workspace/diagnostic-output/screenshots/technician-safearea-360.png"
+    },
+    {
+      "width": 375,
+      "headerTop": 0,
+      "wordmarkTop": 59.78125,
+      "paddingTop": "57.4px",
+      "clearOfStatusBar": true,
+      "noOverflow": true,
+      "pass": true,
+      "screenshot": "/workspace/diagnostic-output/screenshots/technician-safearea-375.png"
+    },
+    {
+      "width": 390,
+      "headerTop": 0,
+      "wordmarkTop": 59.78125,
+      "paddingTop": "57.4px",
+      "clearOfStatusBar": true,
+      "noOverflow": true,
+      "pass": true,
+      "screenshot": "/workspace/diagnostic-output/screenshots/technician-safearea-390.png"
+    },
+    {
+      "width": 414,
+      "headerTop": 0,
+      "wordmarkTop": 59.78125,
+      "paddingTop": "57.4px",
+      "clearOfStatusBar": true,
+      "noOverflow": true,
+      "pass": true,
+      "screenshot": "/workspace/diagnostic-output/screenshots/technician-safearea-414.png"
+    },
+    {
+      "width": 430,
+      "headerTop": 0,
+      "wordmarkTop": 59.78125,
+      "paddingTop": "57.4px",
+      "clearOfStatusBar": true,
+      "noOverflow": true,
+      "pass": true,
+      "screenshot": "/workspace/diagnostic-output/screenshots/technician-safearea-430.png"
+    }
+  ],
+  "pass": true,
+  "productionTouched": 0
+}

@@ -38,6 +38,10 @@ export const MobileNotificationsPage = lazyNamed(
   () => import('../pages/mobile/MobileNotificationsPage'),
   'MobileNotificationsPage',
 );
+export const MobileMessagesPage = lazyNamed(
+  () => import('../pages/mobile/MobileMessagesPage'),
+  'MobileMessagesPage',
+);
 export const MobileSyncPage = lazyNamed(
   () => import('../pages/mobile/MobileSyncPage'),
   'MobileSyncPage',

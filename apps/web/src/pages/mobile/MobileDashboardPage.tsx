@@ -61,16 +61,16 @@ export function MobileDashboardPage() {
                 <Link href="/sync">Offline sync</Link>
               </Panel>
               <Panel
+                title="Messages"
+                description={`${dashboard.pendingRequestCount} office request(s) · job threads`}
+              >
+                <Link href="/messages">Open messages</Link>
+              </Panel>
+              <Panel
                 title="Notifications"
                 description={`${dashboard.unreadNotificationCount} unread`}
               >
                 <Link href="/notifications">Open notifications</Link>
-              </Panel>
-              <Panel
-                title="Requests"
-                description={`${dashboard.pendingRequestCount} pending approval`}
-              >
-                <Link href="/time">Time & requests</Link>
               </Panel>
             </div>
 

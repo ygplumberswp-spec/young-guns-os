@@ -127,9 +127,16 @@ describe('evaluateOwnerStaffDirectUrl (forbidden direct URL browser contract)', 
 
 describe('evaluateTechnicianDirectUrl (mobile URL guess contract)', () => {
   it('allows technician direct access to mobile routes', () => {
-    for (const path of ['/mobile', '/mobile/jobs', '/mobile/sync']) {
+    for (const path of ['/mobile', '/mobile/jobs', '/mobile/sync', '/mobile/messages']) {
       assert.equal(evaluateTechnicianDirectUrl(technician, path).allowed, true, path);
     }
+  });
+
+  it('denies technician Performance analytics URL but allows owner peek', () => {
+    const denied = evaluateTechnicianDirectUrl(technician, '/mobile/performance');
+    assert.equal(denied.allowed, false);
+    if (!denied.allowed) assert.equal(denied.redirectPath, '/mobile');
+    assert.equal(evaluateTechnicianDirectUrl(companyOwner, '/mobile/performance').allowed, true);
   });
 
   it('redirects accountant away from mobile URL guesses', () => {
