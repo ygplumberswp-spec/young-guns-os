@@ -246,10 +246,16 @@ export const SAAS_ONBOARDING_IMPORT_ENTITIES: SaasOnboardingImportEntity[] = [
   },
   { entityType: 'supplier', label: 'Suppliers', supported: true },
   {
+    entityType: 'asset',
+    label: 'Equipment / Assets',
+    supported: true,
+    note: 'Customer/site equipment via canonical asset registry — serial/model provenance retained; uncertain matches require review.',
+  },
+  {
     entityType: 'inventory',
     label: 'Inventory / Materials',
     supported: true,
-    note: 'Physical stock on hand only — not services, labour, or direct purchases.',
+    note: 'Physical stock on hand only — not services, labour, or direct purchases. Existing qty is never overwritten without replace review.',
   },
   {
     entityType: 'price_book',

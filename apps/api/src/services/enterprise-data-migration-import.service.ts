@@ -2,15 +2,21 @@ import { and, eq, ilike, or, sql } from 'drizzle-orm';
 import type { DmEntityType, DmRecordOutcome, DmSourceFormat } from '@titan/shared';
 import {
   HISTORICAL_IMPORT_UNSUPPORTED_MESSAGE,
+  isPhysicalStockImportCandidate,
   mapDmFormatToHistoricalProvider,
   normalizeHistoricalDocumentNumber,
+  normalizeSupplierNameForMatch,
   parseHistoricalAmountToCents,
   paymentImportCreatesLedgerEntry,
   preferXeroCanonicalRecord,
+  previewInventoryStockImpact,
+  scoreEquipmentHistoricalMatch,
   toDbSourceProvider,
 } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
 import {
+  alAssetRegistryProfiles,
+  assetEquipment,
   cxCustomerProperties,
   inventoryItems,
   invoices,
@@ -24,6 +30,8 @@ import type { LeadsService } from './leads.service.js';
 import type { ProcurementService } from './procurement.service.js';
 import type { InventoryService } from './inventory.service.js';
 import type { DocumentsService } from './documents.service.js';
+import type { AssetEquipmentIntelligenceService } from './asset-equipment-intelligence.service.js';
+import type { EnterpriseAssetLifecycleService } from './enterprise-asset-lifecycle.service.js';
 
 export type ImportRowResult = {
   rowNumber: number;
@@ -38,6 +46,9 @@ export type HistoricalImportContext = {
   sourceFormat: DmSourceFormat;
   /** Rows resolved as merge/link → reuse existing entity id (idempotent). */
   linkRows?: Map<number, string>;
+  /** Inventory rows where replace was explicitly approved for stock overwrite. */
+  replaceStockRows?: Set<number>;
+  rowNumber?: number;
 };
 
 type ImportDeps = {
@@ -47,6 +58,8 @@ type ImportDeps = {
   procurementService: ProcurementService;
   inventoryService: InventoryService;
   documentsService: DocumentsService;
+  assetEquipmentIntelligenceService: AssetEquipmentIntelligenceService;
+  enterpriseAssetLifecycleService: EnterpriseAssetLifecycleService;
 };
 
 function rowText(row: Record<string, string>, ...keys: string[]): string | null {
@@ -147,7 +160,7 @@ export class EnterpriseDataMigrationImportService {
           userId,
           entityType,
           row,
-          context,
+          context ? { ...context, rowNumber } : context,
         );
         results.push({
           rowNumber,
@@ -183,13 +196,15 @@ export class EnterpriseDataMigrationImportService {
       case 'lead':
         return this.importLead(companyId, userId, row);
       case 'supplier':
-        return this.importSupplier(companyId, row);
+        return this.importSupplier(companyId, row, context);
       case 'inventory':
-        return this.importInventory(companyId, row);
+        return this.importInventory(companyId, row, context);
       case 'contact':
         return this.importContact(companyId, row);
       case 'property':
         return this.importProperty(companyId, row, context);
+      case 'asset':
+        return this.importAsset(companyId, userId, row, context);
       case 'job':
         return this.importJob(companyId, userId, row, context);
       case 'quote':
@@ -301,28 +316,303 @@ export class EnterpriseDataMigrationImportService {
     return created.lead.id;
   }
 
-  private async importSupplier(companyId: string, row: Record<string, string>): Promise<string> {
+  private async importSupplier(
+    companyId: string,
+    row: Record<string, string>,
+    context?: HistoricalImportContext,
+  ): Promise<string> {
+    const name = rowText(row, 'name');
+    if (!name) throw new Error('Supplier name is required.');
+    const email = rowText(row, 'email');
+    const supplierCode = rowText(row, 'supplierCode', 'code');
+    const provenance = this.provenance(row, context);
+    const existing = await this.deps.procurementService.listSuppliers(companyId);
+
+    if (provenance.sourceExternalId) {
+      const byExternal = existing.find(
+        (supplier) =>
+          (supplier.sourceProvider ?? '') === provenance.sourceProvider &&
+          (supplier.sourceExternalId ?? '') === provenance.sourceExternalId,
+      );
+      if (byExternal) return byExternal.id;
+    }
+    if (supplierCode) {
+      const byCode = existing.find(
+        (supplier) => (supplier.supplierCode ?? '').toLowerCase() === supplierCode.toLowerCase(),
+      );
+      if (byCode) return byCode.id;
+    }
+    if (email) {
+      const byEmail = existing.find(
+        (supplier) => (supplier.email ?? '').toLowerCase() === email.toLowerCase(),
+      );
+      if (byEmail) return byEmail.id;
+    }
+    const normalized = normalizeSupplierNameForMatch(name);
+    const exactNameMatches = existing.filter(
+      (supplier) => normalizeSupplierNameForMatch(supplier.name) === normalized,
+    );
+    if (exactNameMatches.length === 1) return exactNameMatches[0]!.id;
+    if (exactNameMatches.length > 1) {
+      throw new Error(
+        `Low-confidence supplier match for "${name}" — multiple normalised name matches require REVIEW.`,
+      );
+    }
+
     const created = await this.deps.procurementService.createSupplier(companyId, {
-      name: rowText(row, 'name')!,
-      email: rowText(row, 'email'),
+      name,
+      email,
       phone: rowText(row, 'phone'),
+      address: rowText(row, 'address'),
       notes: rowText(row, 'notes'),
+      supplierCode,
+      category: rowText(row, 'category'),
+      sourceProvider: provenance.sourceProvider,
+      sourceExternalId: provenance.sourceExternalId,
+      status: (row.status as 'active' | 'inactive' | undefined) ?? undefined,
     });
     return created.id;
   }
 
-  private async importInventory(companyId: string, row: Record<string, string>): Promise<string> {
-    const sku = rowText(row, 'sku')!;
-    const existing = await this.deps.inventoryService.listItems(companyId);
-    const match = existing.find((item) => item.sku.toLowerCase() === sku.toLowerCase());
-    if (match) return match.id;
-    const created = await this.deps.inventoryService.createItem(companyId, {
-      sku,
-      name: rowText(row, 'name')!,
-      status: (row.status as 'active' | 'inactive' | undefined) ?? undefined,
-      sellPriceCents: parseHistoricalAmountToCents(row.sellPriceCents) ?? undefined,
-      unit: rowText(row, 'unit') ?? undefined,
+  private async importInventory(
+    companyId: string,
+    row: Record<string, string>,
+    context?: HistoricalImportContext,
+  ): Promise<string> {
+    const sku = rowText(row, 'sku');
+    const name = rowText(row, 'name');
+    if (!sku || !name) throw new Error('Inventory SKU and name are required.');
+
+    const physical = isPhysicalStockImportCandidate({
+      name,
+      description: rowText(row, 'description'),
+      category: rowText(row, 'category'),
+      itemType: rowText(row, 'itemType'),
     });
+    if (!physical.accepted) {
+      throw new Error(physical.reason ?? 'Not physical stock.');
+    }
+
+    const existingItems = await this.deps.inventoryService.listItems(companyId);
+    const match = existingItems.find((item) => item.sku.toLowerCase() === sku.toLowerCase());
+    const proposedQtyRaw = rowText(row, 'quantity');
+    const proposedQty =
+      proposedQtyRaw && /^-?\d+(\.\d+)?$/.test(proposedQtyRaw.replace(/,/g, ''))
+        ? Math.trunc(Number(proposedQtyRaw.replace(/,/g, '')))
+        : null;
+
+    const locations = await this.deps.inventoryService.listLocations(companyId);
+    let locationId = locations[0]?.id ?? null;
+    let locationName = locations[0]?.name ?? null;
+    const locationHint = rowText(row, 'location');
+    if (locationHint) {
+      const found = locations.find(
+        (location) => location.name.toLowerCase() === locationHint.toLowerCase(),
+      );
+      if (found) {
+        locationId = found.id;
+        locationName = found.name;
+      }
+    }
+    if (!locationId && proposedQty != null && proposedQty >= 0) {
+      const createdLocation = await this.deps.inventoryService.createLocation(companyId, {
+        name: locationHint ?? 'Main Warehouse',
+      });
+      locationId = createdLocation.id;
+      locationName = createdLocation.name;
+    }
+
+    const overwriteResolved = Boolean(
+      context?.rowNumber && context.replaceStockRows?.has(context.rowNumber),
+    );
+    const impact = previewInventoryStockImpact({
+      sku,
+      itemExists: Boolean(match),
+      existingQuantityOnHand: match?.totalQuantityOnHand ?? 0,
+      proposedQuantity: proposedQty,
+      locationName,
+      overwriteResolved,
+    });
+    if (proposedQty != null && proposedQty < 0) {
+      throw new Error('Negative stock is refused.');
+    }
+
+    let itemId = match?.id;
+    if (!itemId) {
+      const created = await this.deps.inventoryService.createItem(companyId, {
+        sku,
+        name,
+        description: [
+          rowText(row, 'description'),
+          rowText(row, 'category') ? `Category: ${rowText(row, 'category')}` : null,
+          'HISTORICAL_INVENTORY — physical stock catalogue.',
+        ]
+          .filter(Boolean)
+          .join(' | '),
+        status: (row.status as 'active' | 'inactive' | undefined) ?? undefined,
+        sellPriceCents: parseHistoricalAmountToCents(row.sellPriceCents) ?? undefined,
+        unitCostCents: parseHistoricalAmountToCents(row.unitCostCents) ?? undefined,
+        unit: rowText(row, 'unit') ?? undefined,
+      });
+      itemId = created.id;
+    }
+
+    if (impact.willWriteStock && locationId && proposedQty != null && proposedQty >= 0) {
+      await this.deps.inventoryService.setStockLevel(companyId, {
+        itemId,
+        locationId,
+        quantityOnHand: proposedQty,
+        reason: overwriteResolved
+          ? 'historical_import_replace_approved'
+          : 'historical_import_new_item_stock',
+      });
+    }
+
+    return itemId;
+  }
+
+  private async importAsset(
+    companyId: string,
+    userId: string,
+    row: Record<string, string>,
+    context?: HistoricalImportContext,
+  ): Promise<string> {
+    const name = rowText(row, 'name');
+    if (!name) throw new Error('Asset/equipment name is required.');
+    const serialNumber = rowText(row, 'serialNumber', 'serial');
+    const provenance = this.provenance(row, context);
+    const manufacturer = rowText(row, 'manufacturer');
+    const model = rowText(row, 'model');
+    const equipmentType = rowText(row, 'equipmentType', 'assetType') ?? 'equipment';
+
+    const existingAssets = await this.deps.db.query.assetEquipment.findMany({
+      where: eq(assetEquipment.companyId, companyId),
+      limit: 5000,
+    });
+
+    if (provenance.sourceExternalId) {
+      const byExternal = existingAssets.find((asset) => {
+        const meta = (asset.metadata ?? {}) as Record<string, unknown>;
+        return (
+          meta.sourceProvider === provenance.sourceProvider &&
+          meta.sourceExternalId === provenance.sourceExternalId
+        );
+      });
+      if (byExternal) return byExternal.id;
+    }
+
+    let customerId: string | null = null;
+    let propertyId: string | null = null;
+    try {
+      customerId = await this.resolveCustomerId(companyId, row);
+      propertyId = await this.resolvePropertyId(companyId, customerId, row);
+    } catch {
+      customerId = null;
+      propertyId = null;
+    }
+
+    if (serialNumber) {
+      const serialMatches = existingAssets.filter(
+        (asset) => (asset.serialNumber ?? '').toLowerCase() === serialNumber.toLowerCase(),
+      );
+      if (serialMatches.length === 1) {
+        const scored = scoreEquipmentHistoricalMatch({
+          serialMatch: true,
+          customerMatch: Boolean(customerId),
+          propertyMatch: Boolean(propertyId),
+          manufacturerModelMatch: Boolean(manufacturer || model),
+        });
+        if (scored.requiresHumanReview && !customerId) {
+          throw new Error(
+            `Low-confidence equipment match for serial ${serialNumber} — REVIEW required.`,
+          );
+        }
+        return serialMatches[0]!.id;
+      }
+      if (serialMatches.length > 1) {
+        throw new Error(
+          `Ambiguous serial number ${serialNumber} — multiple assets require REVIEW.`,
+        );
+      }
+    }
+
+    const assetTypeRaw = (equipmentType || 'equipment').toLowerCase().replace(/\s+/g, '_');
+    const assetType = (
+      ['vehicle', 'machinery', 'tool', 'equipment', 'office_asset', 'it_equipment', 'rented_asset']
+        .includes(assetTypeRaw)
+        ? assetTypeRaw
+        : 'equipment'
+    ) as
+      | 'vehicle'
+      | 'machinery'
+      | 'tool'
+      | 'equipment'
+      | 'office_asset'
+      | 'it_equipment'
+      | 'rented_asset';
+
+    const created = await this.deps.assetEquipmentIntelligenceService.createAsset(
+      { companyId, userId },
+      {
+        assetType,
+        name,
+        description: [
+          rowText(row, 'notes', 'description'),
+          manufacturer ? `Manufacturer: ${manufacturer}` : null,
+          model ? `Model: ${model}` : null,
+          'HISTORICAL_EQUIPMENT_IMPORT',
+        ]
+          .filter(Boolean)
+          .join(' | '),
+        serialNumber: serialNumber ?? undefined,
+        warrantyExpiresAt: rowText(row, 'warrantyExpiresAt') ?? undefined,
+        locationText: rowText(row, 'location') ?? undefined,
+        status: 'active',
+      },
+    );
+
+    await this.deps.db
+      .update(assetEquipment)
+      .set({
+        metadata: {
+          historicalImport: true,
+          sourceProvider: provenance.sourceProvider,
+          sourceExternalId: provenance.sourceExternalId,
+          sourceImportJobId: provenance.sourceImportJobId,
+          equipmentType,
+          manufacturer,
+          model,
+          relatedJobNumber: rowText(row, 'jobNumber'),
+        },
+        updatedAt: new Date(),
+      })
+      .where(and(eq(assetEquipment.id, created.id), eq(assetEquipment.companyId, companyId)));
+
+    const existingProfile = await this.deps.db.query.alAssetRegistryProfiles.findFirst({
+      where: and(
+        eq(alAssetRegistryProfiles.companyId, companyId),
+        eq(alAssetRegistryProfiles.assetId, created.id),
+      ),
+    });
+    if (!existingProfile) {
+      await this.deps.enterpriseAssetLifecycleService.createRegistryProfile(
+        { companyId, userId },
+        {
+          assetId: created.id,
+          ownershipType: customerId ? 'customer_owned' : 'company_owned',
+          customerId: customerId ?? undefined,
+          propertyId: propertyId ?? undefined,
+          manufacturer: manufacturer ?? undefined,
+          model: model ?? undefined,
+          installationDate: rowText(row, 'installationDate') ?? undefined,
+          customCategoryName: equipmentType,
+          warrantyDetails: rowText(row, 'warrantyExpiresAt')
+            ? { expiresAt: rowText(row, 'warrantyExpiresAt') }
+            : {},
+        },
+      );
+    }
+
     return created.id;
   }
 

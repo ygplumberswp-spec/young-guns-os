@@ -1387,6 +1387,13 @@
       "when": 1786977600000,
       "tag": "0202_historical_import_job_360",
       "breakpoints": true
+    },
+    {
+      "idx": 198,
+      "version": "7",
+      "when": 1787064000000,
+      "tag": "0203_historical_import_completion",
+      "breakpoints": true
     }
   ]
 }

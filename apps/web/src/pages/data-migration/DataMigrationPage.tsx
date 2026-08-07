@@ -313,6 +313,7 @@ export function DataMigrationPage() {
                     <option value="property">Property / Site</option>
                     <option value="lead">Lead</option>
                     <option value="supplier">Supplier</option>
+                    <option value="asset">Equipment / Asset</option>
                     <option value="inventory">Inventory (stock)</option>
                     <option value="price_book">Price Book (catalogue)</option>
                     <option value="job">Job (historical)</option>

@@ -148,15 +148,43 @@ export class JobsService {
           or(
             ilike(jobs.jobNumber, pattern),
             ilike(customers.name, pattern),
+            ilike(customers.email, pattern),
             ilike(jobs.title, pattern),
             ilike(jobs.jobType, pattern),
             ilike(jobs.snapshotStreet, pattern),
             ilike(jobs.snapshotSuburb, pattern),
             ilike(jobs.snapshotCity, pattern),
             ilike(jobs.snapshotPostalCode, pattern),
+            ilike(jobs.snapshotFormattedAddress, pattern),
             ilike(jobs.snapshotSiteContactMobile, pattern),
+            ilike(jobs.snapshotSiteContactEmail, pattern),
             ilike(jobs.snapshotSiteContactName, pattern),
             ilike(customers.phone, pattern),
+            sql`exists (
+              select 1 from quotes
+              where quotes.job_id = ${jobs.id}
+                and quotes.company_id = ${companyId}
+                and quotes.quote_number ilike ${pattern}
+            )`,
+            sql`exists (
+              select 1 from invoices
+              where invoices.job_id = ${jobs.id}
+                and invoices.company_id = ${companyId}
+                and (
+                  invoices.invoice_number ilike ${pattern}
+                  or coalesce(invoices.xero_invoice_number, '') ilike ${pattern}
+                )
+            )`,
+            sql`exists (
+              select 1 from al_asset_registry_profiles arp
+              join asset_equipment ae on ae.id = arp.asset_id
+              where arp.company_id = ${companyId}
+                and arp.customer_id = ${jobs.customerId}
+                and (
+                  coalesce(ae.serial_number, '') ilike ${pattern}
+                  or ae.name ilike ${pattern}
+                )
+            )`,
             ...mobileMatchers,
           ),
         ),

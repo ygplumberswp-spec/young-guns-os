@@ -34,7 +34,17 @@ describe('Job 360 tabs', () => {
 
   it('Job 360 retains commercial + evidence sections for historical archive chains', () => {
     const ids = JOB_360_TABS.map((tab) => tab.id);
-    for (const required of ['quote', 'invoice', 'payment', 'photos', 'documents', 'coc'] as const) {
+    for (const required of [
+      'quote',
+      'invoice',
+      'payment',
+      'photos',
+      'documents',
+      'coc',
+      'materials',
+      'time',
+      'activity',
+    ] as const) {
       assert.ok(ids.includes(required), `missing archive tab ${required}`);
     }
   });

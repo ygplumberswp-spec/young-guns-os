@@ -25,6 +25,10 @@ export type SupplierSummary = {
   address: string | null;
   notes: string | null;
   status: SupplierStatus;
+  supplierCode: string | null;
+  category: string | null;
+  sourceProvider: string | null;
+  sourceExternalId: string | null;
   productCount: number;
   purchaseOrderCount: number;
   completedOrderCount: number;
@@ -172,6 +176,10 @@ export type CreateSupplierRequest = {
   address?: string | null;
   notes?: string | null;
   status?: SupplierStatus;
+  supplierCode?: string | null;
+  category?: string | null;
+  sourceProvider?: string | null;
+  sourceExternalId?: string | null;
 };
 
 export type UpdateSupplierRequest = Partial<CreateSupplierRequest>;

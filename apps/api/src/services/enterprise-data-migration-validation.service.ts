@@ -1,5 +1,11 @@
 import type { DmEntityType, DmValidationSeverity } from '@titan/shared';
-import { DM_ENTITY_FIELD_TARGETS, normalizeHistoricalDocumentNumber } from '@titan/shared';
+import {
+  DM_ENTITY_FIELD_TARGETS,
+  isPhysicalStockImportCandidate,
+  normalizeHistoricalDocumentNumber,
+  normalizeSupplierNameForMatch,
+  previewInventoryStockImpact,
+} from '@titan/shared';
 
 export type ValidationIssue = {
   rowNumber: number;
@@ -15,6 +21,7 @@ const REQUIRED_FIELDS: Partial<Record<DmEntityType, string[]>> = {
   supplier: ['name'],
   contact: ['name'],
   property: ['propertyName'],
+  asset: ['name'],
   job: ['title', 'customerName'],
   quote: ['quoteNumber', 'customerName', 'amountCents'],
   invoice: ['invoiceNumber', 'customerName', 'amountCents'],
@@ -153,6 +160,53 @@ export class EnterpriseDataMigrationValidationService {
         }
       }
 
+      if (entityType === 'inventory') {
+        const physical = isPhysicalStockImportCandidate({
+          name: row.name,
+          description: row.description,
+          category: row.category,
+          itemType: row.itemType,
+        });
+        if (!physical.accepted) {
+          issues.push({
+            rowNumber,
+            fieldName: 'name',
+            severity: 'error',
+            errorCode: 'not_physical_stock',
+            message: physical.reason ?? 'Labour/service items cannot become physical stock.',
+          });
+        }
+        const qty = row.quantity?.trim();
+        if (qty) {
+          const parsed = Number(qty.replace(/,/g, ''));
+          const impact = previewInventoryStockImpact({
+            sku: row.sku ?? '',
+            itemExists: existingKeys.has(buildDuplicateKey('inventory', row)),
+            proposedQuantity: Number.isFinite(parsed) ? Math.trunc(parsed) : null,
+            locationName: row.location?.trim() || null,
+          });
+          issues.push({
+            rowNumber,
+            fieldName: 'quantity',
+            severity: impact.warning?.includes('Negative') ? 'error' : 'info',
+            errorCode: 'inventory_stock_preview',
+            message: [
+              `Stock preview: action=${impact.action}`,
+              impact.proposedQuantityOnHand != null
+                ? `proposedQty=${impact.proposedQuantityOnHand}`
+                : null,
+              impact.existingQuantityOnHand != null
+                ? `existingQty=${impact.existingQuantityOnHand}`
+                : null,
+              impact.willWriteStock ? 'willWriteStock=yes' : 'willWriteStock=no',
+              impact.warning,
+            ]
+              .filter(Boolean)
+              .join(' · '),
+          });
+        }
+      }
+
       const duplicateKey = buildDuplicateKey(entityType, row);
       if (duplicateKey && !duplicateKey.endsWith(':') && existingKeys.has(duplicateKey)) {
         issues.push({
@@ -185,8 +239,19 @@ export class EnterpriseDataMigrationValidationService {
 export function buildDuplicateKey(entityType: DmEntityType, row: Record<string, string>): string {
   switch (entityType) {
     case 'customer':
-    case 'supplier':
       return `${entityType}:${(row.email ?? row.name ?? '').toLowerCase().trim()}`;
+    case 'supplier': {
+      if (row.sourceExternalId?.trim()) {
+        return `supplier:ext:${row.sourceExternalId.trim().toLowerCase()}`;
+      }
+      if (row.supplierCode?.trim()) {
+        return `supplier:code:${row.supplierCode.trim().toLowerCase()}`;
+      }
+      if (row.email?.trim()) {
+        return `supplier:${row.email.trim().toLowerCase()}`;
+      }
+      return `supplier:${normalizeSupplierNameForMatch(row.name)}`;
+    }
     case 'lead':
       return `lead:${(row.contactEmail ?? row.contactName ?? row.title ?? '').toLowerCase().trim()}`;
     case 'contact':
@@ -200,6 +265,8 @@ export function buildDuplicateKey(entityType: DmEntityType, row: Record<string, 
       )
         .toLowerCase()
         .trim()}`;
+    case 'asset':
+      return `asset:${(row.serialNumber ?? row.sourceExternalId ?? row.name ?? '').toLowerCase().trim()}`;
     case 'job':
       return `job:${normalizeHistoricalDocumentNumber(row.jobNumber) || (row.title ?? '').toLowerCase().trim()}|${(
         row.customerName ??

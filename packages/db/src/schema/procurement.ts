@@ -54,6 +54,12 @@ export const suppliers = pgTable('suppliers', {
   address: text('address'),
   notes: text('notes'),
   status: supplierStatusEnum('status').notNull().default('active'),
+  /** Optional supplier code/reference from historical systems. */
+  supplierCode: text('supplier_code'),
+  category: text('category'),
+  /** Import provenance — never invents supplier commercial truth. */
+  sourceProvider: text('source_provider'),
+  sourceExternalId: text('source_external_id'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
