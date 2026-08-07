@@ -750,11 +750,50 @@ export function createJobsRouter({
     },
   );
 
+  router.post(
+    '/:jobId/time-entries/:timeEntryId/correct-labour-rate',
+    requireAnyPermission('finance:write', '*'),
+    async (req, res) => {
+      const auth = getAuth(req);
+      if (!canManageJobProfitabilityAdjustments(auth)) {
+        res.status(403).json({
+          error: { code: 'FORBIDDEN', message: 'Labour rate correction requires finance write access' },
+        });
+        return;
+      }
+      const parsed = z
+        .object({
+          hourlyCostCents: z.number().int().positive(),
+          reason: z.string().trim().min(1).max(2000),
+        })
+        .safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: parsed.error.message } });
+        return;
+      }
+      try {
+        await jobProfitabilityService.correctTimeEntryLabourRate(
+          {
+            companyId: auth.companyId,
+            userId: auth.userId,
+            roleName: auth.roleName,
+            permissions: auth.permissions,
+          },
+          getRouteParam(req.params.jobId),
+          getRouteParam(req.params.timeEntryId),
+          parsed.data,
+        );
+        res.json({ data: { ok: true } });
+      } catch (error) {
+        handleJobProfitabilityError(res, error);
+      }
+    },
+  );
+
   router.use(
     '/:jobId',
     createJobFinancialReviewRouter({
       jobCostControlService,
-      teamService,
       jwtSecret,
       authService,
     }),

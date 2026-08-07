@@ -36,12 +36,15 @@ import type {
 import {
   buildGoogleMapsNavigateUrl,
   buildLabourRateLockMetadata,
+  computeDurationMinutes,
+  detectActiveTimeConflict,
   formatMapsEtaCapabilityLabel,
   isFinanciallyAuthoritativeTimeEntry,
   unresolvedVehicleAddress,
   validateFinancePhotoFile,
   validateFinancePhotoMagicBytes,
 } from '@titan/shared';
+import { emitBusinessEvent } from '../lib/automation-events.js';
 import { classifyOfflineFlushByExistingLog } from './job-execution-completion-idempotency.js';
 import type { DatabaseClient } from '@titan/db';
 import {
@@ -469,8 +472,19 @@ export class MobileWorkforceService {
 
   async createTimeEntry(
     scope: TechnicianScope,
-    input: CreateMobileTimeEntryRequest,
+    input: CreateMobileTimeEntryRequest & { clientActionId?: string },
   ): Promise<MobileTimeEntrySummary> {
+    if (input.clientActionId) {
+      const existing = await this.db.query.mobileTimeEntries.findFirst({
+        where: and(
+          eq(mobileTimeEntries.companyId, scope.companyId),
+          eq(mobileTimeEntries.clientActionId, input.clientActionId),
+        ),
+        with: { job: true, user: true },
+      });
+      if (existing) return toTimeEntrySummary(existing);
+    }
+
     if (input.jobId) {
       await this.requireAssignedJob(scope, input.jobId);
     }
@@ -479,7 +493,7 @@ export class MobileWorkforceService {
     const endedAt = input.endedAt ? new Date(input.endedAt) : null;
     const durationMinutes =
       input.durationMinutes ??
-      (endedAt ? Math.max(1, Math.round((endedAt.getTime() - startedAt.getTime()) / 60000)) : null);
+      (endedAt ? computeDurationMinutes(startedAt, endedAt) : null);
 
     const clientMetadata =
       input.metadata && typeof input.metadata === 'object' ? { ...input.metadata } : {};
@@ -510,6 +524,7 @@ export class MobileWorkforceService {
         durationMinutes,
         notes: input.notes?.trim() || null,
         metadata,
+        clientActionId: input.clientActionId?.trim() || null,
       })
       .returning();
 
@@ -518,12 +533,168 @@ export class MobileWorkforceService {
       jobId: input.jobId ?? null,
     });
 
+    if (endedAt && input.jobId && isFinanciallyAuthoritativeTimeEntry(input.entryType, endedAt, durationMinutes)) {
+      emitBusinessEvent({
+        companyId: scope.companyId,
+        eventType: 'job.time_captured',
+        entityType: 'mobile_time_entry',
+        entityId: created!.id,
+        actorUserId: scope.userId,
+        payload: { jobId: input.jobId, timeEntryId: created!.id },
+      });
+    }
+
     const row = await this.db.query.mobileTimeEntries.findFirst({
       where: eq(mobileTimeEntries.id, created!.id),
       with: { job: true, user: true },
     });
 
     return toTimeEntrySummary(row!);
+  }
+
+  async startTimedEntry(
+    scope: TechnicianScope,
+    input: {
+      entryType: 'job_time' | 'travel';
+      jobId?: string;
+      notes?: string;
+      clientActionId?: string;
+    },
+  ): Promise<MobileTimeEntrySummary> {
+    if (input.clientActionId) {
+      const existing = await this.db.query.mobileTimeEntries.findFirst({
+        where: and(
+          eq(mobileTimeEntries.companyId, scope.companyId),
+          eq(mobileTimeEntries.clientActionId, input.clientActionId),
+        ),
+        with: { job: true, user: true },
+      });
+      if (existing) return toTimeEntrySummary(existing);
+    }
+
+    if (input.jobId) {
+      await this.requireAssignedJob(scope, input.jobId);
+    }
+
+    const openEntries = await this.db.query.mobileTimeEntries.findMany({
+      where: and(
+        eq(mobileTimeEntries.companyId, scope.companyId),
+        eq(mobileTimeEntries.userId, scope.userId),
+        isNull(mobileTimeEntries.endedAt),
+      ),
+    });
+
+    let jobStatus: string | undefined;
+    if (input.jobId) {
+      const job = await this.db.query.jobs.findFirst({
+        where: and(eq(jobs.companyId, scope.companyId), eq(jobs.id, input.jobId)),
+        columns: { status: true },
+      });
+      jobStatus = job?.status;
+    }
+
+    const conflict = detectActiveTimeConflict(
+      openEntries.map((row) => ({
+        id: row.id,
+        entryType: row.entryType,
+        endedAt: row.endedAt?.toISOString() ?? null,
+        jobId: row.jobId,
+      })),
+      { entryType: input.entryType, jobId: input.jobId, jobStatus },
+    );
+    if (conflict) {
+      throw new MobileWorkforceError(conflict.code, conflict.message);
+    }
+
+    return this.createTimeEntry(scope, {
+      entryType: input.entryType,
+      jobId: input.jobId,
+      notes: input.notes,
+      clientActionId: input.clientActionId,
+      startedAt: new Date().toISOString(),
+    });
+  }
+
+  async stopTimeEntry(
+    scope: TechnicianScope,
+    timeEntryId: string,
+    input: { endedAt?: string; clientActionId?: string } = {},
+  ): Promise<MobileTimeEntrySummary> {
+    const entry = await this.db.query.mobileTimeEntries.findFirst({
+      where: and(
+        eq(mobileTimeEntries.companyId, scope.companyId),
+        eq(mobileTimeEntries.id, timeEntryId),
+        eq(mobileTimeEntries.userId, scope.userId),
+      ),
+    });
+    if (!entry) {
+      throw new MobileWorkforceError('NOT_FOUND', 'Time entry not found');
+    }
+    if (entry.endedAt) {
+      const row = await this.db.query.mobileTimeEntries.findFirst({
+        where: eq(mobileTimeEntries.id, entry.id),
+        with: { job: true, user: true },
+      });
+      return toTimeEntrySummary(row!);
+    }
+
+    const endedAt = input.endedAt ? new Date(input.endedAt) : new Date();
+    const durationMinutes = computeDurationMinutes(entry.startedAt, endedAt);
+
+    const settings = await this.db.query.companyFinanceSettings.findFirst({
+      where: eq(companyFinanceSettings.companyId, scope.companyId),
+      columns: { defaultInternalLabourRateCentsPerHour: true },
+    });
+    const metadata = buildLabourRateLockMetadata({
+      existingMetadata: (entry.metadata ?? {}) as Record<string, unknown>,
+      companyDefaultRateCentsPerHour: settings?.defaultInternalLabourRateCentsPerHour ?? 8000,
+      lockedAt: endedAt.toISOString(),
+    });
+
+    const [updated] = await this.db
+      .update(mobileTimeEntries)
+      .set({
+        endedAt,
+        durationMinutes,
+        metadata,
+      })
+      .where(eq(mobileTimeEntries.id, entry.id))
+      .returning();
+
+    await this.logAction(scope, 'stop_time_entry', 'time_entry', entry.id, {
+      durationMinutes,
+      jobId: entry.jobId,
+    });
+
+    if (entry.jobId && isFinanciallyAuthoritativeTimeEntry(entry.entryType, endedAt, durationMinutes)) {
+      emitBusinessEvent({
+        companyId: scope.companyId,
+        eventType: 'job.time_captured',
+        entityType: 'mobile_time_entry',
+        entityId: entry.id,
+        actorUserId: scope.userId,
+        payload: { jobId: entry.jobId, timeEntryId: entry.id },
+      });
+    }
+
+    const row = await this.db.query.mobileTimeEntries.findFirst({
+      where: eq(mobileTimeEntries.id, updated!.id),
+      with: { job: true, user: true },
+    });
+    return toTimeEntrySummary(row!);
+  }
+
+  async getActiveTimeEntries(scope: TechnicianScope) {
+    const rows = await this.db.query.mobileTimeEntries.findMany({
+      where: and(
+        eq(mobileTimeEntries.companyId, scope.companyId),
+        eq(mobileTimeEntries.userId, scope.userId),
+        isNull(mobileTimeEntries.endedAt),
+      ),
+      with: { job: true, user: true },
+      orderBy: [desc(mobileTimeEntries.startedAt)],
+    });
+    return rows.map(toTimeEntrySummary);
   }
 
   async submitInventoryUsage(

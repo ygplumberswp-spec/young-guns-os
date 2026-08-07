@@ -12,13 +12,13 @@ import type {
   MobileJobDocumentationSummary,
   MobileJobExecutionWorkspace,
   MobileRouteIntelligence,
+  MobileTimeEntrySummary,
   MobileWorkforceDashboard,
   MobileWorkforceInventoryCentre,
   MobileWorkforceJobList,
   MobileWorkforceNotificationCentre,
   MobileOfflineBundle,
   MobileSyncProcessResult,
-  MobileTimeEntrySummary,
   MobileWorkforceRequestSummary,
   NotificationSummary,
   RecordJobMaterialLineRequest,
@@ -89,13 +89,51 @@ export async function fetchMobileTimeEntries(accessToken: string) {
 
 export async function createMobileTimeEntry(
   accessToken: string,
-  body: { entryType: string; jobId?: string; notes?: string },
+  body: {
+    entryType: string;
+    jobId?: string;
+    notes?: string;
+    clientActionId?: string;
+    startedAt?: string;
+    endedAt?: string;
+  },
 ) {
   const data = await request<{ entry: MobileTimeEntrySummary }>(
     '/mobile/technician/workforce/time',
     { accessToken, method: 'POST', body },
   );
   return data.entry;
+}
+
+export async function startMobileTimedEntry(
+  accessToken: string,
+  body: { entryType: 'job_time' | 'travel'; jobId?: string; notes?: string; clientActionId?: string },
+) {
+  const data = await request<{ entry: MobileTimeEntrySummary }>(
+    '/mobile/technician/workforce/time/start',
+    { accessToken, method: 'POST', body },
+  );
+  return data.entry;
+}
+
+export async function stopMobileTimeEntry(
+  accessToken: string,
+  timeEntryId: string,
+  body: { clientActionId?: string } = {},
+) {
+  const data = await request<{ entry: MobileTimeEntrySummary }>(
+    `/mobile/technician/workforce/time/${timeEntryId}/stop`,
+    { accessToken, method: 'POST', body },
+  );
+  return data.entry;
+}
+
+export async function fetchActiveMobileTimeEntries(accessToken: string) {
+  const data = await request<{ entries: MobileTimeEntrySummary[] }>(
+    '/mobile/technician/workforce/time/active',
+    { accessToken },
+  );
+  return data.entries;
 }
 
 export async function fetchMobileNotifications(accessToken: string) {
@@ -283,6 +321,54 @@ export async function recordMobileMaterialLine(
       accessToken,
       method: 'POST',
       body: { ...body, clientActionId: newClientActionId('material') },
+    },
+  );
+  return data.materialLine;
+}
+
+export async function fetchMobileCaptureChecklist(accessToken: string, jobId: string) {
+  const data = await request<{ checklist: import('@titan/shared').TechnicianCompletionChecklist }>(
+    `/mobile/technician/jobs/${jobId}/capture-checklist`,
+    { accessToken },
+  );
+  return data.checklist;
+}
+
+export async function createMobileDirectCost(
+  accessToken: string,
+  jobId: string,
+  body: {
+    category: string;
+    description: string;
+    amountCents?: number | null;
+    receiptDocumentId?: string | null;
+    notes?: string | null;
+    clientActionId?: string;
+  },
+) {
+  const data = await request<{ directCost: { id: string; description: string; amountCents: number } }>(
+    `/mobile/technician/jobs/${jobId}/direct-costs`,
+    {
+      accessToken,
+      method: 'POST',
+      body: { ...body, clientActionId: body.clientActionId ?? newClientActionId('direct-cost') },
+    },
+  );
+  return data.directCost;
+}
+
+export async function returnMobileMaterialLine(
+  accessToken: string,
+  jobId: string,
+  materialLineId: string,
+  body: { quantity: number; reason: string; clientActionId?: string },
+) {
+  const data = await request<{ materialLine: JobMaterialLineSummary }>(
+    `/mobile/technician/jobs/${jobId}/material-lines/${materialLineId}/return`,
+    {
+      accessToken,
+      method: 'POST',
+      body: { ...body, clientActionId: body.clientActionId ?? newClientActionId('material-return') },
     },
   );
   return data.materialLine;

@@ -5,7 +5,6 @@ import type {
   JobCostControlSummary,
   JobFinancialCompleteness,
   JobFinancialReviewStatus,
-  MissingCostFlag,
   UnallocatedCostItem,
 } from '@titan/shared';
 import {
@@ -122,7 +121,7 @@ export class JobCostControlService {
     });
     const fingerprint = profitability.snapshot.sourceFingerprint;
 
-    const [row] = await this.db
+    await this.db
       .insert(jobFinancialReviews)
       .values({
         companyId: actor.companyId,
@@ -381,7 +380,7 @@ export class JobCostControlService {
 
     const jobRows = await this.db.query.jobs.findMany({
       where: and(...conditions),
-      columns: { id: true, title: true, referenceNumber: true, status: true, updatedAt: true },
+      columns: { id: true, title: true, jobNumber: true, status: true, updatedAt: true },
       orderBy: [desc(jobs.updatedAt)],
       limit: 500,
     });
@@ -427,7 +426,7 @@ export class JobCostControlService {
         : completeness.flags;
       if (filters.issueType && !completeness.flags.some((f) => f.type === filters.issueType)) continue;
 
-      const jobRef = job.referenceNumber;
+      const jobRef = job.jobNumber;
       const base = { jobId: job.id, jobReference: jobRef, title: job.title, flags: relevantFlags };
 
       if (
@@ -508,7 +507,7 @@ export class JobCostControlService {
     };
   }
 
-  private async buildJobCompleteness(
+  async buildJobCompleteness(
     companyId: string,
     jobId: string,
     options: { includeSensitiveCosts?: boolean },
@@ -541,7 +540,7 @@ export class JobCostControlService {
     return assessJobCostControl({
       jobId,
       jobStatus: job.status,
-      jobReference: job.referenceNumber,
+      jobReference: job.jobNumber,
       currency: profitability.summary.currency,
       profitability,
       financialReview: {

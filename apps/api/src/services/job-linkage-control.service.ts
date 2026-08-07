@@ -586,7 +586,7 @@ export class JobLinkageControlService {
     });
     return rows.map((row) => ({
       id: row.id,
-      jobNumber: row.jobNumber,
+      jobNumber: row.jobNumber ?? '',
       customerId: row.customerId,
       propertyId: row.propertyId,
       title: row.title,
@@ -618,7 +618,7 @@ export class JobLinkageControlService {
     });
     return rows.map((row) => ({
       id: row.id,
-      jobNumber: row.jobNumber,
+      jobNumber: row.jobNumber ?? '',
       customerId: row.customerId,
       propertyId: row.propertyId,
       title: row.title,
@@ -736,7 +736,22 @@ export class JobLinkageControlService {
     return rows.map((row) => row.sourceExternalId!).filter(Boolean);
   }
 
-  private toInvoiceDocument(row: Awaited<ReturnType<typeof this.requireInvoice>>): LinkageInvoiceDocument {
+  private toInvoiceDocument(row: {
+    id: string;
+    companyId: string;
+    customerId: string;
+    jobId: string | null;
+    quoteId: string | null;
+    invoiceNumber: string;
+    xeroReference: string | null;
+    totalCents: number;
+    siteAddress: string | null;
+    issuedAt: Date | null;
+    updatedAt: Date;
+    sourceProvider: string | null;
+    sourceExternalId: string | null;
+    status: string;
+  }): LinkageInvoiceDocument {
     return {
       entityType: 'invoice',
       id: row.id,
