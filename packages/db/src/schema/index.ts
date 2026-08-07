@@ -172,6 +172,7 @@ export * from './email-centre';
 export * from './enterprise-customer-experience';
 export * from './enterprise-asset-lifecycle';
 export * from './enterprise-workforce-intelligence';
+export * from './technician-payroll';
 export * from './enterprise-legal-compliance';
 export * from './enterprise-financial-planning';
 export * from './enterprise-sales-intelligence';

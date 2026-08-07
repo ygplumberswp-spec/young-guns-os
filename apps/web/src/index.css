@@ -6297,6 +6297,82 @@ a:focus-visible {
   border: 1px solid var(--titan-border);
 }
 
+.technician-onboarding-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  margin: 0 0 1rem;
+  padding: 0;
+  list-style: none;
+  counter-reset: tech-onboard;
+}
+.technician-onboarding-steps li {
+  counter-increment: tech-onboard;
+  font-size: 0.8125rem;
+  color: var(--titan-text-muted);
+}
+.technician-onboarding-steps li::before {
+  content: counter(tech-onboard) '. ';
+  font-weight: 600;
+  color: var(--titan-text);
+}
+.technician-invite-payroll {
+  margin: 1rem 0;
+  padding: 1rem;
+  border: 1px solid var(--titan-border);
+  border-radius: var(--titan-radius-md, 0.5rem);
+}
+.settings-field--checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+.settings-field--checkbox input {
+  margin-top: 0.2rem;
+}
+.team-actions__link {
+  border: 0;
+  background: transparent;
+  color: var(--titan-accent, #0f766e);
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+  font: inherit;
+  text-decoration: underline;
+}
+.team-actions__link--warn {
+  color: var(--titan-danger, #b91c1c);
+  font-weight: 600;
+  text-decoration: none;
+}
+.technician-payroll-section {
+  margin-top: 1.25rem;
+}
+.technician-payroll-section__toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.5rem;
+}
+.technician-payroll-panel__summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 0.75rem;
+  margin: 0.75rem 0;
+}
+.technician-payroll-panel__summary dt {
+  font-size: 0.75rem;
+  color: var(--titan-text-muted);
+}
+.technician-payroll-panel__summary dd {
+  margin: 0.15rem 0 0;
+  font-weight: 600;
+}
+.technician-payroll-panel__wages,
+.technician-payroll-panel__history {
+  margin: 1rem 0;
+}
+
 .team-invite-url__label {
   margin: 0 0 0.5rem;
   font-size: 0.8125rem;

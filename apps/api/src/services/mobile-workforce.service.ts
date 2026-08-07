@@ -113,6 +113,8 @@ export class MobileWorkforceService {
   private travelTimeService: import('./travel-time.service.js').TravelTimeService | null = null;
   private technicianEnRouteEtaService: import('./technician-en-route-eta.service.js').TechnicianEnRouteEtaService | null =
     null;
+  private technicianPayrollService: import('./technician-payroll.service.js').TechnicianPayrollService | null =
+    null;
 
   constructor(
     private readonly db: DatabaseClient,
@@ -138,6 +140,62 @@ export class MobileWorkforceService {
     service: import('./technician-en-route-eta.service.js').TechnicianEnRouteEtaService,
   ) {
     this.technicianEnRouteEtaService = service;
+  }
+
+  /** Optional — locks timer labour rates from effective-dated technician monthly salary. */
+  setTechnicianPayrollService(
+    service: import('./technician-payroll.service.js').TechnicianPayrollService,
+  ) {
+    this.technicianPayrollService = service;
+  }
+
+  private async buildAuthoritativeLabourLockMetadata(input: {
+    companyId: string;
+    userId: string;
+    existingMetadata: Record<string, unknown>;
+    endedAt: Date;
+    durationMinutes: number;
+  }): Promise<Record<string, unknown>> {
+    const settings = await this.db.query.companyFinanceSettings.findFirst({
+      where: eq(companyFinanceSettings.companyId, input.companyId),
+      columns: { defaultInternalLabourRateCentsPerHour: true },
+    });
+    const companyDefaultRate = settings?.defaultInternalLabourRateCentsPerHour ?? 8000;
+
+    let existing = { ...input.existingMetadata };
+    if (this.technicianPayrollService) {
+      const payroll = await this.technicianPayrollService.resolveLabourLockForUserAt({
+        companyId: input.companyId,
+        userId: input.userId,
+        asOf: input.endedAt,
+        durationMinutes: input.durationMinutes,
+      });
+      if (payroll.setupComplete && payroll.internalRateCentsPerHour != null) {
+        existing = {
+          ...existing,
+          internalRateCentsPerHour: payroll.internalRateCentsPerHour,
+          hourlyCostSource: 'employee_rate',
+          overtimeMultiplier: payroll.overtimeMultiplier,
+          payrollTermId: payroll.payrollTermId,
+          payrollSetupStatus: 'complete',
+          jobLabourIsAllocationOnly: true,
+        };
+      } else {
+        existing = {
+          ...existing,
+          payrollSetupStatus: 'incomplete',
+          payrollSetupLabel: payroll.setupLabel,
+          // Do not invent employee wages — fall back to company default for JPE allocation only.
+          hourlyCostSource: existing.hourlyCostSource ?? 'company_default',
+        };
+      }
+    }
+
+    return buildLabourRateLockMetadata({
+      existingMetadata: existing,
+      companyDefaultRateCentsPerHour: companyDefaultRate,
+      lockedAt: input.endedAt.toISOString(),
+    });
   }
 
   async getWorkforceDashboard(scope: TechnicianScope): Promise<MobileWorkforceDashboard> {
@@ -559,15 +617,12 @@ export class MobileWorkforceService {
 
     let metadata: Record<string, unknown> = clientMetadata;
     if (isFinanciallyAuthoritativeTimeEntry(input.entryType, endedAt, durationMinutes)) {
-      const settings = await this.db.query.companyFinanceSettings.findFirst({
-        where: eq(companyFinanceSettings.companyId, scope.companyId),
-        columns: { defaultInternalLabourRateCentsPerHour: true },
-      });
-      const companyDefaultRate = settings?.defaultInternalLabourRateCentsPerHour ?? 8000;
-      metadata = buildLabourRateLockMetadata({
+      metadata = await this.buildAuthoritativeLabourLockMetadata({
+        companyId: scope.companyId,
+        userId: scope.userId,
         existingMetadata: clientMetadata,
-        companyDefaultRateCentsPerHour: companyDefaultRate,
-        lockedAt: (endedAt ?? new Date()).toISOString(),
+        endedAt: endedAt ?? new Date(),
+        durationMinutes: durationMinutes ?? 0,
       });
     }
 
@@ -716,17 +771,15 @@ export class MobileWorkforceService {
           })
         : computeDurationMinutes(entry.startedAt, endedAt);
 
-    const settings = await this.db.query.companyFinanceSettings.findFirst({
-      where: eq(companyFinanceSettings.companyId, scope.companyId),
-      columns: { defaultInternalLabourRateCentsPerHour: true },
-    });
-    const metadata = buildLabourRateLockMetadata({
+    const metadata = await this.buildAuthoritativeLabourLockMetadata({
+      companyId: scope.companyId,
+      userId: scope.userId,
       existingMetadata: {
         ...existingMetadata,
         paperlessTimer: { pauses: normalizedPauses, status: 'stopped' },
       },
-      companyDefaultRateCentsPerHour: settings?.defaultInternalLabourRateCentsPerHour ?? 8000,
-      lockedAt: endedAt.toISOString(),
+      endedAt,
+      durationMinutes,
     });
 
     const [updated] = await this.db

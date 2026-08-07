@@ -43,6 +43,7 @@ import { AuraService } from './services/aura.service.js';
 import { CompanyService } from './services/company.service.js';
 import { CompanyMediaService } from './services/company-media.service.js';
 import { TeamService } from './services/team.service.js';
+import { TechnicianPayrollService } from './services/technician-payroll.service.js';
 import { createCrmRouter } from './routes/crm.js';
 import { createDashboardRouter } from './routes/dashboard.js';
 import { createCustomersRouter } from './routes/customers.js';
@@ -566,6 +567,9 @@ const financeDocumentEvidenceStorageService = new FinanceDocumentEvidenceStorage
 );
 const bankStatementStorageService = new BankStatementStorageService(jobEvidenceStoragePath);
 const teamService = new TeamService(db, env.APP_URL);
+const technicianPayrollService = new TechnicianPayrollService(db);
+teamService.setPayrollService(technicianPayrollService);
+authService.setPayrollService(technicianPayrollService);
 const enterpriseSaasPlatformService = new EnterpriseSaasPlatformService({
   db,
   teamService,
@@ -1001,6 +1005,7 @@ const mobileWorkforceService = new MobileWorkforceService(
   jobEvidenceStorageService,
   technicianWorkflowService,
 );
+mobileWorkforceService.setTechnicianPayrollService(technicianPayrollService);
 const paperlessFieldCashService = new PaperlessFieldCashService(
   db,
   financeService,
@@ -1921,6 +1926,7 @@ app.use(
   '/api/v1/team',
   createTeamRouter({
     teamService,
+    technicianPayrollService,
     jwtSecret: env.JWT_SECRET,
     authService,
   }),

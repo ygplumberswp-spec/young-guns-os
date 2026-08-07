@@ -18,6 +18,7 @@ import {
 import type { AuthSession, AuthUser, InvitePreview, StaffSessionSummary } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
 import { companies, roles, sessions, userInvites, users } from '@titan/db';
+import type { TechnicianPayrollService } from './technician-payroll.service.js';
 
 export type AuthServiceConfig = {
   jwtSecret: string;
@@ -63,10 +64,16 @@ export type RefreshInput = {
 };
 
 export class AuthService {
+  private payrollService: TechnicianPayrollService | null = null;
+
   constructor(
     private readonly db: DatabaseClient,
     private readonly config: AuthServiceConfig,
   ) {}
+
+  setPayrollService(payrollService: TechnicianPayrollService) {
+    this.payrollService = payrollService;
+  }
 
   async signup(input: SignupInput): Promise<AuthResult> {
     const email = input.email.trim().toLowerCase();
@@ -365,6 +372,16 @@ export class AuthService {
 
       return user.id;
     });
+
+    // Apply Technician payroll draft after user creation (Owner/Finance private terms).
+    if (this.payrollService && invite.role?.name === 'Technician') {
+      await this.payrollService.applyInvitePayrollSetup({
+        companyId: invite.companyId,
+        userId,
+        createdByUserId: invite.invitedByUserId,
+        payrollSetup: (invite as { payrollSetup?: Record<string, unknown> | null }).payrollSetup,
+      });
+    }
 
     return this.createSessionForUser(this.db, userId, {
       userAgent: input.userAgent,

@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { companies } from './companies';
 import { roles } from './roles';
 import { users } from './users';
@@ -19,6 +19,8 @@ export const userInvites = pgTable('user_invites', {
   expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
   acceptedAt: timestamp('accepted_at', { withTimezone: true }),
   revokedAt: timestamp('revoked_at', { withTimezone: true }),
+  /** Technician onboarding payroll draft — applied when the invite is accepted. */
+  payrollSetup: jsonb('payroll_setup').$type<Record<string, unknown>>(),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
