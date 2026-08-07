@@ -63,8 +63,9 @@ export function ActiveJobsPanel({
           />
         ) : activeJobs.length === 0 ? (
           <EmptyState
-            title="No Active Jobs Right Now"
-            description="Jobs move here when technicians start work. TITAN will not invent active jobs."
+            className="titan-empty-state--compact exec-panel-empty--compact"
+            title="No active jobs"
+            description="Jobs appear here when technicians start work."
             action={
               <Link href="/scheduling">
                 <Button size="sm" variant="secondary">

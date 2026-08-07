@@ -65,6 +65,16 @@
   margin-inline: 0;
 }
 
+/* OWNER-001 — tighten shell padding on the Owner Command Centre canvas */
+.app-content-container--wide:has(.exec-dashboard-page--owner001) {
+  gap: 0.75rem;
+}
+
+.titan-shell__main:has(.exec-dashboard-page--owner001) {
+  --titan-page-pad-x: clamp(0.5rem, 1vw, 1rem);
+  --titan-page-pad-y: clamp(0.5rem, 1vw, 0.875rem);
+}
+
 .page-shell,
 .automation-page,
 .finance-page,

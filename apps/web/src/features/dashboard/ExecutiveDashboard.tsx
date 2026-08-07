@@ -25,6 +25,7 @@ import { FleetOverviewPanel } from './FleetOverviewPanel';
 import { LiveOperationsPanel } from './LiveOperationsPanel';
 import { OpsIntelligenceAlerts } from './OpsIntelligenceAlerts';
 import { OutstandingInvoicesPanel } from './OutstandingInvoicesPanel';
+import { OwnerCommandFinancePulse } from './OwnerCommandFinancePulse';
 import { QuickLinksPanel } from './QuickLinksPanel';
 import { SalesOpportunitiesPanel } from './SalesOpportunitiesPanel';
 import { TeamPerformancePanel } from './TeamPerformancePanel';
@@ -96,40 +97,50 @@ export function ExecutiveDashboard() {
   const previewJobs = liveJobs.slice(0, DASHBOARD_LIST_LIMITS.activeJobs);
 
   return (
-    <div className="exec-dashboard exec-dashboard--dash001a">
-      <ExecutiveDashboardHeader
-        firstName={user?.firstName}
-        counts={summary?.header ?? null}
-        headerExtended={dash001?.headerExtended ?? null}
-        isLoading={isLoading}
-      />
+    <div className="exec-dashboard exec-dashboard--dash001a exec-dashboard--owner001">
+      <div className="exec-dashboard-region exec-dashboard-region--greeting">
+        <ExecutiveDashboardHeader
+          firstName={user?.firstName}
+          counts={summary?.header ?? null}
+          headerExtended={dash001?.headerExtended ?? null}
+          isLoading={isLoading}
+        />
 
-      {dash001?.alerts.length ? <DashboardAlertsStrip alerts={dash001.alerts} /> : null}
+        {dash001?.alerts.length ? <DashboardAlertsStrip alerts={dash001.alerts} /> : null}
 
-      {deferOps && (opsEvents.length > 0 || opsQuery.error) ? (
-        <SectionErrorBoundary sectionName="Operations intelligence" onRetry={refreshOps}>
-          <OpsIntelligenceAlerts
-            events={opsEvents}
-            generatedAt={opsSnapshot?.generatedAt ?? null}
-            isLoading={opsLoading}
-            error={opsQuery.error}
-            onRetry={refreshOps}
-            onDismissed={() => void opsQuery.refetch()}
+        {deferOps && (opsEvents.length > 0 || opsQuery.error) ? (
+          <SectionErrorBoundary sectionName="Operations intelligence" onRetry={refreshOps}>
+            <OpsIntelligenceAlerts
+              events={opsEvents}
+              generatedAt={opsSnapshot?.generatedAt ?? null}
+              isLoading={opsLoading}
+              error={opsQuery.error}
+              onRetry={refreshOps}
+              onDismissed={() => void opsQuery.refetch()}
+            />
+          </SectionErrorBoundary>
+        ) : null}
+      </div>
+
+      <div className="exec-dashboard-region exec-dashboard-region--heartbeat">
+        <SectionErrorBoundary sectionName="Business Heartbeat" onRetry={refetchSummary}>
+          <BusinessHeartbeatPanel
+            data={dash001?.businessHeartbeat ?? null}
+            section={summary?.sections.businessHeartbeat ?? null}
+            generatedAt={summary?.generatedAt ?? null}
+            isLoading={isLoading}
+            error={loadError}
           />
         </SectionErrorBoundary>
-      ) : null}
+      </div>
 
-      <SectionErrorBoundary sectionName="Business Heartbeat" onRetry={refetchSummary}>
-        <BusinessHeartbeatPanel
-          data={dash001?.businessHeartbeat ?? null}
-          section={summary?.sections.businessHeartbeat ?? null}
-          generatedAt={summary?.generatedAt ?? null}
-          isLoading={isLoading}
-          error={loadError}
-        />
-      </SectionErrorBoundary>
+      <div className="exec-dashboard-region exec-dashboard-region--finance-pulse">
+        <SectionErrorBoundary sectionName="Financial Command Pulse">
+          <OwnerCommandFinancePulse />
+        </SectionErrorBoundary>
+      </div>
 
-      <div className="exec-dashboard-row exec-dashboard-row--finance">
+      <div className="exec-dashboard-row exec-dashboard-row--finance exec-dashboard-region exec-dashboard-region--finance">
         <SectionErrorBoundary sectionName="Financial Truth" onRetry={refetchSummary}>
           <FinancialTruthPanel
             data={dash001?.financialTruth ?? null}
@@ -152,7 +163,7 @@ export function ExecutiveDashboard() {
         </SectionErrorBoundary>
       </div>
 
-      <div className="exec-dashboard-row exec-dashboard-row--attention">
+      <div className="exec-dashboard-row exec-dashboard-row--attention exec-dashboard-region exec-dashboard-region--attention">
         <SectionErrorBoundary sectionName="Attention Required" onRetry={refetchSummary}>
           <AttentionRequiredPanel
             data={dash001?.attentionRequired ?? null}
@@ -171,7 +182,7 @@ export function ExecutiveDashboard() {
         </SectionErrorBoundary>
       </div>
 
-      <div className="exec-dashboard-row exec-dashboard-row--team-fleet">
+      <div className="exec-dashboard-row exec-dashboard-row--team-fleet exec-dashboard-region exec-dashboard-region--ops">
         <SectionErrorBoundary sectionName="Team Performance" onRetry={refetchSummary}>
           <TeamPerformancePanel
             data={dash001?.teamPerformance ?? null}
@@ -216,7 +227,7 @@ export function ExecutiveDashboard() {
         </SectionErrorBoundary>
       </div>
 
-      <div className="exec-dashboard-row exec-dashboard-row--aura">
+      <div className="exec-dashboard-row exec-dashboard-row--aura exec-dashboard-region exec-dashboard-region--aura">
         <SectionErrorBoundary sectionName="AURA Executive" onRetry={refetchSummary}>
           <AuraExecutiveRecommendationsPanel
             data={dash001?.auraExecutive ?? null}
@@ -229,7 +240,7 @@ export function ExecutiveDashboard() {
         </SectionErrorBoundary>
       </div>
 
-      <div className="exec-dashboard-row exec-dashboard-row--support">
+      <div className="exec-dashboard-row exec-dashboard-row--support exec-dashboard-region exec-dashboard-region--jobs">
         <SectionErrorBoundary sectionName="Active jobs" onRetry={refetchSummary}>
           <ActiveJobsPanel
             jobs={previewJobs}
@@ -265,7 +276,7 @@ export function ExecutiveDashboard() {
       </div>
 
       {deferSupport ? (
-        <div className="exec-dashboard-row exec-dashboard-row--tools">
+        <div className="exec-dashboard-row exec-dashboard-row--tools exec-dashboard-region exec-dashboard-region--tools">
           <SectionErrorBoundary sectionName="Connections">
             <ConnectionsPanel compact />
           </SectionErrorBoundary>

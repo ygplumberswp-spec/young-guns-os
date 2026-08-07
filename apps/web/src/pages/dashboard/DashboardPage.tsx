@@ -9,7 +9,7 @@ export function DashboardPage() {
   }
 
   return (
-    <div className="dashboard exec-dashboard-page">
+    <div className="dashboard exec-dashboard-page exec-dashboard-page--owner001">
       <ExecutiveDashboard />
     </div>
   );
