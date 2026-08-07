@@ -258,6 +258,58 @@ function formatFinanceContext(context: AuraGenerateContext): string | null {
   return lines.join('\n');
 }
 
+function formatEntityResolutionContext(context: AuraGenerateContext): string | null {
+  const resolution = context.entityResolution;
+  if (!resolution) return null;
+
+  const lines = [
+    `- Status: ${resolution.status}`,
+    `- Query: ${resolution.query}`,
+    `- Guidance: ${resolution.guidance}`,
+  ];
+  if (resolution.match) {
+    lines.push(`- Match: ${resolution.match.kind} ${resolution.match.label} (${resolution.match.id})`);
+  }
+  if (resolution.candidates?.length) {
+    lines.push('- Candidates:');
+    for (const candidate of resolution.candidates.slice(0, 8)) {
+      lines.push(`  - ${candidate.kind}: ${candidate.label} (${candidate.id})`);
+    }
+  }
+  return lines.join('\n');
+}
+
+function formatOwnerFinanceTruthContext(context: AuraGenerateContext): string | null {
+  const truth = context.ownerFinanceTruth;
+  if (!truth) return null;
+
+  const lines = [
+    `- Authority: ${truth.authority}`,
+    `- Completeness: ${truth.completeness}`,
+    `- Period: ${truth.period}`,
+    `- Summary: ${truth.summary}`,
+    `- Invoiced revenue cents: ${truth.invoicedRevenueCents}`,
+    `- Customer cash collected cents: ${truth.customerCashCollectedCents}`,
+    `- Known gross profit cents: ${truth.knownGrossProfitCents ?? 'null (unavailable — not zero)'}`,
+    `- Known realised cash profit cents: ${truth.knownRealisedCashProfitCents}`,
+    `- Outstanding customer cash cents: ${truth.outstandingCustomerCashCents}`,
+    `- Money in cents: ${truth.moneyInCents}`,
+    `- Money out cents: ${truth.moneyOutCents}`,
+    `- Unexplained debit cents: ${truth.unexplainedDebitCents}`,
+    `- Loss jobs: ${truth.lossJobsCount}`,
+    `- Overdue receivables cents: ${truth.overdueReceivableCents}`,
+    `- Growth jobs required: ${truth.growthJobsRequired ?? 'unavailable'}`,
+    `- Growth status: ${truth.growthStatus ?? 'unavailable'}`,
+    `- Note: ${truth.note}`,
+  ];
+
+  if (truth.completenessReasons.length > 0) {
+    lines.push(`- Completeness reasons: ${truth.completenessReasons.slice(0, 8).join('; ')}`);
+  }
+
+  return lines.join('\n');
+}
+
 function formatFinanceIntelligenceContext(context: AuraGenerateContext): string | null {
   const financeIntelligence = context.financeIntelligence;
 
@@ -2143,8 +2195,10 @@ export function buildSystemPrompt(context: AuraGenerateContext): string {
 
   const crmSection = formatCrmContext(context);
   const jobsSection = formatJobsContext(context);
+  const entityResolutionSection = formatEntityResolutionContext(context);
   const schedulingSection = formatSchedulingContext(context);
   const financeSection = formatFinanceContext(context);
+  const ownerFinanceTruthSection = formatOwnerFinanceTruthContext(context);
   const financeIntelligenceSection = formatFinanceIntelligenceContext(context);
   const knowledgeSection = formatKnowledgeContext(context);
   const businessIntelligenceSection = formatBusinessIntelligenceContext(context);
@@ -2212,6 +2266,7 @@ export function buildSystemPrompt(context: AuraGenerateContext): string {
     jobsSection ? 'Jobs' : null,
     schedulingSection ? 'Scheduling' : null,
     financeSection ? 'Finance' : null,
+    ownerFinanceTruthSection ? 'Owner Finance Truth (FIN/CASH/JPE/GROWTH)' : null,
     financeIntelligenceSection ? 'Finance Intelligence' : null,
     knowledgeSection ? 'Knowledge & Learning' : null,
     businessIntelligenceSection ? 'Business Intelligence' : null,
@@ -2310,7 +2365,11 @@ export function buildSystemPrompt(context: AuraGenerateContext): string {
       `When Workforce Intelligence context is present, use only the real candidate pipeline, skill gap, staffing insight, and recommendation data shown below. The Workforce Intelligence Agent analyzes hiring, technician performance, and capacity — never invent candidates, employees, skills, or performance records. All recruitment communications, interview requests, hiring recommendations, and training plans require explicit user approval before execution. No autonomous hiring or employment decisions. ` +
       `When Procurement Intelligence context is present, use only the real stock signal, supplier insight, purchase order, and recommendation data shown below. The Procurement Intelligence Agent analyzes inventory and purchasing needs — never invent products, suppliers, purchase orders, or stock levels. All purchase order drafts and procurement actions require explicit user approval before execution. No autonomous ordering or stock modifications. ` +
       `When Executive Command context is present, use only the real business health score, alert, recommendation, and summary data shown below. The Executive Command Agent analyzes company-wide performance across finance, operations, sales, workforce, and procurement — never invent KPIs, dashboards, or metrics. All executive action drafts require explicit user approval before execution. No autonomous financial decisions, pricing changes, or business modifications. ` +
+      `When Owner Finance Truth (FIN/CASH/JPE/GROWTH) context is present, treat it as the authoritative financial heartbeat for Owner/Admin questions about invoiced revenue, cash collected, known gross/cash profit, outstanding receivables, unexplained cash, and growth jobs required. Completeness verified/provisional/incomplete/unavailable must be stated honestly — incomplete or unavailable is never zero. Do not invent alternative accounting math. ` +
+      `When Entity resolution context is present, follow its status exactly: unique → use that record; ambiguous → ask which match; none → say you cannot find it. Never invent customers, jobs, invoices, payments, or vehicles. ` +
+      `Company preferences (tone/notes) are stable brand/company context groundwork only — not live financial truth and not Creative Studio campaign generation. ` +
       `When Finance Intelligence context is present, use only the real cash flow, profitability, receivables, expense, budget, forecast, and risk data shown below. The Finance Controller Agent analyzes invoices, payments, jobs, and procurement data — never invent financial records, balances, or forecasts. All finance action drafts and recommendations require explicit user approval before execution. No automatic payments, refunds, reminders, or accounting changes. ` +
+      `Communications remain Draft → Approve → Execute — never claim a customer message was sent without approval. ` +
       `When Knowledge & Learning context is present, use only user-created knowledge articles, SOPs, training courses, and policies shown below — never invent documentation, SOPs, training material, or policies. All knowledge article drafts require explicit user approval before publish. No autonomous knowledge publishing. Permission-aware search applies to restricted content. ` +
       `When Business Intelligence context is present, use only the real KPI, dashboard, report metadata, insight, and forecast data shown below — never invent analytics, KPIs, dashboards, reports, or predictions. Business reports follow Draft → Approval → Generate; no autonomous report generation. Insights and forecasts are generated only on explicit API requests from historical tenant data. ` +
       `Agent profiles and operational agents can analyze business data, score candidates, and draft recommendations — never claim agents run autonomously, hire candidates, send messages, or modify records without explicit user approval. ` +
@@ -2331,8 +2390,14 @@ export function buildSystemPrompt(context: AuraGenerateContext): string {
     `Company profile:\n${profileLines.join('\n')}\n\n` +
     (crmSection ? `CRM context:\n${crmSection}\n\n` : '') +
     (jobsSection ? `Jobs context:\n${jobsSection}\n\n` : '') +
+    (entityResolutionSection
+      ? `Entity resolution (never invent records):\n${entityResolutionSection}\n\n`
+      : '') +
     (schedulingSection ? `Scheduling context:\n${schedulingSection}\n\n` : '') +
     (financeSection ? `Finance context:\n${financeSection}\n\n` : '') +
+    (ownerFinanceTruthSection
+      ? `Owner finance truth (FIN/CASH/JPE/GROWTH):\n${ownerFinanceTruthSection}\n\n`
+      : '') +
     (financeIntelligenceSection ? `Finance intelligence:\n${financeIntelligenceSection}\n\n` : '') +
     (knowledgeSection ? `Knowledge & learning:\n${knowledgeSection}\n\n` : '') +
     (businessIntelligenceSection

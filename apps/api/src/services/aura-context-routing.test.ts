@@ -41,3 +41,11 @@ test('skips tenant capability enrichment for routine chat', () => {
   );
   assert.equal(shouldLoadTenantCapabilities('Create a new capability for tender monitoring'), true);
 });
+
+test('AURA-TRAIN-001 routes owner finance prompts to ownerFinance domain', () => {
+  const { domains } = resolveAuraContextDomains(
+    'What is our known operating profit and are we on track for budget?',
+  );
+  assert.equal(domains.has('ownerFinance'), true);
+  assert.equal(domains.has('finance'), true);
+});

@@ -8,8 +8,12 @@ import {
   type AuraGenerateContext,
   type AuraProvider,
 } from '@titan/aura';
-import { hasAnyPermission } from '@titan/auth';
-import { indicatesCapabilityCreationIntent } from '@titan/shared';
+import { hasAnyPermission, isTechnicianRole } from '@titan/auth';
+import {
+  indicatesCapabilityCreationIntent,
+  isTechnicianForbiddenAuraTopic,
+  resolveAuraRoutingCategory,
+} from '@titan/shared';
 import type {
   AuraConversation,
   AuraConversationDetail,
@@ -19,7 +23,9 @@ import type {
   SendAuraMessageResponse,
 } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
-import { auraConversations, auraMessages, users } from '@titan/db';
+import { auraConversations, auraMessages, securityAuditLogs, users } from '@titan/db';
+import type { OwnerFinancialCommandService } from './owner-financial-command.service.js';
+import type { GrowthPlannerService } from './growth-planner.service.js';
 import type { CrmService } from './crm.service.js';
 import type { JobsService } from './jobs.service.js';
 import type { SchedulingService } from './scheduling.service.js';
@@ -166,6 +172,8 @@ type AuraServiceDeps = {
   knowledgeService: KnowledgeService;
   businessIntelligenceService: BusinessIntelligenceService;
   tenantCapabilityBuilderService: TenantCapabilityBuilderService;
+  ownerFinancialCommandService: OwnerFinancialCommandService;
+  growthPlannerService: GrowthPlannerService;
 };
 
 export class AuraService {
@@ -231,6 +239,8 @@ export class AuraService {
   private readonly knowledgeService: KnowledgeService;
   private readonly businessIntelligenceService: BusinessIntelligenceService;
   private readonly tenantCapabilityBuilderService: TenantCapabilityBuilderService;
+  private readonly ownerFinancialCommandService: OwnerFinancialCommandService;
+  private readonly growthPlannerService: GrowthPlannerService;
 
   constructor({
     db,
@@ -295,6 +305,8 @@ export class AuraService {
     knowledgeService,
     businessIntelligenceService,
     tenantCapabilityBuilderService,
+    ownerFinancialCommandService,
+    growthPlannerService,
   }: AuraServiceDeps) {
     this.db = db;
     this.provider = provider;
@@ -358,6 +370,8 @@ export class AuraService {
     this.knowledgeService = knowledgeService;
     this.businessIntelligenceService = businessIntelligenceService;
     this.tenantCapabilityBuilderService = tenantCapabilityBuilderService;
+    this.ownerFinancialCommandService = ownerFinancialCommandService;
+    this.growthPlannerService = growthPlannerService;
   }
 
   async listConversations(scope: TenantScope): Promise<AuraConversationSummary[]> {
@@ -499,36 +513,48 @@ export class AuraService {
     );
 
     const permissions = user.role?.permissions ?? [];
-    const generateOptions = {
-      operationType: 'conversation' as const,
-      routingCategory: 'summarization' as const,
-      conversationId,
-      userId: scope.userId,
-    };
-    const providerPrepPromise = this.aiProviderResilienceService.prepareProviderChain(
-      scope.companyId,
-      generateOptions,
-    );
+    const roleName = user.role?.name ?? 'Owner';
+    const technicianDenied =
+      isTechnicianRole({ roleName, permissions }) && isTechnicianForbiddenAuraTopic(trimmed);
 
     const contextStarted = Date.now();
     const loadedDomains: string[] = [];
-    const { context, agentsMinimal } = await this.buildAuraContext(
-      scope.companyId,
-      scope.userId,
-      baseContext,
-      permissions,
-      trimmed,
-      pageContext,
-      loadedDomains,
-    );
-    const contextBuildMs = Date.now() - contextStarted;
+    let agentsMinimal = false;
+    let enrichedContext: AuraGenerateContext = baseContext;
+    let contextBuildMs = 0;
 
-    const enrichedContext = await this.enrichTenantCapabilityContext(
-      scope.companyId,
-      trimmed,
-      permissions,
-      context,
-    );
+    if (!technicianDenied) {
+      const built = await this.buildAuraContext(
+        scope.companyId,
+        scope.userId,
+        baseContext,
+        permissions,
+        trimmed,
+        pageContext,
+        loadedDomains,
+        roleName,
+      );
+      agentsMinimal = built.agentsMinimal;
+      contextBuildMs = Date.now() - contextStarted;
+      enrichedContext = await this.enrichTenantCapabilityContext(
+        scope.companyId,
+        trimmed,
+        permissions,
+        built.context,
+      );
+    } else {
+      contextBuildMs = Date.now() - contextStarted;
+      loadedDomains.push('roleDenial');
+    }
+
+    const generateOptions = {
+      operationType: 'conversation' as const,
+      routingCategory: technicianDenied
+        ? 'summarization'
+        : resolveAuraRoutingCategory(loadedDomains),
+      conversationId,
+      userId: scope.userId,
+    };
 
     let assistantContent: string;
     let providerMs = 0;
@@ -543,45 +569,52 @@ export class AuraService {
       JSON.stringify(enrichedContext).length +
       priorMessages.reduce((sum, message) => sum + message.content.length, trimmed.length);
 
-    const preparedChain = await providerPrepPromise.catch((error) => {
-      if (error instanceof AiOperationsError) {
-        throw new AuraError(error.code, error.message);
-      }
-      throw error;
-    });
-    providerRoutingMs = preparedChain.providerRoutingMs;
-    routingDiagnostics = preparedChain.routingDiagnostics;
+    if (technicianDenied) {
+      assistantContent =
+        'I can only help with your assigned field work — jobs, Job Cards, materials, checklists, time, photos, and completion. Company finance, banking, payroll, Owner dashboards, CRM lists, and other technicians’ restricted data are not available in this role.';
+    } else {
+      const preparedChain = await this.aiProviderResilienceService
+        .prepareProviderChain(scope.companyId, generateOptions)
+        .catch((error) => {
+          if (error instanceof AiOperationsError) {
+            throw new AuraError(error.code, error.message);
+          }
+          throw error;
+        });
+      providerRoutingMs = preparedChain.providerRoutingMs;
+      routingDiagnostics = preparedChain.routingDiagnostics;
 
-    try {
-      const providerStarted = Date.now();
-      const result = await this.aiProviderResilienceService.generate(
-        scope.companyId,
-        {
-          messages: [...priorMessages, { role: 'user', content: trimmed }],
-          context: enrichedContext,
-        },
-        generateOptions,
-        preparedChain,
-      );
-      providerMs = result.providerLatencyMs ?? Date.now() - providerStarted;
-      assistantContent = result.content;
-      promptTokens = result.promptTokens;
-      completionTokens = result.completionTokens;
-      providerAttempts = result.providerAttempts ?? 1;
-      failoverCount = result.failoverCount;
-      retryCount = result.retryCount ?? 0;
-    } catch (error) {
-      if (error instanceof AiOperationsError) {
-        throw new AuraError(error.code, error.message);
-      }
-      if (error instanceof AiProviderResilienceError) {
-        throw new AuraError(error.code, error.message);
-      }
-      if (error instanceof AuraProviderError) {
-        throw new AuraError(error.code, error.message);
-      }
+      try {
+        const providerStarted = Date.now();
+        const result = await this.aiProviderResilienceService.generate(
+          scope.companyId,
+          {
+            messages: [...priorMessages, { role: 'user', content: trimmed }],
+            context: enrichedContext,
+          },
+          generateOptions,
+          preparedChain,
+        );
+        providerMs = result.providerLatencyMs ?? Date.now() - providerStarted;
+        assistantContent = result.content;
+        promptTokens = result.promptTokens;
+        completionTokens = result.completionTokens;
+        providerAttempts = result.providerAttempts ?? 1;
+        failoverCount = result.failoverCount;
+        retryCount = result.retryCount ?? 0;
+      } catch (error) {
+        if (error instanceof AiOperationsError) {
+          throw new AuraError(error.code, error.message);
+        }
+        if (error instanceof AiProviderResilienceError) {
+          throw new AuraError(error.code, error.message);
+        }
+        if (error instanceof AuraProviderError) {
+          throw new AuraError(error.code, error.message);
+        }
 
-      throw new AuraError('PROVIDER_ERROR', 'Unable to generate an AI response.');
+        throw new AuraError('PROVIDER_ERROR', 'Unable to generate an AI response.');
+      }
     }
 
     const dbStarted = Date.now();
@@ -642,6 +675,30 @@ export class AuraService {
 
     const isDevelopment = process.env.NODE_ENV === 'development';
 
+    // AURA-TRAIN-001: durable audit for chat turns (no prompt secret dump).
+    try {
+      await this.db.insert(securityAuditLogs).values({
+        companyId: scope.companyId,
+        category: 'ai',
+        action: 'aura.message.send',
+        entityType: 'aura_conversation',
+        entityId: conversationId,
+        userId: scope.userId,
+        metadata: {
+          roleName,
+          domainsLoaded: loadedDomains,
+          routingCategory: generateOptions.routingCategory,
+          providerAttempts,
+          failoverCount,
+          hasOwnerFinanceTruth: Boolean(enrichedContext.ownerFinanceTruth),
+          technicianDenied,
+          autoSend: false,
+        },
+      });
+    } catch {
+      // Audit must not fail the user-visible reply.
+    }
+
     return {
       ...result,
       diagnostics: {
@@ -655,7 +712,7 @@ export class AuraService {
         databaseMs,
         agentRoutingMs: providerRoutingMs,
         providerRoutingMs,
-        specialistAgentsInvoked: 0,
+        specialistAgentsInvoked: loadedDomains.includes('ownerFinance') ? 1 : 0,
         providerAttempts,
         failoverCount,
         retryCount,
@@ -663,7 +720,7 @@ export class AuraService {
         completionTokens,
         estimatedInputChars,
         agentsMinimalContext: agentsMinimal,
-        deferredAudit: true,
+        deferredAudit: false,
         ...(isDevelopment && routingDiagnostics ? { routing: routingDiagnostics } : {}),
       },
     };
@@ -739,6 +796,7 @@ export class AuraService {
     message: string,
     pageContext?: AuraPageContext,
     loadedDomains: string[] = [],
+    roleName = 'Owner',
   ): Promise<{ context: AuraGenerateContext; agentsMinimal: boolean }> {
     return buildSelectedAuraContext(
       {
@@ -799,6 +857,8 @@ export class AuraService {
         personalCommunicationsIntelligenceService: this.personalCommunicationsIntelligenceService,
         enterpriseSecurityService: this.enterpriseSecurityService,
         integrationPlatformService: this.integrationPlatformService,
+        ownerFinancialCommandService: this.ownerFinancialCommandService,
+        growthPlannerService: this.growthPlannerService,
       },
       companyId,
       userId,
@@ -807,6 +867,7 @@ export class AuraService {
       message,
       pageContext,
       loadedDomains,
+      roleName,
     );
   }
 }
