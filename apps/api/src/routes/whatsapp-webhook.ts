@@ -81,6 +81,8 @@ export function createWhatsappWebhookRouter({
         appSecret,
         rawBody,
         signatureHeader,
+        // SEC-001: production must not accept unsigned WhatsApp webhooks.
+        failClosedWithoutSecret: process.env.NODE_ENV === 'production',
       });
 
       if (!signature.ok) {

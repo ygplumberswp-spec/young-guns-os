@@ -560,7 +560,8 @@ describe('job profitability engine', () => {
     assert.equal(canAccessJobProfitability({ permissions: ['jobs:read'] }), false);
     assert.equal(canAccessJobProfitability({ permissions: ['finance:read'] }), true);
     assert.equal(canViewJobProfitabilityMargin(['finance:read'], 'Technician'), false);
-    assert.equal(canViewJobProfitabilityMargin(['finance:write'], 'Technician'), true);
+    // SEC-001: role hard-deny — mis-elevated finance:write must not expose margin.
+    assert.equal(canViewJobProfitabilityMargin(['finance:write'], 'Technician'), false);
     assert.equal(canViewJobProfitabilityMargin(['finance:read'], 'Company Owner'), true);
   });
 

@@ -2,8 +2,8 @@ import { createHmac, timingSafeEqual } from 'node:crypto';
 
 /**
  * Meta Cloud API webhook signatures: `X-Hub-Signature-256: sha256=<hex>`.
- * Soft policy: when app secret is unset, verification is skipped (honest degrade).
- * When secret is set, missing/invalid signatures are rejected.
+ * Dev/staging may skip when secret unset (honest degrade).
+ * Production must fail closed when secret is unset (SEC-001).
  */
 export function signWhatsappWebhookBody(appSecret: string, rawBody: string): string {
   return createHmac('sha256', appSecret).update(rawBody, 'utf8').digest('hex');
@@ -13,11 +13,19 @@ export function verifyWhatsappWebhookSignature(input: {
   appSecret: string | null | undefined;
   rawBody: string;
   signatureHeader: string | null | undefined;
+  /** When true, missing app secret rejects instead of skipping (production). */
+  failClosedWithoutSecret?: boolean;
 }):
   | { ok: true; mode: 'verified' | 'skipped_no_secret' }
-  | { ok: false; reason: 'missing_signature' | 'invalid_signature' | 'bad_header' } {
+  | {
+      ok: false;
+      reason: 'missing_signature' | 'invalid_signature' | 'bad_header' | 'missing_secret';
+    } {
   const secret = input.appSecret?.trim();
   if (!secret) {
+    if (input.failClosedWithoutSecret) {
+      return { ok: false, reason: 'missing_secret' };
+    }
     return { ok: true, mode: 'skipped_no_secret' };
   }
 

@@ -121,8 +121,10 @@ export function canViewFinanceProfit(
   permissions: readonly string[],
   roleName?: string | null,
 ): boolean {
+  // SEC-001: Technician/Client never see company profit — even if permissions were mis-elevated.
+  if (roleName === 'Technician' || roleName === 'Client') return false;
   if (permissions.includes('*') || permissions.includes('finance:write')) return true;
-  return ['Company Owner', 'Accountant', 'Manager'].includes(roleName ?? '');
+  return ['Company Owner', 'Owner', 'Accountant', 'Manager'].includes(roleName ?? '');
 }
 
 type FinanceLineCostField = { unitCostCents?: number | null | undefined };

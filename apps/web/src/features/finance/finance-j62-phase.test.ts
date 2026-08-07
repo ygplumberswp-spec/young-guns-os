@@ -86,7 +86,9 @@ test('quote unit cost column is gated by finance profit visibility', () => {
 test('unauthorised roles cannot view finance profit / unit cost fields', () => {
   assert.equal(canViewFinanceProfit(['finance:read'], 'Technician'), false);
   assert.equal(canViewFinanceProfit(['jobs:read'], 'Technician'), false);
-  assert.equal(canViewFinanceProfit(['finance:write'], 'Technician'), true);
+  // SEC-001: Technician/Client hard-denied even with mis-elevated finance:write.
+  assert.equal(canViewFinanceProfit(['finance:write'], 'Technician'), false);
+  assert.equal(canViewFinanceProfit(['finance:write'], 'Client'), false);
   assert.equal(canViewFinanceProfit(['finance:read'], 'Company Owner'), true);
   assert.equal(canViewFinanceProfit(['finance:read'], 'Accountant'), true);
 });
