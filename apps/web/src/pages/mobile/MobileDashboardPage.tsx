@@ -1,6 +1,7 @@
 import { PageHeader } from '../../components/ux';
 import { Link } from 'wouter';
 import { EmptyState, Panel } from '@titan/ui';
+import { countTechnicianActiveAssignedJobs } from '@titan/shared';
 import { fetchMobileWorkforceDashboard } from '../../lib/mobile-api-client';
 import { useAuth } from '../../lib/auth-context';
 import { useStaffCachedQuery } from '../../lib/use-scoped-cached-query';
@@ -17,6 +18,9 @@ export function MobileDashboardPage() {
   });
 
   const dashboard = dashboardQuery.data;
+  const activeAssignedCount = dashboard
+    ? countTechnicianActiveAssignedJobs(dashboard.assignedJobs)
+    : 0;
 
   return (
     <div className="portal-page">
@@ -24,7 +28,7 @@ export function MobileDashboardPage() {
         title={`Welcome, ${user?.firstName ?? 'Technician'}`}
         description={
           dashboard?.greeting.message ??
-          'Your technician workspace loads assigned jobs, route and alerts here.'
+          'Your technician workspace loads assigned jobs, route and field tools here.'
         }
       />
 
@@ -38,7 +42,7 @@ export function MobileDashboardPage() {
         {dashboard ? (
           <>
             <div className="portal-grid">
-              <Panel title="Assigned Jobs" description={`${dashboard.assignedJobs.length} total`}>
+              <Panel title="Assigned Jobs" description={`${activeAssignedCount} active`}>
                 <Link href="/jobs">View jobs</Link>
               </Panel>
               <Panel
@@ -47,11 +51,8 @@ export function MobileDashboardPage() {
               >
                 <Link href="/route">View route</Link>
               </Panel>
-              <Panel
-                title="Inventory Alerts"
-                description={`${dashboard.inventoryAlerts.length} low-stock item(s)`}
-              >
-                <Link href="/inventory">View inventory</Link>
+              <Panel title="Parts Used" description="Log parts and returns on your job cards">
+                <Link href="/inventory">Open parts</Link>
               </Panel>
               <Panel
                 title="Outstanding Tasks"

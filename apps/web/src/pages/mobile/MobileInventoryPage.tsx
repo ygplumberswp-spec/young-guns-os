@@ -5,6 +5,10 @@ import { useAuth } from '../../lib/auth-context';
 import { useStaffCachedQuery } from '../../lib/use-scoped-cached-query';
 import { AnalyticsTabPanel } from '../../features/analytics/AnalyticsTabPanel';
 
+/**
+ * YG-CUTOVER-001E — Parts Used / returns for the signed-in technician.
+ * Company low-stock alerts and warehouse intelligence are not shown.
+ */
 export function MobileInventoryPage() {
   const { accessToken } = useAuth();
 
@@ -20,61 +24,37 @@ export function MobileInventoryPage() {
   return (
     <div className="portal-page">
       <PageHeader
-        title="Inventory Centre"
-        description="Low-stock alerts and recent usage submissions."
+        title="Parts Used"
+        description="Parts and returns you logged on assigned jobs. Company stock alerts are not shown here."
       />
 
       <AnalyticsTabPanel
         isLoading={inventoryQuery.isLoading}
         error={inventoryQuery.error}
         hasData={inventory !== undefined}
-        isEmpty={
-          inventory !== undefined &&
-          inventory.alerts.length === 0 &&
-          inventory.recentUsage.length === 0
-        }
-        emptyTitle="No Inventory Data"
-        emptyDescription="Inventory centre is empty."
-        loadingLabel="Loading inventory…"
+        isEmpty={inventory !== undefined && inventory.recentUsage.length === 0}
+        emptyTitle="No Parts Logged"
+        emptyDescription="Parts used and returns from your job cards will appear here."
+        loadingLabel="Loading parts…"
         onRetry={() => void inventoryQuery.refetch()}
       >
         {inventory ? (
-          <>
-            <Panel title="Low Stock Alerts">
-              {inventory.alerts.length === 0 ? (
-                <p className="page-muted">No low-stock alerts.</p>
-              ) : (
-                <ul className="portal-list">
-                  {inventory.alerts.map((item) => (
-                    <li key={item.itemId}>
-                      <strong>{item.name}</strong>
-                      <span>
-                        {item.sku} · {item.totalQuantityOnHand} on hand (reorder at{' '}
-                        {item.reorderLevel})
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </Panel>
-
-            <Panel title="Recent Usage Submissions">
-              {inventory.recentUsage.length === 0 ? (
-                <p className="page-muted">No inventory usage submitted yet.</p>
-              ) : (
-                <ul className="portal-list">
-                  {inventory.recentUsage.map((item) => (
-                    <li key={item.id}>
-                      <strong>{item.itemName}</strong>
-                      <span>
-                        {item.quantity} × {item.itemSku} · {item.status}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </Panel>
-          </>
+          <Panel title="Recent Usage Submissions">
+            {inventory.recentUsage.length === 0 ? (
+              <p className="page-muted">No parts usage submitted yet. Log parts from a job card.</p>
+            ) : (
+              <ul className="portal-list">
+                {inventory.recentUsage.map((item) => (
+                  <li key={item.id}>
+                    <strong>{item.itemName}</strong>
+                    <span>
+                      {item.quantity} × {item.itemSku} · {item.status}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Panel>
         ) : null}
       </AnalyticsTabPanel>
     </div>

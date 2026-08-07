@@ -1,0 +1,37 @@
+{
+  "label": "YG-CUTOVER-001E",
+  "verdict": "PASS — Technician mobile acceptance complete",
+  "branch": "cursor/yg-cutover-001e-technician-rbac-663e",
+  "base": "cursor/yg-cutover-001d-parity-perf-663e",
+  "productionTouched": 0,
+  "technicianVisibleSurfaces": [
+    "Today",
+    "My Jobs",
+    "Schedule",
+    "Navigation",
+    "Parts Used",
+    "Timesheets",
+    "Notifications",
+    "Offline Sync",
+    "Job Cards / completion on assigned jobs"
+  ],
+  "financeLeakageCorrection": "Stopped reusing Owner Intelligence greeting; technician greeting from active assigned jobs only — no invoices/payments",
+  "inventoryRestriction": "Dashboard Inventory Alerts removed; inventory centre alerts forced []; UI retitled Parts Used",
+  "performanceAudit": "Removed Performance from TECHNICIAN_NAV_ITEMS (productivity/analytics not required for execution)",
+  "messagingScope": "Nav label Messages → Notifications (notification centre); OwnerStaffRoute deny-by-default blocks /communications-hub",
+  "assignedJobTruth": "getJobIdsForUserIncludingCrew → listAssignedJobs; greeting, Assigned Jobs panel, route stops all use active-assigned count",
+  "directRouteRbac": "evaluateOwnerStaffDirectUrl technician deny-by-default except /mobile|/auth; OWNER_ONLY expanded with hub/workforce/analytics prefixes",
+  "duplicateWorkAvoided": [
+    "PR47 AURA",
+    "mobile clipping",
+    "header/logo",
+    "001D parity/perf"
+  ],
+  "tests": {
+    "web": "489 pass (+001E suite)",
+    "sharedFieldTruth": "3 pass",
+    "auth": "24 pass",
+    "apiTypecheck": "pass",
+    "webTypecheck": "pass"
+  }
+}
