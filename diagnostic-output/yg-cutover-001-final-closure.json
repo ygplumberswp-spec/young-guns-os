@@ -101,12 +101,13 @@
     "significant data loss"
   ],
   "testsBuild": {
-    "shared": { "pass": null, "fail": null },
-    "auth": { "pass": null, "fail": null },
-    "api": { "pass": null, "fail": null },
-    "web": { "pass": null, "fail": null },
-    "typecheck": null,
-    "productionBuild": null
+    "shared": { "tests": 1455, "pass": 1455, "fail": 0 },
+    "auth": { "tests": 24, "pass": 24, "fail": 0 },
+    "api": { "tests": 1461, "pass": 1461, "fail": 0 },
+    "apiRbacCutoverSubset": { "tests": 194, "pass": 194, "fail": 0 },
+    "web": { "tests": 458, "pass": 458, "fail": 0 },
+    "typecheck": "pass",
+    "productionBuild": "pass"
   },
   "safety": {
     "productionTouched": 0,
