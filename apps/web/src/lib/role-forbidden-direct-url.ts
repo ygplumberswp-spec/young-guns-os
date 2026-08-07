@@ -10,6 +10,7 @@ import {
   DISPATCHER_BLOCKED_ROUTE_PREFIXES,
   OWNER_ONLY_ROUTE_PREFIXES,
   TECHNICIAN_ALLOWED_ROUTE_PREFIXES,
+  TECHNICIAN_FORBIDDEN_MOBILE_PATHS,
 } from '@titan/shared';
 
 export type ForbiddenDirectUrlDecision =
@@ -26,6 +27,11 @@ export function isOwnerOnlyPath(path: string): boolean {
 
 export function isTechnicianAllowedPath(path: string): boolean {
   return TECHNICIAN_ALLOWED_ROUTE_PREFIXES.some((prefix) => matchesRoutePrefix(path, prefix));
+}
+
+/** Technician-only denylist inside /mobile* (owners may still peek for support). */
+export function isTechnicianForbiddenMobilePath(path: string): boolean {
+  return TECHNICIAN_FORBIDDEN_MOBILE_PATHS.some((prefix) => matchesRoutePrefix(path, prefix));
 }
 
 export function isDispatcherBlockedPath(path: string): boolean {
@@ -53,7 +59,7 @@ export function evaluateOwnerStaffDirectUrl(
    * routing edge cases; TechnicianRoute owns field mobile.
    */
   if (experience === 'technician') {
-    if (isTechnicianAllowedPath(pathname)) {
+    if (isTechnicianAllowedPath(pathname) && !isTechnicianForbiddenMobilePath(pathname)) {
       return { allowed: true };
     }
     return { allowed: false, redirectPath: getStaffHomePath(identity) };
@@ -82,12 +88,16 @@ export function evaluateTechnicianDirectUrl(
     return { allowed: false, redirectPath: '/' };
   }
 
-  // Owners may open field mobile for support; technicians stay on /mobile* only.
-  if (isTechnicianRole(identity) && !isTechnicianAllowedPath(pathname)) {
-    return { allowed: false, redirectPath: '/mobile' };
+  // Technicians: stay on /mobile* and never open denylisted analytics surfaces.
+  if (isTechnicianRole(identity)) {
+    if (!isTechnicianAllowedPath(pathname) || isTechnicianForbiddenMobilePath(pathname)) {
+      return { allowed: false, redirectPath: '/mobile' };
+    }
+    return { allowed: true };
   }
 
-  if (!isTechnicianRole(identity) && !isTechnicianAllowedPath(pathname)) {
+  // Owners/support may open field mobile including Performance peek.
+  if (!isTechnicianAllowedPath(pathname)) {
     return { allowed: false, redirectPath: '/' };
   }
 

@@ -12,7 +12,8 @@ export const YG_CUTOVER_001E_VISIBLE_SURFACES = [
   'Navigation / Directions',
   'Timesheets',
   'Parts Used / returns',
-  'Notifications (job/dispatch scoped)',
+  'Messages (assigned jobs / dispatch / authorised site via job card)',
+  'Notifications (alerts — separate from Messages)',
   'Offline Sync',
   'completion workflow on job cards',
 ] as const;
@@ -24,6 +25,7 @@ export const YG_CUTOVER_001E_FORBIDDEN_SURFACES = [
   'Communications Hub / CRM',
   'Owner dashboard / AURA executive',
   'unrelated company jobs',
+  'Messages mislabeled as Notifications',
 ] as const;
 
 export const YG_CUTOVER_001E_ASSIGNED_JOB_SOURCE =

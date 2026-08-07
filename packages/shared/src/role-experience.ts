@@ -765,13 +765,18 @@ export const TECHNICIAN_NAV_ITEMS: NavItemConfig[] = [
     label: 'Timesheets',
     experiences: ['technician', 'platform_owner', 'company_owner'],
   },
-  // YG-CUTOVER-001E: Performance removed from Technician nav — productivity/analytics
-  // is not required for job execution. Personal self-view route may remain for owners.
+  // Messages ≠ Notifications. Canonical job/dispatch/site threads only (not Comms Hub).
+  {
+    href: '/mobile/messages',
+    label: 'Messages',
+    experiences: ['technician', 'platform_owner', 'company_owner'],
+  },
   {
     href: '/mobile/notifications',
     label: 'Notifications',
     experiences: ['technician', 'platform_owner', 'company_owner'],
   },
+  // Performance removed — overtime/productivity analytics are not field-execution surfaces.
   {
     href: '/mobile/sync',
     label: 'Offline Sync',

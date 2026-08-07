@@ -9004,20 +9004,34 @@ a:focus-visible {
   background: var(--titan-bg);
   color: var(--titan-text);
   overflow-x: hidden;
-  padding-top: env(safe-area-inset-top, 0px);
+  /*
+   * TECHNICIAN SAFE-AREA: top inset lives on .portal-header (sticky), not the shell.
+   * Shell top padding scrolls away / fails under PWA black-translucent + WhatsApp WKWebView.
+   * Keep bottom inset on the shell; horizontal insets on header + body.
+   */
+  padding-top: 0;
   padding-bottom: env(safe-area-inset-bottom, 0px);
-  padding-left: env(safe-area-inset-left, 0px);
-  padding-right: env(safe-area-inset-right, 0px);
+  padding-left: 0;
+  padding-right: 0;
 }
 
 .portal-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding: 0.875rem 1.25rem;
+  box-sizing: border-box;
+  /* Logo/actions sit below notch / Dynamic Island / status bar (Safari, PWA, in-app browsers) */
+  padding-top: calc(0.75rem + env(safe-area-inset-top, 0px));
+  padding-bottom: 0.75rem;
+  padding-left: max(1.25rem, env(safe-area-inset-left, 0px));
+  padding-right: max(1.25rem, env(safe-area-inset-right, 0px));
   background: linear-gradient(180deg, var(--titan-bg-elevated) 0%, var(--titan-bg) 100%);
   border-bottom: 1px solid var(--titan-border);
+  min-width: 0;
 }
 
 .portal-header__brand-block {
@@ -9077,6 +9091,9 @@ a:focus-visible {
   grid-template-columns: 12rem 1fr;
   gap: 1.5rem;
   padding: 1.5rem;
+  padding-left: max(1.5rem, env(safe-area-inset-left, 0px));
+  padding-right: max(1.5rem, env(safe-area-inset-right, 0px));
+  min-width: 0;
 }
 
 .portal-nav {
@@ -10879,12 +10896,48 @@ a:focus-visible {
   }
 }
 
-/* Brand Foundation — mobile shells (375–414) */
+/* Field Mobile — very-narrow floor (≤360 / ≤320); keep safe-area, avoid excess blank chrome */
+@media (max-width: 360px) {
+  .portal-header {
+    padding-top: calc(0.55rem + env(safe-area-inset-top, 0px));
+    padding-bottom: 0.55rem;
+    padding-left: max(0.75rem, env(safe-area-inset-left, 0px));
+    padding-right: max(0.75rem, env(safe-area-inset-right, 0px));
+    gap: 0.35rem;
+  }
+
+  .portal-header__wordmark {
+    width: 5.25rem;
+  }
+}
+
+@media (max-width: 320px) {
+  .portal-header {
+    padding-top: calc(0.5rem + env(safe-area-inset-top, 0px));
+    padding-bottom: 0.5rem;
+    padding-left: max(0.5rem, env(safe-area-inset-left, 0px));
+    padding-right: max(0.5rem, env(safe-area-inset-right, 0px));
+  }
+
+  .portal-header__wordmark {
+    width: 5rem;
+  }
+
+  .portal-nav__link {
+    padding-inline: 0.5rem;
+    font-size: 0.75rem;
+  }
+}
+
+/* Brand Foundation — mobile shells (375–414) + Field Mobile safe-area */
 @media (max-width: 720px) {
   .portal-body {
     grid-template-columns: 1fr;
-    padding: 1rem;
     gap: 1rem;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+    padding-left: max(1rem, env(safe-area-inset-left, 0px));
+    padding-right: max(1rem, env(safe-area-inset-right, 0px));
   }
 
   .portal-nav {
@@ -10894,8 +10947,12 @@ a:focus-visible {
   }
 
   .portal-header {
-    flex-wrap: wrap;
-    padding: 0.75rem 1rem;
+    flex-wrap: nowrap;
+    /* Must not use padding shorthand — that wiped safe-area-inset-top and put the logo under the clock */
+    padding-top: calc(0.65rem + env(safe-area-inset-top, 0px));
+    padding-bottom: 0.65rem;
+    padding-left: max(1rem, env(safe-area-inset-left, 0px));
+    padding-right: max(1rem, env(safe-area-inset-right, 0px));
   }
 
   .auth-form__row {

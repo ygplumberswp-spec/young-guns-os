@@ -27,7 +27,7 @@ const technician = {
 };
 
 describe('YG-CUTOVER-001E Technician mobile RBAC + data truth', () => {
-  it('nav keeps field execution surfaces and drops Performance + Messages hub label', () => {
+  it('nav keeps field execution surfaces, Messages≠Notifications, and drops Performance', () => {
     const hrefs = TECHNICIAN_NAV_ITEMS.map((item) => item.href);
     const labels = TECHNICIAN_NAV_ITEMS.map((item) => item.label);
     assert.ok(hrefs.includes('/mobile'));
@@ -35,13 +35,19 @@ describe('YG-CUTOVER-001E Technician mobile RBAC + data truth', () => {
     assert.ok(hrefs.includes('/mobile/route'));
     assert.ok(hrefs.includes('/mobile/inventory'));
     assert.ok(hrefs.includes('/mobile/time'));
+    assert.ok(hrefs.includes('/mobile/messages'));
     assert.ok(hrefs.includes('/mobile/notifications'));
     assert.equal(hrefs.includes('/mobile/performance'), false);
     assert.equal(labels.includes('Performance'), false);
-    assert.equal(labels.includes('Messages'), false);
+    assert.ok(labels.includes('Messages'));
     assert.ok(labels.includes('Notifications'));
     assert.ok(labels.includes('Parts Used'));
     assert.ok(labels.includes('Navigation'));
+    // Messages must not point at the notifications path
+    const messagesItem = TECHNICIAN_NAV_ITEMS.find((item) => item.label === 'Messages');
+    assert.equal(messagesItem?.href, '/mobile/messages');
+    const notificationsItem = TECHNICIAN_NAV_ITEMS.find((item) => item.label === 'Notifications');
+    assert.equal(notificationsItem?.href, '/mobile/notifications');
   });
 
   it('dashboard greeting and panels do not surface invoices or company inventory alerts', () => {

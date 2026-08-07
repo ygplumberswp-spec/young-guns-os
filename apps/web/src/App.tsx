@@ -117,11 +117,13 @@ export function App() {
                       <Route path="/route" component={MobilePages.MobileRoutePage} />
                       <Route path="/inventory" component={MobilePages.MobileInventoryPage} />
                       <Route path="/time" component={MobilePages.MobileTimePage} />
-                      <Route path="/performance" component={MobilePages.MobilePerformancePage} />
+                      <Route path="/messages" component={MobilePages.MobileMessagesPage} />
                       <Route
                         path="/notifications"
                         component={MobilePages.MobileNotificationsPage}
                       />
+                      {/* Performance retained for owner peek only; technicians denied via TECHNICIAN_FORBIDDEN_MOBILE_PATHS */}
+                      <Route path="/performance" component={MobilePages.MobilePerformancePage} />
                       <Route path="/schedule" component={MobilePages.MobileSchedulePage} />
                       <Route path="/sync" component={MobilePages.MobileSyncPage} />
                       <Route path="/" component={MobilePages.MobileDashboardPage} />
