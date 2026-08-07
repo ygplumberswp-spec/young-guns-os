@@ -369,9 +369,9 @@ export function SaasOnboardingWizardPage() {
       {activeStep === 'plan' ? (
         <Panel title="2 · Choose your TITAN plan">
           <p className="muted-text">
-            Plans use the canonical TITAN package catalog. Checkout is not complete yet — selecting a
-            plan shows <strong>PLAN SELECTED — BILLING SETUP REQUIRED</strong>, never fake payment
-            success.
+            Plans use the canonical TITAN package catalog. Flow:{' '}
+            <strong>PLAN SELECTED → COMPLETE BILLING → VERIFYING PAYMENT → SUBSCRIPTION ACTIVE</strong>.
+            Browser redirects never mark you paid.
           </p>
           {state.availablePlans.length === 0 ? (
             <EmptyState
@@ -420,9 +420,26 @@ export function SaasOnboardingWizardPage() {
             </div>
           )}
           {state.planBillingState === 'plan_selected_billing_setup_required' ? (
-            <p className="form-success">PLAN SELECTED — BILLING SETUP REQUIRED</p>
+            <p className="form-success">PLAN SELECTED — COMPLETE BILLING NEXT</p>
+          ) : null}
+          {state.planBillingState === 'verifying_payment' ? (
+            <p className="form-success">PAYMENT VERIFICATION IN PROGRESS</p>
+          ) : null}
+          {state.planBillingState === 'payment_requires_attention' ? (
+            <p className="form-error">PAYMENT REQUIRES ATTENTION</p>
+          ) : null}
+          {state.planBillingState === 'entitled' ? (
+            <p className="form-success">SUBSCRIPTION ACTIVE</p>
           ) : null}
           <div className="page-header-actions">
+            {state.plan ? (
+              <Button
+                disabled={isWorking}
+                onClick={() => setLocation('/settings/billing?checkout=start')}
+              >
+                COMPLETE BILLING
+              </Button>
+            ) : null}
             <Button
               variant="secondary"
               disabled={isWorking}

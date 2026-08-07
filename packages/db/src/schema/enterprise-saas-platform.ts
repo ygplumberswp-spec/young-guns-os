@@ -187,6 +187,13 @@ export const saasSubscriptions = pgTable('saas_subscriptions', {
   lastSuccessfulPaymentAt: timestamp('last_successful_payment_at', { withTimezone: true }),
   /** Provider reference for idempotent payment/renewal events. */
   paymentProviderRef: text('payment_provider_ref'),
+  /** SaaS billing provider key — never Young Guns invoice Yoco connection. */
+  paymentProvider: text('payment_provider'),
+  providerCustomerRef: text('provider_customer_ref'),
+  providerSubscriptionRef: text('provider_subscription_ref'),
+  cancelAtPeriodEnd: boolean('cancel_at_period_end').notNull().default(false),
+  /** Safe label only (e.g. "Card •••• 4242") — never full PAN/CVV. */
+  paymentMethodLabel: text('payment_method_label'),
   scheduledPlanId: uuid('scheduled_plan_id').references(() => saasSubscriptionPlans.id, {
     onDelete: 'set null',
   }),
@@ -200,6 +207,56 @@ export const saasSubscriptions = pgTable('saas_subscriptions', {
     .default({}),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+/** SaaS checkout sessions — browser success never activates without provider verification. */
+export const saasCheckoutSessions = pgTable('saas_checkout_sessions', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  companyId: uuid('company_id')
+    .notNull()
+    .references(() => companies.id, { onDelete: 'cascade' }),
+  planId: uuid('plan_id').references(() => saasSubscriptionPlans.id, { onDelete: 'set null' }),
+  status: text('status').notNull().default('created'),
+  provider: text('provider').notNull().default('unavailable'),
+  providerSessionRef: text('provider_session_ref'),
+  providerCheckoutUrl: text('provider_checkout_url'),
+  currency: text('currency').notNull().default('ZAR'),
+  subtotalCents: integer('subtotal_cents').notNull().default(0),
+  taxCents: integer('tax_cents').notNull().default(0),
+  totalCents: integer('total_cents').notNull().default(0),
+  extraSeats: jsonb('extra_seats')
+    .$type<{ adminOffice?: number; technician?: number }>()
+    .notNull()
+    .default({}),
+  summary: jsonb('summary').$type<Record<string, unknown>>().notNull().default({}),
+  clientQuotedTotalCents: integer('client_quoted_total_cents'),
+  attentionMessage: text('attention_message'),
+  createdByUserId: uuid('created_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  expiresAt: timestamp('expires_at', { withTimezone: true }),
+  completedAt: timestamp('completed_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+/** Idempotent SaaS billing provider webhook/event ledger (safe metadata only). */
+export const saasBillingProviderEvents = pgTable('saas_billing_provider_events', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  companyId: uuid('company_id').references(() => companies.id, { onDelete: 'set null' }),
+  provider: text('provider').notNull(),
+  providerEventId: text('provider_event_id').notNull(),
+  eventType: text('event_type').notNull(),
+  canonicalType: text('canonical_type').notNull(),
+  providerSessionRef: text('provider_session_ref'),
+  providerPaymentRef: text('provider_payment_ref'),
+  providerSubscriptionRef: text('provider_subscription_ref'),
+  amountCents: integer('amount_cents'),
+  currency: text('currency'),
+  occurredAt: timestamp('occurred_at', { withTimezone: true }),
+  processedAt: timestamp('processed_at', { withTimezone: true }),
+  processingResult: text('processing_result'),
+  payloadFingerprint: text('payload_fingerprint'),
+  safeMetadata: jsonb('safe_metadata').$type<Record<string, unknown>>().notNull().default({}),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
 export const saasBillingRecords = pgTable('saas_billing_records', {

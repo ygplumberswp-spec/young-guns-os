@@ -25,6 +25,7 @@ import {
   updateSubscriptionPlan,
   upgradeSubscription,
 } from '../../lib/platform-api-client';
+import { activateManualSaasBilling } from '../../lib/saas-billing-api-client';
 import { useAuth } from '../../lib/auth-context';
 import { AuraComposer } from '../../features/aura/AuraComposer';
 import { AuraMessageList } from '../../features/aura/AuraMessageList';
@@ -65,6 +66,11 @@ export function PlatformPage() {
   const [hardLimitCents, setHardLimitCents] = useState('');
   const [lowCreditWarningCents, setLowCreditWarningCents] = useState('');
   const [highUsageWarningTokens, setHighUsageWarningTokens] = useState('');
+  const [manualCompanyId, setManualCompanyId] = useState('');
+  const [manualPlanId, setManualPlanId] = useState('');
+  const [manualAmount, setManualAmount] = useState('');
+  const [manualPaidThrough, setManualPaidThrough] = useState('');
+  const [manualReference, setManualReference] = useState('');
 
   const {
     agentMessages,
@@ -314,6 +320,11 @@ export function PlatformPage() {
                           <div>
                             <strong>Plan</strong>
                             <p>{tenant.planName ?? '—'}</p>
+                            <p className="muted-text">
+                              Provider:{' '}
+                              {(tenant as { paymentProvider?: string | null }).paymentProvider ??
+                                '—'}
+                            </p>
                           </div>
                           <div>
                             <strong>Subscription</strong>
@@ -681,6 +692,80 @@ export function PlatformPage() {
                   </div>
                 )}
               </Panel>
+
+              {dashboard.isPlatformOwner && canPlatformWrite ? (
+                <Panel title="Manual / enterprise billing activation">
+                  <p className="muted-text">
+                    Authorised Platform Owner path with evidence only. Tenant owners cannot self-mark
+                    PAID. Recurring card checkout remains PROVIDER CAPABILITY REQUIRED until a
+                    recurring SaaS provider is wired.
+                  </p>
+                  <div className="form-row">
+                    <label>
+                      Tenant company ID
+                      <input
+                        className="titan-input"
+                        value={manualCompanyId}
+                        onChange={(e) => setManualCompanyId(e.target.value)}
+                      />
+                    </label>
+                    <label>
+                      Plan ID
+                      <input
+                        className="titan-input"
+                        value={manualPlanId}
+                        onChange={(e) => setManualPlanId(e.target.value)}
+                        placeholder={dashboard.plans[0]?.id ?? ''}
+                      />
+                    </label>
+                    <label>
+                      Amount (major units)
+                      <input
+                        className="titan-input"
+                        value={manualAmount}
+                        onChange={(e) => setManualAmount(e.target.value)}
+                      />
+                    </label>
+                    <label>
+                      Paid through (ISO)
+                      <input
+                        className="titan-input"
+                        value={manualPaidThrough}
+                        onChange={(e) => setManualPaidThrough(e.target.value)}
+                        placeholder="2026-09-30T23:59:59.000Z"
+                      />
+                    </label>
+                    <label>
+                      External / invoice reference
+                      <input
+                        className="titan-input"
+                        value={manualReference}
+                        onChange={(e) => setManualReference(e.target.value)}
+                      />
+                    </label>
+                  </div>
+                  <Button
+                    disabled={isWorking}
+                    onClick={() =>
+                      void runAction(
+                        () =>
+                          activateManualSaasBilling(accessToken!, {
+                            targetCompanyId: manualCompanyId.trim(),
+                            planId: (manualPlanId || dashboard.plans[0]?.id || '').trim(),
+                            amountCents: Math.round(Number(manualAmount) * 100),
+                            currency: 'ZAR',
+                            paidThroughAt: manualPaidThrough.trim(),
+                            method: 'enterprise_contract',
+                            externalReference: manualReference.trim(),
+                          }),
+                        'Manual billing activated from verified evidence.',
+                      )
+                    }
+                  >
+                    Activate with evidence
+                  </Button>
+                </Panel>
+              ) : null}
             </>
           ) : null}
 

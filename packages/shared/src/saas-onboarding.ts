@@ -67,10 +67,8 @@ export type SaasOnboardingChecklist = {
   review: SaasOnboardingStepState;
 };
 
-export type SaasOnboardingPlanBillingState =
-  | 'not_selected'
-  | 'plan_selected_billing_setup_required'
-  | 'entitled';
+import type { SaasOnboardingPlanBillingState } from './saas-billing-checkout.js';
+export type { SaasOnboardingPlanBillingState };
 
 export type SaasOnboardingIntegrationItem = {
   providerKey: string;

@@ -178,6 +178,11 @@ import { EnterpriseDeveloperPlatformService } from './services/enterprise-develo
 import { EnterpriseSaasPlatformService } from './services/enterprise-saas-platform.service.js';
 import { SaasOnboardingService } from './services/saas-onboarding.service.js';
 import { createSaasOnboardingRouter } from './routes/saas-onboarding.js';
+import { SaasBillingCheckoutService } from './services/saas-billing/saas-billing-checkout.service.js';
+import {
+  createSaasBillingRouter,
+  createSaasBillingWebhookRouter,
+} from './routes/saas-billing.js';
 import { EnterpriseProductionReadinessService } from './services/enterprise-production-readiness.service.js';
 import { createEnterpriseProductionReadinessRouter } from './routes/enterprise-production-readiness.js';
 import { EnterpriseMobilePlatformService } from './services/enterprise-mobile-platform.service.js';
@@ -582,6 +587,12 @@ const saasOnboardingService = new SaasOnboardingService({
   companyService,
   teamService,
   enterpriseSaasPlatformService,
+});
+const saasBillingCheckoutService = new SaasBillingCheckoutService({
+  db,
+  enterpriseSaasPlatformService,
+  appUrl: env.APP_URL,
+  saasBillingWebhookSecret: process.env.SAAS_BILLING_WEBHOOK_SECRET ?? null,
 });
 configureSaasTenantAccessGate(enterpriseSaasPlatformService);
 teamService.setSeatGuard((companyId, roleName) =>
@@ -2449,6 +2460,21 @@ app.use(
     teamService,
     jwtSecret: env.JWT_SECRET,
     authService,
+  }),
+);
+app.use(
+  '/api/v1/saas-billing',
+  createSaasBillingRouter({
+    saasBillingCheckoutService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/webhooks/saas-billing',
+  createSaasBillingWebhookRouter({
+    saasBillingCheckoutService,
   }),
 );
 app.use(
