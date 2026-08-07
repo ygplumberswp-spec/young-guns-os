@@ -216,6 +216,30 @@ export function resolveRateLimitDelayMs(
   return XERO_RATE_LIMIT_BASE_DELAY_MS * 2 ** Math.max(0, attempt - 1);
 }
 
+/**
+ * Parse Retry-After for persisted provider cooldown — full provider duration, no inline cap.
+ * Used only for rate-budget persistence; inline HTTP retries use resolveRateLimitDelayMs().
+ */
+export function parseRetryAfterSecondsForPersistence(
+  retryAfterHeader: string | null | undefined,
+  referenceTimeMs: number = Date.now(),
+): number | null {
+  const trimmed = (retryAfterHeader ?? '').trim();
+  if (!trimmed) return null;
+
+  const parsedSeconds = Number.parseInt(trimmed, 10);
+  if (Number.isFinite(parsedSeconds) && parsedSeconds > 0) {
+    return parsedSeconds;
+  }
+
+  const retryAt = Date.parse(trimmed);
+  if (Number.isFinite(retryAt)) {
+    return Math.max(Math.ceil((retryAt - referenceTimeMs) / 1000), 0);
+  }
+
+  return null;
+}
+
 /** Xero list endpoints return a full page while more records remain. */
 export function hasMoreXeroPages(batchSize: number): boolean {
   return batchSize >= XERO_PAGE_SIZE;

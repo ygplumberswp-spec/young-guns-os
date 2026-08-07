@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 import type { DatabaseClient } from '@titan/db';
 import { securityAuditLogs, xeroRateBudgetState } from '@titan/db';
-import { resolveRateLimitDelayMs } from '../lib/xero.client.js';
+import { parseRetryAfterSecondsForPersistence } from '../lib/xero.client.js';
 
 export type XeroRateBudgetHeaders = {
   minLimitRemaining?: number | null;
@@ -130,8 +130,12 @@ export class XeroRateBudgetService {
     if (response.status === 429) {
       parsed.rateLimitProblem = parsed.rateLimitProblem ?? 'rate_limit_exceeded';
       const retryAfterHeader = response.headers.get('Retry-After');
-      const delayMs = resolveRateLimitDelayMs(retryAfterHeader, 1);
-      parsed.retryAfterSeconds = Math.ceil(delayMs / 1000);
+      const responseDateMs = parsed.responseDate ? Date.parse(parsed.responseDate) : Date.now();
+      const referenceTimeMs = Number.isFinite(responseDateMs) ? responseDateMs : Date.now();
+      parsed.retryAfterSeconds = parseRetryAfterSecondsForPersistence(
+        retryAfterHeader,
+        referenceTimeMs,
+      );
     }
 
     await this.recordHeaders(companyId, parsed);
@@ -312,7 +316,9 @@ export class XeroRateBudgetService {
 
   private resolveRetryAfterUntil(headers: XeroRateBudgetHeaders): Date | null {
     if (headers.retryAfterSeconds && headers.retryAfterSeconds > 0) {
-      return new Date(Date.now() + headers.retryAfterSeconds * 1000);
+      const responseDateMs = headers.responseDate ? Date.parse(headers.responseDate) : NaN;
+      const baseMs = Number.isFinite(responseDateMs) ? responseDateMs : Date.now();
+      return new Date(baseMs + headers.retryAfterSeconds * 1000);
     }
     return null;
   }
@@ -356,11 +362,12 @@ export function parseXeroRateBudgetHeaders(
   };
 
   const retryRaw = read('Retry-After');
-  let retryAfterSeconds: number | null = null;
-  if (retryRaw) {
-    const delayMs = resolveRateLimitDelayMs(retryRaw, 1);
-    retryAfterSeconds = Math.ceil(delayMs / 1000);
-  }
+  const responseDate = read('Date');
+  const responseDateMs = responseDate ? Date.parse(responseDate) : Date.now();
+  const referenceTimeMs = Number.isFinite(responseDateMs) ? responseDateMs : Date.now();
+  const retryAfterSeconds = retryRaw
+    ? parseRetryAfterSecondsForPersistence(retryRaw, referenceTimeMs)
+    : null;
 
   return {
     minLimitRemaining: parseIntHeader('X-MinLimit-Remaining'),
@@ -369,6 +376,6 @@ export function parseXeroRateBudgetHeaders(
     rateLimitProblem: read('X-Rate-Limit-Problem'),
     retryAfterSeconds,
     correlationId: read('Xero-Correlation-Id'),
-    responseDate: read('Date'),
+    responseDate,
   };
 }
