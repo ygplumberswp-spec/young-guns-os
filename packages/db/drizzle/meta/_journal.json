@@ -1324,6 +1324,13 @@
       "when": 1786200000000,
       "tag": "0193_job_visits_reschedule_still_busy",
       "breakpoints": true
+    },
+    {
+      "idx": 189,
+      "version": "7",
+      "when": 1786286400000,
+      "tag": "0194_quick_job_intake",
+      "breakpoints": true
     }
   ]
 }

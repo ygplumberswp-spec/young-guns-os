@@ -205,6 +205,7 @@ type JobsRouterDeps = {
   jobCostControlService: JobCostControlService;
   mobileWorkforceService: MobileWorkforceService;
   jobVisitsService: import('../services/job-visits.service.js').JobVisitsService;
+  quickJobIntakeService: import('../services/quick-job-intake.service.js').QuickJobIntakeService;
   teamService: TeamService;
   db: DatabaseClient;
   jwtSecret: string;
@@ -227,6 +228,7 @@ export function createJobsRouter({
   jobCostControlService,
   mobileWorkforceService,
   jobVisitsService,
+  quickJobIntakeService,
   teamService,
   db,
   jwtSecret,
@@ -244,6 +246,108 @@ export function createJobsRouter({
     await teamService.ensureDefaultRoles(companyId);
     next();
   });
+
+  router.get(
+    '/intake/pending',
+    requireAnyPermission('jobs:read', 'jobs:write'),
+    async (req, res) => {
+      const auth = getAuth(req);
+      const pending = await quickJobIntakeService.listPendingConfirmations(auth.companyId);
+      res.json({ data: { pending } });
+    },
+  );
+
+  router.post(
+    '/intake/quick-call',
+    requireAnyPermission('jobs:write', 'scheduling:write'),
+    async (req, res) => {
+      const parsed = z
+        .object({
+          phone: z.string().trim().min(1),
+          issue: z.string().trim().min(1),
+          location: z.string().trim().optional().nullable(),
+          need: z.string().trim().optional().nullable(),
+          customerName: z.string().trim().optional().nullable(),
+          urgencyHint: z
+            .enum(['emergency', 'same_day', 'next_available', 'scheduled'])
+            .optional()
+            .nullable(),
+          preferredTiming: z.string().trim().optional().nullable(),
+          notes: z.string().trim().optional().nullable(),
+          source: z
+            .enum(['owner', 'office', 'business_call', 'personal_call_manual'])
+            .optional(),
+          matchedCustomerId: z.string().uuid().optional().nullable(),
+          matchedPropertyId: z.string().uuid().optional().nullable(),
+          overrideDuplicateWarning: z.boolean().optional(),
+          prepareOnly: z.boolean().optional(),
+        })
+        .safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({
+          error: { code: 'VALIDATION_ERROR', message: 'Invalid NEW CALL / quick job payload' },
+        });
+        return;
+      }
+      try {
+        const auth = getAuth(req);
+        if (parsed.data.prepareOnly) {
+          const result = await quickJobIntakeService.prepareOwnerQuickCall(auth, parsed.data);
+          res.json({ data: result });
+          return;
+        }
+        const result = await quickJobIntakeService.ownerQuickCallCreate(auth, {
+          ...parsed.data,
+          createJobNow: true,
+        });
+        res.status(201).json({ data: result });
+      } catch (error) {
+        const { QuickJobIntakeError } = await import('../services/quick-job-intake.service.js');
+        if (error instanceof QuickJobIntakeError) {
+          const status =
+            error.code === 'DUPLICATE_OPEN_JOB' || error.code === 'SCHEDULE_CONFLICT'
+              ? 409
+              : error.code === 'FORBIDDEN'
+                ? 403
+                : 400;
+          res.status(status).json({ error: { code: error.code, message: error.message } });
+          return;
+        }
+        throw error;
+      }
+    },
+  );
+
+  router.post(
+    '/:jobId/intake/confirm',
+    requireAnyPermission('jobs:write', 'scheduling:write'),
+    async (req, res) => {
+      try {
+        const auth = getAuth(req);
+        const job = await quickJobIntakeService.confirmTechnicianIntake(
+          auth,
+          getRouteParam(req.params.jobId),
+          {
+            assignedUserId: typeof req.body?.assignedUserId === 'string' ? req.body.assignedUserId : null,
+            scheduledAt: typeof req.body?.scheduledAt === 'string' ? req.body.scheduledAt : null,
+            scheduledEndAt:
+              typeof req.body?.scheduledEndAt === 'string' ? req.body.scheduledEndAt : null,
+            notes: typeof req.body?.notes === 'string' ? req.body.notes : null,
+          },
+        );
+        res.json({ data: { job } });
+      } catch (error) {
+        const { QuickJobIntakeError } = await import('../services/quick-job-intake.service.js');
+        if (error instanceof QuickJobIntakeError) {
+          res.status(error.code === 'NOT_FOUND' ? 404 : 400).json({
+            error: { code: error.code, message: error.message },
+          });
+          return;
+        }
+        throw error;
+      }
+    },
+  );
 
   router.get('/stats', requireAnyPermission('jobs:read', 'jobs:write'), async (req, res) => {
     const { companyId } = getAuth(req);

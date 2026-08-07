@@ -48,9 +48,14 @@ export function JobListPage() {
         breadcrumbs={[{ label: 'Operations', href: '/jobs' }, { label: 'Jobs' }]}
         actions={
           canWrite ? (
-            <Link href="/jobs/new">
-              <PrimaryAction>Create job</PrimaryAction>
-            </Link>
+            <>
+              <Link href="/jobs/quick-call">
+                <PrimaryAction>New call / Quick job</PrimaryAction>
+              </Link>
+              <Link href="/jobs/new">
+                <PrimaryAction>Create job</PrimaryAction>
+              </Link>
+            </>
           ) : null
         }
       />

@@ -140,6 +140,17 @@ export type CreateJobRequest = {
   /** Never silent — only updates property address when true. */
   updateVerifiedPropertyDetails?: boolean;
   documents?: CreateJobDocumentInput[];
+  /** Last-minute / call intake attribution (optional). */
+  intakeSource?:
+    | 'technician'
+    | 'owner'
+    | 'office'
+    | 'aura'
+    | 'business_call'
+    | 'personal_call_manual'
+    | null;
+  intakeStatus?: 'needs_office_confirmation' | 'confirmed' | null;
+  intakeMetadata?: Record<string, unknown> | null;
 };
 
 export type UpdateJobRequest = {

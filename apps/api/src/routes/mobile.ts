@@ -9,6 +9,7 @@ import type { MobileWorkforceService } from '../services/mobile-workforce.servic
 import { MobileWorkforceError } from '../services/mobile-workforce.service.js';
 import type { JobExecutionService } from '../services/job-execution.service.js';
 import { JobExecutionError } from '../services/job-execution.service.js';
+import { QuickJobIntakeError } from '../services/quick-job-intake.service.js';
 import type { RecommendationsService } from '../services/recommendations.service.js';
 import type { TeamService } from '../services/team.service.js';
 import type { PortalAuthService } from '../services/portal-auth.service.js';
@@ -188,6 +189,49 @@ const approveRescheduleSchema = z.object({
   notes: z.string().trim().optional().nullable(),
   clientActionId: z.string().optional().nullable(),
 });
+const technicianQuickAddSchema = z.object({
+  customerName: z.string().trim().min(1),
+  phone: z.string().trim().min(1),
+  siteAddress: z.string().trim().min(1),
+  workDescription: z.string().trim().min(1),
+  urgency: z.enum(['emergency', 'same_day', 'next_available', 'scheduled']),
+  preferredTiming: z.string().trim().min(1).optional().nullable(),
+  notes: z.string().trim().optional().nullable(),
+  matchedCustomerId: z.string().uuid().optional().nullable(),
+  matchedPropertyId: z.string().uuid().optional().nullable(),
+  assignToSelf: z.boolean().optional(),
+  overrideDuplicateWarning: z.boolean().optional(),
+  photoDocIds: z.array(z.string().uuid()).optional(),
+  clientActionId: z.string().optional().nullable(),
+});
+const ownerQuickCallSchema = z.object({
+  phone: z.string().trim().min(1),
+  issue: z.string().trim().min(1),
+  location: z.string().trim().optional().nullable(),
+  need: z.string().trim().optional().nullable(),
+  customerName: z.string().trim().optional().nullable(),
+  urgencyHint: z.enum(['emergency', 'same_day', 'next_available', 'scheduled']).optional().nullable(),
+  preferredTiming: z.string().trim().optional().nullable(),
+  notes: z.string().trim().optional().nullable(),
+  source: z
+    .enum(['owner', 'office', 'business_call', 'personal_call_manual'])
+    .optional(),
+  matchedCustomerId: z.string().uuid().optional().nullable(),
+  matchedPropertyId: z.string().uuid().optional().nullable(),
+  createJobNow: z.boolean().optional(),
+  overrideDuplicateWarning: z.boolean().optional(),
+  clientActionId: z.string().optional().nullable(),
+});
+const confirmIntakeSchema = z.object({
+  assignedUserId: z.string().uuid().optional().nullable(),
+  scheduledAt: z.string().trim().min(1).optional().nullable(),
+  scheduledEndAt: z.string().trim().min(1).optional().nullable(),
+  notes: z.string().trim().optional().nullable(),
+  clientActionId: z.string().optional().nullable(),
+});
+const matchPhoneSchema = z.object({
+  phone: z.string().trim().min(1),
+});
 const reportConflictSchema = z.object({
   queueItemId: z.string().uuid().optional(),
   resourceType: z.string().min(1),
@@ -268,6 +312,7 @@ type MobileRouterDeps = {
   jobCostCaptureService: import('../services/job-cost-capture.service.js').JobCostCaptureService;
   paperlessFieldCashService: import('../services/paperless-field-cash.service.js').PaperlessFieldCashService;
   jobVisitsService: import('../services/job-visits.service.js').JobVisitsService;
+  quickJobIntakeService: import('../services/quick-job-intake.service.js').QuickJobIntakeService;
   recommendationsService: RecommendationsService;
   teamService: TeamService;
   portalAuthService: PortalAuthService;
@@ -298,6 +343,7 @@ export function createMobileRouter({
   jobCostCaptureService,
   paperlessFieldCashService,
   jobVisitsService,
+  quickJobIntakeService,
   recommendationsService,
   teamService,
   portalAuthService,
@@ -449,6 +495,70 @@ export function createMobileRouter({
     res.json({ data: { context } });
   });
 
+  ownerRouter.post('/quick-call/prepare', requireOwnerAccess, async (req, res) => {
+    const parsed = ownerQuickCallSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({
+        error: { code: 'VALIDATION_ERROR', message: 'Invalid NEW CALL payload' },
+      });
+      return;
+    }
+    try {
+      const auth = getAuth(req);
+      const result = await quickJobIntakeService.prepareOwnerQuickCall(auth, parsed.data);
+      res.json({ data: result });
+    } catch (error) {
+      handleQuickIntakeError(res, error);
+    }
+  });
+
+  ownerRouter.post('/quick-call', requireOwnerAccess, async (req, res) => {
+    const parsed = ownerQuickCallSchema.safeParse({ ...req.body, createJobNow: true });
+    if (!parsed.success) {
+      res.status(400).json({
+        error: { code: 'VALIDATION_ERROR', message: 'Invalid NEW CALL payload' },
+      });
+      return;
+    }
+    try {
+      const auth = getAuth(req);
+      const result = await quickJobIntakeService.ownerQuickCallCreate(auth, {
+        ...parsed.data,
+        createJobNow: true,
+      });
+      res.status(201).json({ data: result });
+    } catch (error) {
+      handleQuickIntakeError(res, error);
+    }
+  });
+
+  ownerRouter.get('/intake/pending', requireOwnerAccess, async (req, res) => {
+    const auth = getAuth(req);
+    const pending = await quickJobIntakeService.listPendingConfirmations(auth.companyId);
+    res.json({ data: { pending } });
+  });
+
+  ownerRouter.post('/intake/:jobId/confirm', requireOwnerAccess, async (req, res) => {
+    const parsed = confirmIntakeSchema.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      res.status(400).json({
+        error: { code: 'VALIDATION_ERROR', message: 'Invalid confirm-intake payload' },
+      });
+      return;
+    }
+    try {
+      const auth = getAuth(req);
+      const job = await quickJobIntakeService.confirmTechnicianIntake(
+        auth,
+        getRouteParam(req.params.jobId),
+        parsed.data,
+      );
+      res.json({ data: { job } });
+    } catch (error) {
+      handleQuickIntakeError(res, error);
+    }
+  });
+
   ownerRouter.post(
     '/workforce/requests/:requestId/approve-reschedule',
     requireOwnerAccess,
@@ -506,6 +616,39 @@ export function createMobileRouter({
     const auth = getAuth(req);
     const jobs = await mobileService.listAssignedJobs(auth);
     res.json({ data: { jobs } });
+  });
+
+  /** Controlled phone match — never a CRM browse list. */
+  technicianRouter.post('/workforce/match-phone', requireMobileWrite, async (req, res) => {
+    const parsed = matchPhoneSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Phone required' } });
+      return;
+    }
+    try {
+      const auth = getAuth(req);
+      const matches = await quickJobIntakeService.matchByPhone(auth.companyId, parsed.data.phone);
+      res.json({ data: { matches, crmBrowse: false } });
+    } catch (error) {
+      handleQuickIntakeError(res, error);
+    }
+  });
+
+  technicianRouter.post('/workforce/quick-add', requireMobileWrite, async (req, res) => {
+    const parsed = technicianQuickAddSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({
+        error: { code: 'VALIDATION_ERROR', message: 'Invalid quick-add job payload' },
+      });
+      return;
+    }
+    try {
+      const auth = getAuth(req);
+      const result = await quickJobIntakeService.technicianQuickAdd(auth, parsed.data);
+      res.status(201).json({ data: result });
+    } catch (error) {
+      handleQuickIntakeError(res, error);
+    }
   });
 
   technicianRouter.get('/workforce/jobs/:jobId', requireTechnicianAccess, async (req, res) => {
@@ -1565,5 +1708,21 @@ function handleJobExecutionError(res: import('express').Response, error: unknown
     return;
   }
 
+  throw error;
+}
+
+function handleQuickIntakeError(res: import('express').Response, error: unknown) {
+  if (error instanceof QuickJobIntakeError) {
+    const status =
+      error.code === 'NOT_FOUND'
+        ? 404
+        : error.code === 'FORBIDDEN'
+          ? 403
+          : error.code === 'DUPLICATE_OPEN_JOB' || error.code === 'SCHEDULE_CONFLICT'
+            ? 409
+            : 400;
+    res.status(status).json({ error: { code: error.code, message: error.message } });
+    return;
+  }
   throw error;
 }

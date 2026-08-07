@@ -20,7 +20,15 @@ export function MobileJobsPage() {
 
   return (
     <div className="portal-page">
-      <PageHeader title="My Jobs" description="Assigned jobs for today and upcoming work." />
+      <PageHeader
+        title="My Jobs"
+        description="Assigned jobs for today and upcoming work."
+        actions={
+          <Link href="/jobs/add" className="mobile-action-btn mobile-action-btn--primary">
+            + Add job
+          </Link>
+        }
+      />
 
       <AnalyticsTabPanel
         isLoading={jobsQuery.isLoading}
