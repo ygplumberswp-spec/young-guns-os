@@ -183,8 +183,9 @@ describe('Department 21 SaaS plug-and-play onboarding wizard', () => {
   it('20. PR #61 package entitlements remain intact (upgradePlan, no parallel billing)', () => {
     const service = readApi('./saas-onboarding.service.ts');
     assert.match(service, /upgradePlan/);
-    assert.match(service, /plan_selected_billing_setup_required/);
-    assert.match(service, /will not fake payment success/i);
+    assert.match(service, /mapCheckoutStatusToOnboardingBillingState/);
+    assert.match(service, /COMPLETE BILLING|PAYMENT VERIFICATION IN PROGRESS|PAYMENT REQUIRES ATTENTION/);
+    assert.match(service, /will not invent a paid-through period|Browser redirects never activate/i);
     assert.doesNotMatch(service, /markPaid\(|paymentSucceeded:\s*true/);
     assert.ok(TITAN_CANONICAL_PLANS.some((plan) => plan.packageKey === 'starter'));
     assert.ok(TITAN_CANONICAL_PLANS.some((plan) => plan.packageKey === 'enterprise'));

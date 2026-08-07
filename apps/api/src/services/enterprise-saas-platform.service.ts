@@ -51,6 +51,7 @@ import {
   type SaasOnboardingChecklist,
   saasAccessStatusChip,
   TITAN_CANONICAL_PLANS,
+  YOCO_SAAS_PROVIDER_CAPABILITY,
 } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
 import {
@@ -60,6 +61,7 @@ import {
   roles,
   saasBillingRecords,
   saasBrandingProfiles,
+  saasCheckoutSessions,
   saasFeatureEntitlements,
   saasFeatureFlags,
   saasPlatformActions,
@@ -92,7 +94,9 @@ type EnterpriseSaasPlatformDeps = {
 };
 
 const TRIAL_DAYS = 14;
-const GRACE_DAYS = 7;
+/** Retained for future post-period grace policies; cancel-at-period-end uses paid-through truth. */
+const _GRACE_DAYS_RESERVED = 7;
+void _GRACE_DAYS_RESERVED;
 
 export class EnterpriseSaasPlatformService {
   constructor(private readonly deps: EnterpriseSaasPlatformDeps) {}
@@ -1030,6 +1034,11 @@ export class EnterpriseSaasPlatformService {
     const upgradePlans = allPlans.filter(
       (plan) => plan.isActive && plan.priceCents >= currentPrice && plan.id !== subscription?.plan?.id,
     );
+    const billingHistory = await this.listBillingRecords(companyId);
+    const latestCheckout = await this.deps.db.query.saasCheckoutSessions.findFirst({
+      where: eq(saasCheckoutSessions.companyId, companyId),
+      orderBy: [desc(saasCheckoutSessions.createdAt)],
+    });
 
     return {
       companyName: company?.name ?? 'Your company',
@@ -1038,10 +1047,26 @@ export class EnterpriseSaasPlatformService {
       seats,
       fairUse,
       paidThroughAt: access.paidThroughAt,
-      nextRenewalAt: subscription?.currentPeriodEnd ?? null,
+      nextRenewalAt: subscription?.cancelAtPeriodEnd
+        ? null
+        : subscription?.currentPeriodEnd ?? null,
       billingAttention: !access.allowed || access.paymentFailed || seats.overLimitState === 'action_required',
       upgradePlans,
       entitlements,
+      billingHistory,
+      providerCapability: {
+        providerKey: YOCO_SAAS_PROVIDER_CAPABILITY.providerKey,
+        supportsRecurringSubscriptions: YOCO_SAAS_PROVIDER_CAPABILITY.supportsRecurringSubscriptions,
+        missingCapabilities: [...YOCO_SAAS_PROVIDER_CAPABILITY.missingCapabilities],
+        notes: [...YOCO_SAAS_PROVIDER_CAPABILITY.notes],
+      },
+      latestCheckout: latestCheckout
+        ? {
+            id: latestCheckout.id,
+            status: latestCheckout.status,
+            attentionMessage: latestCheckout.attentionMessage,
+          }
+        : null,
     };
   }
 
@@ -1264,19 +1289,28 @@ export class EnterpriseSaasPlatformService {
     if (await this.shouldEnforceSubscription(scope.companyId)) {
       await this.assertSubscriptionActive(scope.companyId);
     }
-    const gracePeriodEndsAt = new Date(Date.now() + GRACE_DAYS * 24 * 60 * 60 * 1000);
+    // Preferred ordinary SaaS cancellation: cancel at period end; keep access through paid-through.
+    const subscription = await this.deps.db.query.saasSubscriptions.findFirst({
+      where: eq(saasSubscriptions.companyId, scope.companyId),
+    });
+    if (!subscription) {
+      throw new EnterpriseSaasPlatformError('NOT_FOUND', 'Subscription not found');
+    }
     await this.deps.db
       .update(saasSubscriptions)
       .set({
-        status: 'cancelled',
-        gracePeriodEndsAt,
-        cancelledAt: new Date(),
+        cancelAtPeriodEnd: true,
+        // Do not immediately destroy access while paid-through remains.
         updatedAt: new Date(),
       })
       .where(eq(saasSubscriptions.companyId, scope.companyId));
     await this.recordAudit(scope, {
-      actionType: 'subscription_cancelled',
+      actionType: 'subscription_cancel_at_period_end',
       subject: scope.companyId,
+      details: JSON.stringify({
+        paidThroughAt: subscription.currentPeriodEnd?.toISOString() ?? null,
+        preservesTenantData: true,
+      }),
     });
     return (await this.getSubscriptionSummary(scope.companyId))!;
   }
@@ -1728,6 +1762,11 @@ export class EnterpriseSaasPlatformService {
       paidThroughAt: row.currentPeriodEnd?.toISOString() ?? null,
       lastSuccessfulPaymentAt: row.lastSuccessfulPaymentAt?.toISOString() ?? null,
       lastPaymentFailedAt: row.lastPaymentFailedAt?.toISOString() ?? null,
+      paymentProvider: row.paymentProvider ?? null,
+      providerCustomerRef: row.providerCustomerRef ?? null,
+      providerSubscriptionRef: row.providerSubscriptionRef ?? null,
+      cancelAtPeriodEnd: row.cancelAtPeriodEnd ?? false,
+      paymentMethodLabel: row.paymentMethodLabel ?? null,
       scheduledPlanId: row.scheduledPlanId ?? null,
       scheduledChangeType:
         row.scheduledChangeType === 'upgrade' || row.scheduledChangeType === 'downgrade'
@@ -1901,15 +1940,37 @@ export class EnterpriseSaasPlatformService {
       orderBy: [desc(saasBillingRecords.issuedAt)],
       limit: 50,
     });
-    return rows.map((row) => ({
-      id: row.id,
-      recordType: row.recordType,
-      status: row.status,
-      amountCents: row.amountCents,
-      currency: row.currency,
-      description: row.description,
-      issuedAt: row.issuedAt.toISOString(),
-    }));
+    return rows.map((row) => {
+      const meta = (row.metadata ?? {}) as Record<string, unknown>;
+      const taxCents = typeof meta.taxCents === 'number' ? meta.taxCents : null;
+      const totalCents =
+        typeof meta.totalCents === 'number' ? meta.totalCents : row.amountCents + (taxCents ?? 0);
+      return {
+        id: row.id,
+        recordType: row.recordType,
+        status: row.status,
+        amountCents: row.amountCents,
+        currency: row.currency,
+        description: row.description,
+        issuedAt: row.issuedAt.toISOString(),
+        taxCents,
+        totalCents,
+        reference:
+          typeof meta.paymentProviderRef === 'string'
+            ? meta.paymentProviderRef
+            : typeof meta.externalReference === 'string'
+              ? meta.externalReference
+              : null,
+        periodStart: typeof meta.periodStart === 'string' ? meta.periodStart : null,
+        periodEnd:
+          typeof meta.paidThroughAt === 'string'
+            ? meta.paidThroughAt
+            : typeof meta.periodEnd === 'string'
+              ? meta.periodEnd
+              : null,
+        receiptUrl: typeof meta.receiptUrl === 'string' ? meta.receiptUrl : null,
+      };
+    });
   }
 
   private async listBranches(companyId: string): Promise<SaasTenantBranchSummary[]> {
@@ -2078,6 +2139,9 @@ export class EnterpriseSaasPlatformService {
         lastOnboardingActivityAt: row.lastOnboardingActivityAt?.toISOString() ?? null,
         integrationsConnectedCount: integrationCountByCompany.get(row.companyId) ?? 0,
         importAttentionCount: checklist.import === 'attention' ? 1 : 0,
+        paymentProvider: subscription?.paymentProvider ?? null,
+        providerCustomerRef: subscription?.providerCustomerRef ?? null,
+        providerSubscriptionRef: subscription?.providerSubscriptionRef ?? null,
       };
     });
   }
@@ -2166,6 +2230,9 @@ export class EnterpriseSaasPlatformService {
       integrationsConnectedCount: await this.countConnectedIntegrations(companyId),
       importAttentionCount:
         normalizeOnboardingChecklist(profile?.onboardingChecklist).import === 'attention' ? 1 : 0,
+      paymentProvider: subscriptionRow?.paymentProvider ?? null,
+      providerCustomerRef: subscriptionRow?.providerCustomerRef ?? null,
+      providerSubscriptionRef: subscriptionRow?.providerSubscriptionRef ?? null,
     };
   }
 

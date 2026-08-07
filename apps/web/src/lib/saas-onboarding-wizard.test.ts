@@ -35,7 +35,8 @@ describe('SaaS onboarding wizard web wiring', () => {
     assert.match(page, /SKIP FOR NOW/);
     assert.match(page, /REVIEW IMPORT/);
     assert.match(page, /START USING TITAN/);
-    assert.match(page, /PLAN SELECTED — BILLING SETUP REQUIRED/);
+    assert.match(page, /COMPLETE BILLING/);
+    assert.match(page, /PAYMENT VERIFICATION IN PROGRESS/);
     assert.match(page, /SEAT LIMIT REACHED|Seat limits/);
     assert.match(page, /private/);
     assert.match(page, /\/data-migration/);

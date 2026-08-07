@@ -20,6 +20,7 @@ import type {
 import {
   computeOnboardingCompletionPercent,
   defaultOnboardingChecklist,
+  mapCheckoutStatusToOnboardingBillingState,
   SAAS_ONBOARDING_IMPORT_ENTITIES,
   SAAS_ONBOARDING_INTEGRATION_CATALOG,
   SAAS_ONBOARDING_STEPS,
@@ -31,6 +32,7 @@ import {
   integrationConnections,
   roles,
   saasBrandingProfiles,
+  saasCheckoutSessions,
   saasPlatformAudits,
   saasSubscriptions,
   saasTenantProfiles,
@@ -268,21 +270,48 @@ export class SaasOnboardingService {
       (plan, index, all) => plan.isActive && all.findIndex((entry) => entry.id === plan.id) === index,
     );
 
-    const planBillingState =
-      !subscriptionView.plan
-        ? ('not_selected' as const)
-        : subscriptionView.subscription?.status === 'trial' ||
-            subscriptionView.subscription?.lastSuccessfulPaymentAt == null
-          ? ('plan_selected_billing_setup_required' as const)
-          : ('entitled' as const);
+    const latestCheckout = await this.deps.db.query.saasCheckoutSessions.findFirst({
+      where: eq(saasCheckoutSessions.companyId, scope.companyId),
+      orderBy: [desc(saasCheckoutSessions.createdAt)],
+    });
+    const entitled = Boolean(
+      subscriptionView.subscription?.lastSuccessfulPaymentAt &&
+        subscriptionView.subscription.status === 'active',
+    );
+    const planBillingState = !subscriptionView.plan
+      ? ('not_selected' as const)
+      : mapCheckoutStatusToOnboardingBillingState(
+          (latestCheckout?.status as
+            | 'created'
+            | 'awaiting_provider'
+            | 'verifying'
+            | 'completed'
+            | 'failed'
+            | 'cancelled'
+            | 'provider_unavailable'
+            | 'expired'
+            | null) ?? null,
+          entitled,
+        );
 
     const attentionRequired: string[] = [];
     if (checklist.company !== 'complete') attentionRequired.push('Complete company details');
     if (checklist.plan !== 'complete' && checklist.plan !== 'skipped') {
       attentionRequired.push('Select a TITAN plan');
     }
-    if (planBillingState === 'plan_selected_billing_setup_required') {
-      attentionRequired.push('Billing setup required — payment checkout is not complete');
+    if (
+      planBillingState === 'plan_selected_billing_setup_required' ||
+      planBillingState === 'payment_requires_attention' ||
+      planBillingState === 'checkout_in_progress' ||
+      planBillingState === 'verifying_payment'
+    ) {
+      attentionRequired.push(
+        planBillingState === 'verifying_payment'
+          ? 'PAYMENT VERIFICATION IN PROGRESS — waiting for provider confirmation'
+          : planBillingState === 'payment_requires_attention'
+            ? 'PAYMENT REQUIRES ATTENTION — complete billing or contact sales'
+            : 'COMPLETE BILLING — verified payment required before subscription is active',
+      );
     }
     if (seatStatus.overLimitState === 'action_required') {
       attentionRequired.push('Seat over-limit — adjust seats or upgrade');
@@ -718,12 +747,23 @@ function buildAuraTips(input: {
         'Xero is connected. You can sync customers and invoices from Xero instead of re-uploading the same spreadsheet — avoid duplicate records.',
     });
   }
-  if (input.planBillingState === 'plan_selected_billing_setup_required') {
+  if (
+    input.planBillingState === 'plan_selected_billing_setup_required' ||
+    input.planBillingState === 'payment_requires_attention'
+  ) {
     tips.push({
       id: 'billing_setup_required',
       severity: 'warning',
       message:
-        'Plan selected — billing setup required. TITAN will not fake payment success. Checkout arrives in a later SaaS Scaling item.',
+        'Plan selected — complete billing next. Browser redirects never activate TITAN; only verified provider payment or authorised Platform Owner manual evidence can mark a subscription paid. Current Yoco invoice links are for Young Guns jobs, not SaaS recurring subscriptions.',
+    });
+  }
+  if (input.planBillingState === 'verifying_payment') {
+    tips.push({
+      id: 'payment_verifying',
+      severity: 'info',
+      message:
+        'PAYMENT VERIFICATION IN PROGRESS. TITAN is waiting for provider confirmation — it will not invent a paid-through period.',
     });
   }
   if (input.tradeType) {

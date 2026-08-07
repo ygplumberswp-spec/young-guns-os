@@ -128,6 +128,10 @@ export type SaasTenantSummary = {
   lastOnboardingActivityAt?: string | null;
   integrationsConnectedCount?: number | null;
   importAttentionCount?: number | null;
+  /** Safe SaaS billing provider metadata — never card data. */
+  paymentProvider?: string | null;
+  providerCustomerRef?: string | null;
+  providerSubscriptionRef?: string | null;
 };
 
 export type SaasTenantBranchSummary = {
@@ -175,6 +179,11 @@ export type SaasSubscriptionSummary = {
   overLimitDetails?: Record<string, unknown> | null;
   extraSeatEntitlements?: SaasExtraSeatEntitlements;
   currency?: string;
+  paymentProvider?: string | null;
+  providerCustomerRef?: string | null;
+  providerSubscriptionRef?: string | null;
+  cancelAtPeriodEnd?: boolean;
+  paymentMethodLabel?: string | null;
 };
 
 export type SaasBillingRecordSummary = {
@@ -185,6 +194,12 @@ export type SaasBillingRecordSummary = {
   currency: string;
   description: string;
   issuedAt: string;
+  taxCents?: number | null;
+  totalCents?: number | null;
+  reference?: string | null;
+  periodStart?: string | null;
+  periodEnd?: string | null;
+  receiptUrl?: string | null;
 };
 
 export type SaasBrandingProfileSummary = {
@@ -289,6 +304,18 @@ export type SaasTenantSubscriptionView = {
   billingAttention: boolean;
   upgradePlans: SaasSubscriptionPlanSummary[];
   entitlements: SaasFeatureEntitlementSummary[];
+  billingHistory?: SaasBillingRecordSummary[];
+  providerCapability?: {
+    providerKey: string;
+    supportsRecurringSubscriptions: boolean;
+    missingCapabilities: string[];
+    notes: string[];
+  } | null;
+  latestCheckout?: {
+    id: string;
+    status: string;
+    attentionMessage: string | null;
+  } | null;
 };
 
 export type EnterpriseSaasPlatformDashboard = {

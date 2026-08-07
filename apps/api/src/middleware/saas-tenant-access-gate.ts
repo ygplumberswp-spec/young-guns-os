@@ -38,6 +38,10 @@ export function isSaasAccessAllowlistedPath(path: string): boolean {
   if (normalized.startsWith('/api/v1/onboarding')) {
     return true;
   }
+  // Checkout / billing recovery must remain reachable when payment attention is required.
+  if (normalized.startsWith('/api/v1/saas-billing')) {
+    return true;
+  }
   return false;
 }
 
