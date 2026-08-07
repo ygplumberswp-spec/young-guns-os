@@ -1,0 +1,98 @@
+{
+  "label": "xero-002-rate-budget-provider-probe",
+  "startedAt": "2026-08-07T06:07:39.000Z",
+  "completedAt": "2026-08-07T06:07:51.200Z",
+  "commitHash": "4e88951",
+  "environment": {
+    "stagingApi": "https://young-guns-os-staging.up.railway.app",
+    "stagingDbRef": "cpkuwtaipjxeipvbssvn",
+    "productionUntouched": true,
+    "companyId": "095aef76-fef5-4139-af37-a42f2d7e2faf"
+  },
+  "safetyPrechecks": {
+    "stagingDbConfirmed": true,
+    "productionRefAbsent": true,
+    "incrementalScheduleDisabled": true,
+    "tenantSyncPaused": true,
+    "openXeroJobs": 0,
+    "retryAfterElapsed": true,
+    "implementationGuaranteesMaxOneCall": true,
+    "resumeSyncNotCalled": true
+  },
+  "probe": {
+    "status": 200,
+    "elapsedMs": 9931,
+    "error": null,
+    "result": {
+      "outcome": "BLOCKED",
+      "outcomeLabel": "XERO-002 Gate 5B BLOCKED — provider quota still unavailable",
+      "organisationName": "Young Guns Plumbing"
+    }
+  },
+  "providerCallCount": 1,
+  "requestEndpoint": "GET /Organisation",
+  "httpStatus": 429,
+  "capturedHeaders": {
+    "minLimitRemaining": 60,
+    "dayLimitRemaining": 0,
+    "appMinLimitRemaining": 9999,
+    "rateLimitProblem": "day",
+    "retryAfter": "4289",
+    "correlationId": "a10bc2ad-c393-453f-86b4-4018b59900ff",
+    "responseDate": "Fri, 07 Aug 2026 06:07:50 GMT"
+  },
+  "correlationId": "a10bc2ad-c393-453f-86b4-4018b59900ff",
+  "responseDate": "Fri, 07 Aug 2026 06:07:50 GMT",
+  "requestedAt": "2026-08-07T06:07:48.884Z",
+  "budgetBefore": {
+    "min_limit_remaining": 60,
+    "day_limit_remaining": 0,
+    "app_min_limit_remaining": 9999,
+    "rate_limit_problem": "day",
+    "retry_after_until": "2026-08-06T21:23:10.322Z",
+    "last_request_at": "2026-08-06T21:18:10.619Z",
+    "last_response_date": "Thu, 06 Aug 2026 21:18:10 GMT",
+    "sync_pause_reason": "gate5b_waiting_for_daily_quota",
+    "sync_paused_until": null,
+    "updated_at": "2026-08-06T21:18:25.414Z"
+  },
+  "budgetAfter": {
+    "min_limit_remaining": 60,
+    "day_limit_remaining": 0,
+    "app_min_limit_remaining": 9999,
+    "rate_limit_problem": "day",
+    "retry_after_until": "2026-08-07T06:12:50.857Z",
+    "last_request_at": "2026-08-07T06:07:51.158Z",
+    "last_response_date": "Fri, 07 Aug 2026 06:07:50 GMT",
+    "sync_pause_reason": "gate5b_waiting_for_daily_quota",
+    "sync_paused_until": null,
+    "updated_at": "2026-08-07T06:07:51.158Z"
+  },
+  "syncPauseBefore": "gate5b_waiting_for_daily_quota",
+  "syncPauseAfter": "gate5b_waiting_for_daily_quota",
+  "schedulesBefore": [
+    {
+      "enabled": false,
+      "sync_scope": "incremental"
+    }
+  ],
+  "schedulesAfter": [
+    {
+      "enabled": false,
+      "sync_scope": "incremental"
+    }
+  ],
+  "openXeroJobsBefore": 0,
+  "openXeroJobsAfter": 0,
+  "providerCallCountAssertion": "providerCallCount <= 1",
+  "providerCallCountPass": true,
+  "verdict": "BLOCKED — Xero quota still unavailable",
+  "productionUntouched": true,
+  "gate5bRun": false,
+  "notes": [
+    "Single probe executed via POST /api/v1/integrations/xero/rate-budget/provider-probe after staging deploy of commit 4e88951.",
+    "Fresh Xero 429 confirms day_limit_remaining=0 is current provider state, not stale DB snapshot.",
+    "Retry-After=4289s (~71 min) is minute-level throttle; daily quota remains exhausted.",
+    "Incremental schedule remains disabled; tenant sync pause retained; no Gate 5B run."
+  ]
+}
