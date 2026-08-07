@@ -59,6 +59,7 @@ import { MarketingEligibilityService } from './services/marketing-eligibility.se
 import { JobsService } from './services/jobs.service.js';
 import { JobCostingService } from './services/job-costing.service.js';
 import { JobProfitabilityService } from './services/job-profitability.service.js';
+import { JobProfitabilityRefreshBridge } from './services/job-profitability-refresh.bridge.js';
 import { JobDocumentPackService } from './services/job-document-pack.service.js';
 import { CompletionReportService } from './services/completion-report.service.js';
 import { ReportExportService } from './services/report-export.service.js';
@@ -889,6 +890,7 @@ const mobileSyncService = new MobileSyncService(db);
 const jobExecutionService = new JobExecutionService(db, stockMovementsService);
 const jobCostingService = new JobCostingService(db);
 const jobProfitabilityService = new JobProfitabilityService(db);
+const jobProfitabilityRefreshBridge = new JobProfitabilityRefreshBridge(db, jobProfitabilityService);
 backgroundWorkOrchestratorService.attachJobProfitabilityService(jobProfitabilityService);
 const jobDocumentPackService = new JobDocumentPackService(db);
 const technicianWorkflowService = new TechnicianWorkflowService(
@@ -1539,6 +1541,7 @@ const agentOrchestrationEngineService = new AgentOrchestrationEngineService({
 bindAutomationEventEmitter(async (event) => {
   await workflowEngineService.emit(event);
   await agentOrchestrationEngineService.emit(event);
+  await jobProfitabilityRefreshBridge.handleBusinessEvent(event);
 });
 const runtimeMode = (process.env.TITAN_RUNTIME_MODE || 'api').toLowerCase();
 const isWorkerProcess = runtimeMode === 'worker' || runtimeMode === 'scheduler';

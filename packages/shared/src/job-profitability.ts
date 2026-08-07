@@ -15,7 +15,7 @@ import {
   sumReturnedMaterialCents,
 } from './job-costing.js';
 
-export const JPE_CALCULATION_VERSION = 1;
+export const JPE_CALCULATION_VERSION = 2;
 
 export type JobRevenueSource = 'invoice' | 'approved_quote' | 'manual_adjustment' | 'none';
 
@@ -78,6 +78,9 @@ export type JobProfitabilityCostTransaction = {
 export type JobProfitabilitySummary = {
   jobId: string;
   currency: string;
+  /** Authoritative base before manual revenue adjustments. */
+  baseRevenueCents: number;
+  revenueAdjustmentCents: number;
   revenueSource: JobRevenueSource;
   quotedAmountCents: number;
   approvedAmountCents: number;
@@ -97,6 +100,47 @@ export type JobProfitabilitySummary = {
   status: ProfitabilityStatus;
   calculatedAt: string;
   calculationVersion: number;
+};
+
+export type JobProfitabilityRevenueExplainability = {
+  source: JobRevenueSource;
+  baseRevenueCents: number;
+  adjustmentCents: number;
+  finalRevenueCents: number;
+  adjustments: Array<{
+    id: string;
+    amountCents: number;
+    reason: string;
+    createdAt: string;
+  }>;
+};
+
+export type JobProfitabilityCashExplainability = {
+  collectedPaymentCents: number;
+  paidDirectCostCents: number;
+  /** Labour accrual is excluded until explicit paid job-attributed payroll exists. */
+  labourIncludedInCashSpent: boolean;
+  paymentReferences: Array<{
+    id: string;
+    amountCents: number;
+    paidAt: string | null;
+    reference: string | null;
+  }>;
+  paidCostReferences: Array<{
+    id: string;
+    amountCents: number;
+    sourceType: string;
+    sourceId: string;
+    description: string;
+  }>;
+};
+
+export type JobProfitabilitySnapshotMeta = {
+  calculatedAt: string;
+  calculationVersion: number;
+  /** GET /profitability always recomputes from sources — snapshot is write-through cache. */
+  isLiveCalculation: true;
+  sourceFingerprint: string | null;
 };
 
 export type JobProfitabilityExpectedActual = {
@@ -132,6 +176,8 @@ export type JobProfitabilityCash = {
   realisedCashProfitCents: number;
   uncollectedRevenueCents: number;
   unpaidJobCostsCents: number;
+  /** Economic costs not yet represented as paid cash (includes labour accrual). */
+  unpaidAccrualCostsCents: number;
 };
 
 export type JobProfitabilityResult = {
@@ -139,6 +185,11 @@ export type JobProfitabilityResult = {
   expected: JobProfitabilityExpectedActual;
   variance: JobProfitabilityVariance;
   cash: JobProfitabilityCash;
+  explainability: {
+    revenue: JobProfitabilityRevenueExplainability;
+    cash: JobProfitabilityCashExplainability;
+  };
+  snapshot: JobProfitabilitySnapshotMeta;
   completeness: ProfitabilityCompleteness;
   completenessWarnings: string[];
   leakage: MarginLeakageFlag[];
@@ -180,6 +231,13 @@ type MaterialLineInput = {
   description: string;
   recordedByUserId: string;
   createdAt: string;
+  supplierReference: string | null;
+};
+
+type PurchaseOrderItemInput = {
+  id: string;
+  lineTotalCents: number;
+  description: string;
 };
 
 type PurchaseOrderInput = {
@@ -187,6 +245,7 @@ type PurchaseOrderInput = {
   referenceNumber: string;
   status: string;
   totalCostCents: number;
+  items: PurchaseOrderItemInput[];
 };
 
 type InvoiceInput = {
@@ -244,6 +303,13 @@ type AdjustmentInput = {
   createdByUserId: string;
 };
 
+type PaymentInput = {
+  id: string;
+  amountCents: number;
+  paidAt: string | null;
+  reference: string | null;
+};
+
 export type ComputeJobProfitabilityInput = {
   jobId: string;
   currency: string;
@@ -253,7 +319,7 @@ export type ComputeJobProfitabilityInput = {
   materialLines: MaterialLineInput[];
   purchaseOrders: PurchaseOrderInput[];
   invoices: InvoiceInput[];
-  paymentsCents: number;
+  payments: PaymentInput[];
   quotes: QuoteInput[];
   labourEntries: LabourEntryInput[];
   directCosts: DirectCostInput[];
@@ -261,6 +327,7 @@ export type ComputeJobProfitabilityInput = {
   /** When false, strip sensitive margin/labour cost from result. */
   includeSensitiveCosts: boolean;
   calculatedAt?: string;
+  sourceFingerprint?: string | null;
 };
 
 const ACTIVE_PO_STATUSES = new Set([
@@ -277,6 +344,11 @@ const OTHER_QUOTE_CATEGORIES: QuoteLineCategory[] = [
   'subcontractor',
   'other',
 ];
+
+/** PO/material direct-cost rows track cash payment evidence — not additive economic cost. */
+function isCashPaymentTrackingDirectCost(cost: Pick<DirectCostInput, 'sourceType'>): boolean {
+  return cost.sourceType === 'purchase_order' || cost.sourceType === 'material_line';
+}
 
 export function canAccessJobProfitability(identity: {
   permissions?: readonly string[] | null;
@@ -324,9 +396,57 @@ export function classifyProfitabilityStatus(
   return 'loss';
 }
 
+export function materialLineCoversPurchaseOrderItem(
+  line: Pick<MaterialLineInput, 'supplierReference' | 'id'>,
+  _po: Pick<PurchaseOrderInput, 'id' | 'referenceNumber'>,
+  item: Pick<PurchaseOrderItemInput, 'id'>,
+): boolean {
+  const ref = line.supplierReference?.trim().toLowerCase() ?? '';
+  if (!ref) return false;
+  return (
+    ref === `po-item:${item.id}`.toLowerCase() ||
+    ref === item.id.toLowerCase() ||
+    ref === `purchase_order_item:${item.id}`.toLowerCase()
+  );
+}
+
+export function materialLineCoversPurchaseOrder(
+  line: Pick<MaterialLineInput, 'supplierReference' | 'id'>,
+  po: Pick<PurchaseOrderInput, 'id' | 'referenceNumber'>,
+): boolean {
+  const ref = line.supplierReference?.trim().toLowerCase() ?? '';
+  if (!ref) return false;
+  return (
+    ref === po.id.toLowerCase() ||
+    ref === po.referenceNumber.toLowerCase() ||
+    ref === `po:${po.id}`.toLowerCase() ||
+    ref === `purchase_order:${po.id}`.toLowerCase()
+  );
+}
+
+export function directCostCoversPurchaseOrderItem(
+  cost: Pick<DirectCostInput, 'sourceType' | 'sourceId'>,
+  item: Pick<PurchaseOrderItemInput, 'id'>,
+): boolean {
+  return (
+    cost.sourceType === 'purchase_order' &&
+    (cost.sourceId === `po-item:${item.id}` ||
+      cost.sourceId === item.id ||
+      cost.sourceId === `purchase_order_item:${item.id}`)
+  );
+}
+
+export function directCostCoversPurchaseOrder(
+  cost: Pick<DirectCostInput, 'sourceType' | 'sourceId'>,
+  po: Pick<PurchaseOrderInput, 'id'>,
+): boolean {
+  return cost.sourceType === 'purchase_order' && cost.sourceId === po.id;
+}
+
 export function computeNetMaterialCostCents(input: {
   materialLines: MaterialLineInput[];
   purchaseOrders: PurchaseOrderInput[];
+  directCosts?: DirectCostInput[];
 }): {
   materialCostCents: number;
   materialsFromLinesCents: number;
@@ -345,23 +465,47 @@ export function computeNetMaterialCostCents(input: {
   const materialsReturnedCents = sumReturnedMaterialCents(linePayload);
   const netFromLines = materialsFromLinesCents - materialsReturnedCents;
 
-  const hasSupplierPurchaseLines = input.materialLines.some(
-    (line) =>
-      line.materialSource === 'supplier_purchase' &&
-      materialLineCostCents({
-        status: line.status,
-        quantity: line.quantity,
-        fulfilledQuantity: line.fulfilledQuantity,
-        unitCostCents: line.unitCostCents,
-        materialSource: line.materialSource,
-      }) > 0,
-  );
+  let purchaseOrderAddOnCents = 0;
 
-  const purchaseOrderAddOnCents = hasSupplierPurchaseLines
-    ? 0
-    : input.purchaseOrders
-        .filter((po) => ACTIVE_PO_STATUSES.has(po.status))
-        .reduce((sum, po) => sum + po.totalCostCents, 0);
+  for (const po of input.purchaseOrders) {
+    if (!ACTIVE_PO_STATUSES.has(po.status)) continue;
+
+    if (po.items.length > 0) {
+      for (const item of po.items) {
+        const coveredByMaterial = input.materialLines.some((line) =>
+          materialLineCoversPurchaseOrderItem(line, po, item),
+        );
+        const coveredByDirect = (input.directCosts ?? []).some((cost) =>
+          directCostCoversPurchaseOrderItem(cost, item),
+        );
+        if (!coveredByMaterial && !coveredByDirect) {
+          purchaseOrderAddOnCents += item.lineTotalCents;
+        }
+      }
+      continue;
+    }
+
+    const materialAttributed = input.materialLines.reduce((sum, line) => {
+      if (!materialLineCoversPurchaseOrder(line, po)) return sum;
+      return (
+        sum +
+        materialLineCostCents({
+          status: line.status,
+          quantity: line.quantity,
+          fulfilledQuantity: line.fulfilledQuantity,
+          unitCostCents: line.unitCostCents,
+          materialSource: line.materialSource,
+        })
+      );
+    }, 0);
+
+    const directAttributed = (input.directCosts ?? []).reduce((sum, cost) => {
+      if (!directCostCoversPurchaseOrder(cost, po)) return sum;
+      return sum + cost.amountCents;
+    }, 0);
+
+    purchaseOrderAddOnCents += Math.max(0, po.totalCostCents - materialAttributed - directAttributed);
+  }
 
   return {
     materialCostCents: netFromLines + purchaseOrderAddOnCents,
@@ -395,6 +539,8 @@ export function resolveJobRevenue(input: {
   revenueAdjustmentsCents: number;
 }): {
   revenueSource: JobRevenueSource;
+  baseRevenueCents: number;
+  revenueAdjustmentCents: number;
   quotedAmountCents: number;
   approvedAmountCents: number;
   invoiceAmountCents: number;
@@ -412,32 +558,29 @@ export function resolveJobRevenue(input: {
   const invoiceSubtotalCents = activeInvoices.reduce((sum, inv) => sum + inv.subtotalCents, 0);
 
   let revenueSource: JobRevenueSource = 'none';
-  let baseRevenue = 0;
+  let baseRevenueCents = 0;
   let jobRevenueExVatCents: number | null = null;
 
   if (invoiceAmountCents > 0) {
     revenueSource = 'invoice';
-    baseRevenue = invoiceAmountCents;
+    baseRevenueCents = invoiceAmountCents;
     jobRevenueExVatCents = invoiceSubtotalCents > 0 ? invoiceSubtotalCents : null;
   } else if (approvedAmountCents > 0) {
     revenueSource = 'approved_quote';
-    baseRevenue = approvedAmountCents;
+    baseRevenueCents = approvedAmountCents;
     jobRevenueExVatCents = input.primaryQuote?.subtotalCents ?? null;
-  } else if (input.revenueAdjustmentsCents !== 0) {
-    revenueSource = 'manual_adjustment';
-    baseRevenue = 0;
   }
 
-  const jobRevenueCents = baseRevenue + input.revenueAdjustmentsCents;
+  const jobRevenueCents = baseRevenueCents + input.revenueAdjustmentsCents;
 
-  if (input.revenueAdjustmentsCents !== 0 && revenueSource === 'invoice') {
-    revenueSource = 'manual_adjustment';
-  } else if (input.revenueAdjustmentsCents !== 0 && revenueSource === 'approved_quote') {
+  if (baseRevenueCents === 0 && input.revenueAdjustmentsCents !== 0) {
     revenueSource = 'manual_adjustment';
   }
 
   return {
     revenueSource,
+    baseRevenueCents,
+    revenueAdjustmentCents: input.revenueAdjustmentsCents,
     quotedAmountCents,
     approvedAmountCents,
     invoiceAmountCents,
@@ -703,12 +846,15 @@ export function computeJobProfitability(input: ComputeJobProfitabilityInput): Jo
   const material = computeNetMaterialCostCents({
     materialLines: input.materialLines,
     purchaseOrders: input.purchaseOrders,
+    directCosts: input.directCosts,
   });
 
   const labour = computeLabourCostCents(input.labourEntries);
 
   const otherDirectCostCents =
-    input.directCosts.reduce((sum, row) => sum + row.amountCents, 0) +
+    input.directCosts
+      .filter((row) => !isCashPaymentTrackingDirectCost(row))
+      .reduce((sum, row) => sum + row.amountCents, 0) +
     otherAdjustmentsCents +
     (totalCostAdjustmentsCents !== 0 ? totalCostAdjustmentsCents : 0);
 
@@ -762,20 +908,65 @@ export function computeJobProfitability(input: ComputeJobProfitabilityInput): Jo
         : null,
   };
 
-  const cashCollectedCents = input.paymentsCents;
-  const cashSpentCents = input.directCosts
-    .filter((row) => row.isPaid)
-    .reduce((sum, row) => sum + row.amountCents, 0);
-  const unpaidJobCostsCents = input.directCosts
+  const cashCollectedCents = input.payments.reduce((sum, row) => sum + row.amountCents, 0);
+  const paidDirectCosts = input.directCosts.filter((row) => row.isPaid);
+  const cashSpentCents = paidDirectCosts.reduce((sum, row) => sum + row.amountCents, 0);
+  const unpaidDirectCostCents = input.directCosts
     .filter((row) => !row.isPaid)
     .reduce((sum, row) => sum + row.amountCents, 0);
+  const unpaidAccrualCostsCents = Math.max(0, totalDirectCostCents - cashSpentCents);
 
   const cash: JobProfitabilityCash = {
     cashCollectedCents,
     cashSpentCents,
     realisedCashProfitCents: cashCollectedCents - cashSpentCents,
     uncollectedRevenueCents: Math.max(0, revenue.jobRevenueCents - cashCollectedCents),
-    unpaidJobCostsCents,
+    unpaidJobCostsCents: unpaidDirectCostCents + Math.max(0, labourCostCents),
+    unpaidAccrualCostsCents,
+  };
+
+  const revenueAdjustments = input.adjustments
+    .filter((row) => row.kind === 'revenue')
+    .map((row) => ({
+      id: row.id,
+      amountCents: row.amountCents,
+      reason: row.reason,
+      createdAt: row.createdAt,
+    }));
+
+  const explainability = {
+    revenue: {
+      source: revenue.revenueSource,
+      baseRevenueCents: revenue.baseRevenueCents,
+      adjustmentCents: revenue.revenueAdjustmentCents,
+      finalRevenueCents: revenue.jobRevenueCents,
+      adjustments: revenueAdjustments,
+    },
+    cash: {
+      collectedPaymentCents: cashCollectedCents,
+      paidDirectCostCents: cashSpentCents,
+      labourIncludedInCashSpent: false,
+      paymentReferences: input.payments.map((row) => ({
+        id: row.id,
+        amountCents: row.amountCents,
+        paidAt: row.paidAt,
+        reference: row.reference,
+      })),
+      paidCostReferences: paidDirectCosts.map((row) => ({
+        id: row.id,
+        amountCents: row.amountCents,
+        sourceType: row.sourceType,
+        sourceId: row.sourceId,
+        description: row.description,
+      })),
+    },
+  };
+
+  const snapshot: JobProfitabilitySnapshotMeta = {
+    calculatedAt,
+    calculationVersion: JPE_CALCULATION_VERSION,
+    isLiveCalculation: true,
+    sourceFingerprint: input.sourceFingerprint ?? null,
   };
 
   const { completeness, warnings } = assessProfitabilityCompleteness({
@@ -816,7 +1007,10 @@ export function computeJobProfitability(input: ComputeJobProfitabilityInput): Jo
       sourceRecordId: line.id,
       date: line.createdAt,
       enteredByUserId: line.recordedByUserId,
-      isPaid: line.materialSource === 'supplier_purchase',
+      isPaid: input.directCosts.some(
+        (cost) =>
+          cost.isPaid && cost.sourceType === 'material_line' && cost.sourceId === line.id,
+      ),
       notes: null,
     });
   }
@@ -842,6 +1036,7 @@ export function computeJobProfitability(input: ComputeJobProfitabilityInput): Jo
   }
 
   for (const row of input.directCosts) {
+    if (isCashPaymentTrackingDirectCost(row)) continue;
     costTransactions.push({
       id: row.id,
       category: 'other',
@@ -856,9 +1051,26 @@ export function computeJobProfitability(input: ComputeJobProfitabilityInput): Jo
     });
   }
 
+  for (const row of input.directCosts.filter((entry) => isCashPaymentTrackingDirectCost(entry))) {
+    costTransactions.push({
+      id: row.id,
+      category: 'other',
+      description: `${row.description} (cash payment record)`,
+      amountCents: row.amountCents,
+      source: row.sourceType,
+      sourceRecordId: row.sourceId,
+      date: row.costDate,
+      enteredByUserId: row.enteredByUserId,
+      isPaid: row.isPaid,
+      notes: row.notes,
+    });
+  }
+
   const summary: JobProfitabilitySummary = {
     jobId: input.jobId,
     currency: input.currency,
+    baseRevenueCents: revenue.baseRevenueCents,
+    revenueAdjustmentCents: revenue.revenueAdjustmentCents,
     revenueSource: revenue.revenueSource,
     quotedAmountCents: revenue.quotedAmountCents,
     approvedAmountCents: revenue.approvedAmountCents,
@@ -913,6 +1125,8 @@ export function computeJobProfitability(input: ComputeJobProfitabilityInput): Jo
           marginVariancePct: null,
         },
     cash,
+    explainability,
+    snapshot,
     completeness,
     completenessWarnings: warnings,
     leakage: input.includeSensitiveCosts ? leakage : [],

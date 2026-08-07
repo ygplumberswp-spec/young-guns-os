@@ -45,6 +45,10 @@ export type JobProfitabilityActor = {
 export class JobProfitabilityService {
   constructor(private readonly db: DatabaseClient) {}
 
+  /**
+   * Always recomputes from live financial sources. Snapshot persistence is a write-through
+   * cache for downstream reporting — never read back for this response.
+   */
   async getJobProfitability(
     companyId: string,
     jobId: string,
@@ -105,7 +109,7 @@ export class JobProfitabilityService {
   ): Promise<JobProfitabilityResult> {
     const job = await this.db.query.jobs.findFirst({
       where: and(eq(jobs.companyId, companyId), eq(jobs.id, jobId)),
-      columns: { id: true, status: true },
+      columns: { id: true, status: true, updatedAt: true },
     });
 
     if (!job) {
@@ -136,6 +140,7 @@ export class JobProfitabilityService {
       }),
       this.db.query.purchaseOrders.findMany({
         where: and(eq(purchaseOrders.companyId, companyId), eq(purchaseOrders.jobId, jobId)),
+        with: { items: true },
       }),
       this.db.query.invoices.findMany({
         where: and(eq(invoices.companyId, companyId), eq(invoices.jobId, jobId)),
@@ -163,6 +168,22 @@ export class JobProfitabilityService {
     const currency = settingsRow?.currency ?? quoteRows[0]?.currency ?? 'ZAR';
     const labourRateCentsPerHour = settingsRow?.defaultInternalLabourRateCentsPerHour ?? 8000;
 
+    const sourceTimestamps = [
+      job.updatedAt,
+      ...quoteRows.map((row) => row.updatedAt),
+      ...materialRows.map((row) => row.updatedAt),
+      ...poRows.map((row) => row.updatedAt),
+      ...invoiceRows.map((row) => row.updatedAt),
+      ...paymentRows.map((row) => row.createdAt),
+      ...labourRows.map((row) => row.createdAt),
+      ...directCostRows.map((row) => row.updatedAt),
+      ...adjustmentRows.map((row) => row.updatedAt),
+    ].map((value) => value.getTime());
+    const sourceFingerprint =
+      sourceTimestamps.length > 0
+        ? String(Math.max(...sourceTimestamps))
+        : null;
+
     return computeJobProfitability({
       jobId,
       currency,
@@ -183,12 +204,18 @@ export class JobProfitabilityService {
         description: row.description,
         recordedByUserId: row.recordedByUserId,
         createdAt: row.createdAt.toISOString(),
+        supplierReference: row.supplierReference,
       })),
       purchaseOrders: poRows.map((row) => ({
         id: row.id,
         referenceNumber: row.referenceNumber,
         status: row.status,
         totalCostCents: row.totalCostCents,
+        items: row.items.map((item) => ({
+          id: item.id,
+          lineTotalCents: item.lineTotalCents,
+          description: item.description,
+        })),
       })),
       invoices: invoiceRows.map((row) => ({
         id: row.id,
@@ -198,7 +225,12 @@ export class JobProfitabilityService {
         vatCents: row.vatCents,
         amountPaidCents: row.amountPaidCents,
       })),
-      paymentsCents: paymentRows.reduce((sum, row) => sum + row.amountCents, 0),
+      payments: paymentRows.map((row) => ({
+        id: row.id,
+        amountCents: row.amountCents,
+        paidAt: row.paidAt.toISOString(),
+        reference: row.reference,
+      })),
       quotes: quoteRows.map((row) => ({
         id: row.id,
         status: row.status,
@@ -245,6 +277,7 @@ export class JobProfitabilityService {
         createdByUserId: row.createdByUserId,
       })),
       includeSensitiveCosts: options.includeSensitiveCosts ?? false,
+      sourceFingerprint,
     });
   }
 
@@ -259,7 +292,10 @@ export class JobProfitabilityService {
         companyId,
         jobId,
         calculationVersion: JPE_CALCULATION_VERSION,
-        payload: result as unknown as Record<string, unknown>,
+        payload: {
+          ...result,
+          snapshotMeta: result.snapshot,
+        } as unknown as Record<string, unknown>,
         completenessStatus: result.completeness,
         calculatedAt: new Date(result.summary.calculatedAt),
       })
@@ -267,7 +303,10 @@ export class JobProfitabilityService {
         target: [jobProfitabilitySnapshots.companyId, jobProfitabilitySnapshots.jobId],
         set: {
           calculationVersion: JPE_CALCULATION_VERSION,
-          payload: result as unknown as Record<string, unknown>,
+          payload: {
+            ...result,
+            snapshotMeta: result.snapshot,
+          } as unknown as Record<string, unknown>,
           completenessStatus: result.completeness,
           calculatedAt: new Date(result.summary.calculatedAt),
         },

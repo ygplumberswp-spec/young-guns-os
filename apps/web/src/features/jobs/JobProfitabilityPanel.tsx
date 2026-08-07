@@ -155,6 +155,16 @@ export function JobProfitabilityPanel({
             <dd>{summary.revenueSource.replace(/_/g, ' ')}</dd>
           </div>
           <div>
+            <dt>Base revenue</dt>
+            <dd>{formatMoney(summary.baseRevenueCents, currency)}</dd>
+          </div>
+          {summary.revenueAdjustmentCents !== 0 ? (
+            <div>
+              <dt>Revenue adjustments</dt>
+              <dd>{formatMoney(summary.revenueAdjustmentCents, currency)}</dd>
+            </div>
+          ) : null}
+          <div>
             <dt>Job revenue</dt>
             <dd>{formatMoney(summary.jobRevenueCents, currency)}</dd>
           </div>
