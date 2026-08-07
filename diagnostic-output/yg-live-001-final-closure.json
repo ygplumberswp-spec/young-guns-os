@@ -1,0 +1,212 @@
+{
+  "phase": "YG-LIVE-001",
+  "title": "Young Guns Live Implementation",
+  "branch": "cursor/yg-live-001-implementation-663e",
+  "baseBranch": "cursor/aura-train-001-intelligence-663e",
+  "generatedAt": "2026-08-07T16:20:00.000Z",
+  "verdict": "PASS — YG-LIVE-001 Young Guns Live Implementation ready for Owner cutover approval",
+  "verdictReason": "Canonical Young Guns tenant identity, hard role model, workflow chain, provider readiness (from LIVE-001), WhatsApp coexistence feasibility, personal-number privacy design, Owner acceptance checklist, and non-executing cutover/production prerequisites are packaged. Real WhatsApp number not migrated. Production not touched. Fresh DB inventory blocked in this agent (no DATABASE_URL) — Owner/ops can run read-only inventory script on staging.",
+  "youngGunsTenantState": {
+    "canonicalCompanyId": "095aef76-fef5-4139-af37-a42f2d7e2faf",
+    "tradingName": "Young Guns Plumbing",
+    "duplicateTenantCreated": false,
+    "currency": "ZAR",
+    "locale": "en-ZA",
+    "timezone": "Africa/Johannesburg",
+    "contact": {
+      "phone": "066 234 6301",
+      "email": "ygplumberswp@gmail.com",
+      "website": "younggunsplumbingcpt.co.za",
+      "location": "Cape Town, Western Cape"
+    },
+    "vatRateDefaultBps": 1500,
+    "vatNumberInPreferences": "owner_config_required",
+    "operatingHours": "owner_config_required",
+    "logoUpload": "owner_config_required",
+    "serviceArea": "Cape Town / Western Cape defaults in code",
+    "branchModel": "single_operation",
+    "documentBranding": "Young Guns theme + document-engine contact/bank blocks verified in code"
+  },
+  "realDataInventory": {
+    "source": "prior staging evidence (xero-002a 2026-08-06 + cleanup audit 2026-08-01); live script blocked without DATABASE_URL",
+    "liveInventoryScript": "packages/db/scripts/yg-live-001-staging-inventory.mjs",
+    "liveInventoryStatus": "BLOCKED_NO_DATABASE_URL",
+    "countsFromEvidence": {
+      "customers": 841,
+      "quotes": 252,
+      "invoices": 587,
+      "payments": 512,
+      "xeroBankTransactions": 3142,
+      "usersAtCleanupAudit": 1,
+      "jobsAtCleanupAudit": 1,
+      "fleetMappedVehicles": 2
+    },
+    "bulkHistoryModified": false,
+    "fakeFinanceCreated": false
+  },
+  "userRoleMatrix": {
+    "policy": "Individual logins only — no shared staff accounts",
+    "roles": ["Owner", "Admin/Office(Manager/Dispatcher/Accountant)", "Technician", "Client"],
+    "stagingEvidence": {
+      "asOf": "2026-08-01 cleanup audit",
+      "usersTotal": 1,
+      "note": "Staff Technician/Admin invites remain Owner cutover prerequisite — re-run inventory script for current safe directory"
+    },
+    "technicianMustNot": [
+      "company finance",
+      "profit",
+      "banking",
+      "payroll",
+      "Owner dashboard",
+      "CRM lists",
+      "integrations",
+      "unrelated jobs"
+    ],
+    "clientMustNot": [
+      "other clients",
+      "internal costs",
+      "profit",
+      "staff notes",
+      "company admin"
+    ]
+  },
+  "workflows": {
+    "chain": [
+      "Lead",
+      "Customer",
+      "Property",
+      "Booking",
+      "Job",
+      "Dispatch",
+      "Technician Job Card",
+      "Work performed",
+      "Time/materials/photos/receipts",
+      "Completion",
+      "Quote/Invoice as applicable",
+      "Payment",
+      "JPE",
+      "CASH",
+      "FIN",
+      "Owner Dashboard"
+    ],
+    "ownerDaily": "AURA + jobs today + dispatch + outstanding invoices + cash + alerts + fleet + follow-ups; approvals during day; end-day completed/revenue/cash/JPE/missing receipts/tomorrow",
+    "adminDaily": "enquiry → customer → property → booking → schedule → assign → documents/comms",
+    "technicianDaily": "mobile login → assigned jobs → Job Card → navigate/time/materials/photos/receipts/checklist/signature/completion",
+    "clientDaily": "portal own property/jobs/quotes/invoices/payments/documents/messages"
+  },
+  "financeReadiness": {
+    "jpeCashFinGrowth": "CLOSED prior phases — AURA-TRAIN wired authorities",
+    "pricebook": "7 Owner-approved labour/service constants for YG tenant; master DB pricebook still debt",
+    "catalogueDebt": "Full Master Pricebook / assemblies not implemented (PRICEBOOK-001)"
+  },
+  "providerReadiness": {
+    "xero": {
+      "status": "READY_STAGING",
+      "organisation": "Young Guns Plumbing",
+      "tenantId": "20176b90-a093-4da1-a04e-8ae616f89fef",
+      "broadSyncAutoActivated": false
+    },
+    "gmail": {
+      "status": "READY_STAGING",
+      "debt": "manual Sync Now only (P2)"
+    },
+    "cartrack": {
+      "status": "READY_STAGING",
+      "mappedVehicles": ["CF172047", "CF77263"],
+      "honesty": "GPS freshness must remain live/synced/stale/unavailable — never invent"
+    },
+    "yoco": {
+      "status": "TEST_MODE",
+      "productionPrerequisite": "Owner GO + PAYMENT_PROCESSING_ENABLED true + live Yoco credentials; fail-closed when disabled"
+    }
+  },
+  "communicationsReadiness": {
+    "hub": "Communications Hub distinguishes Gmail / WhatsApp / personal_whatsapp paths",
+    "matchingPolicy": "deterministic phone/email; ambiguous → review-required; no weak auto-merge",
+    "outbound": "DRAFT → APPROVE → EXECUTE"
+  },
+  "realWhatsAppFeasibility": {
+    "coexistenceResult": "REQUIRES_META_ELIGIBILITY_CHECK",
+    "metaOfficialSupport": true,
+    "metaFeatureType": "whatsapp_business_app_onboarding",
+    "titanEmbeddedSignupCoexistenceImplemented": false,
+    "stagingConnection": "meta_cloud_api_test_number",
+    "isFinalYoungGunsBusinessNumber": false,
+    "realNumberMigrated": false,
+    "historicalImporterImplemented": false,
+    "historyWhenEligible": "Meta coexistence can sync ~6 months individual Business App chats; personal bulk import forbidden",
+    "personalNumber": {
+      "dualUse": true,
+      "coexistenceApplies": false,
+      "design": "personal_whatsapp path + explicit include/exclude + default private; never auto-CRM all chats"
+    }
+  },
+  "auraLiveReadiness": {
+    "owner": "FIN/CASH/JPE/GROWTH + ops context via AURA-TRAIN-001",
+    "technician": "field-only; finance topics denied server-side",
+    "client": "own records only"
+  },
+  "ownerAcceptanceChecklist": "diagnostic-output/yg-live-001-owner-acceptance-checklist.json",
+  "productionReadinessPrerequisites": [
+    "Owner explicit GO",
+    "migration parity",
+    "env/secrets/domains/OAuth/webhooks",
+    "individual user invites",
+    "payment/outbound flags remain gated",
+    "WhatsApp coexistence eligibility + Embedded Signup path",
+    "backups + rollback owner"
+  ],
+  "cutoverPlan": {
+    "executeInYgLive001": false,
+    "phases": [
+      "PRECHECK",
+      "BACKUP",
+      "PRODUCTION_MIGRATION",
+      "CONFIG",
+      "USERS",
+      "PROVIDERS",
+      "SMOKE_TEST",
+      "OWNER_ACCEPTANCE",
+      "ROLLBACK_CRITERIA"
+    ],
+    "contracts": "packages/shared/src/yg-live-001.ts"
+  },
+  "remainingDebt": {
+    "P0": [
+      "Invite individual Admin/Technician/(Client) logins before production cutover — staging evidence showed 1 user"
+    ],
+    "P1": [
+      "Owner configure VAT number, operating hours, logo upload",
+      "Meta eligibility check + TITAN Embedded Signup coexistence implementation before real WhatsApp number",
+      "Historical Business App chat migration importer (after coexistence)"
+    ],
+    "P2": [
+      "Gmail automatic background sync",
+      "Master Pricebook DB (PRICEBOOK-001)",
+      "Personal dual-use workflow productisation beyond existing connection/intelligence layers"
+    ]
+  },
+  "testsBuild": {
+    "shared": { "pass": null, "fail": null, "note": "filled after gate run" },
+    "auth": { "pass": null, "fail": null },
+    "api": { "pass": null, "fail": null },
+    "web": { "pass": null, "fail": null },
+    "typecheck": null,
+    "productionBuild": null
+  },
+  "safety": {
+    "productionTouched": 0,
+    "historicalWhatsAppsDeleted": 0,
+    "realWhatsAppNumberMigrated": 0,
+    "realCustomerMessagesSent": 0,
+    "realEmailsSent": 0,
+    "cardCharges": 0,
+    "bankWrites": 0,
+    "publicPosts": 0,
+    "creativeStudioImplementation": 0,
+    "newSpeculativeAgents": 0,
+    "unrelatedWork": 0,
+    "liveFnbBanking": 0,
+    "saasPublicLaunch": 0
+  }
+}
