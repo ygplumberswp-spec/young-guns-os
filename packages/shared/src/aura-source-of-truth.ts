@@ -3,6 +3,8 @@
  * AURA must consume these authorities; it must not invent competing finance/ops truth.
  */
 
+import type { AiRoutingCategory } from './ai-orchestration.js';
+
 export type AuraToolClass = 'read' | 'draft' | 'approval_required' | 'execute';
 
 export type AuraTruthCompleteness =
@@ -372,7 +374,7 @@ export function classifyAuraToolClass(input: {
 }
 
 /** Prefer business_analysis for finance/ops; summarization only for overview. */
-export function resolveAuraRoutingCategory(domains: readonly string[]): string {
+export function resolveAuraRoutingCategory(domains: readonly string[]): AiRoutingCategory {
   if (domains.some((d) => d === 'ownerFinance' || d === 'finance' || d === 'financeIntelligence')) {
     return 'business_analysis';
   }
