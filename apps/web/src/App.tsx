@@ -454,6 +454,10 @@ export function App() {
                           path="/finance/operating-profit"
                           component={OwnerPages.OperatingProfitPage}
                         />
+                        <Route
+                          path="/finance/budget-control"
+                          component={OwnerPages.BudgetControlPage}
+                        />
                         <Route path="/scheduling" component={OwnerPages.SchedulingPage} />
                         <Route
                           path="/workforce/day-timeline"
