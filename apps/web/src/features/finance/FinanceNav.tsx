@@ -12,6 +12,7 @@ const sectionTabs = [
   { href: '/finance/profit-analytics', label: 'Profit Analytics' },
   { href: '/finance/operating-profit', label: 'Operating Profit' },
   { href: '/finance/budget-control', label: 'Budget Control' },
+  { href: '/finance/growth-planner', label: 'Growth Planner' },
   { href: '/finance/bank-transactions/import', label: 'Bank Import' },
 ];
 
@@ -56,6 +57,11 @@ const secondaryItems = [
     id: 'finance-budget-control',
     label: 'Budget Control',
     href: '/finance/budget-control',
+  },
+  {
+    id: 'finance-growth-planner',
+    label: 'Growth Planner',
+    href: '/finance/growth-planner',
   },
   {
     id: 'finance-job-cost-control',
