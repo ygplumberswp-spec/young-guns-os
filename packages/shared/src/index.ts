@@ -172,6 +172,7 @@ export * from './owner-financial-command.js';
 export * from './profit-analytics.js';
 export * from './operating-profit.js';
 export * from './budget-control.js';
+export * from './growth-planner.js';
 
 export * from './xero-source-of-truth.js';
 export * from './vehicle-registration.js';

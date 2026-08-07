@@ -12139,3 +12139,43 @@ input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='
     text-align: center;
   }
 }
+
+/* GROWTH-001 Growth Planner (advisory planning; not accounting truth) */
+.growth-planner__metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.growth-planner__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+  margin-top: 0.75rem;
+}
+
+.growth-planner__drivers {
+  margin: 0.5rem 0 0;
+  padding-left: 1.1rem;
+}
+
+.growth-planner__drivers li {
+  margin-bottom: 0.35rem;
+}
+
+.growth-planner__subhead {
+  margin: 1rem 0 0.5rem;
+  font-size: 1rem;
+}
+
+@media (max-width: 1024px) {
+  .growth-planner__metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .growth-planner__metrics {
+    grid-template-columns: 1fr;
+  }
+}
