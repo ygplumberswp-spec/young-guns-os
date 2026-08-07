@@ -15,6 +15,15 @@ export type TeamMember = {
   isActive: boolean;
   lastLoginAt: string | null;
   createdAt: string;
+  /** Present when caller has users:manage — YG-CUTOVER-001A lifecycle flags. */
+  lifecycle?: {
+    canSuspend: boolean;
+    canReactivate: boolean;
+    canRemoveAccess: boolean;
+    canEditRole: boolean;
+    canHardDelete: boolean;
+    hardDeleteRefusalMessage: string | null;
+  };
 };
 
 export type TeamInvite = {
@@ -34,6 +43,10 @@ export type CreateTeamInviteRequest = {
 
 export type UpdateTeamMemberRoleRequest = {
   roleId: string;
+};
+
+export type UpdateTeamMemberStatusRequest = {
+  isActive: boolean;
 };
 
 export type CreateTeamInviteResponse = {

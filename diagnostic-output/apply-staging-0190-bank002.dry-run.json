@@ -1,0 +1,64 @@
+{
+  "label": "apply-staging-0190-bank002",
+  "mode": "dry-run",
+  "stagingRef": "cpkuwtaipjxeipvbssvn",
+  "tag": "0190_finance_receipt_reconciliation",
+  "startedAt": "2026-08-07T11:01:32.160Z",
+  "migrations": [
+    {
+      "tag": "0190_finance_receipt_reconciliation",
+      "hashPrefix": "f8cf445630c2",
+      "alreadyApplied": true,
+      "destructive": false,
+      "additiveObjects": [
+        "supplier_aliases",
+        "finance_receipt_records",
+        "finance_receipt_transaction_links",
+        "finance_receipt_audit_logs",
+        "bank_transactions.confirmed_supplier_id",
+        "bank_transaction_receipt_status.receipt_needs_review"
+      ],
+      "action": "skip_already_applied"
+    }
+  ],
+  "appliedBefore": 186,
+  "journalCount": 186,
+  "protectedCountsBefore": {
+    "companies": 157,
+    "users": 274,
+    "jobs": 65,
+    "job_direct_cost_entries": 0,
+    "bank_transactions": 0,
+    "bank_transaction_allocations": 0,
+    "documents": 1,
+    "suppliers": 7
+  },
+  "migrationHash": "f8cf445630c216a3c3af3e22adb0c0aaaccc78595bf1ca4423002017f529efdd",
+  "migrationHashPrefix": "f8cf445630c2",
+  "bank002TablesPresent": [
+    "finance_receipt_audit_logs",
+    "finance_receipt_records",
+    "finance_receipt_transaction_links",
+    "supplier_aliases"
+  ],
+  "confirmedSupplierColumn": true,
+  "protectedCountsAfter": {
+    "companies": 157,
+    "users": 274,
+    "jobs": 65,
+    "job_direct_cost_entries": 0,
+    "bank_transactions": 0,
+    "bank_transaction_allocations": 0,
+    "documents": 1,
+    "suppliers": 7
+  },
+  "protectedCountsUnchanged": true,
+  "appliedAfter": 186,
+  "finishedAt": "2026-08-07T11:01:34.246Z",
+  "migrationSafety": {
+    "additiveOnly": true,
+    "protectedCountsUnchanged": true,
+    "bank002TablesReady": true,
+    "confirmedSupplierColumn": true
+  }
+}

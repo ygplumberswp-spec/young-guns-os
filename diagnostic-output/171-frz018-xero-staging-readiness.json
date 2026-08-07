@@ -1,0 +1,85 @@
+{
+  "schemaVersion": "frz018-staging-readiness-v1",
+  "startedAt": "2026-08-01T09:48:46.289Z",
+  "completedAt": "2026-08-01T09:49:30.000Z",
+  "branch": "cursor/titan-frozen-scope-completion",
+  "priorCheckpoint": "85363d2",
+  "apiOrigin": "https://young-guns-os-staging.up.railway.app",
+  "webOrigin": "https://comfortable-determination-staging.up.railway.app",
+  "stagingSupabaseRef": "cpkuwtaipjxeipvbssvn",
+  "productionRefTouched": false,
+  "liveFinancialWrites": false,
+  "oauthPerformed": false,
+  "verdict": "BLOCKED",
+  "callbackUrlForXeroApp": "https://young-guns-os-staging.up.railway.app/api/v1/integrations/xero/oauth/callback",
+  "oauthScopesCodeDefined": "openid profile email offline_access accounting.settings accounting.contacts accounting.invoices accounting.payments accounting.banktransactions",
+  "credentialDiscovery": {
+    "railwayCli": {
+      "RAILWAY_TOKEN": { "present": false, "length": 0 },
+      "note": "Cannot list Railway variables locally; inferred from live API behaviour"
+    },
+    "envStagingExample": {
+      "XERO_CLIENT_ID": { "present": false, "length": 0 },
+      "XERO_CLIENT_SECRET": { "present": false, "length": 0 },
+      "XERO_REDIRECT_URI": { "present": false, "length": 0 },
+      "INTEGRATIONS_ENCRYPTION_KEY": { "present": false, "length": 55, "note": "placeholder in example only" },
+      "PROVIDERS_ENABLED": { "present": true, "length": 5, "valueHint": "false in example" },
+      "XERO_SYNC_ENABLED": { "present": true, "length": 5, "valueHint": "false in example" }
+    },
+    "appsApiEnvStagingLocal": {
+      "filePresent": true,
+      "fileSizeBytes": 157,
+      "keysPresent": ["APP_ENV", "TITAN_ENV", "DATABASE_URL"],
+      "XERO_CLIENT_ID": { "present": false, "length": 0 },
+      "XERO_CLIENT_SECRET": { "present": false, "length": 0 },
+      "XERO_REDIRECT_URI": { "present": false, "length": 0 },
+      "INTEGRATIONS_ENCRYPTION_KEY": { "present": false, "length": 0 },
+      "PROVIDERS_ENABLED": { "present": false, "length": 0 },
+      "XERO_SYNC_ENABLED": { "present": false, "length": 0 }
+    },
+    "stagingRuntimeInferred": {
+      "PROVIDERS_ENABLED": { "present": true, "source": "GET /health/ready providersEnabled=true" },
+      "XERO_SYNC_ENABLED": { "present": false, "source": "GET /integrations/xero oauthConfigured=false; POST /oauth/start OAUTH_NOT_CONFIGURED" },
+      "XERO_CLIENT_ID": { "present": false, "source": "oauthConfigured=false via resolveXeroOAuthConfig" },
+      "XERO_CLIENT_SECRET": { "present": false, "source": "oauthConfigured=false via resolveXeroOAuthConfig" },
+      "XERO_REDIRECT_URI": { "present": false, "note": "optional; code default applies when OAuth configured" },
+      "INTEGRATIONS_ENCRYPTION_KEY": { "present": true, "source": "API boots NODE_ENV=production without ENCRYPTION_NOT_CONFIGURED" }
+    }
+  },
+  "codeReview": {
+    "oauthRoutes": {
+      "callback": "GET /api/v1/integrations/xero/oauth/callback (public, no auth)",
+      "start": "POST /api/v1/integrations/xero/oauth/start (auth + integrations:manage)",
+      "test": "POST /api/v1/integrations/xero/test",
+      "disconnect": "DELETE /api/v1/integrations/xero",
+      "status": "GET /api/v1/integrations/xero"
+    },
+    "configResolver": "resolveXeroOAuthConfig — requires xeroSyncEnabled (XERO_SYNC_ENABLED && PROVIDERS_ENABLED) plus XERO_CLIENT_ID and XERO_CLIENT_SECRET",
+    "redirectUriDefault": "API_PUBLIC_URL + /api/v1/integrations/xero/oauth/callback",
+    "encryption": "encryptXeroOAuthCredentials / decryptXeroCredentials — version 2 OAuth tokens",
+    "refresh": "getValidAccessToken with 60s buffer + inflight dedupe per companyId",
+    "disconnect": "revokeToken best-effort + clear credentials + status disconnected + audit xero_disconnected",
+    "tenantIsolation": "integrationConnections scoped by companyId",
+    "truthfulStates": "oauthConfigured false when gates/creds missing; legacy creds force reconnectRequired",
+    "readOnlyPreOAuth": "XERO_SYNC_ENABLED=false keeps resolver inert; no financial writes attempted"
+  },
+  "unitTests": {
+    "command": "pnpm --filter @titan/api test -- xero-oauth",
+    "result": "301 pass (includes 5 xero-oauth tests)"
+  },
+  "liveProbeResults": [
+    { "name": "staging_api_ready", "status": "PASS", "detail": "providersEnabled=true, database=connected" },
+    { "name": "unauthenticated_xero_denied", "status": "PASS", "detail": "401" },
+    { "name": "oauth_callback_public_redirect", "status": "PASS", "detail": "302 to web with xero=error (missing code/state)" },
+    { "name": "owner_signup_session", "status": "PASS", "detail": "session.accessToken issued" },
+    { "name": "xero_connection_truthful", "status": "PASS", "detail": "status=disconnected, oauthConfigured=false, hasCredentials=false" },
+    { "name": "oauth_start_blocked", "status": "PASS", "detail": "400 OAUTH_NOT_CONFIGURED" },
+    { "name": "secret_leak_scan", "status": "PASS", "detail": "no token patterns in responses" }
+  ],
+  "ownerAction": {
+    "step": 1,
+    "action": "Railway → titan-staging-api → Variables: set staging-only XERO_CLIENT_ID and XERO_CLIENT_SECRET from your Xero Developer app, set XERO_SYNC_ENABLED=true, redeploy API. In the same Xero app, register redirect URI exactly: https://young-guns-os-staging.up.railway.app/api/v1/integrations/xero/oauth/callback",
+    "doNot": ["edit code", "run terminal commands", "perform OAuth in automation"]
+  },
+  "nextSafePhase": "FRZ-019 Configuration Studio local audit (Master Directive Phase 19 continuation — no live Xero OAuth)"
+}

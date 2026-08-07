@@ -1,12 +1,14 @@
+import { PageHeader } from '../../components/ux';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Link, useRoute } from 'wouter';
-import { Button, Input, PageHeader, Panel } from '@titan/ui';
+import { Button, Input, Panel } from '@titan/ui';
 import type { JobAssignee, VehicleDetail, VehicleStatus } from '@titan/shared';
 import { AI_NAME, VEHICLE_STATUS_OPTIONS } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import { fetchFleetAssignees, fetchVehicle, updateVehicle } from '../../lib/fleet-api';
 import { useAuth } from '../../lib/auth-context';
 import { canManageFleet, formatVehicleStatus } from '../../features/fleet/VehicleList';
+import { VehicleTrackedPositionPanel } from '../../features/fleet/VehicleTrackedPositionPanel';
 
 export function VehicleDetailPage() {
   const [, params] = useRoute('/fleet/:id');
@@ -115,15 +117,19 @@ export function VehicleDetailPage() {
     }
   }
 
-  if (isLoading) return <p className="page-muted">Loading vehicle…</p>;
+  if (isLoading) {
+    return (
+      <div className="page-shell">
+        <PageHeader title="Vehicle" description="Vehicle record" />
+        <p className="page-muted">Loading vehicle…</p>
+      </div>
+    );
+  }
 
   if (!vehicle) {
     return (
       <div className="fleet-page">
-        <PageHeader title="Vehicle not found" description="This vehicle may have been removed." />
-        <Link href="/fleet">
-          <Button variant="secondary">Back to fleet</Button>
-        </Link>
+        <PageHeader title="Vehicle Not Found" description="This vehicle may have been removed." />
       </div>
     );
   }
@@ -135,9 +141,6 @@ export function VehicleDetailPage() {
         description={`${vehicle.licensePlate} · ${formatVehicleStatus(vehicle.status)}`}
         actions={
           <div className="fleet-detail__actions">
-            <Link href="/fleet">
-              <Button variant="secondary">Back to fleet</Button>
-            </Link>
             {canWrite ? (
               <Button variant="secondary" onClick={() => setIsEditing((value) => !value)}>
                 {isEditing ? 'Cancel edit' : 'Edit vehicle'}
@@ -151,11 +154,11 @@ export function VehicleDetailPage() {
       {success ? <p className="form-success">{success}</p> : null}
 
       {isEditing && canWrite ? (
-        <Panel title="Edit vehicle">
+        <Panel title="Edit Vehicle">
           <form className="fleet-form" onSubmit={(event) => void handleSubmit(event)}>
             <Input label="Name" value={name} onChange={(e) => setName(e.target.value)} required />
             <Input
-              label="License plate"
+              label="License Plate"
               value={licensePlate}
               onChange={(e) => setLicensePlate(e.target.value)}
               required
@@ -214,7 +217,7 @@ export function VehicleDetailPage() {
           </form>
         </Panel>
       ) : (
-        <Panel title="Vehicle details">
+        <Panel title="Vehicle Details">
           <dl className="fleet-detail-list">
             <div>
               <dt>License plate</dt>
@@ -255,6 +258,8 @@ export function VehicleDetailPage() {
           </dl>
         </Panel>
       )}
+
+      <VehicleTrackedPositionPanel vehicleId={vehicle.id} />
 
       <Panel
         title={`Ask ${AI_NAME}`}

@@ -5,7 +5,7 @@ export function StagingBadge() {
   if (!isStagingUi()) return null;
 
   return (
-    <span className="staging-badge" role="status" aria-label="Staging environment">
+    <span className="staging-badge" role="status" aria-label="Staging Environment">
       STAGING
     </span>
   );

@@ -1,21 +1,35 @@
+import { PageHeader } from '../../components/ux';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { Button, Input, PageHeader } from '@titan/ui';
+import { Button, Input } from '@titan/ui';
 import { hasAnyPermission, isCompanyOwnerRole, isPlatformOwnerRole } from '@titan/auth/browser';
+import type { TeamMember } from '@titan/shared';
+import { USER_HARD_DELETE_REFUSED_MESSAGE } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import {
   createTeamInvite,
   fetchTeamInvites,
+  fetchTeamMemberDeleteEligibility,
   fetchTeamMembers,
   fetchTeamRoles,
+  hardDeleteTeamMember,
+  removeTeamMemberAccess,
   revokeTeamInvite,
   updateTeamMemberRole,
   updateTeamMemberStatus,
 } from '../../lib/team-api';
+import { NAV_LABELS } from '@titan/shared';
+import { SettingsNav } from '../../features/settings/SettingsNav';
 import { useAuth } from '../../lib/auth-context';
 import { useStaffCachedQuery } from '../../lib/use-scoped-cached-query';
 import { useStaffMutationInvalidation } from '../../lib/cache-invalidation';
 import { AnalyticsTabPanel } from '../../features/analytics/AnalyticsTabPanel';
 import { toStaffIdentity } from '../../lib/role-experience';
+
+type DeleteDialogState = {
+  member: TeamMember;
+  confirmation: string;
+  error: string | null;
+};
 
 export function TeamSettingsPage() {
   const { accessToken, user } = useAuth();
@@ -27,6 +41,11 @@ export function TeamSettingsPage() {
   const [roleId, setRoleId] = useState('');
   const [pendingActionId, setPendingActionId] = useState<string | null>(null);
   const [roleDrafts, setRoleDrafts] = useState<Record<string, string>>({});
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [deleteDialog, setDeleteDialog] = useState<DeleteDialogState | null>(null);
+  const [hardDeleteFlags, setHardDeleteFlags] = useState<
+    Record<string, { canHardDelete: boolean; refusalMessage: string | null; loading: boolean }>
+  >({});
 
   const canManage = useMemo(
     () => (user ? hasAnyPermission(user.permissions, ['users:manage']) : false),
@@ -81,6 +100,17 @@ export function TeamSettingsPage() {
     setRoleDrafts(next);
   }, [members]);
 
+  useEffect(() => {
+    if (!openMenuId) return;
+    function onPointerDown(event: MouseEvent) {
+      const target = event.target as HTMLElement | null;
+      if (target?.closest?.(`[data-team-actions="${openMenuId}"]`)) return;
+      setOpenMenuId(null);
+    }
+    document.addEventListener('mousedown', onPointerDown);
+    return () => document.removeEventListener('mousedown', onPointerDown);
+  }, [openMenuId]);
+
   async function reloadTeam() {
     await Promise.all([
       membersQuery.refetch(),
@@ -128,16 +158,49 @@ export function TeamSettingsPage() {
     }
   }
 
-  async function handleToggleMember(memberId: string, isActive: boolean) {
+  async function handleSuspend(memberId: string) {
     if (!accessToken || !canManage) return;
     setPendingActionId(memberId);
     setActionError(null);
+    setOpenMenuId(null);
     try {
-      await updateTeamMemberStatus(accessToken, memberId, isActive);
+      await updateTeamMemberStatus(accessToken, memberId, false);
       invalidateTeam();
       await membersQuery.refetch();
     } catch (err) {
-      setActionError(err instanceof ApiClientError ? err.message : 'Unable to update member');
+      setActionError(err instanceof ApiClientError ? err.message : 'Unable to suspend member');
+    } finally {
+      setPendingActionId(null);
+    }
+  }
+
+  async function handleReactivate(memberId: string) {
+    if (!accessToken || !canManage) return;
+    setPendingActionId(memberId);
+    setActionError(null);
+    setOpenMenuId(null);
+    try {
+      await updateTeamMemberStatus(accessToken, memberId, true);
+      invalidateTeam();
+      await membersQuery.refetch();
+    } catch (err) {
+      setActionError(err instanceof ApiClientError ? err.message : 'Unable to reactivate member');
+    } finally {
+      setPendingActionId(null);
+    }
+  }
+
+  async function handleRemoveAccess(memberId: string) {
+    if (!accessToken || !canManage) return;
+    setPendingActionId(memberId);
+    setActionError(null);
+    setOpenMenuId(null);
+    try {
+      await removeTeamMemberAccess(accessToken, memberId);
+      invalidateTeam();
+      await membersQuery.refetch();
+    } catch (err) {
+      setActionError(err instanceof ApiClientError ? err.message : 'Unable to remove access');
     } finally {
       setPendingActionId(null);
     }
@@ -149,12 +212,84 @@ export function TeamSettingsPage() {
     if (!nextRoleId) return;
     setPendingActionId(`role:${memberId}`);
     setActionError(null);
+    setOpenMenuId(null);
     try {
       await updateTeamMemberRole(accessToken, memberId, nextRoleId);
       invalidateTeam();
       await membersQuery.refetch();
     } catch (err) {
       setActionError(err instanceof ApiClientError ? err.message : 'Unable to assign role');
+    } finally {
+      setPendingActionId(null);
+    }
+  }
+
+  async function ensureHardDeleteEligibility(memberId: string) {
+    if (!accessToken || !canManage) return;
+    const existing = hardDeleteFlags[memberId];
+    if (existing && !existing.loading && existing.refusalMessage !== undefined) {
+      return existing;
+    }
+    setHardDeleteFlags((prev) => ({
+      ...prev,
+      [memberId]: {
+        canHardDelete: false,
+        refusalMessage: null,
+        loading: true,
+      },
+    }));
+    try {
+      const eligibility = await fetchTeamMemberDeleteEligibility(accessToken, memberId);
+      const next = {
+        canHardDelete: eligibility.canHardDelete,
+        refusalMessage: eligibility.refusalMessage,
+        loading: false,
+      };
+      setHardDeleteFlags((prev) => ({ ...prev, [memberId]: next }));
+      return next;
+    } catch (err) {
+      const next = {
+        canHardDelete: false,
+        refusalMessage:
+          err instanceof ApiClientError ? err.message : USER_HARD_DELETE_REFUSED_MESSAGE,
+        loading: false,
+      };
+      setHardDeleteFlags((prev) => ({ ...prev, [memberId]: next }));
+      return next;
+    }
+  }
+
+  async function openActionsMenu(memberId: string) {
+    setOpenMenuId((prev) => (prev === memberId ? null : memberId));
+    if (openMenuId !== memberId) {
+      void ensureHardDeleteEligibility(memberId);
+    }
+  }
+
+  async function openHardDeleteDialog(member: TeamMember) {
+    setOpenMenuId(null);
+    const flag = await ensureHardDeleteEligibility(member.id);
+    if (!flag?.canHardDelete) {
+      setActionError(flag?.refusalMessage ?? USER_HARD_DELETE_REFUSED_MESSAGE);
+      return;
+    }
+    setDeleteDialog({ member, confirmation: '', error: null });
+  }
+
+  async function confirmHardDelete() {
+    if (!accessToken || !deleteDialog) return;
+    const { member, confirmation } = deleteDialog;
+    setPendingActionId(`delete:${member.id}`);
+    setDeleteDialog((prev) => (prev ? { ...prev, error: null } : prev));
+    try {
+      await hardDeleteTeamMember(accessToken, member.id, confirmation);
+      setDeleteDialog(null);
+      invalidateTeam();
+      await membersQuery.refetch();
+    } catch (err) {
+      const message =
+        err instanceof ApiClientError ? err.message : 'Unable to permanently delete member';
+      setDeleteDialog((prev) => (prev ? { ...prev, error: message } : prev));
     } finally {
       setPendingActionId(null);
     }
@@ -169,9 +304,10 @@ export function TeamSettingsPage() {
   return (
     <>
       <PageHeader
-        title="Users & Access"
-        description="Manage users, canonical roles and invitations. Owner/Admin/Member/Client/Platform Owner cannot be invited. Only Platform Owner may assign Company Owner. You cannot change your own role."
+        title={NAV_LABELS.teamAndAccess}
+        description="Manage users, canonical roles and invitations. Owner/Admin/Member/Client/Platform Owner cannot be invited. Only Platform Owner may assign Company Owner. You cannot change your own role. Permanent delete is only available for accounts with no business history."
       />
+      <SettingsNav />
 
       {actionError ? <p className="settings-alert settings-alert--error">{actionError}</p> : null}
 
@@ -232,8 +368,9 @@ export function TeamSettingsPage() {
           <h2 className="settings-section__title">Active members</h2>
           {canAssignRoles ? (
             <p className="page-muted">
-              Owner role assignment: select a canonical role and save. Legacy Member remains until
-              you reassign.
+              Owner role assignment: select a canonical role, then use Actions → Edit role. Suspended
+              accounts cannot sign in. Permanent delete requires explicit name/email confirmation and
+              a clean dependency check.
             </p>
           ) : null}
           <div className="team-table-wrap">
@@ -257,6 +394,9 @@ export function TeamSettingsPage() {
                 ) : (
                   members.map((member) => {
                     const isSelf = member.id === user?.id;
+                    const lifecycle = member.lifecycle;
+                    const roleDirty =
+                      (roleDrafts[member.id] ?? member.roleId) !== member.roleId;
                     return (
                       <tr key={member.id}>
                         <td>
@@ -275,7 +415,6 @@ export function TeamSettingsPage() {
                                 }))
                               }
                             >
-                              {/* Keep current role visible even if not in assignable list */}
                               {!manuallyAssignableRoles.some((r) => r.id === member.roleId) ? (
                                 <option value={member.roleId}>{member.roleName}</option>
                               ) : null}
@@ -292,39 +431,107 @@ export function TeamSettingsPage() {
                         <td>{member.isActive ? 'Active' : 'Suspended'}</td>
                         {canManage || canAssignRoles ? (
                           <td>
-                            <div className="settings-inline-actions">
-                              {canAssignRoles && !isSelf ? (
+                            {isSelf ? (
+                              <span className="page-muted">You</span>
+                            ) : (
+                              <div className="team-actions" data-team-actions={member.id}>
                                 <Button
                                   size="sm"
                                   variant="secondary"
-                                  disabled={
-                                    pendingActionId === `role:${member.id}` ||
-                                    (roleDrafts[member.id] ?? member.roleId) === member.roleId
-                                  }
-                                  onClick={() => void handleAssignRole(member.id)}
+                                  disabled={pendingActionId === member.id}
+                                  aria-expanded={openMenuId === member.id}
+                                  aria-haspopup="menu"
+                                  onClick={() => void openActionsMenu(member.id)}
                                 >
-                                  Save role
+                                  Actions
                                 </Button>
-                              ) : null}
-                              {canManage ? (
-                                isSelf ? (
-                                  <span className="page-muted">You</span>
-                                ) : (
-                                  <Button
-                                    size="sm"
-                                    variant="secondary"
-                                    disabled={pendingActionId === member.id}
-                                    onClick={() =>
-                                      void handleToggleMember(member.id, !member.isActive)
-                                    }
-                                  >
-                                    {member.isActive ? 'Suspend' : 'Restore'}
-                                  </Button>
-                                )
-                              ) : isSelf ? (
-                                <span className="page-muted">You</span>
-                              ) : null}
-                            </div>
+                                {openMenuId === member.id ? (
+                                  <ul className="team-actions__menu" role="menu">
+                                    {canAssignRoles ? (
+                                      <li role="none">
+                                        <button
+                                          type="button"
+                                          role="menuitem"
+                                          className="team-actions__item"
+                                          disabled={
+                                            pendingActionId === `role:${member.id}` || !roleDirty
+                                          }
+                                          onClick={() => void handleAssignRole(member.id)}
+                                        >
+                                          Edit role
+                                        </button>
+                                      </li>
+                                    ) : null}
+                                    {canManage && (lifecycle?.canSuspend ?? member.isActive) ? (
+                                      <li role="none">
+                                        <button
+                                          type="button"
+                                          role="menuitem"
+                                          className="team-actions__item"
+                                          disabled={pendingActionId === member.id}
+                                          onClick={() => void handleSuspend(member.id)}
+                                        >
+                                          Suspend
+                                        </button>
+                                      </li>
+                                    ) : null}
+                                    {canManage && (lifecycle?.canReactivate ?? !member.isActive) ? (
+                                      <li role="none">
+                                        <button
+                                          type="button"
+                                          role="menuitem"
+                                          className="team-actions__item"
+                                          disabled={pendingActionId === member.id}
+                                          onClick={() => void handleReactivate(member.id)}
+                                        >
+                                          Reactivate
+                                        </button>
+                                      </li>
+                                    ) : null}
+                                    {canManage && (lifecycle?.canRemoveAccess ?? member.isActive) ? (
+                                      <li role="none">
+                                        <button
+                                          type="button"
+                                          role="menuitem"
+                                          className="team-actions__item"
+                                          disabled={pendingActionId === member.id}
+                                          onClick={() => void handleRemoveAccess(member.id)}
+                                        >
+                                          Remove access
+                                        </button>
+                                      </li>
+                                    ) : null}
+                                    {canManage ? (
+                                      <li role="none">
+                                        <button
+                                          type="button"
+                                          role="menuitem"
+                                          className="team-actions__item team-actions__item--danger"
+                                          disabled={
+                                            pendingActionId === `delete:${member.id}` ||
+                                            hardDeleteFlags[member.id]?.loading === true ||
+                                            hardDeleteFlags[member.id]?.canHardDelete === false ||
+                                            lifecycle?.canHardDelete === false
+                                          }
+                                          title={
+                                            hardDeleteFlags[member.id]?.canHardDelete
+                                              ? 'Permanently delete this unused account'
+                                              : (hardDeleteFlags[member.id]?.refusalMessage ??
+                                                lifecycle?.hardDeleteRefusalMessage ??
+                                                USER_HARD_DELETE_REFUSED_MESSAGE)
+                                          }
+                                          onClick={() => void openHardDeleteDialog(member)}
+                                        >
+                                          {hardDeleteFlags[member.id]?.loading
+                                            ? 'Checking delete…'
+                                            : 'Delete permanently'}
+                                        </button>
+                                      </li>
+                                    ) : null}
+                                  </ul>
+                                ) : null}
+                              </div>
+                            )}
                           </td>
                         ) : null}
                       </tr>
@@ -343,7 +550,7 @@ export function TeamSettingsPage() {
           error={invitesQuery.error}
           hasData={invitesQuery.data !== undefined}
           isEmpty={invites.length === 0}
-          emptyTitle="No pending invites"
+          emptyTitle="No Pending Invites"
           emptyDescription="Create an invite link to add managers, dispatchers, accountants or technicians."
           loadingLabel="Loading invites…"
           onRetry={() => void invitesQuery.refetch()}
@@ -387,6 +594,61 @@ export function TeamSettingsPage() {
             </section>
           ) : null}
         </AnalyticsTabPanel>
+      ) : null}
+
+      {deleteDialog ? (
+        <div className="team-delete-dialog" role="dialog" aria-modal="true" aria-labelledby="team-delete-title">
+          <div className="team-delete-dialog__panel">
+            <h2 id="team-delete-title" className="settings-section__title">
+              Delete permanently
+            </h2>
+            <p>
+              This permanently removes{' '}
+              <strong>
+                {deleteDialog.member.firstName} {deleteDialog.member.lastName}
+              </strong>{' '}
+              ({deleteDialog.member.email}). This is only allowed for accounts with no business
+              history.
+            </p>
+            <p className="page-muted">
+              Type the user&apos;s email or displayed name to confirm.
+            </p>
+            <Input
+              label="Confirmation"
+              name="confirmation"
+              value={deleteDialog.confirmation}
+              onChange={(event) =>
+                setDeleteDialog((prev) =>
+                  prev ? { ...prev, confirmation: event.target.value, error: null } : prev,
+                )
+              }
+              autoFocus
+            />
+            {deleteDialog.error ? (
+              <p className="settings-alert settings-alert--error">{deleteDialog.error}</p>
+            ) : null}
+            <div className="settings-inline-actions">
+              <Button
+                variant="secondary"
+                onClick={() => setDeleteDialog(null)}
+                disabled={pendingActionId === `delete:${deleteDialog.member.id}`}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => void confirmHardDelete()}
+                disabled={
+                  pendingActionId === `delete:${deleteDialog.member.id}` ||
+                  deleteDialog.confirmation.trim().length === 0
+                }
+              >
+                {pendingActionId === `delete:${deleteDialog.member.id}`
+                  ? 'Deleting…'
+                  : 'Confirm permanent delete'}
+              </Button>
+            </div>
+          </div>
+        </div>
       ) : null}
     </>
   );

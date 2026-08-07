@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { hasPermission } from '@titan/auth';
+import { hasPermission, isCompanyOwnerRole } from '@titan/auth';
+import { isGoogleReviewUrl } from '@titan/shared';
 import { AI_TONE_OPTIONS } from '@titan/shared';
 import type { CompanyService } from '../services/company.service.js';
 import { CompanyError } from '../services/company.service.js';
@@ -62,6 +63,7 @@ const preferencesSchema = z
         documentLabel: z.string().trim().min(1).max(200),
       })
       .optional(),
+    googleReviewUrl: z.string().trim().max(2000).nullable().optional(),
   })
   .strict();
 
@@ -141,8 +143,32 @@ export function createCompanyRouter({
       return;
     }
 
+    const reviewUrl = parsed.data.preferences?.googleReviewUrl;
+    if (reviewUrl !== undefined) {
+      if (!isCompanyOwnerRole({ roleName: auth.roleName, permissions: auth.permissions })) {
+        res.status(403).json({
+          error: {
+            code: 'FORBIDDEN',
+            message: 'Only the Company Owner may update the Google review URL',
+          },
+        });
+        return;
+      }
+      if (reviewUrl && !isGoogleReviewUrl(reviewUrl)) {
+        res.status(400).json({
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Google review URL must be a valid HTTPS Google review link',
+          },
+        });
+        return;
+      }
+    }
+
     try {
-      const profile = await companyService.updateProfile(auth.companyId, parsed.data);
+      const profile = await companyService.updateProfile(auth.companyId, parsed.data, {
+        updatedByUserId: auth.userId,
+      });
       res.json({ data: { profile } });
     } catch (error) {
       handleCompanyError(res, error);

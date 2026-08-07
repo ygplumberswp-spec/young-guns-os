@@ -1,0 +1,176 @@
+{
+  "schemaVersion": "frz018c-staging-readonly-verify-v1",
+  "sprint": "FRZ-018c",
+  "startedAt": "2026-08-01T10:29:49.154Z",
+  "branch": "cursor/titan-frozen-scope-completion",
+  "priorCheckpoint": "a67f648",
+  "apiOrigin": "https://young-guns-os-staging.up.railway.app",
+  "webOrigin": "https://comfortable-determination-staging.up.railway.app",
+  "stagingSupabaseRef": "cpkuwtaipjxeipvbssvn",
+  "productionRefTouched": false,
+  "liveFinancialWrites": false,
+  "oauthPerformed": false,
+  "readOnlyIntent": true,
+  "ownerSignal": "Owner completed browser OAuth; staging UI showed Connected",
+  "ownerAccessTokenProvided": false,
+  "callbackUrlForXeroApp": "https://young-guns-os-staging.up.railway.app/api/v1/integrations/xero/oauth/callback",
+  "oauthStartPath": "https://comfortable-determination-staging.up.railway.app/integrations/xero",
+  "results": [
+    {
+      "name": "staging_api_ready",
+      "status": "PASS",
+      "detail": "providersEnabled=true, database=connected"
+    },
+    {
+      "name": "unauthenticated_xero_denied",
+      "status": "PASS",
+      "detail": "401"
+    },
+    {
+      "name": "oauth_callback_public_redirect",
+      "status": "PASS",
+      "detail": "302 honest error redirect"
+    },
+    {
+      "name": "probe_signup_session",
+      "status": "PASS",
+      "detail": "26c082a5…"
+    },
+    {
+      "name": "credential_gate_oauthConfigured",
+      "status": "PASS",
+      "detail": "true"
+    },
+    {
+      "name": "probe_truthful_disconnected_state",
+      "status": "PASS",
+      "detail": "status=disconnected, hasCredentials=false"
+    },
+    {
+      "name": "db_connected_xero_tenant",
+      "status": "PASS",
+      "detail": "1 connected tenant(s); org=Young Guns Plumbing"
+    },
+    {
+      "name": "db_audit_xero_connected",
+      "status": "PASS",
+      "detail": "recent xero_connected audit events=1"
+    },
+    {
+      "name": "tenant_isolation_disconnected_independent",
+      "status": "PASS",
+      "detail": "foreign tenant has own disconnected state"
+    },
+    {
+      "name": "tenant_isolation_sync_status_empty",
+      "status": "PASS",
+      "detail": "foreign sync status not connected"
+    },
+    {
+      "name": "tenant_isolation_sync_logs",
+      "status": "PASS",
+      "detail": "no shared log ids between probe tenants"
+    },
+    {
+      "name": "tenant_isolation_owner_company_distinct",
+      "status": "PASS",
+      "detail": "DB owner company != foreign probe company"
+    },
+    {
+      "name": "checklist_connected_organisation",
+      "status": "PARTIAL",
+      "detail": "DB corroborated connected org; live API test requires Owner session token"
+    },
+    {
+      "name": "checklist_contacts_import",
+      "status": "PARTIAL",
+      "detail": "live import deferred — set OWNER_ACCESS_TOKEN for full verify"
+    },
+    {
+      "name": "checklist_invoices_import",
+      "status": "PARTIAL",
+      "detail": "live import deferred — set OWNER_ACCESS_TOKEN for full verify"
+    },
+    {
+      "name": "checklist_payments_import",
+      "status": "PARTIAL",
+      "detail": "live import deferred — set OWNER_ACCESS_TOKEN for full verify"
+    },
+    {
+      "name": "checklist_bank_transactions_import",
+      "status": "PARTIAL",
+      "detail": "live import deferred — set OWNER_ACCESS_TOKEN for full verify"
+    },
+    {
+      "name": "checklist_lastSyncAt",
+      "status": "PARTIAL",
+      "detail": "live import deferred — set OWNER_ACCESS_TOKEN for full verify"
+    },
+    {
+      "name": "checklist_duplicate_protection",
+      "status": "PARTIAL",
+      "detail": "live import deferred — set OWNER_ACCESS_TOKEN for full verify"
+    },
+    {
+      "name": "checklist_audit_sync_logs",
+      "status": "PARTIAL",
+      "detail": "no sync logs in DB yet; live import deferred"
+    },
+    {
+      "name": "token_refresh_code_coverage",
+      "status": "PASS",
+      "detail": "getValidAccessToken 60s buffer + inflight dedupe; unit tests xero-oauth.test.ts + xero-import-sync.test.ts"
+    },
+    {
+      "name": "secret_leak_scan",
+      "status": "PASS",
+      "detail": "no token patterns in evidence"
+    }
+  ],
+  "checklist": {
+    "tokenRefresh": "PASS-CODE",
+    "tenantIsolation": "PASS",
+    "truthfulProviderStatus": "PASS",
+    "connectedOrganisation": "PASS-DB",
+    "contactsImport": "PARTIAL",
+    "invoicesImport": "PARTIAL",
+    "paymentsImport": "PARTIAL",
+    "bankTransactionsImport": "PARTIAL",
+    "lastSyncAt": "PARTIAL",
+    "duplicateProtection": "PARTIAL",
+    "auditEvidence": "PARTIAL"
+  },
+  "connectedForImport": true,
+  "ownerOAuthCorroborated": true,
+  "verdict": "PARTIAL",
+  "dbConnectedTenants": [
+    {
+      "companyIdPrefix": "095aef76…",
+      "organisationName": "Young Guns Plumbing",
+      "organisationIdPrefix": "20176b90…",
+      "connectedAt": "2026-08-01T10:20:52.209Z",
+      "lastSyncAt": null,
+      "hasCredentials": true
+    }
+  ],
+  "dbImportSnapshot": {
+    "syncLogCount": 0,
+    "customerMappings": 0,
+    "invoiceMappings": 0,
+    "paymentMappings": 0,
+    "lastSyncAt": null
+  },
+  "ownerAction": {
+    "step": 1,
+    "action": "Optional: export staging Bearer token from browser devtools (Application → session) and re-run with OWNER_ACCESS_TOKEN for live read-only import verify",
+    "note": "OAuth connection corroborated via staging DB. No secrets stored in evidence."
+  },
+  "totals": {
+    "passed": 14,
+    "failed": 0,
+    "paused": 0,
+    "skipped": 0,
+    "partial": 8
+  },
+  "completedAt": "2026-08-01T10:30:05.091Z"
+}

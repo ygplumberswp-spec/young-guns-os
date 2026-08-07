@@ -1,0 +1,84 @@
+{
+  "label": "YG-CUTOVER-001B",
+  "title": "Manager mobile acceptance + responsive clipping fix",
+  "verdict": "PASS — Manager mobile acceptance complete",
+  "branch": "cursor/yg-cutover-001b-manager-mobile-663e",
+  "pr": "https://github.com/ygplumberswp-spec/young-guns-os/pull/47",
+  "completedAt": "2026-08-07T17:10:00.000Z",
+  "inviteManagerAcceptance": {
+    "inviteAccepted": true,
+    "individualLogin": true,
+    "managerRoleApplied": true,
+    "youngGunsTenant": true,
+    "dashboardLoads": true,
+    "financeAttentionLoads": true,
+    "googleMapRenders": true,
+    "cartrackMarkerRenders": true,
+    "elevatedToOwner": false
+  },
+  "mobileDefectRootCause": [
+    "OWNER-001 dense --titan-page-pad-x clamp(0.5rem,1vw,1rem) left ~8px gutters on iPhone",
+    "Main lacked horizontal safe-area while header had it",
+    "overflow-x hidden on shell/main clipped left-edge content",
+    "Off-canvas drawer remained potentially interactive while translated",
+    "Header crowded by visible Menu label + identity/sign-out on narrow widths"
+  ],
+  "responsiveFix": {
+    "phonePadRestore": "≤760/≤430 owner001 --titan-page-pad-x: 1rem",
+    "mainSafeArea": "padding-left/right max(pad-x, safe-area-inset-*)",
+    "drawerInert": "visibility:hidden + pointer-events:none when closed",
+    "headerCompact": "hide .app-header__menu-label ≤640",
+    "textWrap": "overflow-wrap anywhere on attention/invoice titles",
+    "compactMetrics": "single-column metric grids ≤390",
+    "desktopPreserved": [
+      "OWNER-001 dense clamp ≥761",
+      "--titan-content-max-width: none",
+      "fixed desktop sidebar",
+      "Live Fleet Map clamp(16rem, 28vh, 22rem)"
+    ]
+  },
+  "overflowProbe": {
+    "artifact": "diagnostic-output/yg-cutover-001b-overflow-check.json",
+    "breakpoints": [360, 390, 430, 768, 1024, 1366, 1920],
+    "pass": true,
+    "horizontalOverflow": 0,
+    "leftClip": 0
+  },
+  "managerRbacMatrix": {
+    "source": "packages/shared/src/yg-cutover-001b.ts + packages/auth MANAGER_PERMISSIONS",
+    "permissionsChanged": false,
+    "financeVisibility": "finance:read + finance:write (not Owner-role gated)",
+    "teamAccess": "users:manage yes; role assign Owner-only",
+    "aura": "chat/agents yes; privileged decide Owner-only",
+    "reservedForOwner": [
+      "*",
+      "role assignment",
+      "ECC",
+      "OAuth connect gates",
+      "AURA privileged decide",
+      "platform/SaaS"
+    ]
+  },
+  "googleMapsEvidence": {
+    "status": "rendering_evidence_only",
+    "fleetAuthority": "Cartrack",
+    "mapAuthority": "Google Maps",
+    "fullVerification": "NOT declared complete"
+  },
+  "gates": {
+    "shared001b": "4 pass",
+    "web001bPlusMobile001PlusOwner001": "29 pass",
+    "auth": "24 pass",
+    "webTypecheck": "pass",
+    "sharedTypecheck": "pass",
+    "webBuild": "pass",
+    "overflowProbe": "pass"
+  },
+  "safety": {
+    "productionTouched": 0,
+    "financeCalculationsChanged": 0,
+    "integrationLogicChanged": 0,
+    "mapsAuthorityChanged": 0,
+    "rolesAltered": 0
+  }
+}

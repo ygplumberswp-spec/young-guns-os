@@ -1,5 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { Button, Input, PageHeader, Panel } from '@titan/ui';
+import { Button, Panel } from '@titan/ui';
+import { isCompanyOwnerRole } from '@titan/auth/browser';
 import type { EmailConnectionSummary } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import {
@@ -10,48 +12,59 @@ import {
 } from '../../lib/integrations-api';
 import { useAuth } from '../../lib/auth-context';
 import { IntegrationsNav } from '../../features/integrations/IntegrationsNav';
+import { IntegrationConnectionLock } from '../../features/integrations/IntegrationConnectionLock';
 import { canAccessIntegrations, canManageIntegrations } from '../../features/integrations/utils';
-import { formatConnectionStatus } from '../../features/integrations/formatters';
 
 export function EmailSettingsPage() {
   const { accessToken, user } = useAuth();
   const [connection, setConnection] = useState<EmailConnectionSummary | null>(null);
-  const [host, setHost] = useState('');
-  const [port, setPort] = useState('587');
-  const [secure, setSecure] = useState(false);
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [fromEmail, setFromEmail] = useState('');
-  const [fromName, setFromName] = useState('');
+  const [formValues, setFormValues] = useState({
+    host: '',
+    port: '587',
+    secure: 'false',
+    username: '',
+    password: '',
+    fromEmail: '',
+    fromName: '',
+  });
   const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
+  const [isBusy, setIsBusy] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
   const canView = useMemo(() => (user ? canAccessIntegrations(user.permissions) : false), [user]);
   const canManage = useMemo(() => (user ? canManageIntegrations(user.permissions) : false), [user]);
+  const isOwner = useMemo(
+    () =>
+      user
+        ? isCompanyOwnerRole({ roleName: user.roleName, permissions: user.permissions })
+        : false,
+    [user],
+  );
 
   async function loadPageData() {
     if (!accessToken || !canView) return;
     const data = await fetchEmailConnection(accessToken);
     setConnection(data);
-    if (data.host) setHost(data.host);
-    if (data.port) setPort(String(data.port));
-    setSecure(data.secure);
-    if (data.fromEmail) setFromEmail(data.fromEmail);
-    if (data.fromName) setFromName(data.fromName);
+    setFormValues((current) => ({
+      host: data.host ?? current.host,
+      port: data.port ? String(data.port) : current.port,
+      secure: data.secure ? 'true' : 'false',
+      username: '',
+      password: '',
+      fromEmail: data.fromEmail ?? current.fromEmail,
+      fromName: data.fromName ?? current.fromName,
+    }));
   }
 
   useEffect(() => {
     let cancelled = false;
-
     async function bootstrap() {
       if (!accessToken || !canView) {
         setIsLoading(false);
         return;
       }
-
       try {
         await loadPageData();
       } catch (err) {
@@ -62,7 +75,6 @@ export function EmailSettingsPage() {
         if (!cancelled) setIsLoading(false);
       }
     }
-
     void bootstrap();
     return () => {
       cancelled = true;
@@ -73,62 +85,65 @@ export function EmailSettingsPage() {
     event.preventDefault();
     if (!accessToken || !canManage) return;
 
-    setIsSaving(true);
+    setIsBusy(true);
     setError(null);
     setSuccess(null);
 
     try {
       const updated = await saveEmailConnection(accessToken, {
-        host,
-        port: Number.parseInt(port, 10),
-        secure,
-        username,
-        password,
-        fromEmail,
-        fromName: fromName.trim() || null,
+        host: formValues.host,
+        port: Number.parseInt(formValues.port, 10),
+        secure: formValues.secure === 'true',
+        username: formValues.username,
+        password: formValues.password,
+        fromEmail: formValues.fromEmail,
+        fromName: formValues.fromName.trim() || null,
       });
       setConnection(updated);
-      setPassword('');
+      setFormValues((current) => ({ ...current, username: '', password: '' }));
       setSuccess('Email provider connected successfully.');
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : 'Unable to connect email provider');
+      await loadPageData().catch(() => undefined);
     } finally {
-      setIsSaving(false);
+      setIsBusy(false);
     }
+  }
+
+  async function handleReplaceCredentials(event: FormEvent<HTMLFormElement>) {
+    await handleConnect(event);
   }
 
   async function handleDisconnect() {
     if (!accessToken || !canManage) return;
-
-    setIsSaving(true);
+    setIsBusy(true);
     setError(null);
     setSuccess(null);
-
     try {
       const updated = await disconnectEmail(accessToken);
       setConnection(updated);
-      setHost('');
-      setPort('587');
-      setSecure(false);
-      setUsername('');
-      setPassword('');
-      setFromEmail('');
-      setFromName('');
+      setFormValues({
+        host: '',
+        port: '587',
+        secure: 'false',
+        username: '',
+        password: '',
+        fromEmail: '',
+        fromName: '',
+      });
       setSuccess('Email provider disconnected.');
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : 'Unable to disconnect email provider');
     } finally {
-      setIsSaving(false);
+      setIsBusy(false);
     }
   }
 
-  async function handleSync() {
+  async function handleRecoverySync() {
     if (!accessToken || !canManage) return;
-
     setIsSyncing(true);
     setError(null);
     setSuccess(null);
-
     try {
       const result = await syncEmail(accessToken);
       setSuccess(`SMTP verified for ${result.fromEmail} via ${result.host}.`);
@@ -152,131 +167,73 @@ export function EmailSettingsPage() {
     <div className="integrations-page">
       <PageHeader
         title="Email (SMTP)"
-        description="Connect your SMTP provider for transactional email. Credentials are verified against the live server."
+        description="Connect once — incoming mail syncs automatically on schedule. Send and permanent changes require Owner approval."
       />
       <IntegrationsNav />
 
       {isLoading ? <p className="page-muted">Loading email settings…</p> : null}
-      {error ? <p className="form-error">{error}</p> : null}
-      {success ? <p className="form-success">{success}</p> : null}
 
       {!isLoading && connection ? (
-        <>
-          <Panel title="Connection status">
-            <dl className="integration-status-list">
-              <div>
-                <dt>Status</dt>
-                <dd>{formatConnectionStatus(connection.status)}</dd>
-              </div>
-              <div>
-                <dt>Host</dt>
-                <dd>{connection.host ?? 'Not configured'}</dd>
-              </div>
-              <div>
-                <dt>Port</dt>
-                <dd>{connection.port ?? '—'}</dd>
-              </div>
-              <div>
-                <dt>TLS</dt>
-                <dd>{connection.secure ? 'Yes' : 'No'}</dd>
-              </div>
-              <div>
-                <dt>From email</dt>
-                <dd>{connection.fromEmail ?? 'Not configured'}</dd>
-              </div>
-              <div>
-                <dt>Last sync</dt>
-                <dd>
-                  {connection.lastSyncAt
-                    ? new Date(connection.lastSyncAt).toLocaleString()
-                    : 'Never'}
-                </dd>
-              </div>
-            </dl>
-          </Panel>
-
-          {canManage ? (
-            <>
-              <Panel title="SMTP credentials">
-                <form className="integrations-form" onSubmit={(event) => void handleConnect(event)}>
-                  <Input
-                    label="SMTP host"
-                    value={host}
-                    onChange={(e) => setHost(e.target.value)}
-                    required
-                  />
-                  <Input
-                    label="SMTP port"
-                    value={port}
-                    onChange={(e) => setPort(e.target.value)}
-                    required
-                  />
-                  <label className="integrations-checkbox">
-                    <input
-                      type="checkbox"
-                      checked={secure}
-                      onChange={(e) => setSecure(e.target.checked)}
-                    />
-                    Use TLS (typically port 465)
-                  </label>
-                  <Input
-                    label="Username"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    required
-                  />
-                  <Input
-                    label="Password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                  <Input
-                    label="From email"
-                    type="email"
-                    value={fromEmail}
-                    onChange={(e) => setFromEmail(e.target.value)}
-                    required
-                  />
-                  <Input
-                    label="From name"
-                    value={fromName}
-                    onChange={(e) => setFromName(e.target.value)}
-                  />
-                  <div className="integrations-form__actions">
-                    <Button type="submit" disabled={isSaving}>
-                      {isSaving ? 'Connecting…' : 'Save & connect'}
-                    </Button>
-                    {connection.hasCredentials ? (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        disabled={isSaving}
-                        onClick={() => void handleDisconnect()}
-                      >
-                        Disconnect
-                      </Button>
-                    ) : null}
-                  </div>
-                </form>
-              </Panel>
-
-              {connection.status === 'connected' ? (
-                <Panel title="Verify connection">
-                  <p className="page-muted">
-                    Sync re-authenticates against your SMTP server and records the verification
-                    result.
-                  </p>
-                  <Button onClick={() => void handleSync()} disabled={isSyncing}>
-                    {isSyncing ? 'Verifying…' : 'Verify SMTP'}
-                  </Button>
-                </Panel>
-              ) : null}
-            </>
-          ) : null}
-        </>
+        <IntegrationConnectionLock
+          providerName="Email"
+          status={connection.status}
+          isConnected={connection.hasCredentials}
+          canManage={canManage}
+          isOwner={isOwner}
+          isBusy={isBusy}
+          error={error}
+          success={success}
+          statusRows={[
+            { label: 'Host', value: connection.host ?? 'Not configured' },
+            { label: 'Port', value: connection.port != null ? String(connection.port) : '—' },
+            { label: 'TLS', value: connection.secure ? 'Yes' : 'No' },
+            { label: 'From Email', value: connection.fromEmail ?? 'Not configured' },
+            {
+              label: 'Last Sync',
+              value: connection.lastSyncAt
+                ? new Date(connection.lastSyncAt).toLocaleString()
+                : 'Never',
+            },
+          ]}
+          connectFields={[
+            { key: 'host', label: 'SMTP Host', autoComplete: 'off' },
+            { key: 'port', label: 'SMTP Port', autoComplete: 'off' },
+            { key: 'username', label: 'Username', autoComplete: 'off' },
+            {
+              key: 'password',
+              label: 'Password',
+              type: 'password',
+              autoComplete: 'new-password',
+            },
+            { key: 'fromEmail', label: 'From Email', type: 'email', autoComplete: 'off' },
+            { key: 'fromName', label: 'From Name', required: false, autoComplete: 'off' },
+          ]}
+          connectValues={formValues}
+          onConnectValueChange={(key, value) =>
+            setFormValues((current) => ({ ...current, [key]: value }))
+          }
+          onConnect={handleConnect}
+          onDisconnect={handleDisconnect}
+          onReplaceCredentials={handleReplaceCredentials}
+          connectHelpText="SMTP credentials are encrypted at rest, validated before saving, and never returned to the browser."
+          recoveryContent={
+            connection.status === 'connected' ? (
+              <Button variant="ghost" disabled={isSyncing} onClick={() => void handleRecoverySync()}>
+                {isSyncing ? 'Verifying…' : 'Run diagnostic SMTP verify (recovery)'}
+              </Button>
+            ) : null
+          }
+        />
       ) : null}
+
+      <Panel title="Provider Support">
+        <p className="page-muted">
+          Business Gmail OAuth lives in Communications Hub (Connect Business Gmail). SMTP remains
+          available here with the same connect-once lock pattern. Microsoft 365 OAuth is still on
+          the roadmap. AURA may classify incoming mail and draft replies — sending requires
+          approval (draft → approve → execute).
+        </p>
+      </Panel>
     </div>
   );
 }

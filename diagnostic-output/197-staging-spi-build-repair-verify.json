@@ -1,0 +1,61 @@
+{
+  "label": "197-staging-spi-build-repair-verify",
+  "generatedAt": "2026-08-01T14:52:00.000Z",
+  "branch": "cursor/titan-frozen-scope-completion",
+  "headCommitBeforePush": "f820dad",
+  "failedDeployId": "9d932896",
+  "rootCause": {
+    "summary": "index.ts exported supplier-price-intelligence.js before the source module existed",
+    "exportAddedCommit": {
+      "short": "4410a02",
+      "subject": "Implement secure persistent session across staff auth surfaces."
+    },
+    "moduleAddedCommit": {
+      "short": "0b6b911",
+      "subject": "Add SPI-001 supplier price intelligence scaffold."
+    },
+    "brokenCommitRange": "4410a02..1e87410 (export present, supplier-price-intelligence.ts absent)",
+    "fixedFromCommit": "0b6b911",
+    "paymentsFixCommit": {
+      "short": "162cbf4",
+      "subject": "Fix Xero payments stage invoice-mapping lateral join SQL error."
+    },
+    "category": "missing_commit_on_deploy — Railway likely built an intermediate commit before 0b6b911 landed"
+  },
+  "recovery": {
+    "action": "No source removal; SPI module present and tracked at HEAD",
+    "filesVerified": [
+      "packages/shared/src/supplier-price-intelligence.ts",
+      "packages/shared/src/supplier-price-intelligence.test.ts",
+      "packages/shared/src/index.ts (line 51 export)",
+      "packages/db/src/schema/supplier-price-intelligence.ts",
+      "apps/api/src/routes/supplier-price-intelligence.ts",
+      "apps/api/src/services/supplier-price-intelligence.service.ts"
+    ],
+    "tmpOriginBuildNote": ".tmp-origin-build worktree had SPI files deleted locally on disk but present in git tree at f820dad — not a remote/git issue"
+  },
+  "verification": {
+    "railwayBuildCommand": "pnpm --filter @titan/shared --filter @titan/auth --filter @titan/db --filter @titan/aura --filter @titan/api run build",
+    "localBuild": "PASS",
+    "freshCloneBuild": "PASS (/tmp/titan-build-verify from file:// clone depth 1)",
+    "sharedTypecheck": "PASS",
+    "sharedSpiTests": "PASS (4/4 via node --test dist/supplier-price-intelligence.test.js)",
+    "apiTests": "PASS (336/336 including supplier-price-intelligence.service tests)"
+  },
+  "ancestry": {
+    "162cbf4InHead": true,
+    "0b6b911InHead": true
+  },
+  "xeroJob81c5b8d8": {
+    "preserved": true,
+    "note": "Read-only probe; no restart/sync/migration",
+    "mappingCounts": {
+      "customer_mappings": 673,
+      "invoice_mappings": 5,
+      "payment_mappings": 0
+    },
+    "checkpointPreserved": true,
+    "awaitingDeploy162cbf4ForPaymentsRetry": true
+  },
+  "verdict": "READY TO REDEPLOY STAGING — build verified at HEAD; push triggers fresh Railway build with SPI module + 162cbf4 payments fix"
+}

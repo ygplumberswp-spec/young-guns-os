@@ -3,17 +3,21 @@ import { eq } from 'drizzle-orm';
 import type { DatabaseClient } from '@titan/db';
 import { whatsappConnections } from '@titan/db';
 import type { WhatsappWebhookPayload } from '../lib/whatsapp.client.js';
+import { verifyWhatsappWebhookSignature } from '../lib/whatsapp-signing.js';
 import type { WhatsappService } from '../services/whatsapp.service.js';
 import { WhatsappServiceError } from '../services/whatsapp.service.js';
 
 type WhatsappWebhookRouterDeps = {
   whatsappService: WhatsappService;
   db: DatabaseClient;
+  /** Meta App Secret — when set, X-Hub-Signature-256 is enforced. */
+  appSecret?: string;
 };
 
 export function createWhatsappWebhookRouter({
   whatsappService,
   db,
+  appSecret,
 }: WhatsappWebhookRouterDeps): Router {
   const router = Router();
 
@@ -50,11 +54,58 @@ export function createWhatsappWebhookRouter({
 
   router.post('/', async (req, res) => {
     try {
+      const flags = whatsappService.getRuntimeFlags();
+      if (!flags.whatsappEnabled || !flags.webhooksEnabled) {
+        res.status(503).json({
+          error: {
+            code: 'FEATURE_DISABLED',
+            message: !flags.whatsappEnabled
+              ? 'WhatsApp is disabled (WHATSAPP_ENABLED / PROVIDERS_ENABLED)'
+              : 'WhatsApp webhooks are disabled (WEBHOOKS_ENABLED)',
+          },
+        });
+        return;
+      }
+
+      const rawBody =
+        (req as { rawBody?: string }).rawBody ??
+        (typeof req.body === 'string' ? req.body : JSON.stringify(req.body ?? {}));
+      const signatureHeader =
+        typeof req.headers['x-hub-signature-256'] === 'string'
+          ? req.headers['x-hub-signature-256']
+          : Array.isArray(req.headers['x-hub-signature-256'])
+            ? req.headers['x-hub-signature-256'][0]
+            : undefined;
+
+      const signature = verifyWhatsappWebhookSignature({
+        appSecret,
+        rawBody,
+        signatureHeader,
+        // SEC-001: production must not accept unsigned WhatsApp webhooks.
+        failClosedWithoutSecret: process.env.NODE_ENV === 'production',
+      });
+
+      if (!signature.ok) {
+        res.status(401).json({
+          error: {
+            code: 'INVALID_SIGNATURE',
+            message: `WhatsApp webhook signature rejected (${signature.reason})`,
+          },
+        });
+        return;
+      }
+
       const result = await whatsappService.handleWebhook(req.body as WhatsappWebhookPayload);
-      res.json({ data: result });
+      res.json({
+        data: {
+          ...result,
+          signatureMode: signature.mode,
+        },
+      });
     } catch (error) {
       if (error instanceof WhatsappServiceError) {
-        res.status(400).json({
+        const status = error.code === 'FEATURE_DISABLED' ? 503 : 400;
+        res.status(status).json({
           error: {
             code: error.code,
             message: error.message,

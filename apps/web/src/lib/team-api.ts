@@ -5,6 +5,7 @@ import type {
   TeamInvite,
   TeamMember,
   TeamRole,
+  UserHardDeleteEligibility,
 } from '@titan/shared';
 import { request, type AuthPayload } from './api-client';
 
@@ -93,6 +94,40 @@ export async function updateTeamMemberRole(
     body: { roleId },
   });
   return data.member;
+}
+
+export async function removeTeamMemberAccess(
+  accessToken: string,
+  memberId: string,
+): Promise<TeamMember> {
+  const data = await request<{ member: TeamMember }>(`/team/members/${memberId}/remove-access`, {
+    method: 'POST',
+    accessToken,
+  });
+  return data.member;
+}
+
+export async function fetchTeamMemberDeleteEligibility(
+  accessToken: string,
+  memberId: string,
+): Promise<UserHardDeleteEligibility> {
+  const data = await request<{ eligibility: UserHardDeleteEligibility }>(
+    `/team/members/${memberId}/delete-eligibility`,
+    { accessToken },
+  );
+  return data.eligibility;
+}
+
+export async function hardDeleteTeamMember(
+  accessToken: string,
+  memberId: string,
+  confirmation: string,
+): Promise<{ deleted: true; memberId: string }> {
+  return request<{ deleted: true; memberId: string }>(`/team/members/${memberId}`, {
+    method: 'DELETE',
+    accessToken,
+    body: { confirmation },
+  });
 }
 
 export async function fetchInvitePreview(token: string): Promise<InvitePreview> {

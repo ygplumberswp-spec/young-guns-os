@@ -20,6 +20,20 @@ const envSchema = z.object({
   XERO_CLIENT_ID: z.string().trim().min(1).optional(),
   XERO_CLIENT_SECRET: z.string().min(1).optional(),
   XERO_REDIRECT_URI: z.string().url().optional(),
+  /** Google OAuth (Business Gmail) — official OAuth 2.0 client. */
+  GOOGLE_CLIENT_ID: z.string().trim().min(1).optional(),
+  GOOGLE_CLIENT_SECRET: z.string().min(1).optional(),
+  GOOGLE_REDIRECT_URI: z.string().url().optional(),
+  /** Google Calendar reuses the Google OAuth client but needs its own redirect URI. */
+  GOOGLE_CALENDAR_REDIRECT_URI: z.string().url().optional(),
+  /** Meta app for the Facebook Business integration (Page publishing, leads, insights). */
+  META_APP_ID: z.string().trim().min(1).optional(),
+  META_APP_SECRET: z.string().min(1).optional(),
+  META_REDIRECT_URI: z.string().url().optional(),
+  /** Facebook Login for Business configuration ID (Meta App Dashboard). */
+  META_LOGIN_CONFIG_ID: z.string().trim().min(1).optional(),
+  /** Echoed back during Meta's webhook subscription handshake. */
+  META_WEBHOOK_VERIFY_TOKEN: z.string().min(1).optional(),
   SEED_DEV: z
     .enum(['true', 'false'])
     .default('false')
@@ -33,7 +47,11 @@ const envSchema = z.object({
   OUTBOUND_MESSAGES_ENABLED: z.string().optional(),
   PAYMENT_PROCESSING_ENABLED: z.string().optional(),
   XERO_SYNC_ENABLED: z.string().optional(),
+  /** Platform-level Xero webhook signing key (never exposed to clients). */
+  XERO_WEBHOOK_KEY: z.string().min(1).optional(),
   WHATSAPP_ENABLED: z.string().optional(),
+  /** Meta App Secret for X-Hub-Signature-256 verification (optional soft gate). */
+  WHATSAPP_APP_SECRET: z.string().min(1).optional(),
   EMAIL_SENDING_ENABLED: z.string().optional(),
   READY_REQUIRE_REDIS: z.string().optional(),
   /** Optional comma-separated extra browser origins allowed for credentialed CORS. */
@@ -128,7 +146,10 @@ function resolveRuntimeControls(
     whatsappEnabled: parseBoolFlag(raw.WHATSAPP_ENABLED, false) && providersEnabled,
     emailSendingEnabled: parseBoolFlag(raw.EMAIL_SENDING_ENABLED, false) && providersEnabled,
     readyRequireRedis: parseBoolFlag(raw.READY_REQUIRE_REDIS, defaultRequireRedis),
-    startInProcessAutomationWorkers: workersEnabled || schedulersEnabled || automationsEnabled,
+    // Schedulers (Xero/import ticks) are independent of automation queue workers.
+    // Coupling them forced a 5s automation poll whenever SCHEDULERS_ENABLED=true,
+    // multiplying DB session usage against Supabase session-mode pool_size (~15).
+    startInProcessAutomationWorkers: workersEnabled || automationsEnabled,
   };
 }
 
@@ -229,5 +250,112 @@ export function resolveXeroOAuthConfig(
     clientId,
     clientSecret,
     redirectUri,
+  };
+}
+
+export type GmailOAuthEnvConfig = {
+  clientId: string;
+  clientSecret: string;
+  redirectUri: string;
+  configured: true;
+};
+
+/**
+ * Business Gmail OAuth. Honest not_configured when client id/secret are absent.
+ * Does not invent a connected state — secrets must be set on the API host.
+ */
+export function resolveGmailOAuthConfig(
+  env: Env,
+  apiPublicUrl: string,
+): GmailOAuthEnvConfig | { configured: false } {
+  const clientId = env.GOOGLE_CLIENT_ID?.trim();
+  const clientSecret = env.GOOGLE_CLIENT_SECRET;
+  const redirectUri =
+    env.GOOGLE_REDIRECT_URI?.trim() ??
+    `${apiPublicUrl.replace(/\/$/, '')}/api/v1/communications-platform/gmail/oauth/callback`;
+
+  if (!clientId || !clientSecret) {
+    return { configured: false };
+  }
+
+  return {
+    configured: true,
+    clientId,
+    clientSecret,
+    redirectUri,
+  };
+}
+
+export type GoogleCalendarOAuthEnvConfig = {
+  clientId: string;
+  clientSecret: string;
+  redirectUri: string;
+  configured: true;
+};
+
+/**
+ * Google Calendar OAuth. Shares the Google client with Business Gmail but keeps a
+ * separate redirect URI so connecting one never disturbs the other. Reports
+ * not_configured honestly rather than implying a usable connection.
+ */
+export function resolveGoogleCalendarOAuthConfig(
+  env: Env,
+  apiPublicUrl: string,
+): GoogleCalendarOAuthEnvConfig | { configured: false } {
+  const clientId = env.GOOGLE_CLIENT_ID?.trim();
+  const clientSecret = env.GOOGLE_CLIENT_SECRET;
+  const redirectUri =
+    env.GOOGLE_CALENDAR_REDIRECT_URI?.trim() ??
+    `${apiPublicUrl.replace(/\/$/, '')}/api/v1/google-calendar/oauth/callback`;
+
+  if (!clientId || !clientSecret) {
+    return { configured: false };
+  }
+
+  return {
+    configured: true,
+    clientId,
+    clientSecret,
+    redirectUri,
+  };
+}
+
+export type FacebookAppEnvConfig = {
+  appId: string;
+  appSecret: string;
+  redirectUri: string;
+  webhookVerifyToken: string | null;
+  loginConfigId: string | null;
+  configured: true;
+};
+
+/**
+ * Meta app for the Facebook Business integration.
+ *
+ * Returns not-configured whenever the app id or secret is absent, which is what
+ * drives the honest `configuration_required` connection state rather than a UI
+ * that looks connectable when it cannot reach Facebook at all.
+ */
+export function resolveFacebookAppConfig(
+  env: Env,
+  apiPublicUrl: string,
+): FacebookAppEnvConfig | { configured: false } {
+  const appId = env.META_APP_ID?.trim();
+  const appSecret = env.META_APP_SECRET;
+  const redirectUri =
+    env.META_REDIRECT_URI?.trim() ??
+    `${apiPublicUrl.replace(/\/$/, '')}/api/v1/facebook-business/oauth/callback`;
+
+  if (!appId || !appSecret) {
+    return { configured: false };
+  }
+
+  return {
+    configured: true,
+    appId,
+    appSecret,
+    redirectUri,
+    webhookVerifyToken: env.META_WEBHOOK_VERIFY_TOKEN?.trim() ?? null,
+    loginConfigId: env.META_LOGIN_CONFIG_ID?.trim() ?? null,
   };
 }

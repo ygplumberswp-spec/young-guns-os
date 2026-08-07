@@ -1,6 +1,5 @@
 import { useAuth } from '../../lib/auth-context';
-import { DashboardEmptyPanels } from '../../features/dashboard/DashboardEmptyPanels';
-import { DashboardStats } from '../../features/dashboard/DashboardStats';
+import { ExecutiveDashboard } from '../../features/dashboard/ExecutiveDashboard';
 
 export function DashboardPage() {
   const { user } = useAuth();
@@ -10,9 +9,8 @@ export function DashboardPage() {
   }
 
   return (
-    <div className="dashboard owner-page-content">
-      <DashboardStats />
-      <DashboardEmptyPanels />
+    <div className="dashboard exec-dashboard-page exec-dashboard-page--owner001">
+      <ExecutiveDashboard />
     </div>
   );
 }

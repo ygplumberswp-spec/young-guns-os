@@ -1,0 +1,397 @@
+/* TITAN V1 responsive layout system — content width, padding, vertical rhythm */
+
+:root {
+  /* Operational pages use the full main column; forms keep their own readable max-width. */
+  --titan-content-max-width: none;
+  --titan-content-max-width-narrow: min(72rem, 100%);
+  --titan-content-max-width-readable: min(48rem, 100%);
+
+  /* Fluid page / section spacing */
+  --titan-page-padding: clamp(0.75rem, 1.5vw, 2rem);
+  --titan-page-pad-x: clamp(0.75rem, 1.5vw, 2rem);
+  --titan-page-pad-y: clamp(0.75rem, 1.25vw, 1.5rem);
+  --titan-section-gap: clamp(1rem, 1.2vw, 1.5rem);
+  --titan-card-gap: clamp(0.75rem, 1vw, 1.25rem);
+  --titan-grid-gap: clamp(0.75rem, 1vw, 1.25rem);
+  --titan-table-gap: clamp(1rem, 1.1vw, 1.25rem);
+
+  /* Form / modal readability caps (not page shells) */
+  --titan-form-max-width: 40rem;
+  --titan-form-max-width-lg: 56rem;
+  --titan-modal-max-width: min(40rem, calc(100vw - 2rem));
+  --titan-modal-max-width-lg: min(56rem, calc(100vw - 2rem));
+
+  --titan-rhythm-title: 0;
+  --titan-rhythm-subtitle: 0.375rem;
+  --titan-rhythm-tabs: 1rem;
+  --titan-rhythm-filters: 0.875rem;
+  --titan-rhythm-cards: var(--titan-card-gap);
+  --titan-rhythm-tables: var(--titan-table-gap);
+
+  --titan-bp-mobile: 48rem; /* 768px */
+  --titan-bp-tablet: 64rem; /* 1024px */
+  --titan-bp-desktop-sm: 75rem; /* 1200px */
+  --titan-bp-desktop: 90rem; /* 1440px */
+  --titan-bp-desktop-lg: 120rem; /* 1920px */
+
+  --titan-summary-card-min: 16rem;
+  --titan-summary-grid-gap: var(--titan-rhythm-cards);
+  --titan-touch-target-min: 2.75rem; /* 44px */
+}
+
+/* Shell main padding — fluid with monitor size */
+.titan-shell__main {
+  padding: var(--titan-page-pad-y) var(--titan-page-pad-x);
+}
+
+.app-content-container {
+  width: 100%;
+  max-width: var(--titan-content-max-width);
+  margin-inline: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--titan-section-gap);
+  overflow-x: clip;
+}
+
+.app-content-container--narrow {
+  max-width: var(--titan-content-max-width-narrow);
+  margin-inline: auto;
+}
+
+.app-content-container--wide {
+  max-width: none;
+  margin-inline: 0;
+}
+
+/* OWNER-001 — tighten shell padding on the Owner Command Centre canvas */
+.app-content-container--wide:has(.exec-dashboard-page--owner001) {
+  gap: 0.75rem;
+}
+
+.titan-shell__main:has(.exec-dashboard-page--owner001) {
+  --titan-page-pad-x: clamp(0.5rem, 1vw, 1rem);
+  --titan-page-pad-y: clamp(0.5rem, 1vw, 0.875rem);
+}
+
+/*
+ * YG-CUTOVER-001B — phone/tablet gutters for the command-centre canvas.
+ * Desktop OWNER-001 dense clamp above stays unchanged (≥761px).
+ * On narrow viewports, 1vw collapses toward ~4px and the 0.5rem floor is too tight
+ * once safe-area / overflow clipping is considered — restore readable pad-x.
+ */
+@media (max-width: 760px) {
+  .titan-shell__main:has(.exec-dashboard-page--owner001) {
+    --titan-page-pad-x: 1rem;
+    --titan-page-pad-y: 0.75rem;
+  }
+}
+
+@media (max-width: 430px) {
+  .titan-shell__main:has(.exec-dashboard-page--owner001) {
+    --titan-page-pad-x: 1rem;
+    --titan-page-pad-y: 0.625rem;
+  }
+}
+
+.page-shell,
+.automation-page,
+.finance-page,
+.scheduling-page,
+.dashboard,
+.settings-page,
+.integrations-page,
+.crm-page,
+.fleet-page,
+.analytics-page,
+.inventory-page,
+.aura-page,
+.leads-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--titan-section-gap);
+  min-width: 0;
+  width: 100%;
+  max-width: none;
+}
+
+.ux-page-header {
+  margin-bottom: var(--titan-rhythm-subtitle);
+}
+
+.page-shell .titan-tab-nav,
+.automation-page .titan-tab-nav {
+  margin-bottom: var(--titan-rhythm-tabs);
+}
+
+/* Tables / panels expand with the shell */
+.crm-table-wrap,
+.finance-table-wrap,
+.fleet-table-wrap,
+.jobs-table-wrap,
+.inventory-table-wrap,
+.analytics-page__table-wrap,
+.table-scroll {
+  width: 100%;
+  min-width: 0;
+}
+
+.crm-table,
+.finance-table,
+.fleet-table,
+.inventory-table,
+.analytics-page__table,
+.leads-table {
+  width: 100%;
+}
+
+/* Form readability — page shells stay full width */
+.crm-form,
+.fleet-form,
+.inventory-form,
+.jobs-form,
+.leads-form,
+.scheduling-form,
+.settings-form {
+  max-width: var(--titan-form-max-width);
+  width: 100%;
+}
+
+.mission-control-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--titan-section-gap);
+  width: 100%;
+}
+
+.mission-control-dashboard__split {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--titan-section-gap);
+  align-items: start;
+}
+
+.mission-control-dashboard__split .titan-panel {
+  height: 100%;
+}
+
+.mission-control-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.aura-business-dashboard {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: var(--titan-section-gap);
+  align-items: start;
+}
+
+.aura-business-dashboard .aura-intelligence__summary {
+  grid-column: 1 / -1;
+}
+
+.mission-control-stats {
+  justify-items: stretch;
+}
+
+@media (max-width: 767px) {
+  .aura-business-dashboard {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ux-summary-grid,
+.stat-grid {
+  display: grid;
+  gap: var(--titan-summary-grid-gap);
+  width: 100%;
+  min-width: 0;
+  justify-items: stretch;
+}
+
+.ux-summary-grid > *,
+.stat-grid > * {
+  min-width: 0;
+}
+
+.ux-summary-grid--cols-4,
+.stat-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 768px) {
+  .ux-summary-grid--cols-4,
+  .stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1199px) {
+  .ux-summary-grid--cols-4,
+  .stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1200px) and (max-width: 1439px) {
+  .ux-summary-grid--cols-4,
+  .stat-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1440px) {
+  .ux-summary-grid--cols-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .stat-grid {
+    grid-template-columns: repeat(auto-fit, minmax(var(--titan-summary-card-min), 1fr));
+  }
+}
+
+.ux-summary-grid--cols-3 {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 768px) {
+  .ux-summary-grid--cols-3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .ux-summary-grid--cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.ux-summary-grid--cols-2 {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 768px) {
+  .ux-summary-grid--cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.dashboard-stats.ux-summary-grid {
+  gap: 0.875rem;
+}
+
+.dashboard-stat-card,
+.exec-dashboard-glance__link,
+.stat-grid .stat-card {
+  min-width: 0;
+}
+
+@media (max-width: 767px) {
+  .dashboard-stat-card__link,
+  .exec-dashboard-glance__link {
+    min-height: var(--titan-touch-target-min);
+  }
+}
+
+@media (max-width: 767px) {
+  .mission-control-dashboard__split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.company-health-areas {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--titan-section-gap);
+  width: 100%;
+}
+
+@media (max-width: 767px) {
+  .company-health-areas {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 1023px) {
+  .company-health-areas {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Large-desktop / ultrawide — denser auto-fit grids without stretching cards */
+@media (min-width: 1600px) {
+  .analytics-page__grid {
+    grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+  }
+
+  .analytics-page__stats {
+    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  }
+}
+
+@media (min-width: 1920px) {
+  .analytics-page__grid {
+    grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr));
+  }
+}
+
+/* Scheduling calendar grows with available height/width */
+@media (min-width: 1440px) {
+  .cal-shell {
+    min-height: min(70vh, 44rem);
+  }
+
+  .cal-shell__main {
+    min-height: min(62vh, 38rem);
+  }
+
+  .cal-month-grid__cell {
+    min-height: 7rem;
+  }
+
+  .scheduling-calendar__day {
+    min-height: 10rem;
+  }
+}
+
+@media (min-width: 1920px) {
+  .cal-shell {
+    min-height: min(74vh, 52rem);
+  }
+
+  .cal-shell__main {
+    min-height: min(66vh, 46rem);
+  }
+
+  .cal-month-grid__cell {
+    min-height: 8.5rem;
+  }
+
+  .scheduling-calendar__day {
+    min-height: 12rem;
+  }
+}
+
+/* Fleet / dispatch boards — map and boards fill the column */
+.fleet-page .titan-panel,
+.fleet-dispatch-board,
+.dispatch-board {
+  width: 100%;
+  min-width: 0;
+}
+
+/*
+ * Only the live map area gets a floor. Panels in the wide column used to inherit a
+ * min-height too, which padded Active Jobs and Schedule Overview with empty space.
+ */
+@media (min-width: 1440px) {
+  .exec-live-ops-fleet {
+    min-height: 20rem;
+  }
+}

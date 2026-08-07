@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>MOBILE-001 Visual Harness</title>
+    <style>
+      :root {
+        --titan-bg: #0f172a;
+        --titan-bg-elevated: #111827;
+        --titan-surface: #1e293b;
+        --titan-surface-muted: #334155;
+        --titan-border: #334155;
+        --titan-border-subtle: #1f2937;
+        --titan-text: #e2e8f0;
+        --titan-text-secondary: #94a3b8;
+        --titan-text-muted: #64748b;
+        --titan-accent-soft: rgba(148, 163, 184, 0.2);
+        --titan-touch-target-min: 2.75rem;
+      }
+      * { box-sizing: border-box; }
+      html, body {
+        margin: 0;
+        background: var(--titan-bg);
+        color: var(--titan-text);
+        font-family: Georgia, 'Times New Roman', serif;
+        overflow-x: clip;
+      }
+      .shell {
+        display: flex;
+        flex-direction: column;
+        min-height: 100dvh;
+        padding-top: env(safe-area-inset-top, 0px);
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+      }
+      .header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        min-height: calc(3.5rem + env(safe-area-inset-top, 0px));
+        padding: 0.5rem 1rem;
+        padding-top: calc(0.5rem + env(safe-area-inset-top, 0px));
+        border-bottom: 1px solid var(--titan-border);
+        background: linear-gradient(180deg, var(--titan-bg-elevated), var(--titan-bg));
+      }
+      .menu {
+        display: none;
+        align-items: center;
+        gap: 0.4rem;
+        min-height: var(--titan-touch-target-min);
+        min-width: var(--titan-touch-target-min);
+        padding: 0 0.65rem;
+        border: 1px solid var(--titan-border);
+        border-radius: 0.5rem;
+        background: var(--titan-surface);
+        color: var(--titan-text);
+      }
+      .brand { font-weight: 700; letter-spacing: 0.04em; }
+      .body { display: flex; flex: 1; min-height: 0; }
+      .sidebar {
+        width: 15rem;
+        border-right: 1px solid var(--titan-border);
+        padding: 0.75rem;
+        background: var(--titan-bg-elevated);
+      }
+      .sidebar a {
+        display: flex;
+        align-items: center;
+        min-height: var(--titan-touch-target-min);
+        padding: 0.4rem 0.65rem;
+        color: var(--titan-text-secondary);
+        text-decoration: none;
+        border-radius: 0.4rem;
+      }
+      .sidebar a.active { background: var(--titan-accent-soft); color: var(--titan-text); }
+      .main {
+        flex: 1;
+        min-width: 0;
+        padding: 1rem;
+        overflow: auto;
+      }
+      .exec-dashboard--owner001 {
+        display: grid;
+        gap: 0.75rem;
+      }
+      .card {
+        border: 1px solid var(--titan-border);
+        border-radius: 0.65rem;
+        background: var(--titan-surface);
+        padding: 0.85rem 1rem;
+      }
+      .card h2 {
+        margin: 0 0 0.35rem;
+        font-size: 1rem;
+      }
+      .card p {
+        margin: 0;
+        color: var(--titan-text-secondary);
+        font-size: 0.875rem;
+      }
+      .map {
+        min-height: 16rem;
+        height: clamp(16rem, 28vh, 22rem);
+        background:
+          linear-gradient(135deg, #1e293b, #0f172a 55%, #334155);
+        border-radius: 0.5rem;
+        display: grid;
+        place-items: center;
+        color: var(--titan-text-muted);
+      }
+      .aura-chat {
+        display: flex;
+        flex-direction: column;
+        min-height: 18rem;
+        border: 1px solid var(--titan-border);
+        border-radius: 0.75rem;
+        overflow: hidden;
+        background: var(--titan-surface);
+      }
+      .aura-messages {
+        flex: 1;
+        overflow: auto;
+        padding: 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+      .bubble {
+        max-width: 80%;
+        padding: 0.75rem 1rem;
+        border-radius: 0.875rem;
+        background: var(--titan-surface-muted);
+        white-space: pre-wrap;
+      }
+      .bubble.user { align-self: flex-end; }
+      .aura-composer {
+        border-top: 1px solid var(--titan-border-subtle);
+        padding: 0.75rem 1rem;
+        padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+        position: sticky;
+        bottom: 0;
+        background: var(--titan-surface);
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+      .aura-composer textarea {
+        width: 100%;
+        min-height: 4.5rem;
+        resize: vertical;
+        border-radius: 0.75rem;
+        border: 1px solid var(--titan-border);
+        background: var(--titan-bg);
+        color: var(--titan-text);
+        padding: 0.75rem;
+        font: inherit;
+      }
+      .aura-composer button {
+        align-self: flex-end;
+        min-height: var(--titan-touch-target-min);
+        padding: 0 1rem;
+        border-radius: 0.5rem;
+        border: 0;
+        background: #e2e8f0;
+        color: #0f172a;
+        font-weight: 700;
+      }
+      .meta {
+        margin: 0 0 0.75rem;
+        font-size: 0.75rem;
+        color: var(--titan-text-muted);
+      }
+      @media (max-width: 1024px) {
+        .menu { display: inline-flex; }
+        .sidebar {
+          position: fixed;
+          top: calc(3.5rem + env(safe-area-inset-top, 0px));
+          left: 0;
+          bottom: 0;
+          transform: translateX(-100%);
+          z-index: 40;
+          overflow-y: auto;
+        }
+        .shell.nav-open .sidebar { transform: translateX(0); }
+      }
+      @media (max-width: 760px) {
+        .exec-dashboard--owner001 {
+          display: flex;
+          flex-direction: column;
+        }
+        .region-greeting { order: 0; }
+        .region-aura { order: 1; }
+        .region-heartbeat { order: 2; }
+        .region-attention { order: 3; }
+        .region-jobs { order: 4; }
+        .region-finance { order: 5; }
+        .region-ops { order: 6; }
+        .region-tools { order: 7; }
+        .desktop-only-note { display: none; }
+      }
+      @media (min-width: 761px) {
+        .mobile-order-badge { display: none; }
+      }
+      .mobile-order-badge {
+        display: inline-block;
+        margin-left: 0.35rem;
+        padding: 0.1rem 0.4rem;
+        border-radius: 999px;
+        background: var(--titan-accent-soft);
+        font-size: 0.7rem;
+        color: var(--titan-text);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell" id="shell">
+      <header class="header">
+        <button class="menu" type="button" id="menuBtn" aria-label="Open navigation">☰ Menu</button>
+        <div class="brand">TITAN</div>
+        <div style="margin-left:auto;font-size:0.8rem;color:var(--titan-text-secondary)">MOBILE-001 harness</div>
+      </header>
+      <div class="body">
+        <nav class="sidebar" aria-label="Main">
+          <a class="active" href="#">Dashboard</a>
+          <a href="#">Jobs</a>
+          <a href="#">CRM</a>
+          <a href="#">Finance</a>
+          <a href="#">Communications</a>
+          <a href="#">Integrations</a>
+        </nav>
+        <main class="main">
+          <p class="meta" id="viewportMeta">viewport</p>
+          <div class="exec-dashboard--owner001">
+            <section class="card region-greeting"><h2>Greeting</h2><p>Owner command centre</p></section>
+            <section class="card region-heartbeat"><h2>Business Heartbeat <span class="mobile-order-badge">2</span></h2><p>Jobs today · cash · risk</p></section>
+            <section class="card region-finance"><h2>Financial Truth <span class="mobile-order-badge">5</span></h2><p>R values remain readable</p></section>
+            <section class="card region-attention"><h2>Attention Required <span class="mobile-order-badge">3</span></h2><p>Alerts + sales opportunities</p></section>
+            <section class="card region-ops">
+              <h2>Fleet / Live Map <span class="mobile-order-badge">6</span></h2>
+              <div class="map">Live Fleet Map (desktop height preserved via clamp)</div>
+            </section>
+            <section class="card region-aura">
+              <h2>AURA <span class="mobile-order-badge">1</span></h2>
+              <p class="desktop-only-note">Desktop order keeps AURA with executive surface mid-page; phone reorders to top.</p>
+              <div class="aura-chat">
+                <div class="aura-messages">
+                  <div class="bubble">Summarise attention items for today.</div>
+                  <div class="bubble user">Show overdue invoices and open jobs.</div>
+                </div>
+                <div class="aura-composer">
+                  <textarea placeholder="Message AURA…"></textarea>
+                  <button type="button">Send</button>
+                </div>
+              </div>
+            </section>
+            <section class="card region-jobs"><h2>Active Jobs <span class="mobile-order-badge">4</span></h2><p>Job cards, not tiny tables</p></section>
+            <section class="card region-tools"><h2>Connections / Quick Links <span class="mobile-order-badge">7</span></h2><p>Tools stay last on phone</p></section>
+          </div>
+        </main>
+      </div>
+    </div>
+    <script>
+      const shell = document.getElementById('shell');
+      document.getElementById('menuBtn').addEventListener('click', () => {
+        shell.classList.toggle('nav-open');
+      });
+      const meta = document.getElementById('viewportMeta');
+      const paint = () => {
+        meta.textContent = `viewport ${window.innerWidth}×${window.innerHeight} · scrollWidth ${document.documentElement.scrollWidth}`;
+      };
+      paint();
+      window.addEventListener('resize', paint);
+    </script>
+  </body>
+</html>

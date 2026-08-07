@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'wouter';
-import { Button, EmptyState, PageHeader, Panel } from '@titan/ui';
+import { Button, EmptyState, Panel } from '@titan/ui';
 import { COMMUNICATION_CHANNEL_OPTIONS, type MessageTemplateSummary } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import { fetchMessageTemplates } from '../../lib/communications-api';
@@ -73,7 +74,7 @@ export function TemplateListPage() {
         actions={
           canWrite ? (
             <Link href="/communications/templates/new">
-              <Button>New template</Button>
+              <Button>New Template</Button>
             </Link>
           ) : undefined
         }
@@ -86,18 +87,18 @@ export function TemplateListPage() {
       {!isLoading && !error ? (
         templates.length === 0 ? (
           <EmptyState
-            title="No templates yet"
+            title="No Templates Yet"
             description="Create reusable message templates for common customer communications."
             action={
               canWrite ? (
                 <Link href="/communications/templates/new">
-                  <Button>New template</Button>
+                  <Button>New Template</Button>
                 </Link>
               ) : undefined
             }
           />
         ) : (
-          <Panel title="Message templates">
+          <Panel title="Message Templates">
             <div className="communications-table-wrap">
               <table className="communications-table">
                 <thead>

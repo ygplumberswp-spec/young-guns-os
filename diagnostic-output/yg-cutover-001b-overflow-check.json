@@ -1,0 +1,77 @@
+{
+  "label": "YG-CUTOVER-001B-overflow-check",
+  "fixture": "/workspace/diagnostic-output/yg-cutover-001b-overflow-fixture.html",
+  "results": [
+    {
+      "width": 360,
+      "overflow": false,
+      "leftClip": false,
+      "scrollWidth": 360,
+      "clientWidth": 360,
+      "mainPadLeft": "16px",
+      "titleLeft": 33,
+      "titleVisible": true
+    },
+    {
+      "width": 390,
+      "overflow": false,
+      "leftClip": false,
+      "scrollWidth": 390,
+      "clientWidth": 390,
+      "mainPadLeft": "16px",
+      "titleLeft": 33,
+      "titleVisible": true
+    },
+    {
+      "width": 430,
+      "overflow": false,
+      "leftClip": false,
+      "scrollWidth": 430,
+      "clientWidth": 430,
+      "mainPadLeft": "16px",
+      "titleLeft": 33,
+      "titleVisible": true
+    },
+    {
+      "width": 768,
+      "overflow": false,
+      "leftClip": false,
+      "scrollWidth": 768,
+      "clientWidth": 768,
+      "mainPadLeft": "8px",
+      "titleLeft": 25,
+      "titleVisible": true
+    },
+    {
+      "width": 1024,
+      "overflow": false,
+      "leftClip": false,
+      "scrollWidth": 1024,
+      "clientWidth": 1024,
+      "mainPadLeft": "10.24px",
+      "titleLeft": 27.234375,
+      "titleVisible": true
+    },
+    {
+      "width": 1366,
+      "overflow": false,
+      "leftClip": false,
+      "scrollWidth": 1366,
+      "clientWidth": 1366,
+      "mainPadLeft": "13.66px",
+      "titleLeft": 278.65625,
+      "titleVisible": true
+    },
+    {
+      "width": 1920,
+      "overflow": false,
+      "leftClip": false,
+      "scrollWidth": 1920,
+      "clientWidth": 1920,
+      "mainPadLeft": "16px",
+      "titleLeft": 281,
+      "titleVisible": true
+    }
+  ],
+  "pass": true
+}

@@ -1,4 +1,5 @@
-import { PageHeader, Panel } from '@titan/ui';
+import { PageHeader } from '../../components/ux';
+import { Panel } from '@titan/ui';
 import { APP_NAME } from '@titan/shared';
 
 export function AboutSettingsPage() {
@@ -9,7 +10,7 @@ export function AboutSettingsPage() {
         <p className="page-muted">
           {APP_NAME} provides operational, financial, and intelligence tools for service businesses.
         </p>
-        <p className="product-attribution">Created by Young Guns Plumbing</p>
+        <p className="product-attribution">Built by Young Guns Plumbing</p>
       </Panel>
     </>
   );

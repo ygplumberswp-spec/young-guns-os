@@ -248,9 +248,16 @@ async function executeQueryFetch<T>(
         if (fallback !== undefined) {
           return fallback;
         }
+        // Surface a real AbortError so useCachedQuery exits loading without a false timeout.
+        throw new DOMException('The operation was aborted.', 'AbortError');
       }
 
-      if (error instanceof DOMException && error.name === 'TimeoutError') {
+      const timedOut =
+        (error instanceof DOMException && error.name === 'TimeoutError') ||
+        (error instanceof Error &&
+          (error.name === 'TimeoutError' ||
+            ('code' in error && (error as { code?: string }).code === 'REQUEST_TIMEOUT')));
+      if (timedOut) {
         recordQueryCacheTimeoutFailure();
       }
 
