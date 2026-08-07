@@ -264,6 +264,7 @@ export type CreateMobileTimeEntryRequest = {
   endedAt?: string;
   durationMinutes?: number;
   notes?: string;
+  metadata?: Record<string, unknown>;
 };
 
 export type SubmitMobileInventoryUsageRequest = {

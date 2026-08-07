@@ -35,7 +35,9 @@ import type {
 } from '@titan/shared';
 import {
   buildGoogleMapsNavigateUrl,
+  buildLabourRateLockMetadata,
   formatMapsEtaCapabilityLabel,
+  isFinanciallyAuthoritativeTimeEntry,
   unresolvedVehicleAddress,
   validateFinancePhotoFile,
   validateFinancePhotoMagicBytes,
@@ -44,6 +46,7 @@ import { classifyOfflineFlushByExistingLog } from './job-execution-completion-id
 import type { DatabaseClient } from '@titan/db';
 import {
   customers,
+  companyFinanceSettings,
   integrationConnections,
   inventoryItems,
   inventoryLocations,
@@ -478,6 +481,23 @@ export class MobileWorkforceService {
       input.durationMinutes ??
       (endedAt ? Math.max(1, Math.round((endedAt.getTime() - startedAt.getTime()) / 60000)) : null);
 
+    const clientMetadata =
+      input.metadata && typeof input.metadata === 'object' ? { ...input.metadata } : {};
+
+    let metadata: Record<string, unknown> = clientMetadata;
+    if (isFinanciallyAuthoritativeTimeEntry(input.entryType, endedAt, durationMinutes)) {
+      const settings = await this.db.query.companyFinanceSettings.findFirst({
+        where: eq(companyFinanceSettings.companyId, scope.companyId),
+        columns: { defaultInternalLabourRateCentsPerHour: true },
+      });
+      const companyDefaultRate = settings?.defaultInternalLabourRateCentsPerHour ?? 8000;
+      metadata = buildLabourRateLockMetadata({
+        existingMetadata: clientMetadata,
+        companyDefaultRateCentsPerHour: companyDefaultRate,
+        lockedAt: (endedAt ?? new Date()).toISOString(),
+      });
+    }
+
     const [created] = await this.db
       .insert(mobileTimeEntries)
       .values({
@@ -489,6 +509,7 @@ export class MobileWorkforceService {
         endedAt,
         durationMinutes,
         notes: input.notes?.trim() || null,
+        metadata,
       })
       .returning();
 

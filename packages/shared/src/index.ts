@@ -54,6 +54,7 @@ export * from './job-payment-ledger.js';
 export * from './inventory.js';
 export * from './job-costing.js';
 export * from './job-profitability.js';
+export * from './job-profitability-source-integrity.js';
 export * from './job-document-pack.js';
 export * from './completion-report.js';
 export * from './operational-report.js';

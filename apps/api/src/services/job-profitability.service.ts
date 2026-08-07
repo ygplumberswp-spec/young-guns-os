@@ -5,9 +5,12 @@ import type {
   JobProfitabilityResult,
 } from '@titan/shared';
 import {
+  applyAuditedLabourRateCorrection,
+  assessLabourRateConfidence,
   computeJobProfitability,
+  isFinanciallyAuthoritativeTimeEntry,
   JPE_CALCULATION_VERSION,
-  resolveLabourHourlyCostCents,
+  resolveProvisionalLabourHourlyCostCents,
 } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
 import {
@@ -69,6 +72,47 @@ export class JobProfitabilityService {
     const result = await this.buildProfitability(companyId, jobId, options);
     await this.persistSnapshot(companyId, jobId, result);
     return result;
+  }
+
+  /** Audited manual correction of a locked labour rate on a time entry. */
+  async correctTimeEntryLabourRate(
+    actor: JobProfitabilityActor,
+    jobId: string,
+    timeEntryId: string,
+    input: { hourlyCostCents: number; reason: string },
+  ): Promise<void> {
+    await this.requireJob(actor.companyId, jobId);
+
+    const entry = await this.db.query.mobileTimeEntries.findFirst({
+      where: and(
+        eq(mobileTimeEntries.companyId, actor.companyId),
+        eq(mobileTimeEntries.id, timeEntryId),
+        eq(mobileTimeEntries.jobId, jobId),
+      ),
+    });
+    if (!entry) {
+      throw new JobProfitabilityError('NOT_FOUND', 'Time entry not found for this job');
+    }
+
+    const correctedMetadata = applyAuditedLabourRateCorrection(entry.metadata, {
+      newHourlyCostCents: input.hourlyCostCents,
+      correctedByUserId: actor.userId,
+      reason: input.reason,
+    });
+
+    await this.db
+      .update(mobileTimeEntries)
+      .set({ metadata: correctedMetadata })
+      .where(eq(mobileTimeEntries.id, timeEntryId));
+
+    await this.recordAudit(actor, 'jpe_labour_rate_corrected', timeEntryId, {
+      jobId,
+      previousMetadata: entry.metadata,
+      correctedMetadata,
+      reason: input.reason.trim(),
+    });
+
+    await this.recalculateJobProfitability(actor.companyId, jobId, { includeSensitiveCosts: true });
   }
 
   async createCostAdjustment(
@@ -246,19 +290,34 @@ export class JobProfitabilityService {
           isOptional: line.isOptional,
         })),
       })),
-      labourEntries: labourRows.map((row) => ({
-        id: row.id,
-        userId: row.userId,
-        durationMinutes: row.durationMinutes ?? 0,
-        startedAt: row.startedAt.toISOString(),
-        endedAt: row.endedAt?.toISOString() ?? null,
-        approved: true,
-        hourlyCostCents: resolveLabourHourlyCostCents(row.metadata, labourRateCentsPerHour),
-        overtimeMultiplier:
-          typeof row.metadata?.overtimeMultiplier === 'number'
-            ? row.metadata.overtimeMultiplier
-            : 1,
-      })),
+      labourEntries: labourRows.map((row) => {
+        const metadata = (row.metadata ?? {}) as Record<string, unknown>;
+        return {
+          id: row.id,
+          userId: row.userId,
+          entryType: row.entryType,
+          durationMinutes: row.durationMinutes ?? 0,
+          startedAt: row.startedAt.toISOString(),
+          endedAt: row.endedAt?.toISOString() ?? null,
+          approved: isFinanciallyAuthoritativeTimeEntry(
+            row.entryType,
+            row.endedAt,
+            row.durationMinutes,
+          ),
+          metadata,
+          labourRateConfidence: assessLabourRateConfidence(
+            metadata,
+            row.entryType,
+            row.durationMinutes ?? 0,
+            row.endedAt?.toISOString() ?? null,
+          ),
+          hourlyCostCents: resolveProvisionalLabourHourlyCostCents(metadata, labourRateCentsPerHour),
+          overtimeMultiplier:
+            typeof row.metadata?.overtimeMultiplier === 'number'
+              ? row.metadata.overtimeMultiplier
+              : 1,
+        };
+      }),
       directCosts: directCostRows.map((row) => ({
         id: row.id,
         category: row.category,

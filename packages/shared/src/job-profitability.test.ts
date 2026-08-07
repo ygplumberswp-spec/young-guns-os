@@ -477,7 +477,7 @@ describe('job profitability engine', () => {
 
     assert.equal(result.snapshot.isLiveCalculation, true);
     assert.equal(result.snapshot.sourceFingerprint, '1735689600000');
-    assert.equal(result.snapshot.calculationVersion, 3);
+    assert.equal(result.snapshot.calculationVersion, 4);
   });
 
   it('computes loss on ex-VAT economic basis', () => {
@@ -870,6 +870,6 @@ describe('JPE-001C accounting integrity', () => {
     const result = computeJobProfitability(baseInput({ sourceFingerprint: '999' }));
     assert.equal(result.snapshot.isLiveCalculation, true);
     assert.equal(result.snapshot.sourceFingerprint, '999');
-    assert.equal(result.snapshot.calculationVersion, 3);
+    assert.equal(result.snapshot.calculationVersion, 4);
   });
 });

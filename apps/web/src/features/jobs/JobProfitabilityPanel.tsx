@@ -31,6 +31,31 @@ function formatPct(value: number | null): string {
   return `${value.toFixed(1)}%`;
 }
 
+function confidenceClass(status: JobProfitabilityResult['profitabilityConfidence']['status']): string {
+  switch (status) {
+    case 'complete':
+      return 'jobs-status jobs-status--completed';
+    case 'provisional':
+      return 'jobs-status jobs-status--in_progress';
+    case 'incomplete':
+      return 'jobs-status jobs-status--cancelled';
+    default:
+      return 'jobs-status';
+  }
+}
+
+function confidenceLabel(status: JobProfitabilityResult['profitabilityConfidence']['status']): string {
+  switch (status) {
+    case 'complete':
+      return 'Verified';
+    case 'provisional':
+      return 'Provisional';
+    case 'incomplete':
+      return 'Incomplete';
+    default:
+      return status;
+  }
+}
 function statusClass(status: JobProfitabilityResult['summary']['status']): string {
   switch (status) {
     case 'excellent':
@@ -137,7 +162,7 @@ export function JobProfitabilityPanel({
     );
   }
 
-  const { summary, expected, variance, cash, completeness, completenessWarnings, leakage } =
+  const { summary, expected, variance, cash, completeness, completenessWarnings, leakage, profitabilityConfidence } =
     profitability;
   const currency = summary.currency;
 
@@ -148,6 +173,26 @@ export function JobProfitabilityPanel({
         description="Accrual and cash views from real job invoices, costs, time entries and adjustments."
       >
         {error ? <p className="form-error">{error}</p> : null}
+
+        <div style={{ marginBottom: '1rem' }}>
+          <span className={confidenceClass(profitabilityConfidence.status)}>
+            {confidenceLabel(profitabilityConfidence.status)}
+          </span>
+          {profitabilityConfidence.issues.length > 0 ? (
+            <ul className="portal-list" style={{ marginTop: '0.5rem' }}>
+              {profitabilityConfidence.issues
+                .filter((issue) => issue.severity !== 'info')
+                .slice(0, 4)
+                .map((issue) => (
+                  <li key={`${issue.type}-${issue.message}`}>{issue.message}</li>
+                ))}
+            </ul>
+          ) : (
+            <p className="page-muted" style={{ marginTop: '0.35rem' }}>
+              All required source data is authoritative for this calculation.
+            </p>
+          )}
+        </div>
 
         <dl className="jobs-detail-list">
           <div>
@@ -203,7 +248,12 @@ export function JobProfitabilityPanel({
           </div>
           <div>
             <dt>Realised cash profit</dt>
-            <dd>{formatMoney(cash.realisedCashProfitCents, currency)}</dd>
+            <dd>
+              {formatMoney(cash.knownRealisedCashProfitCents, currency)}
+              {cash.cashSpentCompleteness !== 'complete_boolean' ? (
+                <span className="page-muted"> · cash settlement limited</span>
+              ) : null}
+            </dd>
           </div>
           <div>
             <dt>Uncollected revenue</dt>
