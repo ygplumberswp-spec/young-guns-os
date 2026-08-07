@@ -59,6 +59,25 @@ export function AppLayout({ children }: AppLayoutProps) {
     setPendingHref(null);
   }, [location]);
 
+  // MOBILE-001: close drawer on route change so content is never trapped under nav.
+  useEffect(() => {
+    setMobileNavOpen(false);
+  }, [location]);
+
+  useEffect(() => {
+    if (!mobileNavOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMobileNavOpen(false);
+    };
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [mobileNavOpen]);
+
   const activeLocation = pendingHref ?? location;
 
   // `navItems` stays the full permission-filtered registry. The sidebar shows
@@ -104,9 +123,13 @@ export function AppLayout({ children }: AppLayoutProps) {
               className="app-header__menu-toggle"
               aria-label={mobileNavOpen ? 'Close navigation' : 'Open navigation'}
               aria-expanded={mobileNavOpen}
+              aria-controls="owner-mobile-nav"
               onClick={() => setMobileNavOpen((open) => !open)}
             >
-              Menu
+              <span aria-hidden="true" className="app-header__menu-glyph">
+                {mobileNavOpen ? '✕' : '☰'}
+              </span>
+              <span className="app-header__menu-label">{mobileNavOpen ? 'Close' : 'Menu'}</span>
             </button>
             <div className="app-header__brand">
               <TitanWordmark variant="compact" className="app-header__wordmark" />
@@ -168,7 +191,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         </div>
       }
       sidebar={
-        <div className="app-sidebar">
+        <div className="app-sidebar" id="owner-mobile-nav">
           <div className="app-nav__toolbar">
             <button
               type="button"

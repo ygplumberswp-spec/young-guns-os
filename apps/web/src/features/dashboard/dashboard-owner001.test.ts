@@ -74,6 +74,21 @@ describe('OWNER-001 Owner Command Centre finalisation', () => {
     );
   });
 
+  it('MOBILE-001: phone hierarchy puts AURA before heartbeat/jobs/finance', () => {
+    const mobileBlock = css.match(
+      /@media \(max-width: 760px\)\s*\{[\s\S]*?\.exec-dashboard-region--tools[\s\S]*?order:\s*7;/,
+    )?.[0];
+    assert.ok(mobileBlock, 'expected 760px owner001 order block');
+    const aura = mobileBlock.indexOf('.exec-dashboard-region--aura');
+    const heartbeat = mobileBlock.indexOf('.exec-dashboard-region--heartbeat');
+    const jobs = mobileBlock.indexOf('.exec-dashboard-region--jobs');
+    const finance = mobileBlock.indexOf('.exec-dashboard-region--finance');
+    assert.ok(aura >= 0 && heartbeat > aura, 'AURA region must precede heartbeat');
+    assert.ok(jobs > heartbeat, 'jobs must follow heartbeat/attention block');
+    assert.ok(finance > jobs, 'finance must follow jobs on phone');
+    assert.match(mobileBlock, /\.exec-dashboard-region--aura\s*\{\s*order:\s*1;/);
+  });
+
   it('uses compact empty states for jobs panels', () => {
     assert.match(activeJobsSource, /exec-panel-empty--compact/);
     assert.match(activeJobsSource, /No active jobs/);

@@ -37,6 +37,7 @@ import {
   readCachedMobileWorkspace,
   type OfflineQueuedAction,
 } from '../../lib/mobile-offline-queue';
+import { evaluateMobileCompletionSubmit } from '../../lib/mobile-offline-completion';
 import { SignaturePad } from '../../features/jobs/SignaturePad';
 import { useAuth } from '../../lib/auth-context';
 import { ReportExportActions } from '../../features/reports/ReportExportActions';
@@ -629,18 +630,23 @@ export function MobileJobDetailPage() {
   async function handleComplete(event: FormEvent) {
     event.preventDefault();
     if (!accessToken || !jobId || busy || !workspace) return;
-    if (hasUnsyncedEvidence(offlineActions, jobId)) {
-      setError(
-        'Required evidence is still Offline/Pending/Failed. Sync must succeed before completion can appear successful.',
-      );
-      return;
-    }
-    if (!signatureDocId && !completeForm.signatureUnavailableReason.trim()) {
-      setError('Capture a signature or provide a mandatory unavailable reason');
-      return;
-    }
-    if (!navigator.onLine) {
-      setError('Final completion requires a live connection after required evidence is synced');
+    const gate = evaluateMobileCompletionSubmit({
+      jobId,
+      offlineActions,
+      signatureDocId,
+      signatureUnavailableReason: completeForm.signatureUnavailableReason,
+      isOnline: navigator.onLine,
+    });
+    if (!gate.allowed) {
+      if (gate.reason === 'unsynced_evidence') {
+        setError(
+          'Required evidence is still Offline/Pending/Failed. Sync must succeed before completion can appear successful.',
+        );
+      } else if (gate.reason === 'missing_signature') {
+        setError('Capture a signature or provide a mandatory unavailable reason');
+      } else {
+        setError('Final completion requires a live connection after required evidence is synced');
+      }
       return;
     }
     setBusy(true);

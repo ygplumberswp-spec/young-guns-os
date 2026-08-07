@@ -37,6 +37,7 @@ test('Phase 3 — owner and portal app shells use compact TitanWordmark', () => 
   const appLayout = readFileSync(join(webRoot, 'layouts/AppLayout.tsx'), 'utf8');
   assert.match(appLayout, /owner-shell--mobile-nav-open/);
   assert.match(appLayout, /app-header__menu-toggle/);
+  assert.match(appLayout, /app-header__menu-glyph/);
 });
 
 test('Phase 3 — responsive auth and owner shell CSS contracts', () => {

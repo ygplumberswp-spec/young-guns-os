@@ -898,6 +898,16 @@ a:focus-visible {
 @media (max-width: 1024px) {
   .app-header__menu-toggle {
     display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-height: var(--titan-touch-target-min, 2.75rem);
+    min-width: var(--titan-touch-target-min, 2.75rem);
+    padding-inline: 0.65rem;
+  }
+
+  .app-header__menu-glyph {
+    font-size: 1.125rem;
+    line-height: 1;
   }
 
   .app-nav__collapse-toggle {
@@ -908,15 +918,26 @@ a:focus-visible {
     max-width: 14rem;
   }
 
+  /* MOBILE-001: header grows with notch safe-area; drawer/backdrop track it */
+  .owner-shell .titan-shell__header {
+    height: auto;
+    min-height: calc(3.5rem + env(safe-area-inset-top, 0px));
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-left: max(1.25rem, env(safe-area-inset-left, 0px));
+    padding-right: max(1.25rem, env(safe-area-inset-right, 0px));
+  }
+
   .owner-shell .titan-shell__sidebar {
     position: fixed;
-    top: 3.5rem;
+    top: calc(3.5rem + env(safe-area-inset-top, 0px));
     left: 0;
     bottom: 0;
-    width: 15rem;
+    width: min(15rem, 86vw);
     transform: translateX(-100%);
     transition: transform 0.2s ease;
     z-index: 40;
+    overflow-y: auto;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
   .owner-shell--mobile-nav-open .titan-shell__sidebar {
@@ -926,11 +947,15 @@ a:focus-visible {
   .owner-shell__backdrop {
     display: block;
     position: fixed;
-    inset: 3.5rem 0 0 0;
+    inset: calc(3.5rem + env(safe-area-inset-top, 0px)) 0 0 0;
     border: 0;
     background: rgba(17, 24, 39, 0.35);
     z-index: 35;
     cursor: pointer;
+  }
+
+  .owner-shell .titan-shell__main {
+    padding-bottom: calc(var(--titan-page-pad-y, 1.5rem) + env(safe-area-inset-bottom, 0px));
   }
 
   .dashboard-stats {
@@ -939,10 +964,16 @@ a:focus-visible {
 }
 
 @media (max-width: 640px) {
+  /* Keep header compact — hide secondary brand lines that previously stacked past 3.5rem */
+  .owner-shell .app-header__brand .brand-sub,
+  .owner-shell .app-header__brand .brand-credit {
+    display: none;
+  }
+
   .app-header__brand {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.35rem;
   }
 
   .brand-sub {
@@ -4106,10 +4137,10 @@ a:focus-visible {
 }
 
 /*
- * OWNER-001 responsive composition:
+ * OWNER-001 / MOBILE-001 responsive composition:
  * - Large desktop keeps multi-column packing (no early single-column collapse).
  * - Tablet reduces columns cleanly without horizontal overflow.
- * - Mobile is one column with heartbeat / attention / finance near the top.
+ * - Mobile is one column with AURA near the top, then heartbeat / attention / jobs / finance.
  */
 @media (max-width: 1400px) {
   .owner-finance-pulse__grid {
@@ -4211,16 +4242,20 @@ a:focus-visible {
     flex-direction: column;
   }
 
-  .exec-dashboard-region--heartbeat {
+  .exec-dashboard-region--greeting {
+    order: 0;
+  }
+
+  /* MOBILE-001 hierarchy: AURA / Owner actions first */
+  .exec-dashboard-region--aura {
     order: 1;
   }
 
-  .exec-dashboard-region--attention {
+  .exec-dashboard-region--heartbeat {
     order: 2;
   }
 
-  .exec-dashboard-region--finance-pulse,
-  .exec-dashboard-region--finance {
+  .exec-dashboard-region--attention {
     order: 3;
   }
 
@@ -4228,12 +4263,9 @@ a:focus-visible {
     order: 4;
   }
 
-  .exec-dashboard-region--aura {
+  .exec-dashboard-region--finance-pulse,
+  .exec-dashboard-region--finance {
     order: 5;
-  }
-
-  .exec-dashboard-region--greeting {
-    order: 0;
   }
 
   .exec-dashboard-region--ops {
@@ -5689,15 +5721,49 @@ a:focus-visible {
 @media (max-width: 960px) {
   .aura-layout {
     grid-template-columns: 1fr;
+    min-height: 0;
+    flex: 1;
   }
 
   .aura-sidebar {
-    max-height: 12rem;
+    max-height: 10rem;
+    flex-shrink: 0;
   }
 
+  /* MOBILE-001: keep chat column viewport-bound so composer stays reachable above keyboard */
   .aura-page {
-    height: auto;
-    min-height: calc(100vh - 7rem);
+    height: calc(100dvh - 7rem - env(safe-area-inset-bottom, 0px));
+    max-height: calc(100dvh - 7rem - env(safe-area-inset-bottom, 0px));
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .aura-chat {
+    min-height: 0;
+    flex: 1;
+  }
+
+  .aura-messages {
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .aura-composer {
+    flex-shrink: 0;
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    background: var(--titan-surface);
+    padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .aura-composer__actions {
+    flex-wrap: wrap;
+  }
+
+  .aura-composer__actions .titan-btn,
+  .aura-composer__actions button {
+    min-height: var(--titan-touch-target-min, 2.75rem);
   }
 }
 
@@ -8530,10 +8596,14 @@ a:focus-visible {
 }
 
 .portal-shell {
-  min-height: 100vh;
+  min-height: 100dvh;
   background: var(--titan-bg);
   color: var(--titan-text);
   overflow-x: hidden;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
 }
 
 .portal-header {
@@ -8615,7 +8685,7 @@ a:focus-visible {
   padding: 0.5rem 0.75rem;
   border-radius: var(--titan-radius-md);
   color: var(--titan-text-secondary);
-  min-height: 2.5rem;
+  min-height: var(--titan-touch-target-min, 2.75rem);
   display: flex;
   align-items: center;
 }

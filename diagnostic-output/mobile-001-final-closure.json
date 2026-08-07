@@ -1,0 +1,113 @@
+{
+  "label": "MOBILE-001",
+  "title": "Mobile Experience Finalisation — FINAL CLOSURE",
+  "generatedAt": "2026-08-07T15:55:00.000Z",
+  "branch": "cursor/mobile-001-experience-663e",
+  "baseBranch": "main",
+  "verdict": "PASS — MOBILE-001 Mobile Experience closed",
+  "verdictReason": "Confirmed P0 mobile defects fixed (nav drawer polish + safe-area, Owner phone hierarchy with AURA near top, AURA composer sticky/dvh, technician Schedule nav, PWA icons, completion gate reuse). Desktop OWNER-001 full-bleed packing preserved by CSS contract tests. Device-matrix visual harness shows no horizontal overflow on phone widths. Authenticated in-app screenshots remain Owner-session follow-up (non-blocking P2).",
+  "architecture": {
+    "shells": ["AppLayout owner/staff", "MobileLayout technician /mobile", "PortalLayout client"],
+    "breakpoints": {
+      "ownerMobileNav": "≤1024px drawer",
+      "ownerDashboardReorder": "≤760px",
+      "auraComposer": "≤960px"
+    }
+  },
+  "desktopPreservation": {
+    "owner001FullBleed": true,
+    "contentMaxWidthNone": true,
+    "multiColumnPackingAbove760": true,
+    "auraNearTopOnDesktop": "mid-page executive surface (unchanged OWNER-001)",
+    "liveFleetMapSubstantial": "clamp(16rem, 28vh, 22rem) on owner001"
+  },
+  "fixes": [
+    "Phone dashboard order: AURA→heartbeat→attention→jobs→finance→ops→tools",
+    "AppLayout: Escape, route-change close, body scroll lock, hamburger glyph, aria-controls",
+    "Safe-area padding on owner header/drawer/backdrop/main + portal-shell + viewport-fit=cover",
+    "AURA mobile: 100dvh page, sticky composer, safe-area bottom, touch-sized actions",
+    "TECHNICIAN_NAV_ITEMS: /mobile/schedule",
+    "MobileJobDetailPage uses evaluateMobileCompletionSubmit",
+    "PWA: 192/512 PNG + maskable + apple-touch-icon",
+    "Visual harness + Playwright device matrix evidence"
+  ],
+  "pwaOfflineAudit": {
+    "manifest": true,
+    "pngIcons192512": true,
+    "maskable": true,
+    "appleTouchIcon": true,
+    "themeColor": "#0f172a",
+    "startUrl": "/mobile",
+    "display": "standalone",
+    "serviceWorker": "public/mobile-sw.js (existing)",
+    "offlineQueue": "IndexedDB mobile-offline-queue (existing)",
+    "fullOfflineSyncArchitecture": false,
+    "classification": "Existing field offline queue + gated completion; no new sync architecture in MOBILE-001"
+  },
+  "remainingDebt": [
+    {
+      "id": "authenticated-in-app-screenshots",
+      "priority": "P2",
+      "summary": "Owner-session screenshots of live dashboard/jobs/comms/finance after staging deploy"
+    },
+    {
+      "id": "comms-list-to-conversation-transition",
+      "priority": "P2",
+      "summary": "Hub remains tab/list architecture; dual-pane master-detail not required for current data model"
+    },
+    {
+      "id": "table-card-conversion-coverage",
+      "priority": "P2",
+      "summary": "Outstanding invoices already card-convert; other tables still use contained horizontal scroll"
+    },
+    {
+      "id": "calendar-drawer-bottom-sheet",
+      "priority": "P2",
+      "summary": "cal-drawer is full-width side panel on phone, not bottom sheet"
+    },
+    {
+      "id": "native-app",
+      "priority": "out_of_scope",
+      "summary": "No native iOS/Android app in MOBILE-001"
+    }
+  ],
+  "visualProof": {
+    "dir": "/opt/cursor/artifacts/mobile-001",
+    "harness": "apps/web/public/mobile-001-visual-harness.html",
+    "script": "scripts/mobile-001-visual-proof.mjs",
+    "phoneHierarchyVerified": true,
+    "noHorizontalOverflowOnPhone": true,
+    "stagingLoginPhoneDesktop": true
+  },
+  "gates": {
+    "sharedTests": { "pass": 1428, "fail": 0 },
+    "authTests": { "pass": 24, "fail": 0 },
+    "webTests": { "pass": 458, "fail": 0 },
+    "apiRelevantRegression": { "pass": 156, "fail": 0 },
+    "webTypecheck": "pass",
+    "monorepoTypecheck": "pass",
+    "webProductionBuild": "pass"
+  },
+  "safety": {
+    "productionTouched": 0,
+    "providerWrites": 0,
+    "realWhatsAppsSent": 0,
+    "realEmailsSent": 0,
+    "publicPosts": 0,
+    "cardCharges": 0,
+    "bankWrites": 0,
+    "creativeStudioWork": 0,
+    "auraTraining": 0,
+    "youngGunsLiveMigration": 0,
+    "newAgents": 0,
+    "newBusinessFeatures": 0,
+    "unrelatedWork": 0
+  },
+  "explicitlyNotStarted": [
+    "Creative Studio",
+    "AURA Training",
+    "Young Guns Live Implementation",
+    "WhatsApp real-number migration",
+    "BANK-003/OCR"
+  ]
+}

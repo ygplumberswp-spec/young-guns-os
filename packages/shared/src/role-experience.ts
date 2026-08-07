@@ -746,6 +746,11 @@ export const TECHNICIAN_NAV_ITEMS: NavItemConfig[] = [
     experiences: ['technician', 'platform_owner', 'company_owner'],
   },
   {
+    href: '/mobile/schedule',
+    label: 'Schedule',
+    experiences: ['technician', 'platform_owner', 'company_owner'],
+  },
+  {
     href: '/mobile/route',
     label: 'Navigation',
     experiences: ['technician', 'platform_owner', 'company_owner'],
