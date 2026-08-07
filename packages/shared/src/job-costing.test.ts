@@ -96,6 +96,19 @@ describe('job costing aggregation', () => {
     assert.equal(returned, 600);
   });
 
+  it('nets in-place partial returns on the same STOCK line', () => {
+    const line = {
+      status: 'used',
+      quantity: '10',
+      fulfilledQuantity: '10',
+      returnedQuantity: '3',
+      unitCostCents: 100,
+      materialSource: 'vehicle_stock',
+    };
+    assert.equal(materialLineCostCents(line), 700);
+    assert.equal(sumReturnedMaterialCents([line]), 300);
+  });
+
   it('computes gross profit from paid revenue when available', () => {
     assert.equal(
       computeJobGrossProfitCents({

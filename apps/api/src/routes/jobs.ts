@@ -155,12 +155,30 @@ const authorizeMaterialLineSchema = z.object({
   clientActionId: z.string().trim().min(1).max(200),
   inventoryItemId: z.string().uuid().optional().nullable(),
   locationId: z.string().uuid().optional().nullable(),
+  unitCostCents: z.number().int().nonnegative().optional().nullable(),
+  supplierReference: z.string().trim().max(500).optional().nullable(),
+  receiptDocumentationId: z.string().uuid().optional().nullable(),
 });
 
 const returnMaterialLineSchema = z.object({
   quantity: z.number().positive(),
   reason: z.string().trim().min(1).max(2000),
   clientActionId: z.string().trim().min(1).max(200),
+});
+
+const receiveUnusedDirectPurchaseSchema = z.object({
+  quantity: z.number().positive(),
+  inventoryItemId: z.string().uuid(),
+  locationId: z.string().uuid(),
+  reason: z.string().trim().min(1).max(2000),
+  clientActionId: z.string().trim().min(1).max(200),
+  unitCostCents: z.number().int().nonnegative().optional().nullable(),
+});
+
+const resolveMaterialStockVarianceSchema = z.object({
+  resolutionNotes: z.string().trim().min(1).max(4000),
+  clientActionId: z.string().trim().min(1).max(200),
+  correctedFulfilledQuantity: z.number().nonnegative().optional().nullable(),
 });
 
 const costAdjustmentSchema = z.object({
@@ -371,6 +389,19 @@ export function createJobsRouter({
     async (req, res) => {
       const auth = getAuth(req);
       const materialLines = await jobExecutionService.listPendingMaterialRequests(
+        auth.companyId,
+        hasCostVisibility(auth),
+      );
+      res.json({ data: { materialLines } });
+    },
+  );
+
+  router.get(
+    '/materials/stock-variances',
+    requireAnyPermission('jobs:write', 'inventory:write'),
+    async (req, res) => {
+      const auth = getAuth(req);
+      const materialLines = await jobExecutionService.listStockVarianceMaterialLines(
         auth.companyId,
         hasCostVisibility(auth),
       );
@@ -769,6 +800,65 @@ export function createJobsRouter({
 
       try {
         const materialLine = await jobExecutionService.returnMaterialLine(
+          auth,
+          getRouteParam(req.params.jobId),
+          getRouteParam(req.params.materialLineId),
+          parsed.data,
+        );
+        res.json({ data: { materialLine } });
+      } catch (error) {
+        handleJobExecutionError(res, error);
+      }
+    },
+  );
+
+  router.post(
+    '/:jobId/materials/:materialLineId/receive-unused',
+    requireAnyPermission('jobs:write', 'inventory:write'),
+    async (req, res) => {
+      const auth = getAuth(req);
+      const parsed = receiveUnusedDirectPurchaseSchema.safeParse(req.body);
+
+      if (!parsed.success) {
+        res.status(400).json({
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid receive-unused direct purchase payload',
+          },
+        });
+        return;
+      }
+
+      try {
+        const materialLine = await jobExecutionService.receiveUnusedDirectPurchaseIntoStock(
+          auth,
+          getRouteParam(req.params.jobId),
+          getRouteParam(req.params.materialLineId),
+          parsed.data,
+        );
+        res.json({ data: { materialLine } });
+      } catch (error) {
+        handleJobExecutionError(res, error);
+      }
+    },
+  );
+
+  router.post(
+    '/:jobId/materials/:materialLineId/resolve-variance',
+    requireAnyPermission('jobs:write', 'inventory:write'),
+    async (req, res) => {
+      const auth = getAuth(req);
+      const parsed = resolveMaterialStockVarianceSchema.safeParse(req.body);
+
+      if (!parsed.success) {
+        res.status(400).json({
+          error: { code: 'VALIDATION_ERROR', message: 'Invalid stock variance resolution payload' },
+        });
+        return;
+      }
+
+      try {
+        const materialLine = await jobExecutionService.resolveMaterialStockVariance(
           auth,
           getRouteParam(req.params.jobId),
           getRouteParam(req.params.materialLineId),

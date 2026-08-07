@@ -279,6 +279,7 @@ const recordMaterialLineSchema = z.object({
   locationId: z.string().uuid().optional().nullable(),
   quotedQuantity: z.number().positive().optional().nullable(),
   supplierReference: z.string().optional(),
+  receiptDocumentationId: z.string().uuid().optional().nullable(),
   notes: z.string().optional(),
   requestOnly: z.boolean().optional(),
   clientActionId: z.string().optional(),
