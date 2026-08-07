@@ -684,6 +684,10 @@ export const ProfitAnalyticsPage = lazyNamed(
   () => import('../pages/finance/ProfitAnalyticsPage'),
   'ProfitAnalyticsPage',
 );
+export const OperatingProfitPage = lazyNamed(
+  () => import('../pages/finance/OperatingProfitPage'),
+  'OperatingProfitPage',
+);
 export const JobLinkageControlPage = lazyNamed(
   () => import('../pages/finance/JobLinkageControlPage'),
   'JobLinkageControlPage',

@@ -444,6 +444,28 @@ export class CashControlService {
     });
   }
 
+  /** Additive read helper for FIN-003 overhead drill-down — no second ledger. */
+  async getBankTransactionsForPeriod(
+    actor: CashControlActor,
+    input: { fromDate: string; toDate: string },
+  ): Promise<CashControlBankTransactionInput[]> {
+    this.assertView(actor);
+    return this.loadBankTransactions(actor.companyId, {
+      fromDate: input.fromDate,
+      toDate: input.toDate,
+    });
+  }
+
+  async hasActiveBankAccounts(actor: CashControlActor): Promise<boolean> {
+    this.assertView(actor);
+    const rows = await this.db
+      .select({ id: bankAccounts.id })
+      .from(bankAccounts)
+      .where(and(eq(bankAccounts.companyId, actor.companyId), eq(bankAccounts.isActive, true)))
+      .limit(1);
+    return rows.length > 0;
+  }
+
   async getLedger(
     actor: CashControlActor,
     options: {
