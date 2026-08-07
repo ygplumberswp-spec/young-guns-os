@@ -16,9 +16,12 @@ import {
   jobExecutionPhaseEnum,
   jobMaterialLineStatusEnum,
   jobMaterialSourceEnum,
+  jobMaterialStockVarianceStatusEnum,
   jobVariationStatusEnum,
 } from './job-execution-enums';
+import { documents } from './documents';
 import { inventoryLocations } from './inventory-locations';
+import { jobDirectCostEntries } from './job-profitability';
 import { jobs } from './jobs';
 import { mobileJobInventoryUsage } from './mobile-workforce';
 import { users } from './users';
@@ -29,6 +32,7 @@ export {
   jobExecutionPhaseEnum,
   jobMaterialLineStatusEnum,
   jobMaterialSourceEnum,
+  jobMaterialStockVarianceStatusEnum,
   jobVariationStatusEnum,
 } from './job-execution-enums';
 
@@ -166,6 +170,7 @@ export const jobMaterialLines = pgTable('job_material_lines', {
   }),
   unitCostCents: integer('unit_cost_cents').notNull().default(0),
   fulfilledQuantity: numeric('fulfilled_quantity', { precision: 12, scale: 3 }),
+  returnedQuantity: numeric('returned_quantity', { precision: 12, scale: 3 }).notNull().default('0'),
   quotedQuantity: numeric('quoted_quantity', { precision: 12, scale: 3 }),
   clientActionId: text('client_action_id'),
   stockMovementId: uuid('stock_movement_id'),
@@ -176,6 +181,21 @@ export const jobMaterialLines = pgTable('job_material_lines', {
   rejectionReason: text('rejection_reason'),
   returnReason: text('return_reason'),
   supplierReference: text('supplier_reference'),
+  receiptDocumentationId: uuid('receipt_documentation_id').references(() => documents.id, {
+    onDelete: 'set null',
+  }),
+  directCostEntryId: uuid('direct_cost_entry_id').references(() => jobDirectCostEntries.id, {
+    onDelete: 'set null',
+  }),
+  stockVarianceStatus: jobMaterialStockVarianceStatusEnum('stock_variance_status')
+    .notNull()
+    .default('none'),
+  stockVarianceNotes: text('stock_variance_notes'),
+  stockVarianceResolvedByUserId: uuid('stock_variance_resolved_by_user_id').references(
+    () => users.id,
+    { onDelete: 'set null' },
+  ),
+  stockVarianceResolvedAt: timestamp('stock_variance_resolved_at', { withTimezone: true }),
   notes: text('notes'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),

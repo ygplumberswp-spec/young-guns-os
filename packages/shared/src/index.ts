@@ -51,6 +51,7 @@ export * from './customer-duplicate-merge.js';
 export * from './contact-validation.js';
 export * from './job-contract.js';
 export * from './job-execution.js';
+export * from './strict-inventory-material-flow.js';
 export * from './job-visits.js';
 export * from './quick-job-intake.js';
 export * from './jobs.js';

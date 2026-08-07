@@ -179,6 +179,7 @@ describe('summary mappers', () => {
   it('maps a material line row to a summary', () => {
     const summary = toMaterialLineSummary({
       id: 'ml-1',
+      jobId: 'job-1',
       description: '15mm copper pipe',
       quantity: '3.500',
       unit: 'm',
@@ -188,9 +189,18 @@ describe('summary mappers', () => {
       notes: null,
       recordedByUserId: 'user-1',
       createdAt: new Date('2026-01-04T00:00:00Z'),
+      returnedQuantity: '1',
+      fulfilledQuantity: '3.500',
+      status: 'used',
+      unitCostCents: 100,
+      stockVarianceStatus: 'none',
     } as never);
     assert.equal(summary.quantity, '3.500');
     assert.equal(summary.materialSource, 'vehicle_stock');
+    assert.equal(summary.materialFlowSource, 'STOCK');
+    assert.equal(summary.returnedQuantity, '1');
+    assert.equal(summary.chargeableQuantity, '2.5');
+    assert.equal(summary.lineTotalCents, 250);
   });
 });
 

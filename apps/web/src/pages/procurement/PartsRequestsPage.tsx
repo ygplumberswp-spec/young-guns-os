@@ -213,7 +213,16 @@ export function PartsRequestsPage() {
                       <td>
                         {line.quotedQuantity ?? line.quantity} {line.unit}
                       </td>
-                      <td>{line.materialSource.replace(/_/g, ' ')}</td>
+                      <td>
+                        {line.materialFlowSource === 'STOCK'
+                          ? 'STOCK'
+                          : line.materialFlowSource === 'DIRECT_PURCHASE'
+                            ? 'DIRECT PURCHASE'
+                            : line.materialSource.replace(/_/g, ' ')}
+                        {line.supplierReference ? (
+                          <div className="page-muted">Slip: {line.supplierReference}</div>
+                        ) : null}
+                      </td>
                       <td>
                         {isStockSource(line.materialSource) ? (
                           <div className="jobs-form__actions">

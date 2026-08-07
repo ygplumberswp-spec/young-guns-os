@@ -135,6 +135,8 @@ export type JobVariationSummary = {
   authorizedAt: string | null;
 };
 
+export type JobMaterialStockVarianceStatus = 'none' | 'review_required' | 'resolved';
+
 export type JobMaterialLineSummary = {
   id: string;
   jobId: string;
@@ -144,6 +146,8 @@ export type JobMaterialLineSummary = {
   quantity: string;
   unit: string;
   materialSource: JobMaterialSource;
+  /** Binary flow: STOCK | DIRECT_PURCHASE (null for customer_supplied). */
+  materialFlowSource: 'STOCK' | 'DIRECT_PURCHASE' | null;
   status: JobMaterialLineStatus;
   inventoryItemId: string | null;
   inventoryItemName: string | null;
@@ -152,6 +156,9 @@ export type JobMaterialLineSummary = {
   unitCostCents: number | null;
   lineTotalCents: number | null;
   fulfilledQuantity: string | null;
+  returnedQuantity: string;
+  /** fulfilled − returned; quantity still charged to the job. */
+  chargeableQuantity: string;
   quotedQuantity: string | null;
   clientActionId: string | null;
   approvedByUserId: string | null;
@@ -160,6 +167,10 @@ export type JobMaterialLineSummary = {
   rejectionReason: string | null;
   returnReason: string | null;
   supplierReference: string | null;
+  receiptDocumentationId: string | null;
+  directCostEntryId: string | null;
+  stockVarianceStatus: JobMaterialStockVarianceStatus;
+  stockVarianceNotes: string | null;
   notes: string | null;
   recordedByUserId: string;
   recordedByName: string | null;
@@ -231,6 +242,10 @@ export type RecordJobMaterialLineRequest = {
   locationId?: string | null;
   quotedQuantity?: number | null;
   supplierReference?: string | null;
+  /** Slip/receipt document for DIRECT PURCHASE / JOB EXPENSE. */
+  receiptDocumentationId?: string | null;
+  /** Unit cost for direct purchase (office/owner); technicians should omit. */
+  unitCostCents?: number | null;
   notes?: string | null;
   /** When true (default for technicians), record as `requested` with no stock effect. */
   requestOnly?: boolean;
@@ -245,12 +260,33 @@ export type AuthorizeJobMaterialLineRequest = {
   /** Office may attach stock identity when the tech request omitted it. */
   inventoryItemId?: string | null;
   locationId?: string | null;
+  /** Office may set/correct direct-purchase unit cost at authorize time. */
+  unitCostCents?: number | null;
+  supplierReference?: string | null;
+  receiptDocumentationId?: string | null;
 };
 
 export type ReturnJobMaterialLineRequest = {
   quantity: number;
   reason: string;
   clientActionId: string;
+};
+
+/** Unused DIRECT PURCHASE material received into Young Guns stock. */
+export type ReceiveUnusedDirectPurchaseRequest = {
+  quantity: number;
+  inventoryItemId: string;
+  locationId: string;
+  reason: string;
+  clientActionId: string;
+  unitCostCents?: number | null;
+};
+
+export type ResolveMaterialStockVarianceRequest = {
+  resolutionNotes: string;
+  clientActionId: string;
+  /** Optional corrected fulfilled quantity after investigation. */
+  correctedFulfilledQuantity?: number | null;
 };
 
 export type SubmitGatedJobCompletionRequest = {

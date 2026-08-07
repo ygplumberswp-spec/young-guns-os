@@ -15,22 +15,33 @@ import type {
   JobTimelineEventSummary,
   JobWorkflowAction,
   JobWorkflowTransitionRequest,
+  ReceiveUnusedDirectPurchaseRequest,
   RecordJobMaterialLineRequest,
+  ResolveMaterialStockVarianceRequest,
   ReturnJobMaterialLineRequest,
   SubmitGatedJobCompletionRequest,
 } from '@titan/shared';
 import {
   JOB_EXECUTION_TRANSITIONS,
+  STOCK_VARIANCE_REVIEW_LABEL,
+  directPurchaseEvidenceOk,
   evaluateCompletionGate,
+  isDirectPurchaseMaterialSource,
+  isStockMaterialSource,
   mapWorkflowActionToCommunicationHook,
+  materialChargeableQuantity,
+  materialFlowSourceFor,
   phaseToJobStatus,
+  stockVarianceReviewRequired,
 } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
 import {
   inventoryItems,
   inventoryLocations,
+  inventoryStockLevels,
   jobCompletionSnapshots,
   jobCrewMembers,
+  jobDirectCostEntries,
   jobMaterialLines,
   jobs,
   jobVariations,
@@ -733,7 +744,7 @@ export class JobExecutionService {
         ),
       });
       if (existing) {
-        return this.hydrateMaterialLine(existing.id);
+        return this.hydrateMaterialLine(existing.id, canAuthorizeMaterials(actor));
       }
     }
 
@@ -745,11 +756,27 @@ export class JobExecutionService {
       throw new JobExecutionError('VALIDATION_ERROR', 'Quantity must be greater than zero');
     }
 
+    const isStockSource = isStockMaterialSource(input.materialSource);
+    const isDirectSource = isDirectPurchaseMaterialSource(input.materialSource);
+
+    if (isDirectSource && !directPurchaseEvidenceOk(input)) {
+      throw new JobExecutionError(
+        'VALIDATION_ERROR',
+        'DIRECT PURCHASE requires a supplier slip/reference or receipt upload',
+      );
+    }
+
+    if (isStockSource && input.receiptDocumentationId) {
+      throw new JobExecutionError(
+        'VALIDATION_ERROR',
+        'STOCK material must not be recorded as a supplier slip expense — use DIRECT PURCHASE for job-bought material',
+      );
+    }
+
     const canAuthorize = canAuthorizeMaterials(actor);
     // Technicians (or anyone without inventory:write/manager access) always land in `requested`.
     const requestOnly = canAuthorize ? (input.requestOnly ?? true) : true;
     const attemptImmediateApproval = !requestOnly && canAuthorize;
-    const isStockSource = input.materialSource === 'vehicle_stock' || input.materialSource === 'warehouse_stock';
 
     if (input.locationId) {
       await this.ensureLocationBelongsToCompany(actor.companyId, input.locationId);
@@ -757,6 +784,11 @@ export class JobExecutionService {
     if (input.inventoryItemId) {
       await this.ensureInventoryItemBelongsToCompany(actor.companyId, input.inventoryItemId);
     }
+
+    const unitCostCents =
+      canAuthorize && input.unitCostCents != null && Number.isFinite(input.unitCostCents)
+        ? Math.max(0, Math.round(input.unitCostCents))
+        : 0;
 
     const createdRow = await this.db.transaction(async (tx) => {
       const [line] = await tx
@@ -775,6 +807,8 @@ export class JobExecutionService {
           quotedQuantity: input.quotedQuantity != null ? String(input.quotedQuantity) : null,
           clientActionId: input.clientActionId?.trim() || null,
           supplierReference: input.supplierReference?.trim() || null,
+          receiptDocumentationId: input.receiptDocumentationId ?? null,
+          unitCostCents,
           notes: input.notes?.trim() || null,
         })
         .returning();
@@ -787,61 +821,18 @@ export class JobExecutionService {
         return line;
       }
 
-      const now = new Date();
-
-      if (input.inventoryItemId && input.locationId && isStockSource) {
-        let movement;
-        try {
-          movement = await this.stockMovementsService.applyMovement(tx, {
-            companyId: actor.companyId,
-            itemId: input.inventoryItemId,
-            locationId: input.locationId,
-            movementType: 'issue',
-            quantityDelta: -input.quantity,
-            jobId,
-            jobMaterialLineId: line.id,
-            reason: 'job_material_issue',
-            clientActionId: input.clientActionId ? `${input.clientActionId}:issue` : null,
-            recordedByUserId: actor.userId,
-          });
-        } catch (error) {
-          if (error instanceof StockMovementError) {
-            throw new JobExecutionError(error.code, error.message);
-          }
-          throw error;
-        }
-
-        const [updated] = await tx
-          .update(jobMaterialLines)
-          .set({
-            status: 'used',
-            fulfilledQuantity: String(input.quantity),
-            unitCostCents: movement.unitCostCents,
-            stockMovementId: movement.id,
-            approvedByUserId: actor.userId,
-            approvedAt: now,
-            updatedAt: now,
-          })
-          .where(eq(jobMaterialLines.id, line.id))
-          .returning();
-
-        return updated ?? line;
-      }
-
-      // Customer-supplied / supplier-purchase (or no linked stock item) — nothing to decrement.
-      const [updated] = await tx
-        .update(jobMaterialLines)
-        .set({
-          status: 'approved',
-          fulfilledQuantity: String(input.quantity),
-          approvedByUserId: actor.userId,
-          approvedAt: now,
-          updatedAt: now,
-        })
-        .where(eq(jobMaterialLines.id, line.id))
-        .returning();
-
-      return updated ?? line;
+      return this.fulfillMaterialLineInTx(tx, {
+        actor,
+        jobId,
+        line,
+        fulfilledQuantity: input.quantity,
+        inventoryItemId: input.inventoryItemId ?? null,
+        locationId: input.locationId ?? null,
+        unitCostCents: input.unitCostCents ?? null,
+        supplierReference: input.supplierReference ?? null,
+        receiptDocumentationId: input.receiptDocumentationId ?? null,
+        clientActionId: input.clientActionId?.trim() || `record:${line.id}`,
+      });
     });
 
     await this.db.insert(jobWorkflowEvents).values({
@@ -852,6 +843,7 @@ export class JobExecutionService {
       metadata: {
         materialLineId: createdRow.id,
         status: createdRow.status,
+        materialFlowSource: materialFlowSourceFor(createdRow.materialSource),
         clientActionId: input.clientActionId ?? null,
       },
     });
@@ -883,13 +875,13 @@ export class JobExecutionService {
       payload: { jobId, materialLineId: createdRow.id, status: createdRow.status },
     });
 
-    return this.hydrateMaterialLine(createdRow.id);
+    return this.hydrateMaterialLine(createdRow.id, canAuthorize);
   }
 
   /**
-   * Office decision on a `requested` material line. Approving a stock-sourced line decrements
-   * inventory via the stock movement ledger; rejecting requires a reason. Re-invoking with the
-   * same line once it has left `requested` is a no-op that returns the current state.
+   * Office decision on a `requested` material line.
+   * STOCK → decrement inventory once (never negative; shortfall → STOCK VARIANCE).
+   * DIRECT PURCHASE → job expense / JPE via material_line direct cost — no stock decrement.
    */
   async authorizeMaterialLine(
     actor: ExecutionScope,
@@ -951,92 +943,46 @@ export class JobExecutionService {
         metadata: { materialLineId, reason, clientActionId: input.clientActionId },
       });
 
+      await this.db.insert(securityAuditLogs).values({
+        companyId: actor.companyId,
+        category: 'inventory',
+        action: 'material_line_rejected',
+        entityType: 'job_material_line',
+        entityId: materialLineId,
+        userId: actor.userId,
+        metadata: { jobId, reason, clientActionId: input.clientActionId },
+      });
+
       return this.hydrateMaterialLine((updated ?? line).id);
     }
 
-    const fulfilledQuantity =
+    const requestedFulfilled =
       input.decision === 'partial' ? (input.fulfilledQuantity ?? 0) : requestedQuantity;
 
-    if (!fulfilledQuantity || fulfilledQuantity <= 0) {
+    if (!requestedFulfilled || requestedFulfilled <= 0) {
       throw new JobExecutionError('VALIDATION_ERROR', 'Fulfilled quantity must be greater than zero');
     }
-    if (fulfilledQuantity > requestedQuantity) {
+    if (requestedFulfilled > requestedQuantity) {
       throw new JobExecutionError(
         'VALIDATION_ERROR',
         'Fulfilled quantity cannot exceed the requested quantity',
       );
     }
 
-    const locationId = input.locationId ?? line.locationId;
-    const inventoryItemId = input.inventoryItemId ?? line.inventoryItemId;
-    const isStockSource = line.materialSource === 'vehicle_stock' || line.materialSource === 'warehouse_stock';
-
-    if (isStockSource && (!inventoryItemId || !locationId)) {
-      throw new JobExecutionError(
-        'VALIDATION_ERROR',
-        'Inventory item and stock location are required to approve vehicle/warehouse stock use',
-      );
-    }
-
-    const needsStock = Boolean(inventoryItemId && locationId && isStockSource);
-
-    if (locationId) {
-      await this.ensureLocationBelongsToCompany(actor.companyId, locationId);
-    }
-    if (inventoryItemId) {
-      await this.ensureInventoryItemBelongsToCompany(actor.companyId, inventoryItemId);
-    }
-
-    let unitCostCents = line.unitCostCents;
-    let stockMovementId: string | null = line.stockMovementId;
-
-    const updatedRow = await this.db.transaction(async (tx) => {
-      if (needsStock) {
-        let movement;
-        try {
-          movement = await this.stockMovementsService.applyMovement(tx, {
-            companyId: actor.companyId,
-            itemId: inventoryItemId!,
-            locationId: locationId!,
-            movementType: 'issue',
-            quantityDelta: -fulfilledQuantity,
-            jobId,
-            jobMaterialLineId: materialLineId,
-            reason: 'job_material_issue',
-            clientActionId: `${input.clientActionId}:issue`,
-            recordedByUserId: actor.userId,
-          });
-        } catch (error) {
-          if (error instanceof StockMovementError) {
-            throw new JobExecutionError(error.code, error.message);
-          }
-          throw error;
-        }
-        unitCostCents = movement.unitCostCents;
-        stockMovementId = movement.id;
-      }
-
-      const status: (typeof jobMaterialLines.$inferSelect)['status'] =
-        fulfilledQuantity < requestedQuantity ? 'partially_fulfilled' : needsStock ? 'used' : 'approved';
-
-      const [row] = await tx
-        .update(jobMaterialLines)
-        .set({
-          status,
-          fulfilledQuantity: String(fulfilledQuantity),
-          inventoryItemId: inventoryItemId ?? null,
-          locationId: locationId ?? null,
-          unitCostCents,
-          stockMovementId,
-          approvedByUserId: actor.userId,
-          approvedAt: now,
-          updatedAt: now,
-        })
-        .where(eq(jobMaterialLines.id, materialLineId))
-        .returning();
-
-      return row ?? line;
-    });
+    const updatedRow = await this.db.transaction(async (tx) =>
+      this.fulfillMaterialLineInTx(tx, {
+        actor,
+        jobId,
+        line,
+        fulfilledQuantity: requestedFulfilled,
+        inventoryItemId: input.inventoryItemId ?? line.inventoryItemId,
+        locationId: input.locationId ?? line.locationId,
+        unitCostCents: input.unitCostCents ?? null,
+        supplierReference: input.supplierReference ?? line.supplierReference,
+        receiptDocumentationId: input.receiptDocumentationId ?? line.receiptDocumentationId,
+        clientActionId: input.clientActionId,
+      }),
+    );
 
     await this.db.insert(jobWorkflowEvents).values({
       companyId: actor.companyId,
@@ -1046,7 +992,8 @@ export class JobExecutionService {
       metadata: {
         materialLineId,
         decision: input.decision,
-        fulfilledQuantity,
+        fulfilledQuantity: updatedRow.fulfilledQuantity,
+        stockVarianceStatus: updatedRow.stockVarianceStatus,
         clientActionId: input.clientActionId,
       },
     });
@@ -1057,13 +1004,22 @@ export class JobExecutionService {
       entityType: 'job_material_line',
       entityId: materialLineId,
       actorUserId: actor.userId,
-      payload: { jobId, materialLineId, status: updatedRow.status, fulfilledQuantity },
+      payload: {
+        jobId,
+        materialLineId,
+        status: updatedRow.status,
+        fulfilledQuantity: updatedRow.fulfilledQuantity,
+        stockVarianceStatus: updatedRow.stockVarianceStatus,
+      },
     });
 
     return this.hydrateMaterialLine(updatedRow.id);
   }
 
-  /** Returns issued/used stock back to a location. Idempotent no-op once already `returned`. */
+  /**
+   * Returns unused STOCK material to inventory. Partial returns keep chargeable used qty on the job.
+   * DIRECT PURCHASE unused material must use receiveUnusedDirectPurchaseIntoStock.
+   */
   async returnMaterialLine(
     actor: ExecutionScope,
     jobId: string,
@@ -1085,13 +1041,20 @@ export class JobExecutionService {
     }
 
     if (line.status === 'returned') {
-      return this.hydrateMaterialLine(line.id);
+      return this.hydrateMaterialLine(line.id, canAuthorizeMaterials(actor));
     }
 
     if (!['used', 'partially_fulfilled', 'approved'].includes(line.status)) {
       throw new JobExecutionError(
         'INVALID_STATUS',
         `Cannot return a material line in status ${line.status}`,
+      );
+    }
+
+    if (isDirectPurchaseMaterialSource(line.materialSource) && !line.inventoryItemId) {
+      throw new JobExecutionError(
+        'VALIDATION_ERROR',
+        'Unused DIRECT PURCHASE material must be received into stock (not returned as stock issue)',
       );
     }
 
@@ -1104,9 +1067,15 @@ export class JobExecutionService {
       throw new JobExecutionError('VALIDATION_ERROR', 'Return reason is required');
     }
 
-    const fulfilled = line.fulfilledQuantity != null ? Number(line.fulfilledQuantity) : Number(line.quantity);
-    if (input.quantity > fulfilled) {
-      throw new JobExecutionError('VALIDATION_ERROR', 'Cannot return more than the fulfilled quantity');
+    const fulfilled =
+      line.fulfilledQuantity != null ? Number(line.fulfilledQuantity) : Number(line.quantity);
+    const alreadyReturned = Number(line.returnedQuantity ?? 0);
+    const returnable = Math.max(0, fulfilled - alreadyReturned);
+    if (input.quantity > returnable) {
+      throw new JobExecutionError(
+        'VALIDATION_ERROR',
+        `Cannot return more than the remaining quantity on the job (${returnable})`,
+      );
     }
 
     if (!line.inventoryItemId || !line.locationId) {
@@ -1116,6 +1085,9 @@ export class JobExecutionService {
       );
     }
 
+    const newReturned = alreadyReturned + input.quantity;
+    const fullyReturned = newReturned >= fulfilled - 1e-9;
+
     const updatedRow = await this.db.transaction(async (tx) => {
       let movement;
       try {
@@ -1124,7 +1096,7 @@ export class JobExecutionService {
           itemId: line.inventoryItemId!,
           locationId: line.locationId!,
           movementType: 'return_to_stock',
-          quantityDelta: input.quantity,
+          quantityDelta: Math.round(input.quantity),
           jobId,
           jobMaterialLineId: materialLineId,
           reason: 'job_material_return',
@@ -1142,13 +1114,26 @@ export class JobExecutionService {
       const [row] = await tx
         .update(jobMaterialLines)
         .set({
-          status: 'returned',
+          status: fullyReturned ? 'returned' : line.status === 'partially_fulfilled' ? 'partially_fulfilled' : 'used',
+          returnedQuantity: String(newReturned),
           returnReason: reason,
           stockMovementId: movement.id,
           updatedAt: new Date(),
         })
         .where(eq(jobMaterialLines.id, materialLineId))
         .returning();
+
+      if (line.directCostEntryId) {
+        const chargeable = Math.max(0, fulfilled - newReturned);
+        await tx
+          .update(jobDirectCostEntries)
+          .set({
+            amountCents: Math.round(chargeable * (line.unitCostCents ?? 0)),
+            quantity: String(chargeable),
+            updatedAt: new Date(),
+          })
+          .where(eq(jobDirectCostEntries.id, line.directCostEntryId));
+      }
 
       return row ?? line;
     });
@@ -1158,10 +1143,330 @@ export class JobExecutionService {
       jobId,
       userId: actor.userId,
       action: 'return_material_line',
-      metadata: { materialLineId, quantity: input.quantity, reason, clientActionId: input.clientActionId },
+      metadata: {
+        materialLineId,
+        quantity: input.quantity,
+        returnedQuantity: newReturned,
+        reason,
+        clientActionId: input.clientActionId,
+      },
+    });
+
+    await this.db.insert(securityAuditLogs).values({
+      companyId: actor.companyId,
+      category: 'inventory',
+      action: 'material_line_returned_to_stock',
+      entityType: 'job_material_line',
+      entityId: materialLineId,
+      userId: actor.userId,
+      metadata: {
+        jobId,
+        quantity: input.quantity,
+        returnedQuantity: newReturned,
+        inventoryItemId: line.inventoryItemId,
+        locationId: line.locationId,
+        clientActionId: input.clientActionId,
+      },
+    });
+
+    return this.hydrateMaterialLine(updatedRow.id, canAuthorizeMaterials(actor));
+  }
+
+  /**
+   * Unused DIRECT PURCHASE material comes back to van/store:
+   * Job purchase → unused qty → RECEIVE INTO STOCK (audited). Job keeps only chargeable used cost.
+   */
+  async receiveUnusedDirectPurchaseIntoStock(
+    actor: ExecutionScope,
+    jobId: string,
+    materialLineId: string,
+    input: ReceiveUnusedDirectPurchaseRequest,
+  ): Promise<JobMaterialLineSummary> {
+    if (!canAuthorizeMaterials(actor)) {
+      throw new JobExecutionError(
+        'FORBIDDEN',
+        'Only Owner/Manager or inventory:write may receive unused direct-purchase material into stock',
+      );
+    }
+
+    await this.requireJob(actor.companyId, jobId);
+
+    const line = await this.db.query.jobMaterialLines.findFirst({
+      where: and(
+        eq(jobMaterialLines.id, materialLineId),
+        eq(jobMaterialLines.companyId, actor.companyId),
+        eq(jobMaterialLines.jobId, jobId),
+      ),
+    });
+
+    if (!line) {
+      throw new JobExecutionError('NOT_FOUND', 'Material line not found');
+    }
+
+    if (!isDirectPurchaseMaterialSource(line.materialSource)) {
+      throw new JobExecutionError(
+        'VALIDATION_ERROR',
+        'Only DIRECT PURCHASE lines can receive unused material into stock this way',
+      );
+    }
+
+    if (!['used', 'partially_fulfilled', 'approved'].includes(line.status)) {
+      throw new JobExecutionError(
+        'INVALID_STATUS',
+        `Cannot receive unused material for status ${line.status}`,
+      );
+    }
+
+    if (!input.quantity || input.quantity <= 0) {
+      throw new JobExecutionError('VALIDATION_ERROR', 'Quantity must be greater than zero');
+    }
+
+    const reason = input.reason?.trim();
+    if (!reason) {
+      throw new JobExecutionError('VALIDATION_ERROR', 'Reason is required');
+    }
+
+    await this.ensureLocationBelongsToCompany(actor.companyId, input.locationId);
+    await this.ensureInventoryItemBelongsToCompany(actor.companyId, input.inventoryItemId);
+
+    const fulfilled =
+      line.fulfilledQuantity != null ? Number(line.fulfilledQuantity) : Number(line.quantity);
+    const alreadyReturned = Number(line.returnedQuantity ?? 0);
+    const returnable = Math.max(0, fulfilled - alreadyReturned);
+    if (input.quantity > returnable) {
+      throw new JobExecutionError(
+        'VALIDATION_ERROR',
+        `Cannot receive more than unused quantity on the job (${returnable})`,
+      );
+    }
+
+    const unitCostCents =
+      input.unitCostCents != null && Number.isFinite(input.unitCostCents)
+        ? Math.max(0, Math.round(input.unitCostCents))
+        : line.unitCostCents ?? 0;
+    const newReturned = alreadyReturned + input.quantity;
+    const fullyReturned = newReturned >= fulfilled - 1e-9;
+
+    const updatedRow = await this.db.transaction(async (tx) => {
+      let movement;
+      try {
+        movement = await this.stockMovementsService.applyMovement(tx, {
+          companyId: actor.companyId,
+          itemId: input.inventoryItemId,
+          locationId: input.locationId,
+          movementType: 'receipt',
+          quantityDelta: Math.round(input.quantity),
+          unitCostCents,
+          jobId,
+          jobMaterialLineId: materialLineId,
+          reason: 'direct_purchase_unused_receive',
+          notes: reason,
+          clientActionId: `${input.clientActionId}:receive`,
+          recordedByUserId: actor.userId,
+        });
+      } catch (error) {
+        if (error instanceof StockMovementError) {
+          throw new JobExecutionError(error.code, error.message);
+        }
+        throw error;
+      }
+
+      const [row] = await tx
+        .update(jobMaterialLines)
+        .set({
+          status: fullyReturned ? 'returned' : line.status,
+          returnedQuantity: String(newReturned),
+          inventoryItemId: input.inventoryItemId,
+          locationId: input.locationId,
+          unitCostCents,
+          returnReason: reason,
+          stockMovementId: movement.id,
+          updatedAt: new Date(),
+        })
+        .where(eq(jobMaterialLines.id, materialLineId))
+        .returning();
+
+      if (line.directCostEntryId) {
+        const chargeable = Math.max(0, fulfilled - newReturned);
+        await tx
+          .update(jobDirectCostEntries)
+          .set({
+            amountCents: Math.round(chargeable * unitCostCents),
+            quantity: String(chargeable),
+            unitCostCents,
+            inventoryItemId: input.inventoryItemId,
+            updatedAt: new Date(),
+          })
+          .where(eq(jobDirectCostEntries.id, line.directCostEntryId));
+      }
+
+      return row ?? line;
+    });
+
+    await this.db.insert(jobWorkflowEvents).values({
+      companyId: actor.companyId,
+      jobId,
+      userId: actor.userId,
+      action: 'receive_unused_direct_purchase',
+      metadata: {
+        materialLineId,
+        quantity: input.quantity,
+        returnedQuantity: newReturned,
+        inventoryItemId: input.inventoryItemId,
+        locationId: input.locationId,
+        clientActionId: input.clientActionId,
+      },
+    });
+
+    await this.db.insert(securityAuditLogs).values({
+      companyId: actor.companyId,
+      category: 'inventory',
+      action: 'direct_purchase_received_into_stock',
+      entityType: 'job_material_line',
+      entityId: materialLineId,
+      userId: actor.userId,
+      metadata: {
+        jobId,
+        quantity: input.quantity,
+        unitCostCents,
+        inventoryItemId: input.inventoryItemId,
+        locationId: input.locationId,
+        supplierReference: line.supplierReference,
+        receiptDocumentationId: line.receiptDocumentationId,
+        clientActionId: input.clientActionId,
+      },
     });
 
     return this.hydrateMaterialLine(updatedRow.id);
+  }
+
+  /** Owner/Admin resolves STOCK VARIANCE — REVIEW REQUIRED with audit trail. */
+  async resolveMaterialStockVariance(
+    actor: ExecutionScope,
+    jobId: string,
+    materialLineId: string,
+    input: ResolveMaterialStockVarianceRequest,
+  ): Promise<JobMaterialLineSummary> {
+    if (!canAuthorizeMaterials(actor)) {
+      throw new JobExecutionError(
+        'FORBIDDEN',
+        'Only Owner/Manager or inventory:write may resolve stock variance',
+      );
+    }
+
+    await this.requireJob(actor.companyId, jobId);
+
+    const line = await this.db.query.jobMaterialLines.findFirst({
+      where: and(
+        eq(jobMaterialLines.id, materialLineId),
+        eq(jobMaterialLines.companyId, actor.companyId),
+        eq(jobMaterialLines.jobId, jobId),
+      ),
+    });
+
+    if (!line) {
+      throw new JobExecutionError('NOT_FOUND', 'Material line not found');
+    }
+
+    if (line.stockVarianceStatus !== 'review_required') {
+      return this.hydrateMaterialLine(line.id);
+    }
+
+    const notes = input.resolutionNotes.trim();
+    if (!notes) {
+      throw new JobExecutionError('VALIDATION_ERROR', 'Resolution notes are required');
+    }
+
+    const now = new Date();
+    const patch: Partial<typeof jobMaterialLines.$inferInsert> = {
+      stockVarianceStatus: 'resolved',
+      stockVarianceNotes: notes,
+      stockVarianceResolvedByUserId: actor.userId,
+      stockVarianceResolvedAt: now,
+      updatedAt: now,
+    };
+
+    if (
+      input.correctedFulfilledQuantity != null &&
+      Number.isFinite(input.correctedFulfilledQuantity) &&
+      input.correctedFulfilledQuantity >= 0
+    ) {
+      const fulfilled = Number(line.fulfilledQuantity ?? line.quantity);
+      const returned = Number(line.returnedQuantity ?? 0);
+      if (input.correctedFulfilledQuantity < returned) {
+        throw new JobExecutionError(
+          'VALIDATION_ERROR',
+          'Corrected fulfilled quantity cannot be below returned quantity',
+        );
+      }
+      patch.fulfilledQuantity = String(input.correctedFulfilledQuantity);
+      if (input.correctedFulfilledQuantity <= returned) {
+        patch.status = 'returned';
+      } else if (input.correctedFulfilledQuantity < Number(line.quantity)) {
+        patch.status = 'partially_fulfilled';
+      } else if (isStockMaterialSource(line.materialSource)) {
+        patch.status = 'used';
+      }
+      void fulfilled;
+    }
+
+    const [updated] = await this.db
+      .update(jobMaterialLines)
+      .set(patch)
+      .where(eq(jobMaterialLines.id, materialLineId))
+      .returning();
+
+    await this.db.insert(jobWorkflowEvents).values({
+      companyId: actor.companyId,
+      jobId,
+      userId: actor.userId,
+      action: 'resolve_material_stock_variance',
+      metadata: {
+        materialLineId,
+        resolutionNotes: notes,
+        correctedFulfilledQuantity: input.correctedFulfilledQuantity ?? null,
+        clientActionId: input.clientActionId,
+      },
+    });
+
+    await this.db.insert(securityAuditLogs).values({
+      companyId: actor.companyId,
+      category: 'inventory',
+      action: 'material_stock_variance_resolved',
+      entityType: 'job_material_line',
+      entityId: materialLineId,
+      userId: actor.userId,
+      metadata: {
+        jobId,
+        resolutionNotes: notes,
+        correctedFulfilledQuantity: input.correctedFulfilledQuantity ?? null,
+        previousNotes: line.stockVarianceNotes,
+        clientActionId: input.clientActionId,
+      },
+    });
+
+    return this.hydrateMaterialLine((updated ?? line).id);
+  }
+
+  /** Owner queue: material lines flagged STOCK VARIANCE — REVIEW REQUIRED. */
+  async listStockVarianceMaterialLines(
+    companyId: string,
+    includeCost = true,
+  ): Promise<JobMaterialLineSummary[]> {
+    const rows = await this.db.query.jobMaterialLines.findMany({
+      where: and(
+        eq(jobMaterialLines.companyId, companyId),
+        eq(jobMaterialLines.stockVarianceStatus, 'review_required'),
+      ),
+      with: { inventoryItem: true, location: true, recordedBy: true, approvedBy: true, job: true },
+      orderBy: [desc(jobMaterialLines.updatedAt)],
+      limit: 200,
+    });
+
+    return rows.map((row) => ({
+      ...toMaterialLineSummary(row, includeCost),
+      jobNumber: row.job?.jobNumber ?? null,
+    }));
   }
 
   async listMaterialLines(
@@ -1196,7 +1501,10 @@ export class JobExecutionService {
     }));
   }
 
-  private async hydrateMaterialLine(materialLineId: string): Promise<JobMaterialLineSummary> {
+  private async hydrateMaterialLine(
+    materialLineId: string,
+    includeCost = true,
+  ): Promise<JobMaterialLineSummary> {
     const row = await this.db.query.jobMaterialLines.findFirst({
       where: eq(jobMaterialLines.id, materialLineId),
       with: { inventoryItem: true, location: true, recordedBy: true, approvedBy: true },
@@ -1206,7 +1514,7 @@ export class JobExecutionService {
       throw new JobExecutionError('NOT_FOUND', 'Material line not found');
     }
 
-    return toMaterialLineSummary(row, true);
+    return toMaterialLineSummary(row, includeCost);
   }
 
   private async ensureLocationBelongsToCompany(companyId: string, locationId: string): Promise<void> {
@@ -1225,6 +1533,275 @@ export class JobExecutionService {
     if (!item) {
       throw new JobExecutionError('ITEM_NOT_FOUND', 'Inventory item not found');
     }
+  }
+
+  private async getOnHandQuantity(
+    dbOrTx: DatabaseClient | Parameters<StockMovementsService['applyMovement']>[0],
+    companyId: string,
+    itemId: string,
+    locationId: string,
+  ): Promise<number> {
+    const level = await dbOrTx.query.inventoryStockLevels.findFirst({
+      where: and(
+        eq(inventoryStockLevels.companyId, companyId),
+        eq(inventoryStockLevels.itemId, itemId),
+        eq(inventoryStockLevels.locationId, locationId),
+      ),
+    });
+    return level?.quantityOnHand ?? 0;
+  }
+
+  /**
+   * Single fulfillment path for STOCK vs DIRECT PURCHASE — prevents double-count and negatives.
+   */
+  private async fulfillMaterialLineInTx(
+    tx: Parameters<StockMovementsService['applyMovement']>[0],
+    args: {
+      actor: ExecutionScope;
+      jobId: string;
+      line: typeof jobMaterialLines.$inferSelect;
+      fulfilledQuantity: number;
+      inventoryItemId: string | null;
+      locationId: string | null;
+      unitCostCents: number | null;
+      supplierReference: string | null;
+      receiptDocumentationId: string | null;
+      clientActionId: string;
+    },
+  ): Promise<typeof jobMaterialLines.$inferSelect> {
+    const {
+      actor,
+      jobId,
+      line,
+      inventoryItemId,
+      locationId,
+      clientActionId,
+    } = args;
+    const now = new Date();
+    const requestedQuantity = Number(line.quantity);
+    const isStockSource = isStockMaterialSource(line.materialSource);
+    const isDirectSource = isDirectPurchaseMaterialSource(line.materialSource);
+    const supplierReference = args.supplierReference?.trim() || line.supplierReference;
+    const receiptDocumentationId = args.receiptDocumentationId ?? line.receiptDocumentationId;
+
+    if (isStockSource && (!inventoryItemId || !locationId)) {
+      throw new JobExecutionError(
+        'VALIDATION_ERROR',
+        'Inventory item and stock location are required to approve STOCK material use',
+      );
+    }
+
+    if (isDirectSource && !directPurchaseEvidenceOk({ supplierReference, receiptDocumentationId })) {
+      throw new JobExecutionError(
+        'VALIDATION_ERROR',
+        'DIRECT PURCHASE requires a supplier slip/reference or receipt upload before approval',
+      );
+    }
+
+    if (locationId) {
+      const location = await tx.query.inventoryLocations.findFirst({
+        where: and(
+          eq(inventoryLocations.id, locationId),
+          eq(inventoryLocations.companyId, actor.companyId),
+        ),
+      });
+      if (!location) {
+        throw new JobExecutionError('LOCATION_NOT_FOUND', 'Inventory location not found');
+      }
+    }
+    if (inventoryItemId) {
+      const item = await tx.query.inventoryItems.findFirst({
+        where: and(
+          eq(inventoryItems.id, inventoryItemId),
+          eq(inventoryItems.companyId, actor.companyId),
+        ),
+      });
+      if (!item) {
+        throw new JobExecutionError('ITEM_NOT_FOUND', 'Inventory item not found');
+      }
+    }
+
+    let issueQuantity = args.fulfilledQuantity;
+    let unitCostCents =
+      args.unitCostCents != null && Number.isFinite(args.unitCostCents)
+        ? Math.max(0, Math.round(args.unitCostCents))
+        : line.unitCostCents ?? 0;
+    let stockMovementId: string | null = line.stockMovementId;
+    let stockVarianceStatus: (typeof jobMaterialLines.$inferSelect)['stockVarianceStatus'] =
+      line.stockVarianceStatus ?? 'none';
+    let stockVarianceNotes: string | null = line.stockVarianceNotes ?? null;
+    let directCostEntryId: string | null = line.directCostEntryId ?? null;
+
+    if (isStockSource && inventoryItemId && locationId) {
+      const available = await this.getOnHandQuantity(tx, actor.companyId, inventoryItemId, locationId);
+      const variance = stockVarianceReviewRequired({
+        requestedQuantity: args.fulfilledQuantity,
+        availableQuantity: available,
+      });
+
+      if (variance) {
+        issueQuantity = Math.max(0, Math.min(args.fulfilledQuantity, available));
+        stockVarianceStatus = 'review_required';
+        stockVarianceNotes = `${STOCK_VARIANCE_REVIEW_LABEL}: requested ${args.fulfilledQuantity}, on hand ${available}, issued ${issueQuantity}`;
+      }
+
+      if (issueQuantity > 0) {
+        // Stock ledger is integer on-hand; truncate fractional request to whole units.
+        const stockIssueQty = Math.trunc(issueQuantity);
+        issueQuantity = stockIssueQty;
+        if (stockIssueQty > 0) {
+          try {
+            const movement = await this.stockMovementsService.applyMovement(tx, {
+              companyId: actor.companyId,
+              itemId: inventoryItemId,
+              locationId,
+              movementType: 'issue',
+              quantityDelta: -stockIssueQty,
+              jobId,
+              jobMaterialLineId: line.id,
+              reason: 'job_material_issue',
+              clientActionId: `${clientActionId}:issue`,
+              recordedByUserId: actor.userId,
+            });
+            unitCostCents = movement.unitCostCents;
+            stockMovementId = movement.id;
+          } catch (error) {
+            if (error instanceof StockMovementError) {
+              if (error.code === 'INSUFFICIENT_STOCK') {
+                stockVarianceStatus = 'review_required';
+                stockVarianceNotes = `${STOCK_VARIANCE_REVIEW_LABEL}: ${error.message}`;
+                issueQuantity = 0;
+              } else {
+                throw new JobExecutionError(error.code, error.message);
+              }
+            } else {
+              throw error;
+            }
+          }
+        }
+      }
+
+      await tx.insert(securityAuditLogs).values({
+        companyId: actor.companyId,
+        category: 'inventory',
+        action:
+          stockVarianceStatus === 'review_required'
+            ? 'material_stock_variance_flagged'
+            : 'material_stock_issued',
+        entityType: 'job_material_line',
+        entityId: line.id,
+        userId: actor.userId,
+        metadata: {
+          jobId,
+          inventoryItemId,
+          locationId,
+          requestedQuantity: args.fulfilledQuantity,
+          issuedQuantity: issueQuantity,
+          stockVarianceStatus,
+          clientActionId,
+        },
+      });
+    }
+
+    if (isDirectSource) {
+      // Authoritative DIRECT PURCHASE path: job expense once — never also issue from inventory.
+      const amountCents = Math.round(args.fulfilledQuantity * unitCostCents);
+      const existingCost = await tx.query.jobDirectCostEntries.findFirst({
+        where: and(
+          eq(jobDirectCostEntries.companyId, actor.companyId),
+          eq(jobDirectCostEntries.sourceType, 'material_line'),
+          eq(jobDirectCostEntries.sourceId, line.id),
+        ),
+      });
+
+      if (existingCost) {
+        directCostEntryId = existingCost.id;
+        await tx
+          .update(jobDirectCostEntries)
+          .set({
+            amountCents,
+            quantity: String(args.fulfilledQuantity),
+            unitCostCents,
+            receiptDocumentId: receiptDocumentationId,
+            notes: supplierReference ? `Supplier ref: ${supplierReference}` : existingCost.notes,
+            updatedAt: now,
+          })
+          .where(eq(jobDirectCostEntries.id, existingCost.id));
+      } else {
+        const [cost] = await tx
+          .insert(jobDirectCostEntries)
+          .values({
+            companyId: actor.companyId,
+            jobId,
+            category: 'consumables',
+            description: line.description,
+            amountCents,
+            quantity: String(args.fulfilledQuantity),
+            unitCostCents,
+            inventoryItemId: inventoryItemId ?? null,
+            sourceType: 'material_line',
+            sourceId: line.id,
+            costDate: now,
+            enteredByUserId: actor.userId,
+            receiptDocumentId: receiptDocumentationId,
+            notes: supplierReference ? `Supplier ref: ${supplierReference}` : null,
+          })
+          .returning();
+        directCostEntryId = cost?.id ?? null;
+      }
+
+      issueQuantity = args.fulfilledQuantity;
+
+      await tx.insert(securityAuditLogs).values({
+        companyId: actor.companyId,
+        category: 'financial',
+        action: 'material_direct_purchase_posted',
+        entityType: 'job_material_line',
+        entityId: line.id,
+        userId: actor.userId,
+        metadata: {
+          jobId,
+          directCostEntryId,
+          amountCents,
+          supplierReference,
+          receiptDocumentationId,
+          clientActionId,
+          inventoryDecremented: false,
+        },
+      });
+    }
+
+    const status: (typeof jobMaterialLines.$inferSelect)['status'] =
+      issueQuantity <= 0 && stockVarianceStatus === 'review_required'
+        ? 'partially_fulfilled'
+        : issueQuantity < requestedQuantity
+          ? 'partially_fulfilled'
+          : isStockSource
+            ? 'used'
+            : 'approved';
+
+    const [row] = await tx
+      .update(jobMaterialLines)
+      .set({
+        status,
+        fulfilledQuantity: String(issueQuantity),
+        inventoryItemId: inventoryItemId ?? null,
+        locationId: locationId ?? null,
+        unitCostCents,
+        stockMovementId,
+        supplierReference: supplierReference ?? null,
+        receiptDocumentationId: receiptDocumentationId ?? null,
+        directCostEntryId,
+        stockVarianceStatus,
+        stockVarianceNotes,
+        approvedByUserId: actor.userId,
+        approvedAt: now,
+        updatedAt: now,
+      })
+      .where(eq(jobMaterialLines.id, line.id))
+      .returning();
+
+    return row ?? line;
   }
 
   /** Office-facing rollup used by the execution summary endpoint. */
@@ -1665,9 +2242,16 @@ export function toMaterialLineSummary(
   },
   includeCost = true,
 ): JobMaterialLineSummary {
-  const quantity = Number(row.quantity);
+  const returnedQuantity = row.returnedQuantity != null ? String(row.returnedQuantity) : '0';
+  const chargeable = materialChargeableQuantity({
+    quantity: row.quantity,
+    fulfilledQuantity: row.fulfilledQuantity,
+    returnedQuantity,
+    status: row.status ?? 'used',
+  });
   const rawUnitCostCents = row.unitCostCents ?? 0;
-  const lineTotalCents = Number.isFinite(quantity) ? Math.round(rawUnitCostCents * quantity) : 0;
+  const lineTotalCents = Math.round(chargeable * rawUnitCostCents);
+  const flow = materialFlowSourceFor(row.materialSource);
 
   return {
     id: row.id,
@@ -1676,6 +2260,7 @@ export function toMaterialLineSummary(
     quantity: row.quantity,
     unit: row.unit,
     materialSource: row.materialSource,
+    materialFlowSource: flow,
     status: row.status ?? 'used',
     inventoryItemId: row.inventoryItemId,
     inventoryItemName: row.inventoryItem?.name ?? null,
@@ -1684,6 +2269,8 @@ export function toMaterialLineSummary(
     unitCostCents: includeCost ? rawUnitCostCents : null,
     lineTotalCents: includeCost ? lineTotalCents : null,
     fulfilledQuantity: row.fulfilledQuantity ?? null,
+    returnedQuantity,
+    chargeableQuantity: String(chargeable),
     quotedQuantity: row.quotedQuantity ?? null,
     clientActionId: row.clientActionId ?? null,
     approvedByUserId: row.approvedByUserId ?? null,
@@ -1694,6 +2281,10 @@ export function toMaterialLineSummary(
     rejectionReason: row.rejectionReason ?? null,
     returnReason: row.returnReason ?? null,
     supplierReference: row.supplierReference,
+    receiptDocumentationId: row.receiptDocumentationId ?? null,
+    directCostEntryId: row.directCostEntryId ?? null,
+    stockVarianceStatus: row.stockVarianceStatus ?? 'none',
+    stockVarianceNotes: row.stockVarianceNotes ?? null,
     notes: row.notes,
     recordedByUserId: row.recordedByUserId,
     recordedByName: row.recordedBy

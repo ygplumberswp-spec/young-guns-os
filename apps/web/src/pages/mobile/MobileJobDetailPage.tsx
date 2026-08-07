@@ -4,6 +4,7 @@ import { Button, EmptyState, Input, PageHeader, Panel } from '@titan/ui';
 import type {
   CartrackArrivalPrompt,
   JobMaterialSource,
+  MaterialFlowSource,
   JobRescheduleReason,
   JobVisitRollup,
   JobWorkflowAction,
@@ -120,7 +121,8 @@ export function MobileJobDetailPage() {
   const [materialQty, setMaterialQty] = useState('1');
   const [materialItemId, setMaterialItemId] = useState('');
   const [materialLocationId, setMaterialLocationId] = useState('');
-  const [materialSource, setMaterialSource] = useState<JobMaterialSource>('vehicle_stock');
+  const [materialFlowSource, setMaterialFlowSource] = useState<MaterialFlowSource>('STOCK');
+  const [materialSupplierRef, setMaterialSupplierRef] = useState('');
   const [inventoryCentre, setInventoryCentre] = useState<MobileWorkforceInventoryCentre | null>(null);
   const [variationTitle, setVariationTitle] = useState('');
   const [variationCondition, setVariationCondition] = useState('');
@@ -650,19 +652,33 @@ export function MobileJobDetailPage() {
     event.preventDefault();
     if (!accessToken || !jobId || busy) return;
 
-    const needsStock = materialSource === 'vehicle_stock' || materialSource === 'warehouse_stock';
+    const needsStock = materialFlowSource === 'STOCK';
     if (needsStock && (!materialItemId || !materialLocationId)) {
-      setError('Select an inventory item and stock location for vehicle/warehouse use');
+      setError('Select an inventory item and stock location for STOCK use');
       return;
     }
+    if (materialFlowSource === 'DIRECT_PURCHASE' && !materialSupplierRef.trim()) {
+      setError('DIRECT PURCHASE requires a supplier slip/reference (or upload the slip as evidence)');
+      return;
+    }
+
+    const selectedLocation = (inventoryCentre?.locations ?? []).find((l) => l.id === materialLocationId);
+    const materialSource: JobMaterialSource =
+      materialFlowSource === 'DIRECT_PURCHASE'
+        ? 'supplier_purchase'
+        : selectedLocation?.locationType === 'warehouse'
+          ? 'warehouse_stock'
+          : 'vehicle_stock';
 
     const payload = {
       description: materialDesc.trim(),
       quantity: Number(materialQty) || 1,
       unit: 'ea',
       materialSource,
-      inventoryItemId: materialItemId || null,
-      locationId: materialLocationId || null,
+      inventoryItemId: needsStock ? materialItemId || null : null,
+      locationId: needsStock ? materialLocationId || null : null,
+      supplierReference:
+        materialFlowSource === 'DIRECT_PURCHASE' ? materialSupplierRef.trim() : null,
       requestOnly: true,
     };
 
@@ -679,6 +695,7 @@ export function MobileJobDetailPage() {
         setMaterialDesc('');
         setMaterialItemId('');
         setMaterialLocationId('');
+        setMaterialSupplierRef('');
         await refreshOffline();
         setMessage('Material requested offline — pending sync and office approval');
         return;
@@ -687,8 +704,13 @@ export function MobileJobDetailPage() {
       setMaterialDesc('');
       setMaterialItemId('');
       setMaterialLocationId('');
+      setMaterialSupplierRef('');
       await reload();
-      setMessage('Material requested — stock decrements when office approves');
+      setMessage(
+        materialFlowSource === 'STOCK'
+          ? 'STOCK material requested — inventory decrements when office approves'
+          : 'DIRECT PURCHASE recorded — job expense only (not deducted from stock)',
+      );
     } catch (err) {
       setError(err instanceof MobileApiClientError ? err.message : 'Unable to record material');
     } finally {
@@ -1366,6 +1388,10 @@ export function MobileJobDetailPage() {
       </Panel>
 
       <Panel title="Materials">
+        <p className="page-muted">
+          Use STOCK for company-owned parts on hand. Use DIRECT PURCHASE for job-bought material with a
+          slip — it is not deducted from inventory unless unused quantity is received into stock.
+        </p>
         <form className="jobs-form" onSubmit={(e) => void handleMaterial(e)}>
           <Input
             label="Description"
@@ -1383,16 +1409,14 @@ export function MobileJobDetailPage() {
             <span className="titan-input-label">Source</span>
             <select
               className="titan-input"
-              value={materialSource}
-              onChange={(e) => setMaterialSource(e.target.value as JobMaterialSource)}
+              value={materialFlowSource}
+              onChange={(e) => setMaterialFlowSource(e.target.value as MaterialFlowSource)}
             >
-              <option value="vehicle_stock">Vehicle stock</option>
-              <option value="warehouse_stock">Warehouse stock</option>
-              <option value="supplier_purchase">Other material / supplier purchase</option>
-              <option value="customer_supplied">Customer supplied</option>
+              <option value="STOCK">STOCK (company inventory)</option>
+              <option value="DIRECT_PURCHASE">DIRECT PURCHASE / JOB EXPENSE</option>
             </select>
           </label>
-          {materialSource === 'vehicle_stock' || materialSource === 'warehouse_stock' ? (
+          {materialFlowSource === 'STOCK' ? (
             <>
               <label className="titan-input-group">
                 <span className="titan-input-label">Inventory item</span>
@@ -1428,7 +1452,14 @@ export function MobileJobDetailPage() {
                 </select>
               </label>
             </>
-          ) : null}
+          ) : (
+            <Input
+              label="Supplier slip / reference"
+              value={materialSupplierRef}
+              onChange={(e) => setMaterialSupplierRef(e.target.value)}
+              required
+            />
+          )}
           <Button type="submit" disabled={busy}>
             Request material use
           </Button>
@@ -1438,13 +1469,26 @@ export function MobileJobDetailPage() {
             <li key={line.id}>
               <strong>{line.description}</strong>
               <span>
-                {line.quantity} {line.unit} · {line.materialSource.replace(/_/g, ' ')} ·{' '}
+                Used {line.fulfilledQuantity ?? line.quantity} {line.unit}
+                {Number(line.returnedQuantity) > 0
+                  ? ` · returned ${line.returnedQuantity}`
+                  : ''}
+                {` · chargeable ${line.chargeableQuantity ?? line.quantity}`}
+                {' · '}
+                {line.materialFlowSource === 'STOCK'
+                  ? 'STOCK'
+                  : line.materialFlowSource === 'DIRECT_PURCHASE'
+                    ? 'DIRECT PURCHASE'
+                    : line.materialSource.replace(/_/g, ' ')}
+                {' · '}
                 {line.status.replace(/_/g, ' ')}
                 {line.inventoryItemName ? ` · ${line.inventoryItemName}` : ''}
                 {line.locationName ? ` @ ${line.locationName}` : ''}
+                {line.supplierReference ? ` · slip ${line.supplierReference}` : ''}
                 {line.rejectionReason ? ` · ${line.rejectionReason}` : ''}
               </span>
-              {['used', 'partially_fulfilled', 'approved'].includes(line.status) ? (
+              {line.materialFlowSource === 'STOCK' &&
+              ['used', 'partially_fulfilled', 'approved'].includes(line.status) ? (
                 <div className="jobs-form" style={{ marginTop: '0.5rem' }}>
                   <Input
                     label="Return qty"
@@ -1461,7 +1505,7 @@ export function MobileJobDetailPage() {
                     }
                   />
                   <Button type="button" disabled={busy} onClick={() => void handleMaterialReturn(line.id)}>
-                    Return material
+                    Return unused STOCK
                   </Button>
                 </div>
               ) : null}

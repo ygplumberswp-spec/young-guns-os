@@ -245,6 +245,53 @@ export async function returnJobMaterialLine(
   return data.materialLine;
 }
 
+export async function receiveUnusedDirectPurchase(
+  accessToken: string,
+  jobId: string,
+  materialLineId: string,
+  body: {
+    quantity: number;
+    inventoryItemId: string;
+    locationId: string;
+    reason: string;
+    clientActionId: string;
+    unitCostCents?: number | null;
+  },
+): Promise<JobMaterialLineSummary> {
+  const data = await request<{ materialLine: JobMaterialLineSummary }>(
+    `/jobs/${jobId}/materials/${materialLineId}/receive-unused`,
+    { accessToken, method: 'POST', body },
+  );
+  return data.materialLine;
+}
+
+export async function resolveJobMaterialStockVariance(
+  accessToken: string,
+  jobId: string,
+  materialLineId: string,
+  body: {
+    resolutionNotes: string;
+    clientActionId: string;
+    correctedFulfilledQuantity?: number | null;
+  },
+): Promise<JobMaterialLineSummary> {
+  const data = await request<{ materialLine: JobMaterialLineSummary }>(
+    `/jobs/${jobId}/materials/${materialLineId}/resolve-variance`,
+    { accessToken, method: 'POST', body },
+  );
+  return data.materialLine;
+}
+
+export async function fetchStockVarianceMaterialLines(
+  accessToken: string,
+): Promise<JobMaterialLineSummary[]> {
+  const data = await request<{ materialLines: JobMaterialLineSummary[] }>(
+    `/jobs/materials/stock-variances`,
+    { accessToken },
+  );
+  return data.materialLines;
+}
+
 export async function fetchJobCostingSummary(
   accessToken: string,
   jobId: string,

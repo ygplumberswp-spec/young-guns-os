@@ -47,3 +47,9 @@ export const jobVariationStatusEnum = pgEnum('job_variation_status', [
   'rejected',
   'cancelled',
 ]);
+
+export const jobMaterialStockVarianceStatusEnum = pgEnum('job_material_stock_variance_status', [
+  'none',
+  'review_required',
+  'resolved',
+]);

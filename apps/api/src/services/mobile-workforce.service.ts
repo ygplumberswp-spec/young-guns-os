@@ -240,7 +240,11 @@ export class MobileWorkforceService {
       this.jobExecutionService.getCrew(scope.companyId, jobId),
       this.jobExecutionService.getActiveVehicle(scope.companyId, jobId),
       this.jobExecutionService.listVariations(scope.companyId, jobId, 'pending'),
-      this.jobExecutionService.listMaterialLines(scope.companyId, jobId),
+      this.jobExecutionService.listMaterialLines(
+        scope.companyId,
+        jobId,
+        /* technicians must not see unit costs / valuation */ false,
+      ),
       this.jobExecutionService.getCompletionGate(scope, jobId),
       job.propertyId
         ? this.db.query.jobs.findMany({

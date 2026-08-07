@@ -1,4 +1,8 @@
 import type { QuoteLineCategory } from './finance.js';
+import {
+  materialChargeableQuantity,
+  materialReturnedQuantity,
+} from './strict-inventory-material-flow.js';
 
 export type JobCostingMaterialSourceBreakdown = {
   vehicleStock: number;
@@ -42,11 +46,13 @@ type MaterialLineForCosting = {
   status: string;
   quantity: string;
   fulfilledQuantity: string | null;
+  /** Cumulative quantity returned / received back into stock. */
+  returnedQuantity?: string | null;
   unitCostCents: number;
   materialSource: string;
 };
 
-const MATERIAL_COST_STATUSES = new Set(['used', 'partially_fulfilled', 'approved']);
+const MATERIAL_COST_STATUSES = new Set(['used', 'partially_fulfilled', 'approved', 'returned']);
 
 export function sumQuoteCategoryCents(
   lines: QuoteLineForCosting[],
@@ -59,10 +65,15 @@ export function sumQuoteCategoryCents(
   }, 0);
 }
 
+/** Job-chargeable material cost: (fulfilled − returned) × unit cost. */
 export function materialLineCostCents(line: MaterialLineForCosting): number {
   if (!MATERIAL_COST_STATUSES.has(line.status)) return 0;
-  const qty = Number(line.fulfilledQuantity ?? line.quantity);
-  if (!Number.isFinite(qty) || qty <= 0) return 0;
+  // Legacy credit-only returned lines (no returnedQuantity) contribute via sumReturnedMaterialCents.
+  if (line.status === 'returned' && (line.returnedQuantity == null || line.returnedQuantity === '')) {
+    return 0;
+  }
+  const qty = materialChargeableQuantity(line);
+  if (qty <= 0) return 0;
   return Math.round(qty * (line.unitCostCents ?? 0));
 }
 
@@ -72,7 +83,20 @@ export function sumMaterialLinesCents(lines: MaterialLineForCosting[]): number {
 
 export function sumReturnedMaterialCents(lines: MaterialLineForCosting[]): number {
   return lines.reduce((sum, line) => {
+    const qty = materialReturnedQuantity(line);
+    if (qty <= 0) return sum;
+    return sum + Math.round(qty * (line.unitCostCents ?? 0));
+  }, 0);
+}
+
+/**
+ * Legacy returned rows (status=returned, no returnedQuantity) are credits subtracted from net.
+ * In-place returns with returnedQuantity are already netted inside materialLineCostCents.
+ */
+export function legacyReturnedMaterialCreditCents(lines: MaterialLineForCosting[]): number {
+  return lines.reduce((sum, line) => {
     if (line.status !== 'returned') return sum;
+    if (line.returnedQuantity != null && line.returnedQuantity !== '') return sum;
     const qty = Number(line.fulfilledQuantity ?? line.quantity);
     if (!Number.isFinite(qty) || qty <= 0) return sum;
     return sum + Math.round(qty * (line.unitCostCents ?? 0));

@@ -24,7 +24,9 @@ import {
   fetchJobTimeline,
   fetchJobVisitsRollup,
   newJobsClientActionId,
+  receiveUnusedDirectPurchase,
   reopenJob,
+  resolveJobMaterialStockVariance,
   returnJobMaterialLine,
   updateJob,
 } from '../../lib/jobs-api';
@@ -73,6 +75,8 @@ export function JobDetailPage() {
   const [stockSelections, setStockSelections] = useState<Record<string, StockSelection>>({});
   const [materialBusyId, setMaterialBusyId] = useState<string | null>(null);
   const [rejectReasons, setRejectReasons] = useState<Record<string, string>>({});
+  const [varianceNotes, setVarianceNotes] = useState<Record<string, string>>({});
+  const [receiveQtyByLine, setReceiveQtyByLine] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -276,6 +280,63 @@ export function JobDetailPage() {
       setSuccess('Material returned to stock.');
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : 'Unable to return material');
+    } finally {
+      setMaterialBusyId(null);
+    }
+  }
+
+  async function handleResolveVariance(line: JobMaterialLineSummary) {
+    if (!accessToken || !jobId || materialBusyId) return;
+    const notes = varianceNotes[line.id]?.trim();
+    if (!notes) {
+      setError('Add resolution notes for the stock variance');
+      return;
+    }
+    setMaterialBusyId(line.id);
+    setError(null);
+    try {
+      await resolveJobMaterialStockVariance(accessToken, jobId, line.id, {
+        resolutionNotes: notes,
+        clientActionId: newJobsClientActionId('resolve-variance'),
+      });
+      setMaterialLines(await fetchJobMaterialLines(accessToken, jobId));
+      setSuccess('Stock variance resolved with audit trail.');
+    } catch (err) {
+      setError(err instanceof ApiClientError ? err.message : 'Unable to resolve stock variance');
+    } finally {
+      setMaterialBusyId(null);
+    }
+  }
+
+  async function handleReceiveUnusedDirect(line: JobMaterialLineSummary) {
+    if (!accessToken || !jobId || materialBusyId) return;
+    const selection = stockSelections[line.id] ?? {
+      inventoryItemId: line.inventoryItemId ?? '',
+      locationId: line.locationId ?? '',
+    };
+    const qty = Number.parseFloat(receiveQtyByLine[line.id] ?? '');
+    if (!Number.isFinite(qty) || qty <= 0) {
+      setError('Enter unused quantity to receive into stock');
+      return;
+    }
+    if (!selection.inventoryItemId || !selection.locationId) {
+      setError('Select inventory item and location to receive unused DIRECT PURCHASE into stock');
+      return;
+    }
+    setMaterialBusyId(line.id);
+    setError(null);
+    try {
+      await receiveUnusedDirectPurchase(accessToken, jobId, line.id, {
+        quantity: qty,
+        inventoryItemId: selection.inventoryItemId,
+        locationId: selection.locationId,
+        reason: 'Unused direct-purchase material received into stock',
+        clientActionId: newJobsClientActionId('receive-unused'),
+      });
+      setMaterialLines(await fetchJobMaterialLines(accessToken, jobId));
+      setSuccess('Unused DIRECT PURCHASE received into stock; job cost reduced.');
+    } catch (err) {
+      setError(err instanceof ApiClientError ? err.message : 'Unable to receive unused material');
     } finally {
       setMaterialBusyId(null);
     }
@@ -984,7 +1045,10 @@ export function JobDetailPage() {
         }
         materialsPanel={
           <>
-            <Panel title="Materials" description="Parts requested, approved and used on this job.">
+            <Panel
+              title="Materials"
+              description="STOCK decrements inventory; DIRECT PURCHASE posts job expense only. One authoritative cost path — no double counting."
+            >
               {materialLines.length === 0 ? (
                 <p className="page-muted">No materials recorded for this job yet.</p>
               ) : (
@@ -1007,6 +1071,12 @@ export function JobDetailPage() {
                           inventoryItemId: line.inventoryItemId ?? '',
                           locationId: line.locationId ?? '',
                         };
+                        const flowLabel =
+                          line.materialFlowSource === 'STOCK'
+                            ? 'STOCK'
+                            : line.materialFlowSource === 'DIRECT_PURCHASE'
+                              ? 'DIRECT PURCHASE'
+                              : line.materialSource.replace(/_/g, ' ');
                         return (
                           <tr key={line.id}>
                             <td>
@@ -1014,14 +1084,29 @@ export function JobDetailPage() {
                               {line.inventoryItemName ? (
                                 <span className="page-muted"> ({line.inventoryItemName})</span>
                               ) : null}
+                              {line.stockVarianceStatus === 'review_required' ? (
+                                <div className="page-muted">
+                                  STOCK VARIANCE — REVIEW REQUIRED
+                                  {line.stockVarianceNotes ? `: ${line.stockVarianceNotes}` : ''}
+                                </div>
+                              ) : null}
                             </td>
                             <td>
                               {line.quantity} {line.unit}
                               {line.fulfilledQuantity
-                                ? ` · ${line.fulfilledQuantity} fulfilled`
+                                ? ` · ${line.fulfilledQuantity} used`
                                 : ''}
+                              {Number(line.returnedQuantity) > 0
+                                ? ` · ${line.returnedQuantity} returned`
+                                : ''}
+                              {` · ${line.chargeableQuantity ?? line.quantity} chargeable`}
                             </td>
-                            <td>{line.materialSource.replace(/_/g, ' ')}</td>
+                            <td>
+                              {flowLabel}
+                              {line.supplierReference ? (
+                                <div className="page-muted">Slip: {line.supplierReference}</div>
+                              ) : null}
+                            </td>
                             <td>
                               {line.status === 'requested' &&
                               isStockSource(line.materialSource) &&
@@ -1116,8 +1201,30 @@ export function JobDetailPage() {
                                       Reject
                                     </Button>
                                   </div>
-                                ) : line.status === 'used' ||
-                                  line.status === 'partially_fulfilled' ? (
+                                ) : null}
+                                {line.stockVarianceStatus === 'review_required' ? (
+                                  <div className="jobs-form__actions">
+                                    <Input
+                                      label="Variance resolution notes"
+                                      value={varianceNotes[line.id] ?? ''}
+                                      onChange={(e) =>
+                                        setVarianceNotes((prev) => ({
+                                          ...prev,
+                                          [line.id]: e.target.value,
+                                        }))
+                                      }
+                                    />
+                                    <Button
+                                      size="sm"
+                                      disabled={materialBusyId === line.id}
+                                      onClick={() => void handleResolveVariance(line)}
+                                    >
+                                      Resolve variance
+                                    </Button>
+                                  </div>
+                                ) : null}
+                                {isStockSource(line.materialSource) &&
+                                (line.status === 'used' || line.status === 'partially_fulfilled') ? (
                                   <Button
                                     size="sm"
                                     variant="secondary"
@@ -1125,15 +1232,91 @@ export function JobDetailPage() {
                                     onClick={() =>
                                       void handleReturnMaterial(
                                         line.id,
-                                        line.fulfilledQuantity ?? line.quantity,
+                                        String(
+                                          Math.max(
+                                            0,
+                                            Number(line.fulfilledQuantity ?? line.quantity) -
+                                              Number(line.returnedQuantity ?? 0),
+                                          ),
+                                        ),
                                       )
                                     }
                                   >
-                                    Return to stock
+                                    Return unused STOCK
                                   </Button>
-                                ) : (
-                                  '—'
-                                )}
+                                ) : null}
+                                {line.materialFlowSource === 'DIRECT_PURCHASE' &&
+                                (line.status === 'used' ||
+                                  line.status === 'partially_fulfilled' ||
+                                  line.status === 'approved') ? (
+                                  <div className="jobs-form__actions">
+                                    <label className="titan-input-group">
+                                      <span className="titan-input-label">Receive item</span>
+                                      <select
+                                        className="titan-input"
+                                        value={selection.inventoryItemId}
+                                        onChange={(e) =>
+                                          updateStockSelection(line.id, {
+                                            inventoryItemId: e.target.value,
+                                          })
+                                        }
+                                      >
+                                        <option value="">Select item</option>
+                                        {inventoryItems.map((item) => (
+                                          <option key={item.id} value={item.id}>
+                                            {item.sku} — {item.name}
+                                          </option>
+                                        ))}
+                                      </select>
+                                    </label>
+                                    <label className="titan-input-group">
+                                      <span className="titan-input-label">Location</span>
+                                      <select
+                                        className="titan-input"
+                                        value={selection.locationId}
+                                        onChange={(e) =>
+                                          updateStockSelection(line.id, {
+                                            locationId: e.target.value,
+                                          })
+                                        }
+                                      >
+                                        <option value="">Select location</option>
+                                        {inventoryLocations.map((location) => (
+                                          <option key={location.id} value={location.id}>
+                                            {location.name} ({location.locationType})
+                                          </option>
+                                        ))}
+                                      </select>
+                                    </label>
+                                    <Input
+                                      label="Unused qty"
+                                      value={receiveQtyByLine[line.id] ?? ''}
+                                      onChange={(e) =>
+                                        setReceiveQtyByLine((prev) => ({
+                                          ...prev,
+                                          [line.id]: e.target.value,
+                                        }))
+                                      }
+                                    />
+                                    <Button
+                                      size="sm"
+                                      variant="secondary"
+                                      disabled={materialBusyId === line.id}
+                                      onClick={() => void handleReceiveUnusedDirect(line)}
+                                    >
+                                      Receive unused into stock
+                                    </Button>
+                                  </div>
+                                ) : null}
+                                {line.status !== 'requested' &&
+                                line.stockVarianceStatus !== 'review_required' &&
+                                !(
+                                  isStockSource(line.materialSource) &&
+                                  (line.status === 'used' || line.status === 'partially_fulfilled')
+                                ) &&
+                                line.materialFlowSource !== 'DIRECT_PURCHASE'
+                                  ? '—'
+                                  : null}
                               </td>
                             ) : null}
                           </tr>

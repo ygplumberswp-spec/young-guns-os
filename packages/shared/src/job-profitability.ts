@@ -9,6 +9,7 @@
 import type { QuoteLineCategory } from './finance.js';
 import { canViewFinanceProfit } from './finance-tenant-pricebook.js';
 import {
+  legacyReturnedMaterialCreditCents,
   materialLineCostCents,
   sumMaterialLinesCents,
   sumQuoteCategoryCents,
@@ -249,6 +250,7 @@ type MaterialLineInput = {
   status: string;
   quantity: string;
   fulfilledQuantity: string | null;
+  returnedQuantity?: string | null;
   unitCostCents: number;
   taxBasis?: TaxBasis | null;
   taxRateBps?: number | null;
@@ -569,6 +571,7 @@ export function computeNetMaterialCostCents(input: {
       status: line.status,
       quantity: line.quantity,
       fulfilledQuantity: line.fulfilledQuantity,
+      returnedQuantity: line.returnedQuantity ?? null,
       unitCostCents: economicUnitCostCents,
       materialSource: line.materialSource,
     };
@@ -576,7 +579,9 @@ export function computeNetMaterialCostCents(input: {
 
   const materialsFromLinesCents = sumMaterialLinesCents(linePayload);
   const materialsReturnedCents = sumReturnedMaterialCents(linePayload);
-  const netFromLines = materialsFromLinesCents - materialsReturnedCents;
+  // In-place returns are already netted in materialsFromLinesCents via returnedQuantity.
+  // Legacy credit-only returned rows (no returnedQuantity) still subtract.
+  const netFromLines = materialsFromLinesCents - legacyReturnedMaterialCreditCents(linePayload);
 
   let purchaseOrderAddOnCents = 0;
 
@@ -1169,6 +1174,7 @@ export function computeJobProfitability(input: ComputeJobProfitabilityInput): Jo
       status: line.status,
       quantity: line.quantity,
       fulfilledQuantity: line.fulfilledQuantity,
+      returnedQuantity: line.returnedQuantity ?? null,
       unitCostCents: line.unitCostCents,
       materialSource: line.materialSource,
     });
@@ -1182,6 +1188,7 @@ export function computeJobProfitability(input: ComputeJobProfitabilityInput): Jo
         status: line.status,
         quantity: line.quantity,
         fulfilledQuantity: line.fulfilledQuantity,
+        returnedQuantity: line.returnedQuantity ?? null,
         unitCostCents: unitTax.economicUnitCostCents,
         materialSource: line.materialSource,
       }),
@@ -1260,6 +1267,7 @@ export function computeJobProfitability(input: ComputeJobProfitabilityInput): Jo
       status: line.status,
       quantity: line.quantity,
       fulfilledQuantity: line.fulfilledQuantity,
+      returnedQuantity: line.returnedQuantity ?? null,
       unitCostCents: line.unitCostCents,
       materialSource: line.materialSource,
     });
@@ -1268,7 +1276,13 @@ export function computeJobProfitability(input: ComputeJobProfitabilityInput): Jo
       id: line.id,
       category: 'material',
       description: line.description,
-      amountCents: line.status === 'returned' ? -cost : cost,
+      // Chargeable cost is already net of returnedQuantity; legacy credit-only returned rows stay negative.
+      amountCents:
+        line.status === 'returned' && (line.returnedQuantity == null || line.returnedQuantity === '')
+          ? -Math.round(
+              Number(line.fulfilledQuantity ?? line.quantity) * (line.unitCostCents ?? 0),
+            )
+          : cost,
       source: line.materialSource,
       sourceRecordId: line.id,
       date: line.createdAt,
