@@ -1,3 +1,1205 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<style>
+:root {
+  --titan-bg: #0f1419;
+  --titan-bg-elevated: #161c24;
+  --titan-surface: #1b2330;
+  --titan-surface-raised: #222b38;
+  --titan-surface-muted: #151b24;
+  --titan-surface-hover: rgba(255,255,255,0.06);
+  --titan-text: #f3f6fb;
+  --titan-text-secondary: #c2cad6;
+  --titan-text-muted: #8b95a5;
+  --titan-border: #2c3646;
+  --titan-border-subtle: #243040;
+  --titan-border-strong: #3a4658;
+  --titan-accent: #3db88a;
+  --titan-accent-rgb: 61, 184, 138;
+  --titan-accent-soft: rgba(61,184,138,0.14);
+  --titan-danger: #f04438;
+  --titan-warning: #f79009;
+  --titan-radius-lg: 0.75rem;
+  --titan-radius-md: 0.5rem;
+  --titan-radius-sm: 0.375rem;
+  --titan-radius-full: 999px;
+  --titan-shadow-sm: 0 1px 2px rgba(0,0,0,0.35);
+  --titan-font-display: "Montserrat", system-ui, sans-serif;
+  --titan-font-ui: "Inter", system-ui, sans-serif;
+  --titan-page-pad-x: 1rem;
+  --titan-page-pad-y: 0.75rem;
+  --titan-touch-target-min: 2.75rem;
+  --titan-space-2: 0.5rem;
+  --titan-space-3: 0.75rem;
+  --titan-space-6: 1.5rem;
+  --titan-space-8: 2rem;
+  --titan-motion-base: 120ms;
+  --titan-motion-slow: 200ms;
+  --titan-ease: ease;
+  --titan-focus-ring: 0 0 0 2px #161c24, 0 0 0 4px var(--titan-accent);
+  --titan-chrome-mid: #c9d2de;
+}
+html, body { margin: 0; padding: 0; font-family: var(--titan-font-ui); background: var(--titan-bg); color: var(--titan-text); }
+.titan-btn { display:inline-flex; align-items:center; justify-content:center; min-height:2.25rem; padding:0.35rem 0.75rem; border:1px solid var(--titan-border); border-radius:var(--titan-radius-sm); background:var(--titan-surface); color:var(--titan-text); font-size:0.8125rem; cursor:pointer; }
+@import './tokens.css';
+
+.titan-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  border: 1px solid transparent;
+  border-radius: var(--titan-radius-md);
+  font-family: var(--titan-font-ui);
+  font-weight: 600;
+  min-height: 2.5rem;
+  cursor: pointer;
+  transition:
+    background-color var(--titan-motion-base) var(--titan-ease),
+    border-color var(--titan-motion-base) var(--titan-ease),
+    color var(--titan-motion-base) var(--titan-ease),
+    box-shadow var(--titan-motion-base) var(--titan-ease);
+}
+
+.titan-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.titan-btn:focus-visible {
+  outline: 2px solid var(--titan-focus);
+  outline-offset: 2px;
+  box-shadow: var(--titan-focus-ring);
+}
+
+.titan-btn--sm {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.8125rem;
+  min-height: 2.25rem;
+}
+
+.titan-btn--md {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+}
+
+.titan-btn--lg {
+  padding: 0.625rem 1.25rem;
+  font-size: 1rem;
+  min-height: 2.75rem;
+}
+
+.titan-btn--primary {
+  background: var(--yg-blue-primary);
+  color: var(--titan-text);
+  border-color: rgba(var(--titan-accent-rgb), 0.55);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    var(--titan-shadow-sm);
+}
+
+.titan-btn--primary:hover:not(:disabled) {
+  background: var(--yg-blue-hover);
+  border-color: var(--titan-accent);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 0 0 1px rgba(var(--titan-accent-rgb), 0.35),
+    var(--titan-shadow-accent);
+}
+
+.titan-btn--secondary {
+  background-color: var(--titan-surface-raised);
+  color: var(--titan-text);
+  border-color: var(--titan-border);
+}
+
+.titan-btn--secondary:hover:not(:disabled) {
+  background-color: var(--titan-surface-hover);
+  border-color: var(--titan-border-strong);
+}
+
+.titan-btn--outline {
+  background-color: transparent;
+  color: var(--titan-text);
+  border-color: var(--titan-border-strong);
+}
+
+.titan-btn--outline:hover:not(:disabled) {
+  background-color: var(--titan-accent-soft);
+  border-color: var(--titan-accent);
+}
+
+.titan-btn--ghost {
+  background-color: transparent;
+  color: var(--titan-text-secondary);
+}
+
+.titan-btn--ghost:hover:not(:disabled) {
+  background-color: var(--titan-surface-hover);
+  color: var(--titan-text);
+}
+
+.titan-btn--destructive {
+  background-color: var(--titan-danger-soft);
+  color: #fecaca;
+  border-color: rgba(239, 68, 68, 0.45);
+}
+
+.titan-btn--destructive:hover:not(:disabled) {
+  background-color: rgba(239, 68, 68, 0.28);
+  color: #fff;
+}
+
+.titan-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.titan-input-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--titan-text-secondary);
+  font-family: var(--titan-font-ui);
+}
+
+.titan-input {
+  width: 100%;
+  min-height: 2.5rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--titan-border);
+  border-radius: var(--titan-radius-md);
+  font-size: 0.875rem;
+  font-family: var(--titan-font-ui);
+  background-color: var(--titan-bg-elevated);
+  color: var(--titan-text);
+  transition:
+    border-color var(--titan-motion-fast) var(--titan-ease),
+    box-shadow var(--titan-motion-fast) var(--titan-ease);
+}
+
+.titan-input::placeholder {
+  color: var(--titan-text-muted);
+}
+
+.titan-input:focus,
+.titan-input:focus-visible {
+  outline: 2px solid var(--titan-focus);
+  outline-offset: 1px;
+  border-color: var(--titan-accent);
+  box-shadow: var(--titan-focus-ring);
+}
+
+.titan-input--error {
+  border-color: var(--titan-danger);
+}
+
+.titan-input-error {
+  font-size: 0.75rem;
+  color: #fca5a5;
+}
+
+/* Native select — same surface as .titan-input */
+.titan-select,
+select.titan-input {
+  width: 100%;
+  min-height: 2.5rem;
+  padding: 0.5rem 2rem 0.5rem 0.75rem;
+  border: 1px solid var(--titan-border);
+  border-radius: var(--titan-radius-md);
+  font-size: 0.875rem;
+  font-family: var(--titan-font-ui);
+  background-color: var(--titan-bg-elevated);
+  color: var(--titan-text);
+  color-scheme: dark;
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--titan-text-muted) 50%),
+    linear-gradient(135deg, var(--titan-text-muted) 50%, transparent 50%);
+  background-position:
+    calc(100% - 1rem) calc(50% - 0.15rem),
+    calc(100% - 0.7rem) calc(50% - 0.15rem);
+  background-size:
+    0.3rem 0.3rem,
+    0.3rem 0.3rem;
+  background-repeat: no-repeat;
+  transition:
+    border-color var(--titan-motion-fast) var(--titan-ease),
+    box-shadow var(--titan-motion-fast) var(--titan-ease);
+}
+
+.titan-select:focus,
+.titan-select:focus-visible,
+select.titan-input:focus,
+select.titan-input:focus-visible {
+  outline: 2px solid var(--titan-focus);
+  outline-offset: 1px;
+  border-color: var(--titan-accent);
+  box-shadow: var(--titan-focus-ring);
+}
+
+/* Legacy orphan class used by Leads — map to design-system input */
+.input {
+  width: 100%;
+  min-height: 2.5rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--titan-border);
+  border-radius: var(--titan-radius-md);
+  font-size: 0.875rem;
+  font-family: var(--titan-font-ui);
+  background-color: var(--titan-bg-elevated);
+  color: var(--titan-text);
+}
+
+.input:focus,
+.input:focus-visible {
+  outline: 2px solid var(--titan-focus);
+  outline-offset: 1px;
+  border-color: var(--titan-accent);
+  box-shadow: var(--titan-focus-ring);
+}
+
+/* Checkbox / radio rows — shared filter & form alignment */
+.checkbox-row,
+.titan-checkbox-row,
+.radio-row,
+.titan-radio-row,
+.jobs-checkbox-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.25rem;
+  padding: 0.25rem 0;
+  font-size: 0.875rem;
+  font-family: var(--titan-font-ui);
+  color: var(--titan-text-secondary);
+  cursor: pointer;
+}
+
+.checkbox-row input[type='checkbox'],
+.titan-checkbox-row input[type='checkbox'],
+.radio-row input[type='radio'],
+.titan-radio-row input[type='radio'],
+.jobs-checkbox-row input[type='checkbox'],
+.jobs-checkbox-row input[type='radio'] {
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+  flex-shrink: 0;
+  accent-color: var(--titan-accent);
+}
+
+/* Compact filter / form grids */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 0.75rem 1rem;
+  align-items: end;
+}
+
+.form-grid > label:not(.checkbox-row):not(.titan-checkbox-row):not(.radio-row) {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--titan-text-secondary);
+  font-family: var(--titan-font-ui);
+}
+
+.form-grid select,
+.form-grid .titan-select {
+  width: 100%;
+}
+
+.stack-gap {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.titan-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
+  background-color: var(--titan-bg);
+  color: var(--titan-text);
+}
+
+.titan-shell__header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  border-bottom: 1px solid var(--titan-border);
+  background: linear-gradient(180deg, var(--titan-bg-elevated) 0%, var(--titan-bg) 100%);
+  padding: 0 1.25rem;
+  height: 3.5rem;
+  min-height: 3.5rem;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  box-shadow: var(--titan-shadow-sm);
+}
+
+.titan-shell__header > * {
+  flex: 1;
+  min-width: 0;
+}
+
+.titan-shell__body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.titan-shell__sidebar {
+  width: 15.5rem;
+  flex-shrink: 0;
+  border-right: 1px solid var(--titan-border);
+  background: linear-gradient(180deg, var(--titan-bg-elevated) 0%, var(--titan-bg) 100%);
+  padding: 0;
+  overflow: hidden;
+  position: relative;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  transition: width var(--titan-motion-slow) var(--titan-ease);
+}
+
+.titan-shell__main {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  padding: var(--titan-page-pad-y, var(--titan-space-6)) var(--titan-page-pad-x, var(--titan-space-8));
+  overflow-y: auto;
+  overflow-x: hidden;
+  background:
+    radial-gradient(ellipse 70% 40% at 100% 0%, rgba(var(--titan-accent-rgb), 0.035), transparent 55%),
+    var(--titan-bg);
+}
+
+.titan-page-header__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.titan-page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.titan-page-header__title {
+  font-family: var(--titan-font-display);
+  font-size: 1.375rem;
+  font-weight: 700;
+  color: var(--titan-text);
+  margin: 0;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+}
+
+.titan-page-header__description {
+  font-size: 0.875rem;
+  color: var(--titan-text-secondary);
+  margin: 0.25rem 0 0;
+  font-family: var(--titan-font-ui);
+}
+
+.titan-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 2rem 1.25rem;
+  border: 1px solid var(--titan-border);
+  border-radius: var(--titan-radius-lg);
+  background-color: var(--titan-surface);
+}
+
+.titan-empty-state--compact {
+  padding: 1.5rem 1rem;
+}
+
+.titan-empty-state__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  margin-bottom: 0.75rem;
+  border-radius: var(--titan-radius-md);
+  background-color: var(--titan-accent-soft);
+  color: var(--titan-accent);
+}
+
+.titan-empty-state__title {
+  font-family: var(--titan-font-display);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--titan-text);
+  margin: 0 0 0.375rem;
+}
+
+.titan-empty-state__description {
+  font-size: 0.8125rem;
+  color: var(--titan-text-secondary);
+  margin: 0 0 1rem;
+  max-width: 22rem;
+  line-height: 1.5;
+}
+
+.titan-empty-state__action {
+  margin-top: 0.25rem;
+}
+
+.titan-stat-card {
+  background-color: var(--titan-surface);
+  border: 1px solid var(--titan-border);
+  border-radius: var(--titan-radius-lg);
+  padding: 1.25rem 1.375rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-height: 7.5rem;
+  box-shadow: var(--titan-shadow-sm);
+  transition:
+    border-color var(--titan-motion-base) var(--titan-ease),
+    box-shadow var(--titan-motion-base) var(--titan-ease),
+    background-color var(--titan-motion-base) var(--titan-ease),
+    transform var(--titan-motion-base) var(--titan-ease);
+}
+
+.titan-stat-card:hover {
+  border-color: var(--titan-border-strong);
+  box-shadow: var(--titan-shadow-md);
+}
+
+.titan-stat-card:focus-within,
+.titan-stat-card[aria-selected='true'],
+.titan-stat-card--selected {
+  border-color: rgba(var(--titan-accent-rgb), 0.45);
+  box-shadow: var(--titan-shadow-accent);
+}
+
+.titan-stat-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.titan-stat-card__label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--titan-text-secondary);
+  letter-spacing: 0.01em;
+}
+
+.titan-stat-card__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.125rem;
+  height: 2.125rem;
+  border-radius: var(--titan-radius-md);
+  background-color: var(--titan-accent-soft);
+  color: var(--titan-accent);
+  flex-shrink: 0;
+}
+
+.titan-stat-card__value {
+  margin: 0;
+  font-family: var(--titan-font-tabular);
+  font-variant-numeric: tabular-nums;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--titan-text);
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.titan-stat-card__hint {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--titan-text-muted);
+}
+
+.titan-panel {
+  background-color: var(--titan-surface);
+  border: 1px solid var(--titan-border);
+  border-radius: var(--titan-radius-lg);
+  overflow: hidden;
+  box-shadow: var(--titan-shadow-sm);
+  transition:
+    border-color var(--titan-motion-base) var(--titan-ease),
+    box-shadow var(--titan-motion-base) var(--titan-ease);
+}
+
+.titan-panel:hover {
+  border-color: var(--titan-border-strong);
+}
+
+.titan-panel[aria-selected='true'],
+.titan-panel--selected {
+  border-color: rgba(var(--titan-accent-rgb), 0.4);
+  box-shadow: var(--titan-shadow-accent);
+}
+
+.titan-panel__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--titan-border-subtle);
+  background-color: var(--titan-surface-raised);
+}
+
+.titan-panel__heading {
+  min-width: 0;
+}
+
+.titan-panel__action {
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.titan-panel__action a {
+  color: var(--titan-accent);
+  text-decoration: none;
+}
+
+.titan-panel__action a:hover {
+  text-decoration: underline;
+}
+
+.titan-panel__title {
+  margin: 0;
+  font-family: var(--titan-font-display);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--titan-text);
+}
+
+.titan-panel__description {
+  margin: 0.25rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--titan-text-secondary);
+}
+
+.titan-panel__body {
+  padding: 1.25rem;
+}
+
+.titan-tab-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.titan-tab-nav__scroll {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.375rem;
+  overflow-x: auto;
+  padding-bottom: 0.125rem;
+  scrollbar-width: thin;
+}
+
+.titan-tab-nav__tab,
+.titan-tab-nav__group {
+  flex: 0 0 auto;
+  border: 1px solid var(--titan-border);
+  border-radius: var(--titan-radius-sm);
+  background: var(--titan-surface);
+  color: var(--titan-text-secondary);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.2;
+  padding: 0.5rem 0.75rem;
+  min-height: 2.25rem;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: var(--titan-font-ui);
+}
+
+.titan-tab-nav__tab:hover,
+.titan-tab-nav__group:hover {
+  background: var(--titan-surface-hover);
+  color: var(--titan-text);
+}
+
+.titan-tab-nav__tab:focus-visible,
+.titan-tab-nav__group:focus-visible {
+  outline: none;
+  box-shadow: var(--titan-focus-ring);
+}
+
+.titan-tab-nav__tab--active {
+  background: var(--titan-accent-soft);
+  border-color: var(--titan-accent);
+  color: var(--titan-text);
+}
+
+.titan-tab-nav__group--active {
+  background: var(--titan-surface-raised);
+  border-color: var(--titan-border-strong);
+  color: var(--titan-text);
+}
+
+.titan-tab-nav__sub {
+  border-top: 1px solid var(--titan-border-subtle);
+  padding-top: 0.5rem;
+}
+
+.titan-loading-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.75rem 0;
+  color: var(--titan-text-secondary);
+  font-size: 0.875rem;
+  font-family: var(--titan-font-ui);
+}
+
+.titan-loading-state__spinner {
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid var(--titan-border);
+  border-top-color: var(--titan-accent);
+  border-radius: 50%;
+  animation: titan-spin 0.8s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .titan-loading-state__spinner {
+    animation: none;
+    border-top-color: var(--titan-accent);
+    opacity: 0.8;
+  }
+}
+
+.titan-loading-state__label {
+  line-height: 1.4;
+}
+
+.titan-page-empty {
+  padding: 1.25rem;
+  border: 1px solid var(--titan-border);
+  border-radius: var(--titan-radius-md);
+  background: var(--titan-surface);
+}
+
+.titan-page-empty__title {
+  margin: 0 0 0.375rem;
+  font-family: var(--titan-font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--titan-text);
+}
+
+.titan-page-empty__description {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--titan-text-secondary);
+  line-height: 1.5;
+}
+
+.titan-page-empty__action {
+  margin-top: 0.875rem;
+}
+
+.titan-page-error {
+  padding: 1rem 1.125rem;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  border-radius: var(--titan-radius-md);
+  background: var(--titan-danger-soft);
+}
+
+.titan-page-error__title {
+  margin: 0 0 0.25rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #fecaca;
+}
+
+.titan-page-error__message {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #fca5a5;
+}
+
+.titan-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border: 1px solid var(--titan-border);
+  background: var(--titan-surface-muted);
+  color: var(--titan-text-secondary);
+  font-family: var(--titan-font-ui);
+}
+
+.titan-badge--success {
+  background: var(--titan-success-soft);
+  border-color: rgba(34, 197, 94, 0.35);
+  color: #86efac;
+}
+
+.titan-badge--warning {
+  background: var(--titan-warning-soft);
+  border-color: rgba(245, 158, 11, 0.35);
+  color: #fcd34d;
+}
+
+.titan-badge--danger {
+  background: var(--titan-danger-soft);
+  border-color: rgba(239, 68, 68, 0.35);
+  color: #fca5a5;
+}
+
+.titan-badge--info {
+  background: var(--yg-info-badge-bg, var(--titan-accent-soft));
+  border-color: var(--yg-info-badge-border, rgba(var(--titan-accent-rgb), 0.35));
+  color: var(--yg-info-badge-text, var(--titan-text-secondary));
+}
+
+@keyframes titan-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* TITAN V1 responsive layout system — content width, padding, vertical rhythm */
+
+:root {
+  /* Operational pages use the full main column; forms keep their own readable max-width. */
+  --titan-content-max-width: none;
+  --titan-content-max-width-narrow: min(72rem, 100%);
+  --titan-content-max-width-readable: min(48rem, 100%);
+
+  /* Fluid page / section spacing */
+  --titan-page-padding: clamp(0.75rem, 1.5vw, 2rem);
+  --titan-page-pad-x: clamp(0.75rem, 1.5vw, 2rem);
+  --titan-page-pad-y: clamp(0.75rem, 1.25vw, 1.5rem);
+  --titan-section-gap: clamp(1rem, 1.2vw, 1.5rem);
+  --titan-card-gap: clamp(0.75rem, 1vw, 1.25rem);
+  --titan-grid-gap: clamp(0.75rem, 1vw, 1.25rem);
+  --titan-table-gap: clamp(1rem, 1.1vw, 1.25rem);
+
+  /* Form / modal readability caps (not page shells) */
+  --titan-form-max-width: 40rem;
+  --titan-form-max-width-lg: 56rem;
+  --titan-modal-max-width: min(40rem, calc(100vw - 2rem));
+  --titan-modal-max-width-lg: min(56rem, calc(100vw - 2rem));
+
+  --titan-rhythm-title: 0;
+  --titan-rhythm-subtitle: 0.375rem;
+  --titan-rhythm-tabs: 1rem;
+  --titan-rhythm-filters: 0.875rem;
+  --titan-rhythm-cards: var(--titan-card-gap);
+  --titan-rhythm-tables: var(--titan-table-gap);
+
+  --titan-bp-mobile: 48rem; /* 768px */
+  --titan-bp-tablet: 64rem; /* 1024px */
+  --titan-bp-desktop-sm: 75rem; /* 1200px */
+  --titan-bp-desktop: 90rem; /* 1440px */
+  --titan-bp-desktop-lg: 120rem; /* 1920px */
+
+  --titan-summary-card-min: 16rem;
+  --titan-summary-grid-gap: var(--titan-rhythm-cards);
+  --titan-touch-target-min: 2.75rem; /* 44px */
+}
+
+/* Shell main padding — fluid with monitor size */
+.titan-shell__main {
+  padding: var(--titan-page-pad-y) var(--titan-page-pad-x);
+}
+
+.app-content-container {
+  width: 100%;
+  max-width: var(--titan-content-max-width);
+  margin-inline: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--titan-section-gap);
+  overflow-x: clip;
+}
+
+.app-content-container--narrow {
+  max-width: var(--titan-content-max-width-narrow);
+  margin-inline: auto;
+}
+
+.app-content-container--wide {
+  max-width: none;
+  margin-inline: 0;
+}
+
+/* OWNER-001 — tighten shell padding on the Owner Command Centre canvas */
+.app-content-container--wide:has(.exec-dashboard-page--owner001) {
+  gap: 0.75rem;
+}
+
+.titan-shell__main:has(.exec-dashboard-page--owner001) {
+  --titan-page-pad-x: clamp(0.5rem, 1vw, 1rem);
+  --titan-page-pad-y: clamp(0.5rem, 1vw, 0.875rem);
+}
+
+/*
+ * YG-CUTOVER-001B — phone/tablet gutters for the command-centre canvas.
+ * Desktop OWNER-001 dense clamp above stays unchanged (≥761px).
+ * On narrow viewports, 1vw collapses toward ~4px and the 0.5rem floor is too tight
+ * once safe-area / overflow clipping is considered — restore readable pad-x.
+ */
+@media (max-width: 760px) {
+  .titan-shell__main:has(.exec-dashboard-page--owner001) {
+    --titan-page-pad-x: 1rem;
+    --titan-page-pad-y: 0.75rem;
+  }
+}
+
+@media (max-width: 430px) {
+  .titan-shell__main:has(.exec-dashboard-page--owner001) {
+    --titan-page-pad-x: 1rem;
+    --titan-page-pad-y: 0.625rem;
+  }
+}
+
+.page-shell,
+.automation-page,
+.finance-page,
+.scheduling-page,
+.dashboard,
+.settings-page,
+.integrations-page,
+.crm-page,
+.fleet-page,
+.analytics-page,
+.inventory-page,
+.aura-page,
+.leads-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--titan-section-gap);
+  min-width: 0;
+  width: 100%;
+  max-width: none;
+}
+
+.ux-page-header {
+  margin-bottom: var(--titan-rhythm-subtitle);
+}
+
+.page-shell .titan-tab-nav,
+.automation-page .titan-tab-nav {
+  margin-bottom: var(--titan-rhythm-tabs);
+}
+
+/* Tables / panels expand with the shell */
+.crm-table-wrap,
+.finance-table-wrap,
+.fleet-table-wrap,
+.jobs-table-wrap,
+.inventory-table-wrap,
+.analytics-page__table-wrap,
+.table-scroll {
+  width: 100%;
+  min-width: 0;
+}
+
+.crm-table,
+.finance-table,
+.fleet-table,
+.inventory-table,
+.analytics-page__table,
+.leads-table {
+  width: 100%;
+}
+
+/* Form readability — page shells stay full width */
+.crm-form,
+.fleet-form,
+.inventory-form,
+.jobs-form,
+.leads-form,
+.scheduling-form,
+.settings-form {
+  max-width: var(--titan-form-max-width);
+  width: 100%;
+}
+
+.mission-control-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--titan-section-gap);
+  width: 100%;
+}
+
+.mission-control-dashboard__split {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--titan-section-gap);
+  align-items: start;
+}
+
+.mission-control-dashboard__split .titan-panel {
+  height: 100%;
+}
+
+.mission-control-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.aura-business-dashboard {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: var(--titan-section-gap);
+  align-items: start;
+}
+
+.aura-business-dashboard .aura-intelligence__summary {
+  grid-column: 1 / -1;
+}
+
+.mission-control-stats {
+  justify-items: stretch;
+}
+
+@media (max-width: 767px) {
+  .aura-business-dashboard {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ux-summary-grid,
+.stat-grid {
+  display: grid;
+  gap: var(--titan-summary-grid-gap);
+  width: 100%;
+  min-width: 0;
+  justify-items: stretch;
+}
+
+.ux-summary-grid > *,
+.stat-grid > * {
+  min-width: 0;
+}
+
+.ux-summary-grid--cols-4,
+.stat-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 768px) {
+  .ux-summary-grid--cols-4,
+  .stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1199px) {
+  .ux-summary-grid--cols-4,
+  .stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1200px) and (max-width: 1439px) {
+  .ux-summary-grid--cols-4,
+  .stat-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1440px) {
+  .ux-summary-grid--cols-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .stat-grid {
+    grid-template-columns: repeat(auto-fit, minmax(var(--titan-summary-card-min), 1fr));
+  }
+}
+
+.ux-summary-grid--cols-3 {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 768px) {
+  .ux-summary-grid--cols-3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .ux-summary-grid--cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.ux-summary-grid--cols-2 {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 768px) {
+  .ux-summary-grid--cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.dashboard-stats.ux-summary-grid {
+  gap: 0.875rem;
+}
+
+.dashboard-stat-card,
+.exec-dashboard-glance__link,
+.stat-grid .stat-card {
+  min-width: 0;
+}
+
+@media (max-width: 767px) {
+  .dashboard-stat-card__link,
+  .exec-dashboard-glance__link {
+    min-height: var(--titan-touch-target-min);
+  }
+}
+
+@media (max-width: 767px) {
+  .mission-control-dashboard__split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.company-health-areas {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--titan-section-gap);
+  width: 100%;
+}
+
+@media (max-width: 767px) {
+  .company-health-areas {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 1023px) {
+  .company-health-areas {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Large-desktop / ultrawide — denser auto-fit grids without stretching cards */
+@media (min-width: 1600px) {
+  .analytics-page__grid {
+    grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+  }
+
+  .analytics-page__stats {
+    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  }
+}
+
+@media (min-width: 1920px) {
+  .analytics-page__grid {
+    grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr));
+  }
+}
+
+/* Scheduling calendar grows with available height/width */
+@media (min-width: 1440px) {
+  .cal-shell {
+    min-height: min(70vh, 44rem);
+  }
+
+  .cal-shell__main {
+    min-height: min(62vh, 38rem);
+  }
+
+  .cal-month-grid__cell {
+    min-height: 7rem;
+  }
+
+  .scheduling-calendar__day {
+    min-height: 10rem;
+  }
+}
+
+@media (min-width: 1920px) {
+  .cal-shell {
+    min-height: min(74vh, 52rem);
+  }
+
+  .cal-shell__main {
+    min-height: min(66vh, 46rem);
+  }
+
+  .cal-month-grid__cell {
+    min-height: 8.5rem;
+  }
+
+  .scheduling-calendar__day {
+    min-height: 12rem;
+  }
+}
+
+/* Fleet / dispatch boards — map and boards fill the column */
+.fleet-page .titan-panel,
+.fleet-dispatch-board,
+.dispatch-board {
+  width: 100%;
+  min-width: 0;
+}
+
+/*
+ * Only the live map area gets a floor. Panels in the wide column used to inherit a
+ * min-height too, which padded Active Jobs and Schedule Overview with empty space.
+ */
+@media (min-width: 1440px) {
+  .exec-live-ops-fleet {
+    min-height: 20rem;
+  }
+}
+
 @import 'tailwindcss';
 @import '@titan/ui/styles.css';
 @import './styles/young-guns-utilities.css';
@@ -4651,78 +5853,6 @@ a:focus-visible {
   }
 }
 
-/*
- * UNIVERSAL PHONE COMPATIBILITY — SE / very-narrow floor (≤320).
- * Standards widths only; do not change desktop packing (≥761).
- */
-@media (max-width: 320px) {
-  .app-header {
-    gap: 0.25rem;
-  }
-
-  .app-header__wordmark {
-    width: 5.75rem;
-  }
-
-  .app-header__brand {
-    max-width: min(100%, 7.5rem);
-  }
-
-  .app-header__meta {
-    max-width: 3.25rem;
-  }
-
-  .app-header__identity {
-    max-width: 3.25rem;
-  }
-
-  .owner-shell .titan-shell__header {
-    padding-left: max(0.5rem, env(safe-area-inset-left, 0px));
-    padding-right: max(0.5rem, env(safe-area-inset-right, 0px));
-  }
-
-  .portal-header {
-    padding-inline: 0.5rem;
-    gap: 0.35rem;
-  }
-
-  .portal-header__wordmark {
-    width: 5.25rem;
-  }
-
-  .portal-nav__link {
-    padding-inline: 0.5rem;
-    font-size: 0.75rem;
-  }
-}
-
-/*
- * UNIVERSAL PHONE — short landscape (keyboard + chrome pressure).
- * Prefer dvh + safe-area over device UA hacks.
- */
-@media (max-height: 430px) and (orientation: landscape) {
-  .owner-shell .titan-shell__header {
-    min-height: calc(2.75rem + env(safe-area-inset-top, 0px));
-  }
-
-  .portal-header {
-    padding-block: 0.4rem;
-  }
-
-  .portal-brand,
-  .portal-header__company,
-  .portal-header__role,
-  .portal-header .brand-credit,
-  .portal-header .brand-sub {
-    display: none;
-  }
-
-  .aura-chat-composer,
-  .exec-aura-launcher__form {
-    padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
-  }
-}
-
 
 .dashboard-panel-empty {
   border: 1px solid var(--titan-border-subtle);
@@ -9075,36 +10205,21 @@ a:focus-visible {
   min-height: 100dvh;
   background: var(--titan-bg);
   color: var(--titan-text);
-  /* hidden (not clip): contain field horizontal bleed without tripping finance workspace anti-clip gate */
   overflow-x: hidden;
-  /*
-   * TECHNICIAN SAFE-AREA: top inset lives on .portal-header (sticky), not the shell.
-   * Shell top padding scrolls away / fails under PWA black-translucent + WhatsApp WKWebView.
-   * Keep bottom inset on the shell; horizontal insets on header + body.
-   */
-  padding-top: 0;
+  padding-top: env(safe-area-inset-top, 0px);
   padding-bottom: env(safe-area-inset-bottom, 0px);
-  padding-left: 0;
-  padding-right: 0;
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
 }
 
 .portal-header {
-  position: sticky;
-  top: 0;
-  z-index: 40;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  box-sizing: border-box;
-  /* Logo/actions sit below notch / Dynamic Island / status bar (Safari, PWA, in-app browsers) */
-  padding-top: calc(0.75rem + env(safe-area-inset-top, 0px));
-  padding-bottom: 0.75rem;
-  padding-left: max(1.25rem, env(safe-area-inset-left, 0px));
-  padding-right: max(1.25rem, env(safe-area-inset-right, 0px));
+  padding: 0.875rem 1.25rem;
   background: linear-gradient(180deg, var(--titan-bg-elevated) 0%, var(--titan-bg) 100%);
   border-bottom: 1px solid var(--titan-border);
-  min-width: 0;
 }
 
 .portal-header__brand-block {
@@ -9112,25 +10227,10 @@ a:focus-visible {
   flex-direction: column;
   gap: 0.15rem;
   min-width: 0;
-  flex: 1 1 auto;
 }
 
 .portal-header__wordmark {
-  width: 6rem;
-  height: auto;
-  flex-shrink: 0;
-}
-
-.portal-main {
-  min-width: 0;
-  overflow-x: hidden;
-}
-
-.portal-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
-  gap: 0.75rem;
-  min-width: 0;
+  width: 5.5rem;
 }
 
 .portal-brand {
@@ -9179,9 +10279,6 @@ a:focus-visible {
   grid-template-columns: 12rem 1fr;
   gap: 1.5rem;
   padding: 1.5rem;
-  padding-left: max(1.5rem, env(safe-area-inset-left, 0px));
-  padding-right: max(1.5rem, env(safe-area-inset-right, 0px));
-  min-width: 0;
 }
 
 .portal-nav {
@@ -10984,59 +12081,23 @@ a:focus-visible {
   }
 }
 
-/* Brand Foundation — mobile shells + UNIVERSAL PHONE + Field Mobile safe-area */
+/* Brand Foundation — mobile shells (375–414) */
 @media (max-width: 720px) {
   .portal-body {
     grid-template-columns: 1fr;
+    padding: 1rem;
     gap: 1rem;
-    min-width: 0;
-    padding-top: 1rem;
-    padding-bottom: 1rem;
-    padding-left: max(1rem, env(safe-area-inset-left, 0px));
-    padding-right: max(1rem, env(safe-area-inset-right, 0px));
   }
 
   .portal-nav {
     flex-direction: row;
     flex-wrap: wrap;
     gap: 0.375rem;
-    min-width: 0;
-  }
-
-  .portal-nav__link {
-    min-width: 0;
-    max-width: 100%;
   }
 
   .portal-header {
-    flex-wrap: nowrap;
-    gap: 0.5rem;
-    /* Must not use padding shorthand — that wiped safe-area-inset-top and put the logo under the clock */
-    padding-top: calc(0.65rem + env(safe-area-inset-top, 0px));
-    padding-bottom: 0.65rem;
-    padding-left: max(1rem, env(safe-area-inset-left, 0px));
-    padding-right: max(1rem, env(safe-area-inset-right, 0px));
-  }
-
-  .portal-header .brand-credit {
-    display: none;
-  }
-
-  .portal-header__company,
-  .portal-header__role {
-    display: none;
-  }
-
-  .portal-header__name {
-    max-width: 7rem;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .portal-header__user {
-    gap: 0.35rem;
-    flex-shrink: 0;
+    flex-wrap: wrap;
+    padding: 0.75rem 1rem;
   }
 
   .auth-form__row {
@@ -11049,77 +12110,6 @@ a:focus-visible {
 
   .app-header__brand .brand-credit {
     display: none;
-  }
-}
-
-/* Field Mobile — very-narrow floor (≤360 / ≤320); keep safe-area, avoid excess blank chrome */
-@media (max-width: 360px) {
-  .portal-header {
-    padding-top: calc(0.55rem + env(safe-area-inset-top, 0px));
-    padding-bottom: 0.55rem;
-    padding-left: max(0.75rem, env(safe-area-inset-left, 0px));
-    padding-right: max(0.75rem, env(safe-area-inset-right, 0px));
-    gap: 0.35rem;
-  }
-
-  .portal-header__wordmark {
-    width: 5.25rem;
-  }
-}
-
-@media (max-width: 320px) {
-  .portal-header {
-    padding-top: calc(0.5rem + env(safe-area-inset-top, 0px));
-    padding-bottom: 0.5rem;
-    padding-left: max(0.5rem, env(safe-area-inset-left, 0px));
-    padding-right: max(0.5rem, env(safe-area-inset-right, 0px));
-  }
-
-  .portal-header__wordmark {
-    width: 5rem;
-  }
-
-  .portal-nav__link {
-    padding-inline: 0.5rem;
-    font-size: 0.75rem;
-  }
-}
-
-@media (max-width: 430px) {
-  .portal-header__wordmark {
-    width: 5.75rem;
-  }
-
-  .portal-brand {
-    font-size: 0.8125rem;
-  }
-
-  .portal-header .brand-sub {
-    font-size: 0.5rem;
-  }
-
-  .portal-body {
-    padding: 0.75rem;
-  }
-
-  .portal-grid {
-    gap: 0.75rem;
-    min-width: 0;
-  }
-}
-
-@media (max-width: 360px) {
-  .portal-header__wordmark {
-    width: 5.5rem;
-  }
-
-  .portal-header__name {
-    max-width: 5rem;
-  }
-
-  .portal-header__user .titan-btn {
-    padding-inline: 0.4rem;
-    font-size: 0.75rem;
   }
 }
 
@@ -13149,3 +14139,607 @@ input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='
     grid-template-columns: 1fr;
   }
 }
+
+/* TITAN Premium Enterprise UX — shared component chrome */
+
+.header-search-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.125rem;
+  padding: 0.375rem 0.75rem;
+  border: 1px solid var(--titan-border-subtle);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--titan-surface) 88%, var(--titan-accent) 12%);
+  color: var(--titan-text-secondary);
+  font-family: var(--titan-font-ui);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background var(--titan-motion-fast) var(--titan-ease),
+    border-color var(--titan-motion-fast) var(--titan-ease),
+    color var(--titan-motion-fast) var(--titan-ease),
+    box-shadow var(--titan-motion-fast) var(--titan-ease),
+    transform var(--titan-motion-fast) var(--titan-ease);
+  white-space: nowrap;
+}
+
+.header-search-trigger:hover {
+  background: var(--titan-surface-hover);
+  border-color: color-mix(in srgb, var(--titan-accent) 35%, var(--titan-border-subtle));
+  color: var(--titan-text);
+}
+
+.header-search-trigger:focus-visible {
+  outline: none;
+  border-color: var(--titan-accent);
+  box-shadow: var(--titan-focus-ring);
+  color: var(--titan-text);
+}
+
+.header-search-trigger:active {
+  transform: scale(0.98);
+  background: color-mix(in srgb, var(--titan-surface-hover) 85%, var(--titan-accent) 15%);
+}
+
+.header-search-trigger__icon {
+  flex-shrink: 0;
+  color: var(--titan-accent);
+}
+
+.header-search-trigger__label {
+  color: var(--titan-chrome-mid, var(--titan-text));
+}
+
+.header-search-trigger__kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.75rem;
+  padding: 0.125rem 0.375rem;
+  border: 1px solid var(--titan-border-subtle);
+  border-radius: 0.25rem;
+  background: var(--titan-bg-elevated, var(--titan-surface));
+  color: var(--titan-text-muted);
+  font-family: var(--titan-font-ui);
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+}
+
+.app-header__search {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-width: 0;
+  max-width: 20rem;
+  margin-inline: 0.5rem;
+}
+
+.ux-command-palette-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 12vh;
+  background: rgba(10, 10, 11, 0.72);
+  backdrop-filter: blur(6px);
+}
+
+.ux-command-palette {
+  width: min(32rem, calc(100vw - 2rem));
+  border-radius: var(--titan-radius-lg);
+  border: 1px solid var(--titan-border-strong);
+  background: var(--titan-surface-raised);
+  box-shadow: var(--titan-shadow-md), var(--titan-shadow-glow);
+  overflow: hidden;
+}
+
+.ux-command-palette__input {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  border: none;
+  border-bottom: 1px solid var(--titan-border-subtle);
+  background: transparent;
+  color: var(--titan-text);
+  font-size: 1rem;
+}
+
+.ux-command-palette__input:focus {
+  outline: none;
+}
+
+.ux-command-palette__hint {
+  padding: 0.75rem 1rem;
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--titan-text-muted);
+}
+
+.ux-command-palette__hint a {
+  color: var(--titan-accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+@media (max-width: 640px) {
+  .app-header__search {
+    flex: 0;
+    max-width: none;
+    margin-inline: 0;
+  }
+
+  .header-search-trigger {
+    width: 2.125rem;
+    min-width: 2.125rem;
+    padding: 0;
+    justify-content: center;
+    border-radius: var(--titan-radius-md);
+  }
+
+  .header-search-trigger__label,
+  .header-search-trigger__kbd {
+    display: none;
+  }
+}
+
+/* Back button */
+.ux-page-header__row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.ux-page-header__main {
+  flex: 1;
+  min-width: 0;
+}
+
+.ux-back-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-height: 2.125rem;
+  padding: 0.375rem 0.75rem;
+  margin-top: 0.125rem;
+  border: 1px solid color-mix(in srgb, var(--titan-accent) 35%, var(--titan-border-subtle));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--titan-surface) 90%, var(--titan-accent) 10%);
+  color: var(--titan-chrome-mid, var(--titan-text));
+  font-family: var(--titan-font-ui);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background var(--titan-motion-fast) var(--titan-ease),
+    border-color var(--titan-motion-fast) var(--titan-ease),
+    box-shadow var(--titan-motion-fast) var(--titan-ease),
+    transform var(--titan-motion-fast) var(--titan-ease);
+}
+
+.ux-back-button:hover {
+  background: var(--titan-surface-hover);
+  border-color: var(--titan-accent);
+  color: var(--titan-text);
+}
+
+.ux-back-button:focus-visible {
+  outline: none;
+  box-shadow: var(--titan-focus-ring);
+}
+
+.ux-back-button:active {
+  transform: scale(0.98);
+}
+
+.ux-back-button__label {
+  line-height: 1;
+}
+
+@media (max-width: 640px) {
+  .ux-back-button {
+    width: 2.125rem;
+    min-width: 2.125rem;
+    padding: 0;
+    justify-content: center;
+    border-radius: var(--titan-radius-md);
+  }
+
+  .ux-back-button__label {
+    display: none;
+  }
+}
+
+/* Toast notifications */
+.ux-toast-stack {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 1200;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-width: min(22rem, calc(100vw - 2rem));
+  pointer-events: none;
+}
+
+.ux-toast {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 0.875rem;
+  border: 1px solid var(--titan-border-subtle);
+  border-radius: var(--titan-radius-md);
+  background: color-mix(in srgb, var(--titan-surface) 92%, var(--titan-accent) 8%);
+  box-shadow: var(--titan-shadow-md, 0 8px 24px rgba(0, 0, 0, 0.12));
+  pointer-events: auto;
+}
+
+.ux-toast--failed {
+  border-color: color-mix(in srgb, #c0392b 40%, var(--titan-border-subtle));
+}
+
+.ux-toast--draft_saved,
+.ux-toast--saved,
+.ux-toast--sync_completed {
+  border-color: color-mix(in srgb, var(--titan-accent) 45%, var(--titan-border-subtle));
+}
+
+.ux-toast__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.ux-toast__label {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--titan-accent);
+}
+
+.ux-toast__message {
+  font-size: 0.8125rem;
+  color: var(--titan-text);
+}
+
+.ux-toast__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+.ux-toast__undo,
+.ux-toast__dismiss {
+  border: none;
+  background: transparent;
+  color: var(--titan-text-secondary);
+  font-size: 0.8125rem;
+  cursor: pointer;
+  padding: 0.125rem 0.25rem;
+}
+
+.ux-toast__undo:hover,
+.ux-toast__dismiss:hover {
+  color: var(--titan-text);
+}
+
+/* Unsaved changes guard */
+.ux-guard-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(10, 10, 11, 0.55);
+}
+
+.ux-guard-modal {
+  width: min(28rem, 100%);
+  padding: 1.375rem;
+  border-radius: var(--titan-radius-lg);
+  border: 1px solid var(--titan-border);
+  background: var(--titan-surface-raised);
+  box-shadow: var(--titan-shadow-md), var(--titan-shadow-glow);
+}
+
+.ux-guard-modal__title {
+  margin: 0 0 0.5rem;
+  font-size: 1.125rem;
+  color: var(--titan-text);
+}
+
+.ux-guard-modal__body {
+  margin: 0 0 1rem;
+  color: var(--titan-text-secondary);
+  font-size: 0.875rem;
+}
+
+.ux-guard-modal__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.finance-draft-status,
+.jobs-draft-status {
+  margin: 0 0 0.75rem;
+  font-size: 0.8125rem;
+  color: var(--titan-text-muted);
+}
+
+/* Drafts workspace */
+.drafts-page__group {
+  margin-bottom: 1.5rem;
+}
+
+.drafts-page__group-title {
+  margin: 0 0 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--titan-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.drafts-page__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--titan-border-subtle);
+}
+
+.drafts-page__meta {
+  min-width: 0;
+}
+
+.drafts-page__title {
+  font-weight: 600;
+  color: var(--titan-text);
+}
+
+.drafts-page__sub {
+  font-size: 0.8125rem;
+  color: var(--titan-text-muted);
+}
+
+.drafts-page__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  flex-shrink: 0;
+}
+
+.settings-scaffold-note {
+  margin: 0 0 1rem;
+  font-size: 0.8125rem;
+  color: var(--titan-text-muted);
+}
+
+.ux-command-palette__recent {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--titan-border-subtle);
+}
+
+.ux-command-palette__recent-title {
+  margin: 0 0 0.375rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--titan-text-muted);
+}
+
+.ux-command-palette__recent-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ux-command-palette__recent-item {
+  margin: 0;
+}
+
+.ux-command-palette__recent-link {
+  display: block;
+  width: 100%;
+  padding: 0.375rem 0;
+  border: none;
+  background: transparent;
+  text-align: left;
+  color: var(--titan-accent);
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+.ux-command-palette__recent-link:hover {
+  text-decoration: underline;
+}
+
+/* In-module navigation — sits above page content when a module has sections. */
+.module-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--titan-border);
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.module-toolbar__link {
+  flex: 0 0 auto;
+  padding: 0.375rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  color: var(--titan-text-muted);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.25rem;
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    background-color 120ms ease,
+    color 120ms ease,
+    border-color 120ms ease;
+}
+
+.module-toolbar__link:hover {
+  background-color: var(--titan-surface-hover);
+  color: var(--titan-text);
+}
+
+.module-toolbar__link--active {
+  background-color: var(--titan-accent-soft);
+  border-color: var(--titan-accent);
+  color: var(--titan-text);
+  font-weight: 600;
+}
+
+.module-toolbar__link:focus-visible {
+  outline: none;
+  box-shadow: var(--titan-focus-ring);
+}
+
+@media (max-width: 640px) {
+  .module-toolbar {
+    flex-wrap: nowrap;
+    margin-bottom: 0.75rem;
+    /* YG-CUTOVER-001B: keep first tab fully visible; scroll for the rest */
+    margin-inline: 0;
+    padding-inline: 1px;
+    max-width: 100%;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .module-toolbar__link {
+    padding: 0.3125rem 0.625rem;
+    font-size: 0.75rem;
+  }
+
+  .module-toolbar__link:first-child {
+    margin-left: 0;
+  }
+}
+
+</style>
+</head>
+<body>
+<div class="titan-shell owner-shell">
+  <header class="titan-shell__header">
+    <div class="app-header">
+      <div class="app-header__start">
+        <button type="button" class="app-header__menu-toggle" style="display:inline-flex">
+          <span class="app-header__menu-glyph">☰</span>
+          <span class="app-header__menu-label">Menu</span>
+        </button>
+        <div class="app-header__brand">
+          <svg class="titan-wordmark titan-wordmark--compact app-header__wordmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 88" role="img" aria-label="TITAN">
+  <title>TITAN</title>
+  <defs>
+    <linearGradient id="chrome" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#f4f7fb"/>
+      <stop offset="22%" stop-color="#d7dee8"/>
+      <stop offset="48%" stop-color="#8b98ab"/>
+      <stop offset="72%" stop-color="#c9d2de"/>
+      <stop offset="100%" stop-color="#5b6b80"/>
+    </linearGradient>
+    <linearGradient id="sheen" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.35"/>
+      <stop offset="35%" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.08"/>
+    </linearGradient>
+    <linearGradient id="edge" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#1f7aec" stop-opacity="0.75"/>
+      <stop offset="45%" stop-color="#e2e8f0" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#3e9bff" stop-opacity="0.45"/>
+    </linearGradient>
+  </defs>
+  <g fill="url(#chrome)" stroke="url(#edge)" stroke-width="1.25" stroke-linejoin="miter">
+    <path d="M12 20 H104 L108 28 H68 V70 H48 V28 H8 Z"/>
+    <path d="M128 20 H152 L154 24 V66 L152 70 H128 L126 66 V24 Z"/>
+    <path d="M172 20 H264 L268 28 H228 V70 H208 V28 H168 Z"/>
+    <path d="M286 70 L324 16 H340 L378 70 H354 L332 36 L310 70 Z"/>
+    <path d="M396 70 V20 H418 L470 52 V20 H492 V70 H470 L418 38 V70 Z"/>
+  </g>
+  <g fill="url(#sheen)" opacity="0.55" pointer-events="none">
+    <path d="M12 20 H104 L108 28 H68 V36 H48 V28 H8 Z"/>
+    <path d="M128 20 H152 L154 24 V34 H126 Z"/>
+    <path d="M172 20 H264 L268 28 H228 V36 H208 V28 H168 Z"/>
+    <path d="M286 70 L324 16 H340 L338 22 L324 22 L300 58 Z"/>
+    <path d="M396 20 H418 L430 28 H396 Z"/>
+  </g>
+</svg>
+
+          <div class="app-header__brand-meta">
+            <span class="staging-badge" role="status">STAGING</span>
+            <span class="brand-sub">Powered by <span class="brand-sub__accent">AURA</span></span>
+          </div>
+          <span class="brand-credit"><span class="brand-credit__by">Built by</span> <span class="brand-credit__org">Young Guns Plumbing</span></span>
+        </div>
+      </div>
+      <div class="app-header__search">
+        <button type="button" class="header-search-trigger" aria-label="Search">
+          <span class="header-search-trigger__icon" aria-hidden="true">⌕</span>
+          <span class="header-search-trigger__label">Search</span>
+          <kbd class="header-search-trigger__kbd">⌘K</kbd>
+        </button>
+      </div>
+      <div class="app-header__user">
+        <a class="app-header__identity" href="#" title="Alex Owner — Young Guns Plumbing — Company Owner">
+          <span class="app-header__identity-mark">YG</span>
+          <span class="app-header__meta">
+            <span class="app-header__name">Alex Owner</span>
+            <span class="app-header__tenant">Young Guns Plumbing</span>
+            <span class="app-header__role">Company Owner</span>
+          </span>
+        </a>
+        <button type="button" class="titan-btn app-header__signout">
+          <span class="app-header__signout-full">Sign Out</span>
+          <span class="app-header__signout-short" aria-hidden="true">Out</span>
+        </button>
+      </div>
+    </div>
+  </header>
+  <div class="titan-shell__body">
+    <aside class="titan-shell__sidebar" id="owner-mobile-nav">
+      <div class="app-sidebar">
+        <div class="app-sidebar__profile" aria-label="Signed-in profile">
+          <span class="app-sidebar__profile-mark">YG</span>
+          <span class="app-sidebar__profile-meta">
+            <span class="app-sidebar__profile-name">Alex Owner</span>
+            <span class="app-sidebar__profile-tenant">Young Guns Plumbing</span>
+            <span class="app-sidebar__profile-role">Company Owner</span>
+          </span>
+        </div>
+        <nav class="app-nav" aria-label="Main Navigation"><a class="app-nav__link" href="#">Dashboard</a></nav>
+      </div>
+    </aside>
+    <main class="titan-shell__main">
+      <div class="app-content-container app-content-container--wide">
+        <p style="padding:1rem;color:var(--titan-text-muted)">Header polish proof surface</p>
+      </div>
+    </main>
+  </div>
+</div>
+</body>
+</html>
