@@ -81,6 +81,19 @@ export type WhatsappConnectionSummary = {
   runtimeNote: string | null;
 };
 
+/** LIVE-001B — read-only Meta GET proof using stored tenant credentials. */
+export type WhatsappConnectionTestResult = {
+  ok: boolean;
+  status: 'connected' | 'degraded' | 'error';
+  phoneNumberId: string;
+  businessAccountId: string | null;
+  displayPhoneNumber: string | null;
+  verifiedName: string | null;
+  /** Always false — Test Connection never POSTs /messages. */
+  providerWritePerformed: false;
+  outboundMessageSent: false;
+};
+
 export type SaveWhatsappConnectionRequest = {
   accessToken?: string;
   phoneNumberId: string;

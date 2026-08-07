@@ -8,6 +8,7 @@ import type {
   WhatsappAutomationActionResult,
   WhatsappAutomationTriggerContext,
   WhatsappConnectionSummary,
+  WhatsappConnectionTestResult,
   WhatsappMessageSummary,
   WhatsappStats,
   WhatsappTemplateCategory,
@@ -31,6 +32,7 @@ import {
 import {
   parseIncomingWebhookMessages,
   parseWebhookDeliveryStatuses,
+  redactWhatsappSecretMaterial,
   WhatsappClient,
   WhatsappError,
   type WhatsappWebhookPayload,
@@ -206,6 +208,114 @@ export class WhatsappService {
     return this.toConnectionSummary(connection);
   }
 
+  /**
+   * LIVE-001B — Safe read-only Test Connection.
+   * Uses stored tenant credentials for ONE Meta GET on the phone number resource.
+   * Never calls /messages, never mutates credentials, never requires outbound flag.
+   */
+  async testStoredConnection(
+    companyId: string,
+    actorUserId?: string,
+  ): Promise<{ result: WhatsappConnectionTestResult; connection: WhatsappConnectionSummary }> {
+    this.ensureWhatsappFeatureEnabled('connect');
+
+    const connection = await this.requireConnectedConnection(companyId);
+    const client = this.createClient(connection);
+
+    try {
+      const verified = await client.verifyConnection();
+
+      const [updated] = await this.db
+        .update(whatsappConnections)
+        .set({
+          status: 'connected',
+          displayPhoneNumber: verified.displayPhoneNumber ?? connection.displayPhoneNumber,
+          lastError: null,
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(whatsappConnections.id, connection.id),
+            eq(whatsappConnections.companyId, companyId),
+          ),
+        )
+        .returning();
+
+      await this.recordAudit(
+        companyId,
+        actorUserId,
+        'whatsapp_business_test_connection',
+        updated!.id,
+        {
+          phoneNumberId: connection.phoneNumberId,
+          displayPhoneNumber: verified.displayPhoneNumber,
+          verifiedName: verified.verifiedName,
+          providerWritePerformed: false,
+          outboundMessageSent: false,
+        },
+      );
+
+      const result: WhatsappConnectionTestResult = {
+        ok: true,
+        status: 'connected',
+        phoneNumberId: connection.phoneNumberId!,
+        businessAccountId: connection.businessAccountId,
+        displayPhoneNumber: verified.displayPhoneNumber,
+        verifiedName: verified.verifiedName,
+        providerWritePerformed: false,
+        outboundMessageSent: false,
+      };
+
+      return { result, connection: this.toConnectionSummary(updated!) };
+    } catch (error) {
+      const code = error instanceof WhatsappError ? error.code : 'CONNECTION_FAILED';
+      const rawMessage =
+        error instanceof Error ? error.message : 'WhatsApp test connection failed';
+      const message = redactWhatsappSecretMaterial(rawMessage);
+      const status: WhatsappConnectionTestResult['status'] =
+        code === 'RATE_LIMITED' || code === 'TIMEOUT' ? 'degraded' : 'error';
+
+      await this.db
+        .update(whatsappConnections)
+        .set({
+          // Keep credentials; mark degraded/error honestly for Operator UI.
+          status: status === 'degraded' ? 'error' : 'error',
+          lastError: message,
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(whatsappConnections.id, connection.id),
+            eq(whatsappConnections.companyId, companyId),
+          ),
+        );
+
+      await this.recordAudit(
+        companyId,
+        actorUserId,
+        'whatsapp_business_test_connection_failed',
+        connection.id,
+        {
+          phoneNumberId: connection.phoneNumberId,
+          code,
+          providerWritePerformed: false,
+          outboundMessageSent: false,
+        },
+      );
+
+      throw new WhatsappServiceError(
+        code === 'AUTH_EXPIRED' ||
+          code === 'FORBIDDEN' ||
+          code === 'RATE_LIMITED' ||
+          code === 'TIMEOUT' ||
+          code === 'PROVIDER_ERROR'
+          ? code
+          : 'CONNECTION_FAILED',
+        message,
+      );
+    }
+  }
+
   async saveConnection(
     companyId: string,
     input: SaveWhatsappConnectionRequest,
@@ -280,12 +390,13 @@ export class WhatsappService {
 
       return this.toConnectionSummary(updated!);
     } catch (error) {
-      const message =
+      const message = redactWhatsappSecretMaterial(
         error instanceof WhatsappError
           ? error.message
           : error instanceof Error
             ? error.message
-            : 'WhatsApp connection failed';
+            : 'WhatsApp connection failed',
+      );
 
       await this.db
         .update(whatsappConnections)

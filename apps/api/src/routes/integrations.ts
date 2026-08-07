@@ -1701,6 +1701,28 @@ export function createIntegrationsRouter({
     }
   });
 
+  /**
+   * LIVE-001B — read-only Meta GET using stored credentials.
+   * Distinct from POST /whatsapp/test which sends an outbound message.
+   */
+  router.post(
+    '/whatsapp/test-connection',
+    requireAnyPermission('integrations:manage'),
+    async (req, res) => {
+      const { companyId, userId } = getAuth(req);
+
+      try {
+        const { result, connection } = await whatsappService.testStoredConnection(
+          companyId,
+          userId,
+        );
+        res.json({ data: { result, connection } });
+      } catch (error) {
+        handleWhatsappError(res, error);
+      }
+    },
+  );
+
   router.post('/whatsapp/test', requireAnyPermission('integrations:manage'), async (req, res) => {
     const { companyId } = getAuth(req);
     const parsed = sendWhatsappTestSchema.safeParse(req.body);
@@ -2300,13 +2322,21 @@ function handleWhatsappError(res: import('express').Response, error: unknown) {
     const status =
       error.code === 'NOT_FOUND'
         ? 404
-        : error.code === 'FEATURE_DISABLED' || error.code === 'ENCRYPTION_NOT_CONFIGURED'
-          ? 503
-          : error.code === 'NOT_CONNECTED' ||
-              error.code === 'VALIDATION_ERROR' ||
-              error.code === 'CONNECTION_FAILED'
-            ? 400
-            : 400;
+        : error.code === 'AUTH_EXPIRED'
+          ? 401
+          : error.code === 'FORBIDDEN'
+            ? 403
+            : error.code === 'RATE_LIMITED'
+              ? 429
+              : error.code === 'TIMEOUT' || error.code === 'PROVIDER_ERROR'
+                ? 502
+                : error.code === 'FEATURE_DISABLED' || error.code === 'ENCRYPTION_NOT_CONFIGURED'
+                  ? 503
+                  : error.code === 'NOT_CONNECTED' ||
+                      error.code === 'VALIDATION_ERROR' ||
+                      error.code === 'CONNECTION_FAILED'
+                    ? 400
+                    : 400;
 
     res.status(status).json({
       error: {

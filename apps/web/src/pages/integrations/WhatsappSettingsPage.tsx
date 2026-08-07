@@ -16,6 +16,7 @@ import {
   fetchWhatsappIntegration,
   saveWhatsappConnection,
   sendWhatsappTestMessage,
+  testWhatsappConnection,
   updateWhatsappTemplate,
 } from '../../lib/whatsapp-api';
 import { useAuth } from '../../lib/auth-context';
@@ -64,6 +65,7 @@ export function WhatsappSettingsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
+  const [isTestingConnection, setIsTestingConnection] = useState(false);
   const [isCreatingTemplate, setIsCreatingTemplate] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -170,6 +172,29 @@ export function WhatsappSettingsPage() {
       setError(err instanceof ApiClientError ? err.message : 'Unable to disconnect Business WhatsApp');
     } finally {
       setIsSaving(false);
+    }
+  }
+
+  async function handleTestConnection() {
+    if (!accessToken || !canManage) return;
+
+    setIsTestingConnection(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const { result, connection: next } = await testWhatsappConnection(accessToken);
+      setConnection(next);
+      const identity =
+        result.verifiedName || result.displayPhoneNumber || result.phoneNumberId || 'WhatsApp';
+      setSuccess(
+        `Connection verified for ${identity}. Read-only Meta check — no message sent.`,
+      );
+    } catch (err) {
+      setError(err instanceof ApiClientError ? err.message : 'Unable to test WhatsApp connection');
+      await loadPageData().catch(() => undefined);
+    } finally {
+      setIsTestingConnection(false);
     }
   }
 
@@ -321,6 +346,14 @@ export function WhatsappSettingsPage() {
                   <div className="integration-actions" style={{ marginTop: '0.75rem' }}>
                     <Button
                       type="button"
+                      disabled={isTestingConnection || isSaving}
+                      onClick={() => void handleTestConnection()}
+                    >
+                      {isTestingConnection ? 'Testing…' : 'Test Connection'}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="secondary"
                       onClick={() => {
                         setManageOpen((open) => !open);
                         setConfirmDisconnect(false);
@@ -330,6 +363,10 @@ export function WhatsappSettingsPage() {
                       {manageOpen ? 'Close' : 'Manage'}
                     </Button>
                   </div>
+                  <p className="page-muted" style={{ marginTop: '0.5rem' }}>
+                    Test Connection performs one read-only Meta check using the stored token. It does
+                    not send a WhatsApp message.
+                  </p>
 
                   {manageOpen ? (
                     <div className="page-header-actions" style={{ marginTop: '0.75rem' }}>
