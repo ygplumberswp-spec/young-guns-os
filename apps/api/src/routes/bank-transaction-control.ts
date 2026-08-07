@@ -26,6 +26,7 @@ const allocateLineSchema = z.object({
   supplierId: z.string().uuid().optional(),
   directCostId: z.string().uuid().optional(),
   notes: z.string().trim().max(2000).optional(),
+  idempotencyKey: z.string().trim().min(1).max(120).optional(),
   createDirectCost: z.boolean().optional(),
   directCostDescription: z.string().trim().max(500).optional(),
   directCostCategory: z.string().trim().max(80).optional(),
@@ -78,7 +79,7 @@ function handleError(res: import('express').Response, error: unknown): boolean {
         ? 403
         : error.code === 'NOT_FOUND'
           ? 404
-          : error.code === 'CONFLICT'
+          : error.code === 'CONFLICT' || error.code === 'OVER_ALLOCATION'
             ? 409
             : 400;
     res.status(status).json({ error: { code: error.code, message: error.message } });

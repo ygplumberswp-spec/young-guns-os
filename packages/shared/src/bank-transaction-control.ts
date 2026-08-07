@@ -84,6 +84,7 @@ export function buildBankTransactionFingerprintCanonical(
   if (input.externalTransactionId?.trim()) {
     return [
       input.companyId,
+      input.bankAccountId,
       input.provider,
       input.externalTransactionId.trim(),
     ].join('|');
@@ -386,6 +387,56 @@ export function allocationAffectsJobProfitability(
   allocationType: BankTransactionAllocationType,
 ): boolean {
   return allocationType === 'direct_job_cost';
+}
+
+export type DirectCostSettlementStatus = 'unpaid' | 'partially_paid' | 'paid';
+
+/** Resolve cash paid against a direct cost — bank amountPaidCents authoritative when set. */
+export function resolveDirectCostCashPaidCents(cost: {
+  amountCents: number;
+  amountPaidCents?: number | null;
+  isPaid: boolean;
+}): number {
+  if (cost.amountPaidCents != null && cost.amountPaidCents > 0) {
+    return Math.min(cost.amountPaidCents, cost.amountCents);
+  }
+  return cost.isPaid ? cost.amountCents : 0;
+}
+
+export function deriveDirectCostSettlementStatus(cost: {
+  amountCents: number;
+  amountPaidCents?: number | null;
+  isPaid: boolean;
+}): DirectCostSettlementStatus {
+  const paid = resolveDirectCostCashPaidCents(cost);
+  if (paid <= 0) return 'unpaid';
+  if (paid >= cost.amountCents) return 'paid';
+  return 'partially_paid';
+}
+
+export function computeDirectCostSettlementAfterAllocation(input: {
+  amountCents: number;
+  currentAmountPaidCents: number;
+  allocationAmountCents: number;
+}): { amountPaidCents: number; isPaid: boolean } {
+  const amountPaidCents = Math.min(
+    input.amountCents,
+    input.currentAmountPaidCents + input.allocationAmountCents,
+  );
+  return {
+    amountPaidCents,
+    isPaid: amountPaidCents >= input.amountCents,
+  };
+}
+
+/** Sum active bank allocations linked to a direct cost. */
+export function sumBankAllocationsForDirectCost(
+  allocations: ReadonlyArray<{ directCostId: string | null; amountCents: number; isActive?: boolean }>,
+  directCostId: string,
+): number {
+  return allocations
+    .filter((row) => row.directCostId === directCostId && row.isActive !== false)
+    .reduce((sum, row) => sum + row.amountCents, 0);
 }
 
 /** Credits must not auto-become customer revenue. */

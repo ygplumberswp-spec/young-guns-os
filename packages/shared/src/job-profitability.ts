@@ -1048,12 +1048,31 @@ export function computeJobProfitability(input: ComputeJobProfitabilityInput): Jo
   };
 
   const cashCollectedCents = sumCashCollectedCents(input.payments);
-  const paidDirectCosts = input.directCosts.filter((row) => row.isPaid);
-  const cashSpentCents = paidDirectCosts.reduce((sum, row) => sum + row.amountCents, 0);
+  const cashSpentCents = input.directCosts.reduce(
+    (sum, row) =>
+      sum +
+      (row.amountPaidCents != null && row.amountPaidCents > 0
+        ? Math.min(row.amountPaidCents, row.amountCents)
+        : row.isPaid
+          ? row.amountCents
+          : 0),
+    0,
+  );
   const cashSpentCompleteness = assessCashSpentCompleteness(input.directCosts);
-  const unpaidDirectCostCents = input.directCosts
-    .filter((row) => !row.isPaid)
-    .reduce((sum, row) => sum + row.amountCents, 0);
+  const unpaidDirectCostCents = input.directCosts.reduce(
+    (sum, row) =>
+      sum +
+      Math.max(
+        0,
+        row.amountCents -
+          (row.amountPaidCents != null && row.amountPaidCents > 0
+            ? Math.min(row.amountPaidCents, row.amountCents)
+            : row.isPaid
+              ? row.amountCents
+              : 0),
+      ),
+    0,
+  );
   const unpaidAccrualCostsCents = Math.max(0, totalDirectCostCents - cashSpentCents);
   const realisedCashProfitCents = cashCollectedCents - cashSpentCents;
 
@@ -1097,13 +1116,22 @@ export function computeJobProfitability(input: ComputeJobProfitabilityInput): Jo
           paidAt: row.paidAt,
           reference: row.reference,
         })),
-      paidCostReferences: paidDirectCosts.map((row) => ({
-        id: row.id,
-        amountCents: row.amountCents,
-        sourceType: row.sourceType,
-        sourceId: row.sourceId,
-        description: row.description,
-      })),
+      paidCostReferences: input.directCosts
+        .filter(
+          (row) =>
+            row.isPaid ||
+            (row.amountPaidCents != null && row.amountPaidCents > 0),
+        )
+        .map((row) => ({
+          id: row.id,
+          amountCents:
+            row.amountPaidCents != null && row.amountPaidCents > 0
+              ? Math.min(row.amountPaidCents, row.amountCents)
+              : row.amountCents,
+          sourceType: row.sourceType,
+          sourceId: row.sourceId,
+          description: row.description,
+        })),
     },
   };
 

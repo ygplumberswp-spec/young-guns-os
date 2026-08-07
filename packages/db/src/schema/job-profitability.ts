@@ -91,6 +91,7 @@ export const jobDirectCostEntries = pgTable('job_direct_cost_entries', {
     .notNull()
     .references(() => users.id, { onDelete: 'restrict' }),
   isPaid: boolean('is_paid').notNull().default(false),
+  amountPaidCents: integer('amount_paid_cents').notNull().default(0),
   paidAt: timestamp('paid_at', { withTimezone: true }),
   notes: text('notes'),
   receiptDocumentId: uuid('receipt_document_id').references(() => documents.id, {

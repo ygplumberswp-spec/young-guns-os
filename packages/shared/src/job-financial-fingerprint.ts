@@ -74,6 +74,7 @@ export type JobFinancialFingerprintDirectCost = {
   id: string;
   category: string;
   amountCents: number;
+  amountPaidCents?: number;
   sourceType: string;
   sourceId: string;
   isPaid: boolean;
@@ -164,15 +165,22 @@ export function buildJobFinancialFingerprintCanonical(input: JobFinancialFingerp
       overtimeMultiplier: row.overtimeMultiplier,
       hourlyCostLockedAt: row.hourlyCostLockedAt,
     })),
-    directCosts: sortById(input.directCosts).map((row) => ({
-      id: row.id,
-      category: row.category,
-      amountCents: row.amountCents,
-      sourceType: row.sourceType,
-      sourceId: row.sourceId,
-      isPaid: row.isPaid,
-      receiptDocumentId: row.receiptDocumentId,
-    })),
+    directCosts: sortById(input.directCosts).map((row) => {
+      const paid = row.amountPaidCents ?? (row.isPaid ? row.amountCents : 0);
+      const payload: Record<string, unknown> = {
+        id: row.id,
+        category: row.category,
+        amountCents: row.amountCents,
+        sourceType: row.sourceType,
+        sourceId: row.sourceId,
+        isPaid: row.isPaid,
+        receiptDocumentId: row.receiptDocumentId,
+      };
+      if (paid > 0 && paid < row.amountCents) {
+        payload.amountPaidCents = paid;
+      }
+      return payload;
+    }),
     payments: sortById(input.payments).map((row) => ({
       id: row.id,
       amountCents: row.amountCents,

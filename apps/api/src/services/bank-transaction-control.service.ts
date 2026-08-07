@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 import { and, desc, eq, gte, inArray, lte, sql } from 'drizzle-orm';
 import type { DatabaseClient } from '@titan/db';
 import {
@@ -26,6 +27,7 @@ import {
   canManageBankTransactionControl,
   canViewBankTransactionControl,
   computeAllocationTotals,
+  computeDirectCostSettlementAfterAllocation,
   creditRequiresManualReview,
   deriveBankTransactionDirection,
   deriveReceiptStatus,
@@ -61,6 +63,7 @@ export type AllocateBankTransactionInput = {
   supplierId?: string | null;
   directCostId?: string | null;
   notes?: string | null;
+  idempotencyKey?: string | null;
   /** When true, create a new direct job cost instead of only linking. */
   createDirectCost?: boolean;
   directCostDescription?: string | null;
@@ -200,6 +203,7 @@ export class BankTransactionControlService {
       const existing = await this.db.query.bankTransactions.findFirst({
         where: and(
           eq(bankTransactions.companyId, actor.companyId),
+          eq(bankTransactions.bankAccountId, account.id),
           eq(bankTransactions.sourceFingerprint, fingerprint),
         ),
       });
@@ -216,24 +220,38 @@ export class BankTransactionControlService {
 
       const allocationStatus = creditRequiresManualReview(direction) ? 'needs_review' : 'unallocated';
 
-      await this.db.insert(bankTransactions).values({
-        companyId: actor.companyId,
-        bankAccountId: account.id,
-        provider: 'manual_import',
-        transactionDate: row.transactionDate,
-        amountCents,
-        direction,
-        description: row.description,
-        reference: row.reference,
-        sourceFingerprint: fingerprint,
-        importBatchId: batchId,
-        importRowId: row.id,
-        receiptStatus,
-        allocationStatus,
-        rawProviderMetadata: { importRowIndex: row.rowIndex },
-      });
-
-      imported += 1;
+      try {
+        const inserted = await this.db
+          .insert(bankTransactions)
+          .values({
+            companyId: actor.companyId,
+            bankAccountId: account.id,
+            provider: 'manual_import',
+            transactionDate: row.transactionDate,
+            amountCents,
+            direction,
+            description: row.description,
+            reference: row.reference,
+            sourceFingerprint: fingerprint,
+            importBatchId: batchId,
+            importRowId: row.id,
+            receiptStatus,
+            allocationStatus,
+            rawProviderMetadata: { importRowIndex: row.rowIndex },
+          })
+          .onConflictDoNothing({
+            target: [
+              bankTransactions.companyId,
+              bankTransactions.bankAccountId,
+              bankTransactions.sourceFingerprint,
+            ],
+          })
+          .returning({ id: bankTransactions.id });
+        if (inserted.length === 0) skipped += 1;
+        else imported += 1;
+      } catch {
+        skipped += 1;
+      }
     }
 
     await this.audit(actor.companyId, actor.userId, 'import_batch_ingested', {
@@ -505,6 +523,56 @@ export class BankTransactionControlService {
     return detail.candidateMatches;
   }
 
+  private async sumActiveAllocationsForDirectCost(
+    db: DatabaseClient,
+    companyId: string,
+    directCostId: string,
+    excludeAllocationIds: string[] = [],
+  ): Promise<number> {
+    const rows = await db
+      .select({ amountCents: bankTransactionAllocations.amountCents, id: bankTransactionAllocations.id })
+      .from(bankTransactionAllocations)
+      .where(
+        and(
+          eq(bankTransactionAllocations.companyId, companyId),
+          eq(bankTransactionAllocations.directCostId, directCostId),
+          eq(bankTransactionAllocations.isActive, true),
+        ),
+      );
+    return rows
+      .filter((row) => !excludeAllocationIds.includes(row.id))
+      .reduce((sum, row) => sum + row.amountCents, 0);
+  }
+
+  private async syncDirectCostSettlement(
+    db: DatabaseClient,
+    companyId: string,
+    directCostId: string,
+    paidAt?: Date | null,
+  ): Promise<void> {
+    const cost = await db.query.jobDirectCostEntries.findFirst({
+      where: and(
+        eq(jobDirectCostEntries.id, directCostId),
+        eq(jobDirectCostEntries.companyId, companyId),
+      ),
+    });
+    if (!cost) return;
+
+    const allocatedCents = await this.sumActiveAllocationsForDirectCost(db, companyId, directCostId);
+    const amountPaidCents = Math.min(cost.amountCents, allocatedCents);
+    const isPaid = amountPaidCents >= cost.amountCents;
+
+    await db
+      .update(jobDirectCostEntries)
+      .set({
+        amountPaidCents,
+        isPaid,
+        paidAt: amountPaidCents > 0 ? (paidAt ?? cost.paidAt ?? new Date()) : null,
+        updatedAt: new Date(),
+      })
+      .where(eq(jobDirectCostEntries.id, directCostId));
+  }
+
   async allocate(
     actor: BankTransactionControlActor,
     transactionId: string,
@@ -513,142 +581,199 @@ export class BankTransactionControlService {
   ): Promise<BankTransactionDetail> {
     this.assertManage(actor);
 
-    const tx = await this.db.query.bankTransactions.findFirst({
-      where: and(
-        eq(bankTransactions.id, transactionId),
-        eq(bankTransactions.companyId, actor.companyId),
-      ),
-    });
-    if (!tx) {
-      throw new BankTransactionControlError('NOT_FOUND', 'Bank transaction not found.');
-    }
-    if (tx.allocationStatus === 'ignored') {
-      throw new BankTransactionControlError('CONFLICT', 'Ignored transactions cannot be allocated.');
-    }
-
-    const existingAllocations = await this.db.query.bankTransactionAllocations.findMany({
-      where: and(
-        eq(bankTransactionAllocations.transactionId, transactionId),
-        eq(bankTransactionAllocations.isActive, true),
-      ),
-    });
-
-    const proposedTotal = [
-      ...existingAllocations.map((a) => ({ amountCents: a.amountCents })),
-      ...lines.map((l) => ({ amountCents: l.amountCents })),
-    ];
-    assertAllocationWithinTransaction(tx.amountCents, proposedTotal);
-
     const affectedJobIds = new Set<string>();
+    const affectedDirectCostIds = new Set<string>();
 
-    for (const line of lines) {
-      if (line.allocationType === 'direct_job_cost' && !line.jobId && !line.directCostId && !line.createDirectCost) {
-        throw new BankTransactionControlError(
-          'VALIDATION_ERROR',
-          'Direct job cost allocation requires jobId, directCostId, or createDirectCost.',
+    await this.db.transaction(async (tx) => {
+      const locked = await tx
+        .select()
+        .from(bankTransactions)
+        .where(
+          and(
+            eq(bankTransactions.id, transactionId),
+            eq(bankTransactions.companyId, actor.companyId),
+          ),
+        )
+        .for('update');
+
+      const txRow = locked[0];
+      if (!txRow) {
+        throw new BankTransactionControlError('NOT_FOUND', 'Bank transaction not found.');
+      }
+      if (txRow.allocationStatus === 'ignored') {
+        throw new BankTransactionControlError('CONFLICT', 'Ignored transactions cannot be allocated.');
+      }
+
+      const existingAllocations = await tx.query.bankTransactionAllocations.findMany({
+        where: and(
+          eq(bankTransactionAllocations.transactionId, transactionId),
+          eq(bankTransactionAllocations.isActive, true),
+        ),
+      });
+
+      const linesToApply: AllocateBankTransactionInput[] = [];
+      for (const line of lines) {
+        if (line.idempotencyKey) {
+          const dup = existingAllocations.find(
+            (row) => row.idempotencyKey === line.idempotencyKey,
+          );
+          if (dup) continue;
+        }
+        linesToApply.push(line);
+      }
+
+      if (linesToApply.length === 0) return;
+
+      const proposedTotal = [
+        ...existingAllocations.map((a) => ({ amountCents: a.amountCents })),
+        ...linesToApply.map((l) => ({ amountCents: l.amountCents })),
+      ];
+      assertAllocationWithinTransaction(txRow.amountCents, proposedTotal);
+
+      for (const line of linesToApply) {
+        if (
+          line.allocationType === 'direct_job_cost' &&
+          !line.jobId &&
+          !line.directCostId &&
+          !line.createDirectCost
+        ) {
+          throw new BankTransactionControlError(
+            'VALIDATION_ERROR',
+            'Direct job cost allocation requires jobId, directCostId, or createDirectCost.',
+          );
+        }
+
+        let directCostId = line.directCostId ?? null;
+
+        if (line.directCostId) {
+          const cost = await tx.query.jobDirectCostEntries.findFirst({
+            where: and(
+              eq(jobDirectCostEntries.id, line.directCostId),
+              eq(jobDirectCostEntries.companyId, actor.companyId),
+            ),
+          });
+          if (!cost) {
+            throw new BankTransactionControlError('NOT_FOUND', 'Direct cost not found.');
+          }
+
+          const alreadyAllocated = await this.sumActiveAllocationsForDirectCost(
+            tx as unknown as DatabaseClient,
+            actor.companyId,
+            cost.id,
+          );
+          if (alreadyAllocated + line.amountCents > cost.amountCents) {
+            throw new BankTransactionControlError(
+              'OVER_ALLOCATION',
+              `Allocation would exceed direct cost amount (${alreadyAllocated + line.amountCents} > ${cost.amountCents}).`,
+            );
+          }
+
+          const preview = computeDirectCostSettlementAfterAllocation({
+            amountCents: cost.amountCents,
+            currentAmountPaidCents: cost.amountPaidCents ?? 0,
+            allocationAmountCents: line.amountCents,
+          });
+
+          directCostId = cost.id;
+          affectedDirectCostIds.add(cost.id);
+          if (cost.jobId) affectedJobIds.add(cost.jobId);
+
+          await tx
+            .update(jobDirectCostEntries)
+            .set({
+              amountPaidCents: preview.amountPaidCents,
+              isPaid: preview.isPaid,
+              paidAt: preview.amountPaidCents > 0 ? new Date(txRow.transactionDate) : null,
+              updatedAt: new Date(),
+            })
+            .where(eq(jobDirectCostEntries.id, cost.id));
+        } else if (line.createDirectCost && line.jobId) {
+          const [cost] = await tx
+            .insert(jobDirectCostEntries)
+            .values({
+              companyId: actor.companyId,
+              jobId: line.jobId,
+              category: (line.directCostCategory ?? 'miscellaneous') as typeof jobDirectCostEntries.$inferInsert.category,
+              description: line.directCostDescription?.trim() || txRow.description || 'Bank transaction cost',
+              amountCents: line.amountCents,
+              amountPaidCents: line.amountCents,
+              sourceType: 'bank_transaction',
+              sourceId: `${transactionId}:${line.idempotencyKey ?? randomUUID()}`,
+              costDate: new Date(txRow.transactionDate),
+              enteredByUserId: actor.userId,
+              isPaid: true,
+              paidAt: new Date(txRow.transactionDate),
+              supplierId: line.supplierId ?? null,
+              notes: line.notes?.trim() || null,
+            })
+            .returning();
+          directCostId = cost!.id;
+          affectedDirectCostIds.add(cost!.id);
+          affectedJobIds.add(line.jobId);
+        }
+
+        if (line.jobId && allocationAffectsJobProfitability(line.allocationType)) {
+          affectedJobIds.add(line.jobId);
+        }
+
+        await tx.insert(bankTransactionAllocations).values({
+          companyId: actor.companyId,
+          transactionId,
+          amountCents: line.amountCents,
+          allocationType: line.allocationType,
+          category: line.category ?? null,
+          jobId: line.jobId ?? null,
+          supplierId: line.supplierId ?? null,
+          directCostId,
+          notes: line.notes?.trim() || null,
+          idempotencyKey: line.idempotencyKey ?? null,
+          createdByUserId: actor.userId,
+        });
+      }
+
+      for (const directCostId of affectedDirectCostIds) {
+        await this.syncDirectCostSettlement(
+          tx as unknown as DatabaseClient,
+          actor.companyId,
+          directCostId,
+          new Date(txRow.transactionDate),
         );
       }
 
-      let directCostId = line.directCostId ?? null;
+      const allActive = await tx.query.bankTransactionAllocations.findMany({
+        where: and(
+          eq(bankTransactionAllocations.transactionId, transactionId),
+          eq(bankTransactionAllocations.isActive, true),
+        ),
+      });
+      const totals = computeAllocationTotals(txRow.amountCents, allActive);
 
-      if (line.directCostId) {
-        const cost = await this.db.query.jobDirectCostEntries.findFirst({
-          where: and(
-            eq(jobDirectCostEntries.id, line.directCostId),
-            eq(jobDirectCostEntries.companyId, actor.companyId),
-          ),
-        });
-        if (!cost) {
-          throw new BankTransactionControlError('NOT_FOUND', 'Direct cost not found.');
-        }
-        if (cost.isPaid) {
-          throw new BankTransactionControlError('CONFLICT', 'Direct cost is already marked paid.');
-        }
+      const primaryType = linesToApply[0]?.allocationType ?? null;
+      const receiptStatus = deriveReceiptStatus({
+        direction: txRow.direction,
+        allocationType: primaryType,
+        category: linesToApply[0]?.category ?? null,
+        receiptDocumentId: txRow.receiptDocumentId,
+      });
 
-        // Match existing cost — do NOT duplicate economic cost
-        await this.db
-          .update(jobDirectCostEntries)
-          .set({
-            isPaid: true,
-            paidAt: new Date(tx.transactionDate),
-            updatedAt: new Date(),
-          })
-          .where(eq(jobDirectCostEntries.id, cost.id));
+      await tx
+        .update(bankTransactions)
+        .set({
+          allocatedAmountCents: totals.allocatedAmountCents,
+          allocationStatus: totals.allocationStatus,
+          receiptStatus,
+          updatedAt: new Date(),
+        })
+        .where(eq(bankTransactions.id, transactionId));
 
-        directCostId = cost.id;
-        if (cost.jobId) affectedJobIds.add(cost.jobId);
-      } else if (line.createDirectCost && line.jobId) {
-        const [cost] = await this.db
-          .insert(jobDirectCostEntries)
-          .values({
-            companyId: actor.companyId,
-            jobId: line.jobId,
-            category: (line.directCostCategory ?? 'miscellaneous') as typeof jobDirectCostEntries.$inferInsert.category,
-            description: line.directCostDescription?.trim() || tx.description || 'Bank transaction cost',
-            amountCents: line.amountCents,
-            sourceType: 'bank_transaction',
-            sourceId: transactionId,
-            costDate: new Date(tx.transactionDate),
-            enteredByUserId: actor.userId,
-            isPaid: true,
-            paidAt: new Date(tx.transactionDate),
-            supplierId: line.supplierId ?? null,
-            notes: line.notes?.trim() || null,
-          })
-          .returning();
-        directCostId = cost!.id;
-        affectedJobIds.add(line.jobId);
-      }
-
-      if (line.jobId && allocationAffectsJobProfitability(line.allocationType)) {
-        affectedJobIds.add(line.jobId);
-      }
-
-      await this.db.insert(bankTransactionAllocations).values({
+      await tx.insert(bankTransactionAuditLogs).values({
         companyId: actor.companyId,
         transactionId,
-        amountCents: line.amountCents,
-        allocationType: line.allocationType,
-        category: line.category ?? null,
-        jobId: line.jobId ?? null,
-        supplierId: line.supplierId ?? null,
-        directCostId,
-        notes: line.notes?.trim() || null,
-        createdByUserId: actor.userId,
+        action: 'transaction_allocated',
+        actorUserId: actor.userId,
+        metadata: { lines: linesToApply, reason: reason ?? null },
       });
-    }
-
-    const allActive = await this.db.query.bankTransactionAllocations.findMany({
-      where: and(
-        eq(bankTransactionAllocations.transactionId, transactionId),
-        eq(bankTransactionAllocations.isActive, true),
-      ),
     });
-    const totals = computeAllocationTotals(tx.amountCents, allActive);
-
-    const primaryType = lines[0]?.allocationType ?? null;
-    const receiptStatus = deriveReceiptStatus({
-      direction: tx.direction,
-      allocationType: primaryType,
-      category: lines[0]?.category ?? null,
-      receiptDocumentId: tx.receiptDocumentId,
-    });
-
-    await this.db
-      .update(bankTransactions)
-      .set({
-        allocatedAmountCents: totals.allocatedAmountCents,
-        allocationStatus: totals.allocationStatus,
-        receiptStatus,
-        updatedAt: new Date(),
-      })
-      .where(eq(bankTransactions.id, transactionId));
-
-    await this.audit(actor.companyId, actor.userId, 'transaction_allocated', {
-      transactionId,
-      lines,
-      reason: reason ?? null,
-    }, transactionId);
 
     for (const jobId of affectedJobIds) {
       await this.refreshJobFinancials(actor.companyId, jobId);
@@ -669,32 +794,65 @@ export class BankTransactionControlService {
     this.assertManage(actor);
 
     const oldJobIds = new Set<string>();
+    const affectedDirectCostIds = new Set<string>();
 
-    for (const allocId of input.deactivateAllocationIds) {
-      const alloc = await this.db.query.bankTransactionAllocations.findFirst({
-        where: and(
-          eq(bankTransactionAllocations.id, allocId),
-          eq(bankTransactionAllocations.companyId, actor.companyId),
-          eq(bankTransactionAllocations.transactionId, transactionId),
-        ),
-      });
-      if (!alloc) continue;
+    await this.db.transaction(async (tx) => {
+      const locked = await tx
+        .select()
+        .from(bankTransactions)
+        .where(
+          and(
+            eq(bankTransactions.id, transactionId),
+            eq(bankTransactions.companyId, actor.companyId),
+          ),
+        )
+        .for('update');
 
-      if (alloc.jobId) oldJobIds.add(alloc.jobId);
+      if (!locked[0]) {
+        throw new BankTransactionControlError('NOT_FOUND', 'Bank transaction not found.');
+      }
 
-      await this.db
-        .update(bankTransactionAllocations)
-        .set({ isActive: false, updatedAt: new Date() })
-        .where(eq(bankTransactionAllocations.id, allocId));
+      for (const allocId of input.deactivateAllocationIds) {
+        const alloc = await tx.query.bankTransactionAllocations.findFirst({
+          where: and(
+            eq(bankTransactionAllocations.id, allocId),
+            eq(bankTransactionAllocations.companyId, actor.companyId),
+            eq(bankTransactionAllocations.transactionId, transactionId),
+          ),
+        });
+        if (!alloc) continue;
 
-      await this.audit(actor.companyId, actor.userId, 'allocation_deactivated', {
-        allocationId: allocId,
-        oldAmountCents: alloc.amountCents,
-        oldJobId: alloc.jobId,
-        oldDirectCostId: alloc.directCostId,
-        reason: input.reason,
-      }, transactionId);
-    }
+        if (alloc.jobId) oldJobIds.add(alloc.jobId);
+        if (alloc.directCostId) affectedDirectCostIds.add(alloc.directCostId);
+
+        await tx
+          .update(bankTransactionAllocations)
+          .set({ isActive: false, updatedAt: new Date() })
+          .where(eq(bankTransactionAllocations.id, allocId));
+
+        await tx.insert(bankTransactionAuditLogs).values({
+          companyId: actor.companyId,
+          transactionId,
+          action: 'allocation_deactivated',
+          actorUserId: actor.userId,
+          metadata: {
+            allocationId: allocId,
+            oldAmountCents: alloc.amountCents,
+            oldJobId: alloc.jobId,
+            oldDirectCostId: alloc.directCostId,
+            reason: input.reason,
+          },
+        });
+      }
+
+      for (const directCostId of affectedDirectCostIds) {
+        await this.syncDirectCostSettlement(
+          tx as unknown as DatabaseClient,
+          actor.companyId,
+          directCostId,
+        );
+      }
+    });
 
     const result = await this.allocate(actor, transactionId, input.newLines, input.reason);
 

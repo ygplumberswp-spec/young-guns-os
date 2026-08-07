@@ -135,14 +135,15 @@ export const bankTransactions = pgTable(
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => ({
-    companyFingerprintUnique: uniqueIndex('bank_transactions_company_fingerprint_unique').on(
+    companyFingerprintUnique: uniqueIndex('bank_transactions_company_account_fingerprint_unique').on(
       table.companyId,
+      table.bankAccountId,
       table.sourceFingerprint,
     ),
     companyProviderExternalUnique: uniqueIndex(
-      'bank_transactions_company_provider_external_unique',
+      'bank_transactions_company_account_provider_external_unique',
     )
-      .on(table.companyId, table.provider, table.externalTransactionId)
+      .on(table.companyId, table.bankAccountId, table.provider, table.externalTransactionId)
       .where(sql`${table.externalTransactionId} IS NOT NULL`),
     companyStatusDateIdx: index('bank_transactions_company_status_date_idx').on(
       table.companyId,
@@ -180,6 +181,7 @@ export const bankTransactionAllocations = pgTable(
       onDelete: 'set null',
     }),
     notes: text('notes'),
+    idempotencyKey: text('idempotency_key'),
     createdByUserId: uuid('created_by_user_id')
       .notNull()
       .references(() => users.id),
@@ -193,6 +195,9 @@ export const bankTransactionAllocations = pgTable(
       table.transactionId,
       table.isActive,
     ),
+    idempotencyUnique: uniqueIndex('bank_transaction_allocations_idempotency_unique')
+      .on(table.companyId, table.transactionId, table.idempotencyKey)
+      .where(sql`${table.idempotencyKey} IS NOT NULL`),
     companyJobIdx: index('bank_transaction_allocations_company_job_idx').on(
       table.companyId,
       table.jobId,

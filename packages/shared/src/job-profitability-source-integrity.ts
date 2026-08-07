@@ -315,14 +315,18 @@ export function resolveInvoiceRevenueTaxBasis(invoice: {
 }
 
 export function assessCashSpentCompleteness(
-  directCosts: Array<{ isPaid: boolean; amountPaidCents?: number | null }>,
+  directCosts: Array<{ isPaid: boolean; amountPaidCents?: number | null; amountCents?: number }>,
 ): CashSpentCompleteness {
-  const hasPartial = directCosts.some(
-    (row) =>
-      row.amountPaidCents != null &&
-      row.amountPaidCents > 0 &&
-      row.amountPaidCents !== undefined,
-  );
+  const hasPartial = directCosts.some((row) => {
+    const paid =
+      row.amountPaidCents != null && row.amountPaidCents > 0
+        ? row.amountPaidCents
+        : row.isPaid
+          ? (row.amountCents ?? 0)
+          : 0;
+    const total = row.amountCents ?? 0;
+    return paid > 0 && paid < total;
+  });
   if (hasPartial) return 'partial_unsupported';
   if (directCosts.length === 0) return 'unknown';
   return 'complete_boolean';
