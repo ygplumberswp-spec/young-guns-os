@@ -49,4 +49,3 @@ export async function fetchCashControlJob(
 ): Promise<CashControlJobView> {
   return request<CashControlJobView>(`/finance/cash-control/jobs/${jobId}`, { accessToken });
 }
-)

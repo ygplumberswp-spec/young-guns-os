@@ -244,6 +244,7 @@ export class CashControlService {
           .select({
             id: invoices.id,
             totalCents: invoices.totalCents,
+            amountCents: invoices.amountCents,
             amountPaidCents: invoices.amountPaidCents,
             status: invoices.status,
           })
@@ -350,7 +351,12 @@ export class CashControlService {
     }
 
     for (const inv of outstandingInvoices) {
-      const due = invoiceBalanceDueCents(inv);
+      const due = invoiceBalanceDueCents({
+        status: inv.status,
+        totalCents: inv.totalCents,
+        amountCents: inv.amountCents,
+        amountPaidCents: inv.amountPaidCents,
+      });
       if (due > 0) {
         issueTotals.outstandingCustomerInvoices.count += 1;
         issueTotals.outstandingCustomerInvoices.amountCents += due;
@@ -618,6 +624,7 @@ export class CashControlService {
         customerName: customers.name,
         jobId: invoices.jobId,
         totalCents: invoices.totalCents,
+        amountCents: invoices.amountCents,
         amountPaidCents: invoices.amountPaidCents,
         dueDate: invoices.dueDate,
         status: invoices.status,
@@ -677,7 +684,12 @@ export class CashControlService {
         jobId: row.jobId,
         totalCents: row.totalCents,
         amountPaidCents: row.amountPaidCents,
-        balanceDueCents: invoiceBalanceDueCents(row),
+        balanceDueCents: invoiceBalanceDueCents({
+          status: row.status,
+          totalCents: row.totalCents,
+          amountCents: row.amountCents,
+          amountPaidCents: row.amountPaidCents,
+        }),
         dueDate: row.dueDate ? row.dueDate.toISOString().slice(0, 10) : null,
         status: row.status,
         paymentSource: paymentSourceByInvoice.get(row.id) ?? 'none',
@@ -789,6 +801,7 @@ export class CashControlService {
     const jobInvoices = await this.db
       .select({
         totalCents: invoices.totalCents,
+        amountCents: invoices.amountCents,
         amountPaidCents: invoices.amountPaidCents,
         status: invoices.status,
       })
@@ -796,7 +809,14 @@ export class CashControlService {
       .where(and(eq(invoices.companyId, actor.companyId), eq(invoices.jobId, jobId)));
 
     const customerBalanceOutstandingCents = jobInvoices.reduce(
-      (sum, inv) => sum + invoiceBalanceDueCents(inv),
+      (sum, inv) =>
+        sum +
+        invoiceBalanceDueCents({
+          status: inv.status,
+          totalCents: inv.totalCents,
+          amountCents: inv.amountCents,
+          amountPaidCents: inv.amountPaidCents,
+        }),
       0,
     );
 
@@ -815,4 +835,3 @@ export class CashControlService {
     });
   }
 }
-)

@@ -39,4 +39,3 @@ describe('CASH-001 cash-control route envelope', () => {
     assert.ok(sharedSource.includes("roleName === 'Client'"));
   });
 });
-)

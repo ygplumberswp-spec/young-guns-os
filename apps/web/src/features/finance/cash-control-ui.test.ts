@@ -34,4 +34,3 @@ describe('CASH-001 finance UI', () => {
     assert.match(appSource, /CashControlPage/);
   });
 });
-)

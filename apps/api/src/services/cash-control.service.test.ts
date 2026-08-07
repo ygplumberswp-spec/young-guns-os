@@ -136,4 +136,3 @@ describe('CASH-001 CashControlService invariants', () => {
     assert.ok(source.includes('eq(jobDirectCostEntries.companyId, actor.companyId)'));
   });
 });
-)

@@ -27,6 +27,7 @@ import {
   type JobProfitabilityResult,
 } from './job-profitability.js';
 import type { ProfitabilityConfidence } from './job-profitability-source-integrity.js';
+import { invoiceBalanceDueCents } from './finance-report-source-policy.js';
 
 /** Calculated control vocabulary — prefers existing BANK statuses; not a new PG enum. */
 export type EveryRandControlState =
@@ -640,22 +641,23 @@ export function resolveDirectCostSettlementView(cost: {
   };
 }
 
-export function invoiceBalanceDueCents(invoice: {
-  totalCents: number;
-  amountPaidCents: number;
-  status: string;
-}): number {
-  if (invoice.status === 'cancelled' || invoice.status === 'draft') return 0;
-  if (invoice.status === 'paid') return 0;
-  return Math.max(0, invoice.totalCents - invoice.amountPaidCents);
-}
-
 export function isOutstandingCustomerInvoice(invoice: {
   totalCents: number;
   amountPaidCents: number;
+  amountCents?: number;
   status: string;
 }): boolean {
-  return invoiceBalanceDueCents(invoice) > 0;
+  if (invoice.status === 'paid' || invoice.status === 'cancelled' || invoice.status === 'draft') {
+    return false;
+  }
+  return (
+    invoiceBalanceDueCents({
+      status: invoice.status,
+      totalCents: invoice.totalCents,
+      amountCents: invoice.amountCents ?? invoice.totalCents,
+      amountPaidCents: invoice.amountPaidCents,
+    }) > 0
+  );
 }
 
 export function deriveCashTruthCompleteness(input: {
@@ -817,4 +819,4 @@ export function emptyIssueTotals(): CashControlSummary['issues'] {
     outstandingCustomerInvoices: { count: 0, amountCents: 0 },
   };
 }
-)
+

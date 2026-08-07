@@ -7,7 +7,6 @@ import {
   classifyBankMoneyForPeriod,
   deriveCashTruthCompleteness,
   deriveEveryRandControlState,
-  invoiceBalanceDueCents,
   isOutstandingCustomerInvoice,
   overheadExcludedFromJobGrossProfit,
   paginateCashControlLedger,
@@ -19,6 +18,7 @@ import {
   type CashControlLedgerRow,
   type CashControlPaymentInput,
 } from './cash-control.js';
+import { invoiceBalanceDueCents } from './finance-report-source-policy.js';
 
 function tx(
   partial: Partial<CashControlBankTransactionInput> &
@@ -352,6 +352,7 @@ describe('CASH-001 Every-Rand Control', () => {
     assert.equal(
       invoiceBalanceDueCents({
         totalCents: 500000,
+        amountCents: 500000,
         amountPaidCents: 200000,
         status: 'partial',
       }),
@@ -371,6 +372,7 @@ describe('CASH-001 Every-Rand Control', () => {
     assert.equal(
       invoiceBalanceDueCents({
         totalCents: 500000,
+        amountCents: 500000,
         amountPaidCents: 500000,
         status: 'paid',
       }),
@@ -577,4 +579,4 @@ describe('CASH-001 Every-Rand Control', () => {
     assert.equal(sumCustomerCashCollectedCents(payments, '2026-08-07', '2026-08-07'), 0);
   });
 });
-)
+
