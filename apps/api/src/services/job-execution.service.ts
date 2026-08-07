@@ -1838,6 +1838,9 @@ export class JobExecutionService {
             documentationType: true,
             title: true,
             evidencePhase: true,
+            attachmentCategory: true,
+            clientVisible: true,
+            userId: true,
             storageKey: true,
             mimeType: true,
             sizeBytes: true,
@@ -1886,9 +1889,12 @@ export class JobExecutionService {
           documentationType: doc.documentationType,
           title: doc.title,
           evidencePhase: doc.evidencePhase,
+          attachmentCategory: doc.attachmentCategory ?? null,
+          clientVisible: doc.clientVisible ?? false,
           hasBinary,
           mimeType: doc.mimeType,
           sizeBytes: doc.sizeBytes,
+          uploadedByUserId: doc.userId ?? null,
           createdAt: doc.createdAt.toISOString(),
           downloadPath: hasBinary
             ? `/api/v1/jobs/${jobId}/evidence/${doc.id}/content`

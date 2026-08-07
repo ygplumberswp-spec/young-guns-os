@@ -85,15 +85,35 @@ export async function enqueueOfflineAction(
 ): Promise<OfflineQueuedAction> {
   const db = await openDb();
   const now = new Date().toISOString();
-  const row: OfflineQueuedAction = {
-    ...input,
-    id: crypto.randomUUID(),
-    status: navigator.onLine ? 'pending' : 'offline',
-    createdAt: now,
-    updatedAt: now,
-  };
   const tx = db.transaction(STORE, 'readwrite');
-  tx.objectStore(STORE).put(row);
+  const store = tx.objectStore(STORE);
+
+  // Upsert by clientActionId so retries never mint a second queue row (or duplicate upload).
+  const existing = await new Promise<OfflineQueuedAction | undefined>((resolve, reject) => {
+    const req = store.index('clientActionId').get(input.clientActionId);
+    req.onsuccess = () => resolve(req.result as OfflineQueuedAction | undefined);
+    req.onerror = () => reject(req.error);
+  });
+
+  const row: OfflineQueuedAction = existing
+    ? {
+        ...existing,
+        ...input,
+        id: existing.id,
+        status: existing.status === 'synced' ? 'synced' : navigator.onLine ? 'pending' : 'offline',
+        errorMessage: null,
+        createdAt: existing.createdAt,
+        updatedAt: now,
+      }
+    : {
+        ...input,
+        id: crypto.randomUUID(),
+        status: navigator.onLine ? 'pending' : 'offline',
+        createdAt: now,
+        updatedAt: now,
+      };
+
+  store.put(row);
   await txDone(tx);
   db.close();
   return row;

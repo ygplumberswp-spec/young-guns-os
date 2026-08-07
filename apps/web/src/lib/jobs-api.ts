@@ -138,12 +138,16 @@ export async function uploadOfficeJobEvidence(
   accessToken: string,
   jobId: string,
   body: {
-    documentationType: 'photo' | 'document';
+    documentationType: 'photo' | 'document' | 'inspection_form';
     title: string;
     mimeType: string;
     dataBase64: string;
     fileName?: string;
+    evidencePhase?: 'before' | 'during' | 'after' | 'signature' | 'document';
+    attachmentCategory?: string | null;
+    clientVisible?: boolean;
     clientActionId?: string;
+    metadata?: Record<string, unknown>;
   },
 ): Promise<{ id: string; fileName: string | null; mimeType: string | null; sizeBytes: number | null }> {
   const data = await request<{
@@ -156,7 +160,11 @@ export async function uploadOfficeJobEvidence(
   }>(`/jobs/${jobId}/evidence/upload`, {
     method: 'POST',
     accessToken,
-    body,
+    body: {
+      ...body,
+      // Never request client exposure from office upload path.
+      clientVisible: false,
+    },
   });
   return data.documentation;
 }

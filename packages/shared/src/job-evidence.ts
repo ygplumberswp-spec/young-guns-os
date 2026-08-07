@@ -1,5 +1,6 @@
 /** UX-B closure: binary evidence upload/retrieval contracts and offline action flush contracts. */
 import type { MobileDocumentationType } from './mobile-workforce.js';
+import type { EvidenceAttachmentCategory } from './universal-evidence-upload.js';
 
 export type JobEvidencePhase = 'before' | 'during' | 'after' | 'signature' | 'document';
 
@@ -11,6 +12,13 @@ export type UploadJobEvidenceRequest = {
   dataBase64: string;
   fileName?: string;
   evidencePhase?: JobEvidencePhase;
+  /** Universal attachment category (before/after/slip/COC/etc.). */
+  attachmentCategory?: EvidenceAttachmentCategory | null;
+  /**
+   * Client/portal visibility. Defaults false — internal slips/receipts/evidence
+   * must never auto-expose to the Client.
+   */
+  clientVisible?: boolean;
   metadata?: Record<string, unknown>;
   clientActionId?: string;
   signerName?: string;

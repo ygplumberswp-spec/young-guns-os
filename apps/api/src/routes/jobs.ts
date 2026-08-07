@@ -135,12 +135,34 @@ const reopenJobSchema = z.object({
 });
 
 const officeEvidenceUploadSchema = z.object({
-  documentationType: z.enum(['photo', 'document']),
+  documentationType: z.enum(['photo', 'document', 'inspection_form']),
   title: z.string().trim().min(1).max(200),
   mimeType: z.string().trim().min(1).max(120),
   dataBase64: z.string().min(1),
   fileName: z.string().trim().max(200).optional(),
+  evidencePhase: z.enum(['before', 'during', 'after', 'signature', 'document']).optional(),
+  attachmentCategory: z
+    .enum([
+      'before_photo',
+      'after_photo',
+      'during_photo',
+      'other_job_evidence',
+      'job_card',
+      'supplier_slip',
+      'receipt',
+      'coc',
+      'inspection_report',
+      'service_report',
+      'customer_paperwork',
+      'supplier_document',
+      'other_attachment',
+    ])
+    .optional()
+    .nullable(),
+  // Accepted for forward-compat but ignored — server always forces false.
+  clientVisible: z.boolean().optional(),
   clientActionId: z.string().trim().max(200).optional(),
+  metadata: z.record(z.unknown()).optional(),
 });
 
 const authorizeVariationSchema = z.object({

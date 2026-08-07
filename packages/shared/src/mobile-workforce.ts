@@ -89,9 +89,13 @@ export type MobileJobDocumentationSummary = {
   storageKey: string | null;
   checksumSha256: string | null;
   evidencePhase: JobEvidencePhase | null;
+  attachmentCategory: string | null;
+  /** Always false unless explicitly shared — internal slips/receipts never auto-expose. */
+  clientVisible: boolean;
   hasBinary: boolean;
   /** Relative API path to fetch the stored binary, or null when no binary is stored. */
   downloadPath: string | null;
+  uploadedByUserId?: string | null;
   createdAt: string;
 };
 

@@ -44,9 +44,12 @@ import {
   formatMapsEtaCapabilityLabel,
   isFinanciallyAuthoritativeTimeEntry,
   isValidLatLng,
+  mapPhaseToAttachmentCategory,
   unresolvedVehicleAddress,
+  validateEvidenceUploadFile,
   validateFinancePhotoFile,
   validateFinancePhotoMagicBytes,
+  type EvidenceAttachmentCategory,
   type LabourTimerPauseSegment,
 } from '@titan/shared';
 import { emitBusinessEvent } from '../lib/automation-events.js';
@@ -1010,7 +1013,17 @@ export class MobileWorkforceService {
     }
 
     const buffer = decodeBase64Payload(input.dataBase64);
+    const mimeType = input.mimeType.trim();
+    const fileValidation = validateEvidenceUploadFile({ mimeType, sizeBytes: buffer.length });
+    if (!fileValidation.ok) {
+      throw new MobileWorkforceError('VALIDATION_ERROR', fileValidation.message);
+    }
     const kind = documentationTypeToEvidenceKind(input.documentationType);
+    const attachmentCategory =
+      (input.attachmentCategory as EvidenceAttachmentCategory | null | undefined) ??
+      (input.evidencePhase ? mapPhaseToAttachmentCategory(input.evidencePhase) : 'other_attachment');
+    // Never auto-expose attachments to Client — sharing is an explicit later action.
+    const clientVisible = false;
 
     let stored: Awaited<ReturnType<JobEvidenceStorageService['store']>>;
     try {
@@ -1018,7 +1031,7 @@ export class MobileWorkforceService {
         companyId: scope.companyId,
         jobId,
         kind,
-        mimeType: input.mimeType.trim(),
+        mimeType,
         buffer,
         originalFileName: input.fileName ?? null,
       });
@@ -1033,6 +1046,9 @@ export class MobileWorkforceService {
     if (input.signerName?.trim()) metadata.signerName = input.signerName.trim();
     if (input.signerRole?.trim()) metadata.signerRole = input.signerRole.trim();
     if (input.acknowledgement !== undefined) metadata.acknowledgement = input.acknowledgement;
+    metadata.attachmentCategory = attachmentCategory;
+    metadata.clientVisible = clientVisible;
+    metadata.uploadSource = metadata.uploadSource ?? 'technician';
 
     const [created] = await this.db
       .insert(mobileJobDocumentation)
@@ -1051,6 +1067,8 @@ export class MobileWorkforceService {
         checksumSha256: stored.checksumSha256,
         clientActionId: input.clientActionId ?? null,
         evidencePhase: input.evidencePhase ?? null,
+        attachmentCategory,
+        clientVisible,
         metadata,
       })
       .returning();
@@ -1063,7 +1081,10 @@ export class MobileWorkforceService {
       documentationId: created.id,
       documentationType: input.documentationType,
       evidencePhase: input.evidencePhase ?? null,
+      attachmentCategory,
+      clientVisible,
       sizeBytes: stored.sizeBytes,
+      clientActionId: input.clientActionId ?? null,
     });
 
     return toDocumentationSummary(created);
@@ -1131,7 +1152,16 @@ export class MobileWorkforceService {
       throw error;
     }
 
-    const metadata: Record<string, unknown> = { ...(input.metadata ?? {}) };
+    const attachmentCategory =
+      (input.attachmentCategory as EvidenceAttachmentCategory | null | undefined) ??
+      (input.evidencePhase ? mapPhaseToAttachmentCategory(input.evidencePhase) : 'other_attachment');
+    const clientVisible = false;
+    const metadata: Record<string, unknown> = {
+      ...(input.metadata ?? {}),
+      attachmentCategory,
+      clientVisible,
+      uploadSource: 'office',
+    };
 
     const [created] = await this.db
       .insert(mobileJobDocumentation)
@@ -1149,6 +1179,8 @@ export class MobileWorkforceService {
         checksumSha256: stored.checksumSha256,
         clientActionId: input.clientActionId ?? null,
         evidencePhase: input.evidencePhase ?? null,
+        attachmentCategory,
+        clientVisible,
         metadata,
       })
       .returning();
@@ -1160,7 +1192,10 @@ export class MobileWorkforceService {
     await this.logAction(scope, 'upload_job_evidence_office', 'job', jobId, {
       documentationId: created.id,
       documentationType: input.documentationType,
+      attachmentCategory,
+      clientVisible,
       sizeBytes: stored.sizeBytes,
+      clientActionId: input.clientActionId ?? null,
     });
 
     return toDocumentationSummary(created);
@@ -1811,10 +1846,13 @@ function toDocumentationSummary(
     storageKey: row.storageKey,
     checksumSha256: row.checksumSha256,
     evidencePhase: (row.evidencePhase as MobileJobDocumentationSummary['evidencePhase']) ?? null,
+    attachmentCategory: row.attachmentCategory ?? null,
+    clientVisible: row.clientVisible ?? false,
     hasBinary,
     downloadPath: hasBinary
       ? `/api/v1/mobile/technician/workforce/jobs/${row.jobId}/documentation/${row.id}/content`
       : null,
+    uploadedByUserId: row.userId,
     createdAt: row.createdAt.toISOString(),
   };
 }

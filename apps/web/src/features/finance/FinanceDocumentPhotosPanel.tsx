@@ -139,7 +139,15 @@ export function FinanceDocumentPhotosPanel(props: FinanceDocumentPhotosPanelProp
         if (jobId) {
           const documentation = await uploadOfficeJobEvidence(accessToken, jobId, {
             documentationType: mimeType === 'application/pdf' ? 'document' : 'photo',
-            title: file.name, mimeType, dataBase64: await fileToBase64(file), fileName: file.name, clientActionId: localId,
+            title: file.name,
+            mimeType,
+            dataBase64: await fileToBase64(file),
+            fileName: file.name,
+            evidencePhase: 'document',
+            attachmentCategory: 'other_job_evidence',
+            clientVisible: false,
+            clientActionId: localId,
+            metadata: { uploadSource: 'finance', clientVisible: false },
           });
           nextPhotos = addDocumentPhoto(photos, {
             id: newPhotoId(), documentationId: documentation.id, jobId, role: 'additional', caption: null, fileName: file.name, mimeType,

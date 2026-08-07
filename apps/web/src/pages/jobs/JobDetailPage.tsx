@@ -49,6 +49,7 @@ import { canAccessDocuments, canManageDocuments } from '../../features/documents
 import { canAccessProcurement, materialLineStatusPillClass } from '../../features/procurement/utils';
 import { JobSchedulePanel } from '../../features/scheduling/JobSchedulePanel';
 import { canAccessScheduling, canManageScheduling } from '../../features/scheduling/utils';
+import { EvidenceAttachmentUploader } from '../../features/evidence/EvidenceAttachmentUploader';
 
 type StockSelection = {
   inventoryItemId: string;
@@ -958,6 +959,24 @@ export function JobDetailPage() {
                       ))}
                     </ul>
                   ) : null}
+                  {canWrite && accessToken && jobId ? (
+                    <div style={{ marginTop: '0.75rem' }}>
+                      <EvidenceAttachmentUploader
+                        accessToken={accessToken}
+                        jobId={jobId}
+                        mode="office"
+                        defaultCategory="other_job_evidence"
+                        enableDragDrop
+                        enableOfflineQueue={false}
+                        onUploaded={async () => {
+                          setExecution(await fetchJobExecution(accessToken, jobId));
+                          setSuccess('Attachment uploaded — visible on this job record');
+                        }}
+                        onMessage={setSuccess}
+                        onError={setError}
+                      />
+                    </div>
+                  ) : null}
                   {execution.evidence?.length ? (
                     <ul className="portal-list" style={{ marginTop: '0.75rem' }}>
                       {execution.evidence.map((doc) => (
@@ -965,8 +984,10 @@ export function JobDetailPage() {
                           <strong>{doc.title}</strong>
                           <span>
                             {doc.documentationType}
+                            {doc.attachmentCategory ? ` · ${doc.attachmentCategory}` : ''}
                             {doc.evidencePhase ? ` · ${doc.evidencePhase}` : ''}
                             {doc.hasBinary ? ' · binary stored' : ' · metadata only'}
+                            {doc.clientVisible ? ' · client shared' : ' · internal'}
                             {doc.downloadPath && accessToken ? (
                               <>
                                 {' · '}

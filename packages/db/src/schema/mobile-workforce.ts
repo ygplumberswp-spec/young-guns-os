@@ -149,6 +149,9 @@ export const mobileJobDocumentation = pgTable('mobile_job_documentation', {
   checksumSha256: text('checksum_sha256'),
   clientActionId: text('client_action_id'),
   evidencePhase: text('evidence_phase'),
+  /** Never auto-expose internal slips/receipts/evidence to Client unless explicitly shared. */
+  clientVisible: boolean('client_visible').notNull().default(false),
+  attachmentCategory: text('attachment_category'),
   metadata: jsonb('metadata').$type<Record<string, unknown>>().notNull().default({}),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
