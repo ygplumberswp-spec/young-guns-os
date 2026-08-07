@@ -28,6 +28,7 @@ import type {
   StillBusyInput,
   SubmitGatedJobCompletionRequest,
   SubmitMobileJobDocumentationRequest,
+  TechnicianEnRouteConfirmResponse,
   UploadJobEvidenceRequest,
 } from '@titan/shared';
 import { request, ApiClientError } from './api-client';
@@ -280,12 +281,28 @@ export async function transitionMobileJob(
     reason: reason ?? null,
     clientActionId: newClientActionId(action),
   };
-  const data = await request<{ job: JobDetail }>(`/mobile/technician/jobs/${jobId}/transition`, {
-    accessToken,
-    method: 'POST',
-    body,
-  });
-  return data.job;
+  const data = await request<{ job: JobDetail } & Partial<TechnicianEnRouteConfirmResponse>>(
+    `/mobile/technician/jobs/${jobId}/transition`,
+    {
+      accessToken,
+      method: 'POST',
+      body,
+    },
+  );
+  return data;
+}
+
+/** ON MY WAY / EN ROUTE — Cartrack + Maps ETA + customer notify (idempotent). */
+export async function confirmMobileEnRoute(accessToken: string, jobId: string) {
+  const data = await request<TechnicianEnRouteConfirmResponse>(
+    `/mobile/technician/jobs/${jobId}/en-route`,
+    {
+      accessToken,
+      method: 'POST',
+      body: { clientActionId: newClientActionId('en-route') },
+    },
+  );
+  return data;
 }
 
 export async function stillBusyMobileJob(

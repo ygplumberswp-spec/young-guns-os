@@ -1,5 +1,5 @@
 import { FormEvent, useCallback, useEffect, useRef, useState } from 'react';
-import { useParams } from 'wouter';
+import { Link, useParams } from 'wouter';
 import { Button, EmptyState, Input, PageHeader, Panel } from '@titan/ui';
 import type {
   CartrackArrivalPrompt,
@@ -15,13 +15,17 @@ import type {
   TechnicianInvoicePaymentStrip,
 } from '@titan/shared';
 import {
+  ETA_UNAVAILABLE_LABEL,
   evaluatePaperlessCompletionSequence,
+  isValidLatLng,
   JOB_RESCHEDULE_REASON_LABELS,
   requiredChecklistForJobType,
 } from '@titan/shared';
+import type { MobileRouteIntelligence } from '@titan/shared';
 import {
   MobileApiClientError,
   completeMobileJobGated,
+  confirmMobileEnRoute,
   createMobileDirectCost,
   createMobileJobVariation,
   fetchActiveMobileTimeEntries,
@@ -29,6 +33,7 @@ import {
   fetchMobileCaptureChecklist,
   fetchMobileJobVisits,
   fetchMobilePaymentStrip,
+  fetchMobileRoute,
   pauseMobileTimeEntry,
   recordMobileOnSitePayment,
   requestMobileJobReschedule,
@@ -57,8 +62,10 @@ import {
 } from '../../lib/mobile-offline-queue';
 import { evaluateMobileCompletionSubmit } from '../../lib/mobile-offline-completion';
 import { SignaturePad } from '../../features/jobs/SignaturePad';
+import { GoogleMapView } from '../../features/maps/GoogleMapView';
 import { useAuth } from '../../lib/auth-context';
 import { ReportExportActions } from '../../features/reports/ReportExportActions';
+import { Link } from 'wouter';
 
 async function fileToBase64(file: File): Promise<string> {
   const buffer = await file.arrayBuffer();
@@ -78,7 +85,7 @@ function dataUrlToBase64(dataUrl: string): string {
 
 const ACTION_LABELS: Record<JobWorkflowAction, string> = {
   accept: 'Accept job',
-  en_route: 'Start travel',
+  en_route: 'ON MY WAY / EN ROUTE',
   arrive: 'Arrive on site',
   start_work: 'Start work',
   pause: 'Pause',
@@ -116,6 +123,7 @@ export function MobileJobDetailPage() {
   const [rescheduleNotes, setRescheduleNotes] = useState('');
   const [rescheduleProposedAt, setRescheduleProposedAt] = useState('');
   const [visitRollup, setVisitRollup] = useState<JobVisitRollup | null>(null);
+  const [routeIntel, setRouteIntel] = useState<MobileRouteIntelligence | null>(null);
   const [note] = useState('');
   const [materialDesc, setMaterialDesc] = useState('');
   const [materialQty, setMaterialQty] = useState('1');
@@ -176,12 +184,14 @@ export function MobileJobDetailPage() {
   const reload = useCallback(async () => {
     if (!accessToken || !jobId) return;
     try {
-      const [data, inventory] = await Promise.all([
+      const [data, inventory, route] = await Promise.all([
         fetchMobileJobWorkspace(accessToken, jobId),
         fetchMobileInventory(accessToken).catch(() => null),
+        fetchMobileRoute(accessToken).catch(() => null),
       ]);
       setWorkspace(data);
       if (inventory) setInventoryCentre(inventory);
+      if (route) setRouteIntel(route);
       const activeEntries = await fetchActiveMobileTimeEntries(accessToken).catch(
         (): MobileTimeEntrySummary[] => [],
       );
@@ -311,6 +321,25 @@ export function MobileJobDetailPage() {
         await refreshOffline();
         setMessage(`${ACTION_LABELS[action]} queued offline`);
         setPauseReason('');
+        return;
+      }
+      if (action === 'en_route') {
+        const result = await confirmMobileEnRoute(accessToken, jobId);
+        await reload();
+        const etaLabel = result.eta.arrivalWindowLabel || ETA_UNAVAILABLE_LABEL;
+        const notify =
+          result.customerNotification.status === 'queued'
+            ? 'Customer notified once.'
+            : result.customerNotification.status === 'already_queued'
+              ? 'Customer already notified — duplicate blocked.'
+              : result.customerNotification.status === 'skipped_opt_out'
+                ? 'Customer opted out — no message sent.'
+                : 'Customer message prepared per communication rules.';
+        setMessage(
+          result.alreadyEnRoute
+            ? `Already EN ROUTE · ${etaLabel} · ${notify}`
+            : `EN ROUTE confirmed · arrival ${etaLabel} · ${notify}`,
+        );
         return;
       }
       await transitionMobileJob(
@@ -1210,12 +1239,123 @@ export function MobileJobDetailPage() {
             </dd>
           </div>
         </dl>
+      </Panel>
+
+      <Panel
+        title="Job map"
+        description="Canonical site address with pin — Navigate opens Google Maps directions (iPhone / Android / tablet)."
+      >
+        {isValidLatLng(workspace.siteMap?.latitude, workspace.siteMap?.longitude) ? (
+          <GoogleMapView
+            height={220}
+            contextKey={workspace.jobId}
+            markers={[
+              {
+                id: workspace.jobId,
+                latitude: workspace.siteMap.latitude!,
+                longitude: workspace.siteMap.longitude!,
+                label: workspace.customer.name,
+                tone: 'job',
+              },
+            ]}
+            emptyTitle="Map unavailable"
+            emptyDescription="Verified site coordinates are required for the pin."
+          />
+        ) : (
+          <p className="page-muted">
+            Site pin unavailable — property geocode missing. Address still shown above; Navigate uses
+            the stored address when coordinates are absent.
+          </p>
+        )}
+        <p style={{ marginTop: '0.75rem' }}>{workspace.address.display ?? '—'}</p>
         {workspace.navigationUrl ? (
-          <a className="mobile-action-btn mobile-action-btn--primary" href={workspace.navigationUrl} target="_blank" rel="noreferrer">
-            Navigate
+          <a
+            className="mobile-action-btn mobile-action-btn--primary"
+            href={workspace.navigationUrl}
+            target="_blank"
+            rel="noreferrer"
+          >
+            NAVIGATE / GET DIRECTIONS
           </a>
+        ) : (
+          <p className="page-muted">No navigable destination on this job.</p>
+        )}
+        {workspace.availableActions.includes('en_route') ? (
+          <Button
+            type="button"
+            disabled={busy}
+            style={{ marginTop: '0.5rem' }}
+            onClick={() => void runAction('en_route')}
+          >
+            ON MY WAY / EN ROUTE
+          </Button>
         ) : null}
       </Panel>
+
+      {routeIntel?.route.nextDestination &&
+      routeIntel.route.nextDestination.jobId !== workspace.jobId ? (
+        <Panel title="NEXT JOB" description="Next assigned stop after this job.">
+          <p>
+            <strong>{routeIntel.route.nextDestination.customerName}</strong>
+          </p>
+          <p>{routeIntel.route.nextDestination.title}</p>
+          <p>{routeIntel.route.nextDestination.address ?? 'Address missing'}</p>
+          <p className="page-muted">
+            Scheduled:{' '}
+            {routeIntel.route.nextDestination.scheduledAt
+              ? new Date(routeIntel.route.nextDestination.scheduledAt).toLocaleString()
+              : '—'}
+          </p>
+          <p className="page-muted">
+            Travel estimate:{' '}
+            {routeIntel.route.travelEstimateLabel ?? ETA_UNAVAILABLE_LABEL}
+          </p>
+          <div className="jobs-form__actions">
+            {routeIntel.route.nextDestination.navigationUrl ? (
+              <a
+                className="mobile-action-btn mobile-action-btn--primary"
+                href={routeIntel.route.nextDestination.navigationUrl}
+                target="_blank"
+                rel="noreferrer"
+              >
+                NAVIGATE
+              </a>
+            ) : null}
+            <Link href={`/mobile/jobs/${routeIntel.route.nextDestination.jobId}`}>
+              <Button type="button" variant="secondary">
+                Open next job
+              </Button>
+            </Link>
+            <Button
+              type="button"
+              disabled={busy}
+              onClick={() => {
+                const nextId = routeIntel.route.nextDestination!.jobId;
+                void (async () => {
+                  if (!accessToken || busy) return;
+                  setBusy(true);
+                  setError(null);
+                  try {
+                    const result = await confirmMobileEnRoute(accessToken, nextId);
+                    setMessage(
+                      `Next job EN ROUTE · ${result.eta.arrivalWindowLabel} · customer ${result.customerNotification.status.replace(/_/g, ' ')}`,
+                    );
+                    window.location.href = `/mobile/jobs/${nextId}`;
+                  } catch (err) {
+                    setError(
+                      err instanceof MobileApiClientError ? err.message : 'Unable to mark next job EN ROUTE',
+                    );
+                  } finally {
+                    setBusy(false);
+                  }
+                })();
+              }}
+            >
+              EN ROUTE
+            </Button>
+          </div>
+        </Panel>
+      ) : null}
 
       <Panel title="Work Description">
         <p>{workspace.workInstructions ?? '—'}</p>
