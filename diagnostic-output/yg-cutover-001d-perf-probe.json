@@ -1,0 +1,120 @@
+{
+  "label": "YG-CUTOVER-001D-perf-probe",
+  "capturedAt": "2026-08-07T17:27:17.438Z",
+  "staging": {
+    "web": "https://comfortable-determination-staging.up.railway.app",
+    "api": "https://young-guns-os-staging.up.railway.app"
+  },
+  "shellTimings": [
+    {
+      "url": "https://comfortable-determination-staging.up.railway.app/",
+      "httpCode": 200,
+      "ttfbMs": 105,
+      "totalMs": 105,
+      "bytes": 1192
+    },
+    {
+      "url": "https://young-guns-os-staging.up.railway.app/api/v1/health/ready",
+      "httpCode": 200,
+      "ttfbMs": 243,
+      "totalMs": 243,
+      "bytes": 209
+    }
+  ],
+  "progressivePaintContract": {
+    "unit": "ms_after_auth_ready",
+    "before_001d": {
+      "criticalPathIncludes": [
+        "executive-summary",
+        "OwnerCommandFinancePulse (finance/owner-command + growth-planner immediately)",
+        "ops@120",
+        "fleet/Cartrack@180",
+        "support@320",
+        "Maps config+script only after LiveOperationsPanel mount + markers"
+      ],
+      "blockingFullPageSpinners": [
+        "ProtectedRoute session",
+        "TechnicianRoute Loading… duplicate"
+      ]
+    },
+    "after_001d": {
+      "shellFirst": true,
+      "sequence": [
+        {
+          "surface": "auth session (ProtectedRoute only)",
+          "deferMs": 0
+        },
+        {
+          "surface": "executive-summary → AURA + Heartbeat + Attention/Jobs cards",
+          "deferMs": 0
+        },
+        {
+          "surface": "ops intelligence",
+          "deferMs": 120
+        },
+        {
+          "surface": "Cartrack + Maps warmup (config+script)",
+          "deferMs": 180
+        },
+        {
+          "surface": "OwnerCommandFinancePulse",
+          "deferMs": 250
+        },
+        {
+          "surface": "Connections / Quick tools",
+          "deferMs": 320
+        },
+        {
+          "surface": "Maps panel mount reuses warmed script",
+          "deferMs": "≥180"
+        }
+      ],
+      "codeEvidence": {
+        "deferFinancePulse": true,
+        "warmMaps": true,
+        "lazyPortal": true,
+        "lazyMobile": true
+      }
+    }
+  },
+  "localBundle": {
+    "note": "Post-build chunk sizes from apps/web/dist/assets",
+    "largestJs": [
+      {
+        "name": "vendor-react-DtAy6LWK.js",
+        "bytes": 194755
+      },
+      {
+        "name": "index-BKHgLCtv.js",
+        "bytes": 189719
+      },
+      {
+        "name": "vendor-markdown-Ch616hIP.js",
+        "bytes": 189519
+      },
+      {
+        "name": "titan-shared-DDeup45p.js",
+        "bytes": 175799
+      },
+      {
+        "name": "DashboardPage-C4qwyZvL.js",
+        "bytes": 71506
+      },
+      {
+        "name": "JobDetailPage-BTwmYbKV.js",
+        "bytes": 57590
+      },
+      {
+        "name": "useCalendarState-DaCWNlJG.js",
+        "bytes": 44709
+      },
+      {
+        "name": "FacebookBusinessPage-CY-TPHsH.js",
+        "bytes": 39392
+      }
+    ],
+    "indexChunkBytes": 189719
+  },
+  "authDashboardNote": "Authenticated time-to-shell / time-to-useful-dashboard requires staging session credentials; client progressive-paint schedule above is the enforceable 001D contract.",
+  "productionTouched": 0
+}

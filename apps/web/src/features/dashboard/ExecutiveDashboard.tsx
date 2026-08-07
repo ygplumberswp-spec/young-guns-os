@@ -26,6 +26,7 @@ import { DashboardSectionSkeleton } from './DashboardSectionSkeleton';
 import { ExecutiveDashboardHeader } from './ExecutiveDashboardHeader';
 import { FinancialTruthPanel } from './FinancialTruthPanel';
 import { FleetOverviewPanel } from './FleetOverviewPanel';
+import { warmGoogleMapsForDashboard } from '../maps/warm-google-maps';
 import { LiveOperationsPanel } from './LiveOperationsPanel';
 import { OpsIntelligenceAlerts } from './OpsIntelligenceAlerts';
 import { OutstandingInvoicesPanel } from './OutstandingInvoicesPanel';
@@ -37,6 +38,8 @@ import { TodayAtAGlancePanel } from './TodayAtAGlancePanel';
 
 const DEFER_OPS_MS = 120;
 const DEFER_FLEET_MS = 180;
+/** YG-CUTOVER-001D — FIN-001/Growth pulse off the AURA/heartbeat critical path */
+const DEFER_FINANCE_PULSE_MS = 250;
 const DEFER_SUPPORT_MS = 320;
 
 export function ExecutiveDashboard() {
@@ -45,7 +48,14 @@ export function ExecutiveDashboard() {
 
   const deferOps = useDeferredMount(authReady, DEFER_OPS_MS);
   const deferFleet = useDeferredMount(authReady, DEFER_FLEET_MS);
+  const deferFinancePulse = useDeferredMount(authReady, DEFER_FINANCE_PULSE_MS);
   const deferSupport = useDeferredMount(authReady, DEFER_SUPPORT_MS);
+
+  // Warm Maps config/script in parallel with Cartrack — do not block shell/AURA paint.
+  useEffect(() => {
+    if (!accessToken || !deferFleet) return;
+    void warmGoogleMapsForDashboard(accessToken);
+  }, [accessToken, deferFleet]);
 
   const summaryQuery = useStaffCachedQuery({
     queryKey: 'dashboard/executive-summary',
@@ -173,7 +183,11 @@ export function ExecutiveDashboard() {
 
       <div className="exec-dashboard-region exec-dashboard-region--finance-pulse">
         <SectionErrorBoundary sectionName="Financial Command Pulse">
-          <OwnerCommandFinancePulse />
+          {deferFinancePulse ? (
+            <OwnerCommandFinancePulse />
+          ) : (
+            <DashboardSectionSkeleton rows={2} />
+          )}
         </SectionErrorBoundary>
       </div>
 

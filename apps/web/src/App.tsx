@@ -24,36 +24,9 @@ import {
 import { PortalGuestRoute, PortalProtectedRoute } from './components/PortalProtectedRoute';
 import { LegacyPortalRedirect } from './components/LegacyPortalRedirect';
 import { PortalLayout } from './layouts/PortalLayout';
-import { PortalLoginPage } from './pages/portal/PortalLoginPage';
-import { PortalAcceptInvitePage } from './pages/portal/PortalAcceptInvitePage';
-import { PortalDashboardPage } from './pages/portal/PortalDashboardPage';
-import { PortalJobsPage } from './pages/portal/PortalJobsPage';
-import { PortalJobDetailPage } from './pages/portal/PortalJobDetailPage';
-import { PortalQuotesPage } from './pages/portal/PortalQuotesPage';
-import { PortalQuoteDetailPage } from './pages/portal/PortalQuoteDetailPage';
-import { PortalFinancePage } from './pages/portal/PortalFinancePage';
-import { PortalAppointmentsPage } from './pages/portal/PortalAppointmentsPage';
-import { PortalCommunicationsPage } from './pages/portal/PortalCommunicationsPage';
-import { PortalKnowledgePage } from './pages/portal/PortalKnowledgePage';
-import { PortalNotificationsPage } from './pages/portal/PortalNotificationsPage';
-import { PortalDocumentsPage } from './pages/portal/PortalDocumentsPage';
-import { PortalProfilePage } from './pages/portal/PortalProfilePage';
-import { PortalFeedbackPage } from './pages/portal/PortalFeedbackPage';
-import { PortalLoyaltyPage } from './pages/portal/PortalLoyaltyPage';
-import { PortalAssetsPage } from './pages/portal/PortalAssetsPage';
-import { PortalNotFoundPage } from './pages/portal/PortalNotFoundPage';
-import { PortalHomeshieldPage } from './pages/portal/PortalHomeshieldPage';
 import { MobileLayout } from './layouts/MobileLayout';
-import { MobileDashboardPage } from './pages/mobile/MobileDashboardPage';
-import { MobileJobsPage } from './pages/mobile/MobileJobsPage';
-import { MobileJobDetailPage } from './pages/mobile/MobileJobDetailPage';
-import { MobileRoutePage } from './pages/mobile/MobileRoutePage';
-import { MobileInventoryPage } from './pages/mobile/MobileInventoryPage';
-import { MobileTimePage } from './pages/mobile/MobileTimePage';
-import { MobileNotificationsPage } from './pages/mobile/MobileNotificationsPage';
-import { MobileSyncPage } from './pages/mobile/MobileSyncPage';
-import { MobileSchedulePage } from './pages/mobile/MobileSchedulePage';
-import { MobilePerformancePage } from './pages/mobile/MobilePerformancePage';
+import * as PortalPages from './routes/portal-pages';
+import * as MobilePages from './routes/mobile-pages';
 import { DevErrorBoundaryTestPage } from './pages/dev/DevErrorBoundaryTestPage';
 
 export function App() {
@@ -82,13 +55,17 @@ export function App() {
           <Route path="/portal" component={LegacyPortalRedirect} />
           <Route path="/my/accept-invite">
             <PortalRouteShell>
-              <PortalAcceptInvitePage />
+              <Suspense fallback={<PageRouteSuspense />}>
+                <PortalPages.PortalAcceptInvitePage />
+              </Suspense>
             </PortalRouteShell>
           </Route>
           <Route path="/my/login">
             <PortalRouteShell>
               <PortalGuestRoute>
-                <PortalLoginPage />
+                <Suspense fallback={<PageRouteSuspense />}>
+                  <PortalPages.PortalLoginPage />
+                </Suspense>
               </PortalGuestRoute>
             </PortalRouteShell>
           </Route>
@@ -97,25 +74,33 @@ export function App() {
               <PortalProtectedRoute>
                 <PortalLayout>
                   {/* Nested paths are relative to `/my` (Wouter nest base). */}
-                  <Switch>
-                    <Route path="/jobs/:jobId" component={PortalJobDetailPage} />
-                    <Route path="/jobs" component={PortalJobsPage} />
-                    <Route path="/quotes/:quoteId" component={PortalQuoteDetailPage} />
-                    <Route path="/quotes" component={PortalQuotesPage} />
-                    <Route path="/finance" component={PortalFinancePage} />
-                    <Route path="/appointments" component={PortalAppointmentsPage} />
-                    <Route path="/communications" component={PortalCommunicationsPage} />
-                    <Route path="/knowledge" component={PortalKnowledgePage} />
-                    <Route path="/notifications" component={PortalNotificationsPage} />
-                    <Route path="/documents" component={PortalDocumentsPage} />
-                    <Route path="/profile" component={PortalProfilePage} />
-                    <Route path="/feedback" component={PortalFeedbackPage} />
-                    <Route path="/loyalty" component={PortalLoyaltyPage} />
-                    <Route path="/assets" component={PortalAssetsPage} />
-                    <Route path="/" component={PortalDashboardPage} />
-                    <Route path="/homeshield" component={PortalHomeshieldPage} />
-                    <Route path="/:rest*" component={PortalNotFoundPage} />
-                  </Switch>
+                  <Suspense fallback={<PageRouteSuspense />}>
+                    <Switch>
+                      <Route path="/jobs/:jobId" component={PortalPages.PortalJobDetailPage} />
+                      <Route path="/jobs" component={PortalPages.PortalJobsPage} />
+                      <Route path="/quotes/:quoteId" component={PortalPages.PortalQuoteDetailPage} />
+                      <Route path="/quotes" component={PortalPages.PortalQuotesPage} />
+                      <Route path="/finance" component={PortalPages.PortalFinancePage} />
+                      <Route path="/appointments" component={PortalPages.PortalAppointmentsPage} />
+                      <Route
+                        path="/communications"
+                        component={PortalPages.PortalCommunicationsPage}
+                      />
+                      <Route path="/knowledge" component={PortalPages.PortalKnowledgePage} />
+                      <Route
+                        path="/notifications"
+                        component={PortalPages.PortalNotificationsPage}
+                      />
+                      <Route path="/documents" component={PortalPages.PortalDocumentsPage} />
+                      <Route path="/profile" component={PortalPages.PortalProfilePage} />
+                      <Route path="/feedback" component={PortalPages.PortalFeedbackPage} />
+                      <Route path="/loyalty" component={PortalPages.PortalLoyaltyPage} />
+                      <Route path="/assets" component={PortalPages.PortalAssetsPage} />
+                      <Route path="/" component={PortalPages.PortalDashboardPage} />
+                      <Route path="/homeshield" component={PortalPages.PortalHomeshieldPage} />
+                      <Route path="/:rest*" component={PortalPages.PortalNotFoundPage} />
+                    </Switch>
+                  </Suspense>
                 </PortalLayout>
               </PortalProtectedRoute>
             </PortalRouteShell>
@@ -125,18 +110,23 @@ export function App() {
               <TechnicianRoute>
                 <MobileLayout>
                   {/* Nested paths are relative to `/mobile` (Wouter nest base). */}
-                  <Switch>
-                    <Route path="/jobs/:jobId" component={MobileJobDetailPage} />
-                    <Route path="/jobs" component={MobileJobsPage} />
-                    <Route path="/route" component={MobileRoutePage} />
-                    <Route path="/inventory" component={MobileInventoryPage} />
-                    <Route path="/time" component={MobileTimePage} />
-                    <Route path="/performance" component={MobilePerformancePage} />
-                    <Route path="/notifications" component={MobileNotificationsPage} />
-                    <Route path="/schedule" component={MobileSchedulePage} />
-                    <Route path="/sync" component={MobileSyncPage} />
-                    <Route path="/" component={MobileDashboardPage} />
-                  </Switch>
+                  <Suspense fallback={<PageRouteSuspense />}>
+                    <Switch>
+                      <Route path="/jobs/:jobId" component={MobilePages.MobileJobDetailPage} />
+                      <Route path="/jobs" component={MobilePages.MobileJobsPage} />
+                      <Route path="/route" component={MobilePages.MobileRoutePage} />
+                      <Route path="/inventory" component={MobilePages.MobileInventoryPage} />
+                      <Route path="/time" component={MobilePages.MobileTimePage} />
+                      <Route path="/performance" component={MobilePages.MobilePerformancePage} />
+                      <Route
+                        path="/notifications"
+                        component={MobilePages.MobileNotificationsPage}
+                      />
+                      <Route path="/schedule" component={MobilePages.MobileSchedulePage} />
+                      <Route path="/sync" component={MobilePages.MobileSyncPage} />
+                      <Route path="/" component={MobilePages.MobileDashboardPage} />
+                    </Switch>
+                  </Suspense>
                 </MobileLayout>
               </TechnicianRoute>
             </ProtectedRoute>

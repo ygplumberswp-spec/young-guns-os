@@ -4,6 +4,7 @@ import { YOUNG_GUNS_APP_COLORS } from '@titan/shared';
 import { Link } from 'wouter';
 import { useAuth } from '../../lib/auth-context';
 import { fetchGoogleMapsBrowserConfig } from '../../lib/google-maps-api';
+import { loadGoogleMapsScript } from './google-maps-loader';
 import {
   decideMapCameraAction,
   resolveContextKey,
@@ -116,24 +117,7 @@ declare global {
         };
       };
     };
-    __titanGoogleMapsLoader?: Promise<void>;
   }
-}
-
-function loadGoogleMapsScript(apiKey: string): Promise<void> {
-  if (window.google?.maps) return Promise.resolve();
-  if (window.__titanGoogleMapsLoader) return window.__titanGoogleMapsLoader;
-
-  window.__titanGoogleMapsLoader = new Promise((resolve, reject) => {
-    const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&libraries=geometry`;
-    script.async = true;
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error('Failed to load Google Maps JavaScript API'));
-    document.head.appendChild(script);
-  });
-
-  return window.__titanGoogleMapsLoader;
 }
 
 /**
