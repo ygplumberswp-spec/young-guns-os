@@ -11,6 +11,7 @@ import type { TeamService } from '../services/team.service.js';
 import type { JobExecutionService } from '../services/job-execution.service.js';
 import { JobExecutionError } from '../services/job-execution.service.js';
 import type { JobCostingService } from '../services/job-costing.service.js';
+import type { JobCostControlService } from '../services/job-cost-control.service.js';
 import type { JobProfitabilityService } from '../services/job-profitability.service.js';
 import { JobProfitabilityError } from '../services/job-profitability.service.js';
 import type { MobileWorkforceService } from '../services/mobile-workforce.service.js';
@@ -22,6 +23,7 @@ import {
   createDenyTechnicianFromOwnerModules,
   createRequireAssignedJob,
 } from '../middleware/authorization-guards.js';
+import { createJobFinancialReviewRouter } from './job-cost-control.js';
 import { appendServerTiming } from '../lib/server-timing.js';
 
 const jobStatusSchema = z.enum(['new', 'scheduled', 'in_progress', 'completed', 'cancelled']);
@@ -193,6 +195,7 @@ type JobsRouterDeps = {
   jobExecutionService: JobExecutionService;
   jobCostingService: JobCostingService;
   jobProfitabilityService: JobProfitabilityService;
+  jobCostControlService: JobCostControlService;
   mobileWorkforceService: MobileWorkforceService;
   teamService: TeamService;
   db: DatabaseClient;
@@ -213,6 +216,7 @@ export function createJobsRouter({
   jobExecutionService,
   jobCostingService,
   jobProfitabilityService,
+  jobCostControlService,
   mobileWorkforceService,
   teamService,
   db,
@@ -744,6 +748,16 @@ export function createJobsRouter({
         handleJobsError(res, error);
       }
     },
+  );
+
+  router.use(
+    '/:jobId',
+    createJobFinancialReviewRouter({
+      jobCostControlService,
+      teamService,
+      jwtSecret,
+      authService,
+    }),
   );
 
   return router;

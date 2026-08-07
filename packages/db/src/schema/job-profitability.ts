@@ -74,9 +74,7 @@ export const jobDirectCostEntries = pgTable('job_direct_cost_entries', {
   companyId: uuid('company_id')
     .notNull()
     .references(() => companies.id, { onDelete: 'cascade' }),
-  jobId: uuid('job_id')
-    .notNull()
-    .references(() => jobs.id, { onDelete: 'cascade' }),
+  jobId: uuid('job_id').references(() => jobs.id, { onDelete: 'cascade' }),
   category: jobDirectCostCategoryEnum('category').notNull().default('miscellaneous'),
   description: text('description').notNull(),
   amountCents: integer('amount_cents').notNull(),
@@ -130,6 +128,37 @@ export const jobProfitabilitySnapshots = pgTable('job_profitability_snapshots', 
   ),
 }));
 
-export type JobProfitabilityAdjustment = typeof jobProfitabilityAdjustments.$inferSelect;
+export const jobFinancialReviewStatusEnum = pgEnum('job_financial_review_status', [
+  'not_required',
+  'needs_review',
+  'in_review',
+  'financially_complete',
+]);
+
+export const jobFinancialReviews = pgTable('job_financial_reviews', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  companyId: uuid('company_id')
+    .notNull()
+    .references(() => companies.id, { onDelete: 'cascade' }),
+  jobId: uuid('job_id')
+    .notNull()
+    .references(() => jobs.id, { onDelete: 'cascade' }),
+  status: jobFinancialReviewStatusEnum('status').notNull().default('not_required'),
+  reviewFingerprint: text('review_fingerprint'),
+  reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
+  reviewedByUserId: uuid('reviewed_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
+  reviewNotes: text('review_notes'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (table) => ({
+  companyJobUnique: unique('job_financial_reviews_company_job_unique').on(
+    table.companyId,
+    table.jobId,
+  ),
+}));
+
+export type JobFinancialReview = typeof jobFinancialReviews.$inferSelect;
 export type JobDirectCostEntry = typeof jobDirectCostEntries.$inferSelect;
 export type JobProfitabilitySnapshot = typeof jobProfitabilitySnapshots.$inferSelect;

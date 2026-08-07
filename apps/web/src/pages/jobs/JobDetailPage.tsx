@@ -36,6 +36,7 @@ import { canAccessFinance, canManageFinance, canViewJobCosting } from '../../fea
 import { canViewFinanceProfit } from '@titan/shared';
 import { JobCompletionFinancePanel } from '../../features/finance/JobCompletionFinancePanel';
 import { JobProfitabilityPanel } from '../../features/jobs/JobProfitabilityPanel';
+import { JobFinancialChecklist } from '../../features/jobs/JobFinancialChecklist';
 import { JobCompletionReportPanel } from '../../features/jobs/JobCompletionReportPanel';
 import { JobDocumentPackPanel } from '../../features/jobs/JobDocumentPackPanel';
 import { ReportExportActions } from '../../features/reports/ReportExportActions';
@@ -1184,12 +1185,15 @@ export function JobDetailPage() {
         }
         profitabilityPanel={
           accessToken && canViewJobProfitability ? (
-            <JobProfitabilityPanel
-              accessToken={accessToken}
-              jobId={job.id}
-              canViewMargin={canViewProfitMargin}
-              canManageAdjustments={canWriteFinance}
-            />
+            <>
+              <JobFinancialChecklist accessToken={accessToken} jobId={job.id} />
+              <JobProfitabilityPanel
+                accessToken={accessToken}
+                jobId={job.id}
+                canViewMargin={canViewProfitMargin}
+                canManageAdjustments={canWriteFinance}
+              />
+            </>
           ) : undefined
         }
       />
