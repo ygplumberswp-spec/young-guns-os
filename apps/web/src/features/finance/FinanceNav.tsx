@@ -8,6 +8,7 @@ const sectionTabs = [
   { href: '/finance/payments', label: 'Payments' },
   { href: '/finance/bank-control', label: 'Bank Control' },
   { href: '/finance/cash-control', label: 'Cash Control' },
+  { href: '/finance/owner-command', label: 'Command' },
   { href: '/finance/bank-transactions/import', label: 'Bank Import' },
 ];
 
@@ -32,6 +33,11 @@ const secondaryItems = [
     id: 'finance-cash-control',
     label: 'Cash Control',
     href: '/finance/cash-control',
+  },
+  {
+    id: 'finance-owner-command',
+    label: 'Financial Command',
+    href: '/finance/owner-command',
   },
   {
     id: 'finance-job-cost-control',

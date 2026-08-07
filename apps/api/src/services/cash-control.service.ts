@@ -24,6 +24,8 @@ import type {
   CashControlJobView,
   CashControlLedgerPage,
   CashControlOutstandingInvoice,
+  CashControlPeriodKey,
+  CashControlPeriodMetrics,
   CashControlSummary,
   CashControlBankTransactionInput,
   CashControlPaymentInput,
@@ -408,6 +410,38 @@ export class CashControlService {
         'jpe',
       ],
     };
+  }
+
+  /**
+   * Additive period snapshot for FIN-001 composition — reuses CASH-001 pure metrics.
+   * Does not redesign cash-control semantics.
+   */
+  async getPeriodMetrics(
+    actor: CashControlActor,
+    input: {
+      periodKey: CashControlPeriodKey;
+      fromDate: string;
+      toDate: string;
+    },
+  ): Promise<CashControlPeriodMetrics> {
+    this.assertView(actor);
+    const [transactions, paymentRows] = await Promise.all([
+      this.loadBankTransactions(actor.companyId, {
+        fromDate: input.fromDate,
+        toDate: input.toDate,
+      }),
+      this.loadPayments(actor.companyId, {
+        fromDate: input.fromDate,
+        toDate: input.toDate,
+      }),
+    ]);
+    return buildPeriodMetrics({
+      periodKey: input.periodKey,
+      fromDate: input.fromDate,
+      toDate: input.toDate,
+      payments: paymentRows,
+      transactions,
+    });
   }
 
   async getLedger(
