@@ -1,24 +1,44 @@
 {
   "label": "apply-staging-journal-chain",
   "mode": "apply",
-  "startedAt": "2026-08-03T23:33:12.320Z",
+  "startedAt": "2026-08-07T11:01:26.331Z",
   "through": null,
   "realignedRows": [],
   "applied": [
     {
-      "tag": "0172_payments_yoco_payment_id",
-      "ms": 845
+      "tag": "0174_facebook_business_integration",
+      "ms": 465
+    },
+    {
+      "tag": "0185_job_cost_control",
+      "ms": 452
+    },
+    {
+      "tag": "0188_bank_transaction_control",
+      "ms": 413
+    },
+    {
+      "tag": "0189_bank_transaction_integrity",
+      "ms": 378
+    },
+    {
+      "tag": "0190_finance_receipt_reconciliation",
+      "ms": 446
     }
   ],
-  "skippedAlreadyApplied": 168,
+  "skippedAlreadyApplied": 181,
   "failure": null,
-  "appliedBefore": 168,
-  "plannedCount": 1,
+  "appliedBefore": 181,
+  "plannedCount": 5,
   "plannedTags": [
-    "0172_payments_yoco_payment_id"
+    "0174_facebook_business_integration",
+    "0185_job_cost_control",
+    "0188_bank_transaction_control",
+    "0189_bank_transaction_integrity",
+    "0190_finance_receipt_reconciliation"
   ],
-  "appliedAfter": 169,
-  "journalCount": 169,
+  "appliedAfter": 186,
+  "journalCount": 186,
   "complete": true,
-  "finishedAt": "2026-08-03T23:33:14.897Z"
+  "finishedAt": "2026-08-07T11:01:29.227Z"
 }

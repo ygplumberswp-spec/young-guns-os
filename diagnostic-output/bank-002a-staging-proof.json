@@ -1,0 +1,212 @@
+{
+  "label": "bank-002a-staging-proof",
+  "generatedAt": "2026-08-07T11:04:25.674Z",
+  "branch": "cursor/bank-002-receipt-reconciliation-998f",
+  "expectedCommit": "98065b0",
+  "pr": 31,
+  "stagingRef": "cpkuwtaipjxeipvbssvn",
+  "apiBase": "https://young-guns-os-staging.up.railway.app",
+  "webBase": "https://comfortable-determination-staging.up.railway.app",
+  "results": [
+    {
+      "name": "precheck_staging_only",
+      "status": "PASS",
+      "detail": "ref=cpkuwtai…"
+    },
+    {
+      "name": "precheck_no_xero_sync",
+      "status": "PASS",
+      "detail": "gates false"
+    },
+    {
+      "name": "precheck_branch_commit",
+      "status": "PASS",
+      "detail": "98065b0"
+    },
+    {
+      "name": "precheck_bank001_ancestry",
+      "status": "PASS",
+      "detail": "2db8dd21c6ca"
+    },
+    {
+      "name": "health_live",
+      "status": "PASS",
+      "detail": "status=200 service=titan-api"
+    },
+    {
+      "name": "health_ready",
+      "status": "PASS",
+      "detail": "status=200 service=undefined"
+    },
+    {
+      "name": "migration_0190_audit",
+      "status": "PASS",
+      "detail": "additive only"
+    },
+    {
+      "name": "migration_0190_applied",
+      "status": "PASS",
+      "detail": "journal=186 hash=f8cf445630c2"
+    },
+    {
+      "name": "route_GET_receipts",
+      "status": "PASS",
+      "detail": "status=401 (auth envelope)"
+    },
+    {
+      "name": "route_POST_00000000-0000-4000-8000-000000000001",
+      "status": "PASS",
+      "detail": "status=401 (auth envelope)"
+    },
+    {
+      "name": "route_GET_00000000-0000-4000-8000-000000000001",
+      "status": "PASS",
+      "detail": "status=401 (auth envelope)"
+    },
+    {
+      "name": "route_POST_00000000-0000-4000-8000-000000000001",
+      "status": "PASS",
+      "detail": "status=401 (auth envelope)"
+    },
+    {
+      "name": "route_POST_00000000-0000-4000-8000-000000000001",
+      "status": "PASS",
+      "detail": "status=401 (auth envelope)"
+    },
+    {
+      "name": "route_POST_00000000-0000-4000-8000-000000000001",
+      "status": "PASS",
+      "detail": "status=401 (auth envelope)"
+    },
+    {
+      "name": "route_GET_bank-transactions",
+      "status": "PASS",
+      "detail": "status=401 (auth envelope)"
+    },
+    {
+      "name": "route_proof_live_distinction",
+      "status": "SKIP",
+      "detail": "finance prefix auth envelope masks 404"
+    },
+    {
+      "name": "empty_state_counts_readable",
+      "status": "PASS",
+      "detail": "{\"receiptRecords\":0,\"supplierAliases\":0,\"receiptLinks\":0}"
+    },
+    {
+      "name": "empty_state_missing_receipts",
+      "status": "PASS",
+      "detail": "0 (zero acceptable)"
+    },
+    {
+      "name": "web_shell_reachable",
+      "status": "PASS",
+      "detail": "status=200"
+    },
+    {
+      "name": "ui_bank_control_shell",
+      "status": "PASS",
+      "detail": "status=200"
+    },
+    {
+      "name": "rbac_harness_deferred",
+      "status": "PASS",
+      "detail": "role-forbidden + cross-tenant tests in API suite"
+    },
+    {
+      "name": "receipt_integrity_harness_deferred",
+      "status": "PASS",
+      "detail": "finance-receipt-reconciliation.test.ts"
+    },
+    {
+      "name": "jpe_regression_harness_deferred",
+      "status": "PASS",
+      "detail": "bank-transaction-control + job-profitability tests"
+    }
+  ],
+  "safety": {
+    "liveFnbConnection": false,
+    "bankCredentials": 0,
+    "paymentsInitiated": 0,
+    "xeroCalls": 0,
+    "xeroFilesChanged": 0,
+    "ocrImplementation": 0,
+    "productionTouched": false,
+    "realBankStatementImported": 0,
+    "fakeStagingFinanceDataCreated": 0
+  },
+  "precheck": {
+    "appEnv": "staging",
+    "titanEnv": "staging",
+    "stagingRefPresent": true,
+    "productionRefBlocked": true,
+    "xeroSyncEnabled": false,
+    "providersEnabled": false,
+    "schedulersEnabled": false
+  },
+  "commit": {
+    "full": "98065b0003207cfa9453adb9863bf6ec27529c52",
+    "short": "98065b0",
+    "bank001Base": "2db8dd21c6caa17dfb032e08d432bb9908cefd7e"
+  },
+  "deployedVersion": "0.2.0",
+  "deployedTimestamp": "2026-08-07T11:04:25.801Z",
+  "migration": {
+    "tag": "0190_finance_receipt_reconciliation",
+    "hash": "f8cf445630c216a3c3af3e22adb0c0aaaccc78595bf1ca4423002017f529efdd",
+    "hashPrefix": "f8cf445630c2",
+    "additiveOnly": true,
+    "objects": [
+      "supplier_aliases",
+      "finance_receipt_records",
+      "finance_receipt_transaction_links",
+      "finance_receipt_audit_logs",
+      "bank_transactions.confirmed_supplier_id"
+    ],
+    "applied": true,
+    "journalBefore": 186,
+    "bank002Tables": [
+      "finance_receipt_audit_logs",
+      "finance_receipt_records",
+      "finance_receipt_transaction_links",
+      "supplier_aliases"
+    ],
+    "confirmedSupplierColumn": true
+  },
+  "protectedCounts": {
+    "bankTransactions": 0,
+    "directCosts": 0
+  },
+  "routeProof": {
+    "deployed": 7,
+    "missing404": 0,
+    "financeAuthEnvelopeOnly": true,
+    "note": "Unauthenticated /finance/* returns 401 even for unknown paths — live route existence requires authenticated probe or deployed commit SHA"
+  },
+  "emptyState": {
+    "receiptRecords": 0,
+    "supplierAliases": 0,
+    "receiptLinks": 0,
+    "missingReceiptsYoungGuns": 0
+  },
+  "ui": {
+    "bankControlStatus": 200,
+    "hasAppShell": true
+  },
+  "rbacHarness": "local automated tests — see tests/build section",
+  "receiptIntegrityHarness": "local shared + API tests — see tests/build section",
+  "jpeRegressionHarness": "local bank-transaction + JPE tests — see tests/build section",
+  "deployment": {
+    "prNumber": 31,
+    "prState": "OPEN",
+    "prMergedAt": null,
+    "prHeadOid": "98065b000320",
+    "note": "PR #31 not merged — staging API/Web deploy of BANK-002 code requires owner Railway deploy after merge",
+    "apiBase": "https://young-guns-os-staging.up.railway.app",
+    "webBase": "https://comfortable-determination-staging.up.railway.app",
+    "deployedVersion": "0.2.0",
+    "localCommit": "98065b0",
+    "railwayDeployIds": "not exposed via health endpoint — owner Railway dashboard required"
+  },
+  "verdict": "FAIL — BANK-002 staging integrity gap remains (DB migration PASS; API/Web deploy of PR #31 not verified)"
+}

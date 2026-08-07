@@ -1,0 +1,8 @@
+{
+  "status": "backup_ok",
+  "path": "/home/ubuntu/titan-staging-backups/titan-staging-20260807T105802Z.dump",
+  "bytes": 11991562,
+  "sha256": "56313dcbcf6cd1830d4365023b0c5514b01d9f8a8c678e223acc62d7287dfd2a",
+  "pgRestoreListExitCode": 0,
+  "tocLineCount": 9334
+}
