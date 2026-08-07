@@ -1,7 +1,9 @@
+import { useState } from 'react';
+import { Link } from 'wouter';
 import { PageHeader } from '../../components/ux';
 import { Panel, Button } from '@titan/ui';
 import {
-  buildAddressMapsDeepLink,
+  ETA_UNAVAILABLE_LABEL,
   buildVehiclePositionNavigateUrl,
   formatVehicleIgnitionLabel,
   formatVehicleMotionLabel,
@@ -9,7 +11,11 @@ import {
   formatVehiclePositionFreshness,
   resolveVehiclePositionAddressDisplay,
 } from '@titan/shared';
-import { fetchMobileRoute } from '../../lib/mobile-api-client';
+import {
+  MobileApiClientError,
+  confirmMobileEnRoute,
+  fetchMobileRoute,
+} from '../../lib/mobile-api-client';
 import { useAuth } from '../../lib/auth-context';
 import { useStaffCachedQuery } from '../../lib/use-scoped-cached-query';
 import { AnalyticsTabPanel } from '../../features/analytics/AnalyticsTabPanel';
@@ -17,6 +23,9 @@ import { AnalyticsTabPanel } from '../../features/analytics/AnalyticsTabPanel';
 /** UX-043 — route stops with stored site address + Maps deep-link; no fake live ETA. */
 export function MobileRoutePage() {
   const { accessToken } = useAuth();
+  const [busy, setBusy] = useState(false);
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const routeQuery = useStaffCachedQuery({
     queryKey: 'mobile/route',
@@ -26,7 +35,25 @@ export function MobileRoutePage() {
   });
 
   const route = routeQuery.data;
-  const nextDeepLink = buildAddressMapsDeepLink(route?.route.nextDestination?.address);
+  const nextDeepLink = route?.route.nextDestination?.navigationUrl ?? null;
+
+  async function markNextEnRoute() {
+    if (!accessToken || !route?.route.nextDestination || busy) return;
+    setBusy(true);
+    setActionError(null);
+    setActionMessage(null);
+    try {
+      const result = await confirmMobileEnRoute(accessToken, route.route.nextDestination.jobId);
+      setActionMessage(
+        `EN ROUTE · ${result.eta.arrivalWindowLabel} · customer ${result.customerNotification.status.replace(/_/g, ' ')}`,
+      );
+      await routeQuery.refetch();
+    } catch (err) {
+      setActionError(err instanceof MobileApiClientError ? err.message : 'Unable to mark EN ROUTE');
+    } finally {
+      setBusy(false);
+    }
+  }
 
   return (
     <div className="portal-page">
@@ -55,16 +82,23 @@ export function MobileRoutePage() {
               </p>
               <p className="page-muted">
                 ETA source:{' '}
-                {route.etaSource === 'schedule_only'
-                  ? 'Planned appointment time only (not live traffic routing)'
-                  : 'None — no scheduled times on active stops'}
+                {route.etaSource === 'google_maps'
+                  ? 'Cartrack vehicle position + Google Maps live route'
+                  : route.etaSource === 'schedule_only'
+                    ? 'Planned appointment time only (not live traffic routing)'
+                    : 'None — no truthful live route available'}
+              </p>
+              <p className="page-muted">
+                Travel estimate: {route.route.travelEstimateLabel ?? ETA_UNAVAILABLE_LABEL}
               </p>
               <p className="page-muted">
                 Live tracking:{' '}
                 {route.liveTrackingAvailable
-                  ? 'Available from connected fleet provider'
+                  ? 'Assigned-vehicle Cartrack GPS available for technician ETA (not shared as a live customer feed)'
                   : 'Unavailable — no assigned-vehicle GPS for this technician; fleet-wide tracking is blocked'}
               </p>
+              {actionMessage ? <p className="form-success">{actionMessage}</p> : null}
+              {actionError ? <p className="form-error">{actionError}</p> : null}
             </Panel>
 
             {route.latestGps?.isAssignedVehicle ? (
@@ -114,22 +148,25 @@ export function MobileRoutePage() {
             ) : null}
 
             {route.route.nextDestination ? (
-              <Panel title="Next Destination">
+              <Panel title="NEXT JOB">
                 <p>
-                  <strong>{route.route.nextDestination.title}</strong> —{' '}
-                  {route.route.nextDestination.customerName}
+                  <strong>{route.route.nextDestination.customerName}</strong>
                 </p>
+                <p>{route.route.nextDestination.title}</p>
                 <p>
                   {route.route.nextDestination.address
-                    ? `Site: ${route.route.nextDestination.address}`
+                    ? `Address: ${route.route.nextDestination.address}`
                     : 'Site address missing on job snapshot'}
                 </p>
-                {route.route.nextDestination.scheduledAt ? (
-                  <p>
-                    Planned:{' '}
-                    {new Date(route.route.nextDestination.scheduledAt).toLocaleString()}
-                  </p>
-                ) : null}
+                <p className="page-muted">
+                  Scheduled:{' '}
+                  {route.route.nextDestination.scheduledAt
+                    ? new Date(route.route.nextDestination.scheduledAt).toLocaleString()
+                    : '—'}
+                </p>
+                <p className="page-muted">
+                  Travel estimate: {route.route.travelEstimateLabel ?? ETA_UNAVAILABLE_LABEL}
+                </p>
                 {route.route.assignedVehicleName ? (
                   <p>
                     Vehicle: {route.route.assignedVehicleName} (
@@ -138,13 +175,26 @@ export function MobileRoutePage() {
                 ) : (
                   <p className="page-muted">No vehicle assigned on this technician record.</p>
                 )}
-                {nextDeepLink ? (
-                  <p>
-                    <a href={nextDeepLink} target="_blank" rel="noreferrer">
-                      Open site address in Maps (deep-link — TITAN does not call Google)
+                <div className="jobs-form__actions" style={{ marginTop: '0.75rem' }}>
+                  {nextDeepLink ? (
+                    <a
+                      className="mobile-action-btn mobile-action-btn--primary"
+                      href={nextDeepLink}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      NAVIGATE
                     </a>
-                  </p>
-                ) : null}
+                  ) : null}
+                  <Button type="button" disabled={busy} onClick={() => void markNextEnRoute()}>
+                    EN ROUTE
+                  </Button>
+                  <Link href={`/mobile/jobs/${route.route.nextDestination.jobId}`}>
+                    <Button type="button" variant="secondary">
+                      Open job
+                    </Button>
+                  </Link>
+                </div>
               </Panel>
             ) : null}
 
@@ -154,7 +204,7 @@ export function MobileRoutePage() {
               ) : (
                 <ul className="portal-list">
                   {route.route.stops.map((stop) => {
-                    const link = buildAddressMapsDeepLink(stop.address);
+                    const link = stop.navigationUrl;
                     return (
                       <li key={stop.jobId}>
                         <strong>
@@ -171,7 +221,7 @@ export function MobileRoutePage() {
                         </span>
                         {link ? (
                           <a href={link} target="_blank" rel="noreferrer">
-                            Maps deep-link
+                            NAVIGATE
                           </a>
                         ) : null}
                       </li>

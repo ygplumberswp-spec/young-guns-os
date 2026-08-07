@@ -40,8 +40,10 @@ import {
   computeDurationMinutes,
   computeWorkingDurationMinutes,
   detectActiveTimeConflict,
+  ETA_UNAVAILABLE_LABEL,
   formatMapsEtaCapabilityLabel,
   isFinanciallyAuthoritativeTimeEntry,
+  isValidLatLng,
   unresolvedVehicleAddress,
   validateFinancePhotoFile,
   validateFinancePhotoMagicBytes,
@@ -105,6 +107,10 @@ function documentationTypeToEvidenceKind(documentationType: string): JobEvidence
 }
 
 export class MobileWorkforceService {
+  private travelTimeService: import('./travel-time.service.js').TravelTimeService | null = null;
+  private technicianEnRouteEtaService: import('./technician-en-route-eta.service.js').TechnicianEnRouteEtaService | null =
+    null;
+
   constructor(
     private readonly db: DatabaseClient,
     private readonly mobileService: MobileService,
@@ -118,6 +124,18 @@ export class MobileWorkforceService {
     private readonly jobEvidenceStorageService: JobEvidenceStorageService,
     private readonly technicianWorkflowService: TechnicianWorkflowService,
   ) {}
+
+  /** Optional — enables truthful next-job travel minutes (Cartrack + Google Maps). */
+  setTravelTimeService(service: import('./travel-time.service.js').TravelTimeService) {
+    this.travelTimeService = service;
+  }
+
+  /** Optional — offline EN ROUTE flush uses Cartrack + Maps ETA + customer notify. */
+  setTechnicianEnRouteEtaService(
+    service: import('./technician-en-route-eta.service.js').TechnicianEnRouteEtaService,
+  ) {
+    this.technicianEnRouteEtaService = service;
+  }
 
   async getWorkforceDashboard(scope: TechnicianScope): Promise<MobileWorkforceDashboard> {
     const [baseDashboard, route, announcements, pendingRequests, pendingActions, todaySchedule] =
@@ -323,6 +341,12 @@ export class MobileWorkforceService {
         placeId: job.address.placeId,
         address: job.address.formattedAddress ?? job.address.display ?? job.addressDisplay,
       }),
+      siteMap: {
+        latitude: job.address.latitude ?? null,
+        longitude: job.address.longitude ?? null,
+        placeId: job.address.placeId ?? null,
+        formattedAddress: job.address.formattedAddress ?? job.address.display ?? null,
+      },
       crew,
       vehicle,
       variations: pendingVariations,
@@ -340,7 +364,7 @@ export class MobileWorkforceService {
   }
 
   async getRouteIntelligence(scope: TechnicianScope): Promise<MobileRouteIntelligence> {
-    const [route, travelHistory, tracking, fleetInfo] = await Promise.all([
+    const [routeBase, travelHistory, tracking, fleetInfo] = await Promise.all([
       this.getRouteSummary(scope),
       this.getTravelHistory(scope),
       this.integrationsService.buildFleetTrackingContext(scope.companyId),
@@ -353,14 +377,12 @@ export class MobileWorkforceService {
     const latestGps =
       liveTrackingAvailable && assignedVehicleId != null
         ? (tracking.latestPositions.find((pos) => pos.vehicleId === assignedVehicleId) ?? null)
-        : liveTrackingAvailable
-          ? (tracking.latestPositions[0] ?? null)
-          : null;
+        : null;
     const isAssignedVehiclePosition = Boolean(
       latestGps && assignedVehicleId != null && latestGps.vehicleId === assignedVehicleId,
     );
 
-    const hasSchedule = route.stops.some((stop) => Boolean(stop.scheduledAt));
+    const hasSchedule = routeBase.stops.some((stop) => Boolean(stop.scheduledAt));
     const googleMapsConnected = await this.db.query.integrationConnections
       .findFirst({
         where: and(
@@ -375,11 +397,44 @@ export class MobileWorkforceService {
     const mapsCapabilityState = googleMapsConnected
       ? ('connected' as const)
       : ('not_configured' as const);
-    const etaSource = googleMapsConnected
-      ? ('google_maps' as const)
-      : hasSchedule
-        ? ('schedule_only' as const)
-        : ('none' as const);
+
+    let estimatedTravelMinutes: number | null = null;
+    let travelEstimateLabel: string | null = ETA_UNAVAILABLE_LABEL;
+    let etaSource: MobileRouteIntelligence['etaSource'] = hasSchedule ? 'schedule_only' : 'none';
+
+    const next = routeBase.nextDestination;
+    const vehicleOrigin =
+      isAssignedVehiclePosition &&
+      latestGps &&
+      isValidLatLng(latestGps.latitude, latestGps.longitude)
+        ? { latitude: latestGps.latitude, longitude: latestGps.longitude }
+        : null;
+    const destination =
+      next && isValidLatLng(next.latitude, next.longitude)
+        ? { latitude: next.latitude!, longitude: next.longitude! }
+        : null;
+
+    if (this.travelTimeService && vehicleOrigin && destination && googleMapsConnected) {
+      const travel = await this.travelTimeService.estimateTravelMinutes({
+        companyId: scope.companyId,
+        vehicleOrigin,
+        destination,
+        defaultMinutes: 0,
+        knownCartrackConnected: tracking.cartrackConnected,
+        knownGoogleMapsConnected: googleMapsConnected,
+      });
+      if (travel.source === 'google_maps' && travel.vehicleOriginUsed) {
+        estimatedTravelMinutes = travel.minutes;
+        travelEstimateLabel = `${travel.minutes} min (live route)`;
+        etaSource = 'google_maps';
+      }
+    }
+
+    const route = {
+      ...routeBase,
+      estimatedTravelMinutes,
+      travelEstimateLabel,
+    };
 
     return {
       route,
@@ -1238,6 +1293,18 @@ export class MobileWorkforceService {
         if (!payload?.action) {
           throw new MobileWorkforceError('VALIDATION_ERROR', 'A transition action is required');
         }
+        if (payload.action === 'en_route') {
+          if (!this.technicianEnRouteEtaService) {
+            throw new MobileWorkforceError(
+              'VALIDATION_ERROR',
+              'EN ROUTE service unavailable for offline sync',
+            );
+          }
+          const result = await this.technicianEnRouteEtaService.confirmEnRoute(scope, action.jobId, {
+            clientActionId: action.clientActionId,
+          });
+          return result.job.id;
+        }
         const job = await this.jobExecutionService.transition(scope, action.jobId, {
           action: payload.action,
           reason: payload.reason ?? null,
@@ -1509,13 +1576,21 @@ export class MobileWorkforceService {
       scheduledAt: job.scheduledAt,
       address: job.addressDisplay ?? null,
       sequence: index + 1,
+      latitude: job.latitude ?? null,
+      longitude: job.longitude ?? null,
+      navigationUrl: buildGoogleMapsNavigateUrl({
+        latitude: job.latitude,
+        longitude: job.longitude,
+        placeId: job.placeId,
+        address: job.addressDisplay,
+      }),
     }));
 
     return {
       stopCount: stops.length,
       nextDestination: stops[0] ?? null,
-      // UX-I: no fabricated travel minutes — live routing is not implemented.
       estimatedTravelMinutes: null,
+      travelEstimateLabel: ETA_UNAVAILABLE_LABEL,
       assignedVehicleName: fleetInfo.assignedVehicle?.name ?? null,
       assignedVehiclePlate: fleetInfo.assignedVehicle?.licensePlate ?? null,
       stops,

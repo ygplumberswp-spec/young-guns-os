@@ -164,6 +164,7 @@ import { MobileService } from './services/mobile.service.js';
 import { NotificationService } from './services/notification.service.js';
 import { MobileSyncService } from './services/mobile-sync.service.js';
 import { TechnicianWorkflowService } from './services/technician-workflow.service.js';
+import { TechnicianEnRouteEtaService } from './services/technician-en-route-eta.service.js';
 import { JobExecutionService } from './services/job-execution.service.js';
 import { WorkflowStudioService } from './services/workflow-studio.service.js';
 import { EnterpriseAutomationStudioService } from './services/enterprise-automation-studio.service.js';
@@ -1241,6 +1242,17 @@ const dispatchCommunicationService = new DispatchCommunicationService(
   db,
   enterpriseUnifiedCommunicationsService,
 );
+const technicianEnRouteEtaService = new TechnicianEnRouteEtaService(
+  db,
+  jobsService,
+  jobExecutionService,
+  travelTimeService,
+  integrationsService,
+  mobileService,
+  dispatchCommunicationService,
+);
+mobileWorkforceService.setTravelTimeService(travelTimeService);
+mobileWorkforceService.setTechnicianEnRouteEtaService(technicianEnRouteEtaService);
 const enterpriseCustomerExperienceService = new EnterpriseCustomerExperienceService({
   db,
   enterpriseSaasPlatformService,
@@ -2542,6 +2554,7 @@ app.use(
     notificationService,
     mobileSyncService,
     technicianWorkflowService,
+    technicianEnRouteEtaService,
     mobileWorkforceService,
     jobExecutionService,
     jobCostCaptureService,

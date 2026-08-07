@@ -62,6 +62,11 @@ function buildApp(services: {
       notificationService: {} as NotificationService,
       mobileSyncService: {} as MobileSyncService,
       technicianWorkflowService: {} as TechnicianWorkflowService,
+      technicianEnRouteEtaService: {
+        confirmEnRoute: async () => {
+          throw new Error('not used in offline completion test');
+        },
+      } as never,
       mobileWorkforceService: services.mobileWorkforceService as MobileWorkforceService,
       jobExecutionService: services.jobExecutionService as JobExecutionService,
       jobCostCaptureService: {} as JobCostCaptureService,

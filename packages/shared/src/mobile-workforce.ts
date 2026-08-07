@@ -120,12 +120,17 @@ export type MobileRouteStop = {
   scheduledAt: string | null;
   address: string | null;
   sequence: number;
+  navigationUrl: string | null;
+  latitude: number | null;
+  longitude: number | null;
 };
 
 export type MobileRouteSummary = {
   stopCount: number;
   nextDestination: MobileRouteStop | null;
   estimatedTravelMinutes: number | null;
+  /** Honest label when live minutes are unavailable. */
+  travelEstimateLabel: string | null;
   assignedVehicleName: string | null;
   assignedVehiclePlate: string | null;
   stops: MobileRouteStop[];
@@ -164,6 +169,28 @@ export type MobileRouteIntelligence = {
   mapsCapabilityLabel: string;
   etaSource: 'none' | 'schedule_only' | 'google_maps';
   liveTrackingAvailable: boolean;
+};
+
+export type TechnicianEnRouteConfirmResponse = {
+  job: import('./jobs.js').JobDetail;
+  eta: import('./technician-en-route-eta.js').TechnicianEnRouteEtaTruth;
+  customerNotification: {
+    status:
+      | 'queued'
+      | 'already_queued'
+      | 'skipped_opt_out'
+      | 'skipped_no_channel'
+      | 'skipped_no_recipient';
+    notificationId: string | null;
+    messageBody: string;
+  };
+  vehicle: {
+    id: string | null;
+    name: string | null;
+    licensePlate: string | null;
+    positionUsed: boolean;
+  };
+  alreadyEnRoute: boolean;
 };
 
 export type MobileWorkforceDashboard = {
@@ -215,6 +242,13 @@ export type MobileJobExecutionWorkspace = {
     province: string | null;
     postalCode: string | null;
     unit: string | null;
+  };
+  /** Verified site geocode for technician map pin — not a live vehicle feed. */
+  siteMap: {
+    latitude: number | null;
+    longitude: number | null;
+    placeId: string | null;
+    formattedAddress: string | null;
   };
   accessInstructions: string | null;
   siteContact: {

@@ -5,6 +5,10 @@ import type { NotificationService } from '../services/notification.service.js';
 import type { MobileSyncService } from '../services/mobile-sync.service.js';
 import type { TechnicianWorkflowService } from '../services/technician-workflow.service.js';
 import { TechnicianWorkflowError } from '../services/technician-workflow.service.js';
+import {
+  TechnicianEnRouteEtaError,
+  type TechnicianEnRouteEtaService,
+} from '../services/technician-en-route-eta.service.js';
 import type { MobileWorkforceService } from '../services/mobile-workforce.service.js';
 import { MobileWorkforceError } from '../services/mobile-workforce.service.js';
 import type { JobExecutionService } from '../services/job-execution.service.js';
@@ -308,6 +312,7 @@ type MobileRouterDeps = {
   notificationService: NotificationService;
   mobileSyncService: MobileSyncService;
   technicianWorkflowService: TechnicianWorkflowService;
+  technicianEnRouteEtaService: TechnicianEnRouteEtaService;
   mobileWorkforceService: MobileWorkforceService;
   jobExecutionService: JobExecutionService;
   jobCostCaptureService: import('../services/job-cost-capture.service.js').JobCostCaptureService;
@@ -339,6 +344,7 @@ export function createMobileRouter({
   notificationService,
   mobileSyncService,
   technicianWorkflowService,
+  technicianEnRouteEtaService,
   mobileWorkforceService,
   jobExecutionService,
   jobCostCaptureService,
@@ -1102,10 +1108,25 @@ export function createMobileRouter({
   technicianRouter.post('/jobs/:id/en-route', requireMobileWrite, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const job = await technicianWorkflowService.markEnRoute(auth, getRouteParam(req.params.id));
-      res.json({ data: { job } });
+      const clientActionId =
+        typeof req.body?.clientActionId === 'string' ? req.body.clientActionId : null;
+      const messageTemplate =
+        typeof req.body?.messageTemplate === 'string' ? req.body.messageTemplate : null;
+      const result = await technicianEnRouteEtaService.confirmEnRoute(auth, getRouteParam(req.params.id), {
+        clientActionId,
+        messageTemplate,
+      });
+      res.json({
+        data: {
+          job: result.job,
+          eta: result.eta,
+          customerNotification: result.customerNotification,
+          vehicle: result.vehicle,
+          alreadyEnRoute: result.alreadyEnRoute,
+        },
+      });
     } catch (error) {
-      handleTechnicianError(res, error);
+      handleTechnicianEnRouteError(res, error);
     }
   });
 
@@ -1187,6 +1208,22 @@ export function createMobileRouter({
     try {
       const auth = getAuth(req);
       const jobId = getRouteParam(req.params.id);
+      // EN ROUTE must use Cartrack + Maps ETA + customer notify — never bare transition.
+      if (parsed.data.action === 'en_route') {
+        const result = await technicianEnRouteEtaService.confirmEnRoute(auth, jobId, {
+          clientActionId: parsed.data.clientActionId ?? null,
+        });
+        res.json({
+          data: {
+            job: result.job,
+            eta: result.eta,
+            customerNotification: result.customerNotification,
+            vehicle: result.vehicle,
+            alreadyEnRoute: result.alreadyEnRoute,
+          },
+        });
+        return;
+      }
       const job = await jobExecutionService.transition(auth, jobId, parsed.data);
       if (parsed.data.action === 'arrive') {
         await jobVisitsService.ensureOpenVisit(auth, jobId, 'arrive');
@@ -1692,6 +1729,19 @@ function handleTechnicianError(res: import('express').Response, error: unknown) 
     return;
   }
 
+  throw error;
+}
+
+function handleTechnicianEnRouteError(res: import('express').Response, error: unknown) {
+  if (error instanceof TechnicianEnRouteEtaError) {
+    const status = error.code === 'NOT_FOUND' ? 404 : error.code === 'FORBIDDEN' ? 403 : 400;
+    res.status(status).json({ error: { code: error.code, message: error.message } });
+    return;
+  }
+  if (error instanceof TechnicianWorkflowError) {
+    handleTechnicianError(res, error);
+    return;
+  }
   throw error;
 }
 
