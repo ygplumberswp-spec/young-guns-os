@@ -187,12 +187,12 @@
     ]
   },
   "testsBuild": {
-    "shared": { "pass": null, "fail": null, "note": "filled after gate run" },
-    "auth": { "pass": null, "fail": null },
-    "api": { "pass": null, "fail": null },
-    "web": { "pass": null, "fail": null },
-    "typecheck": null,
-    "productionBuild": null
+    "shared": { "tests": 1446, "pass": 1446, "fail": 0 },
+    "auth": { "tests": 24, "pass": 24, "fail": 0 },
+    "api": { "tests": 1456, "pass": 1456, "fail": 0 },
+    "web": { "tests": 458, "pass": 458, "fail": 0 },
+    "typecheck": "pass",
+    "productionBuild": "pass"
   },
   "safety": {
     "productionTouched": 0,
