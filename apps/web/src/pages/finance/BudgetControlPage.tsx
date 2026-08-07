@@ -371,7 +371,7 @@ export function BudgetControlPage() {
 
       <Panel title="Forecast">
         <p className="page-muted">
-          <strong>{dashboard.forecast.label}</strong> — {dashboard.forecast.confidenceNote}
+          <strong>FORECAST</strong> ({dashboard.forecast.label}) — {dashboard.forecast.confidenceNote}
         </p>
         <MetricGrid>
           <StatCard

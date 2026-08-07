@@ -26,6 +26,7 @@ describe('FIN-004 Budget Control UI', () => {
     assert.match(pageSource, /Forecast/);
     assert.match(pageSource, /Overhead Budget/);
     assert.match(pageSource, /Needs Attention/);
+    assert.match(pageSource, /Forecast/);
     assert.match(pageSource, /FORECAST/);
     assert.match(pageSource, /budget-control__metrics/);
   });
