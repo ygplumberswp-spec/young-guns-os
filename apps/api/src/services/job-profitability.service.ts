@@ -7,6 +7,7 @@ import type {
 import {
   computeJobProfitability,
   JPE_CALCULATION_VERSION,
+  resolveLabourHourlyCostCents,
 } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
 import {
@@ -48,6 +49,7 @@ export class JobProfitabilityService {
   /**
    * Always recomputes from live financial sources. Snapshot persistence is a write-through
    * cache for downstream reporting — never read back for this response.
+   * Consumers must treat GET /profitability as authoritative; snapshots are analytics-only.
    */
   async getJobProfitability(
     companyId: string,
@@ -230,6 +232,7 @@ export class JobProfitabilityService {
         amountCents: row.amountCents,
         paidAt: row.paidAt.toISOString(),
         reference: row.reference,
+        xeroPaymentStatus: row.xeroPaymentStatus,
       })),
       quotes: quoteRows.map((row) => ({
         id: row.id,
@@ -250,7 +253,7 @@ export class JobProfitabilityService {
         startedAt: row.startedAt.toISOString(),
         endedAt: row.endedAt?.toISOString() ?? null,
         approved: true,
-        hourlyCostCents: labourRateCentsPerHour,
+        hourlyCostCents: resolveLabourHourlyCostCents(row.metadata, labourRateCentsPerHour),
         overtimeMultiplier:
           typeof row.metadata?.overtimeMultiplier === 'number'
             ? row.metadata.overtimeMultiplier

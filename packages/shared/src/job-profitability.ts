@@ -15,7 +15,7 @@ import {
   sumReturnedMaterialCents,
 } from './job-costing.js';
 
-export const JPE_CALCULATION_VERSION = 2;
+export const JPE_CALCULATION_VERSION = 3;
 
 export type JobRevenueSource = 'invoice' | 'approved_quote' | 'manual_adjustment' | 'none';
 
@@ -87,6 +87,8 @@ export type JobProfitabilitySummary = {
   invoiceAmountCents: number;
   creditAdjustmentCents: number;
   jobRevenueCents: number;
+  /** Ex-VAT economic revenue (base ex-VAT + adjustments) — basis for gross margin. */
+  economicRevenueCents: number;
   jobRevenueExVatCents: number | null;
   materialCostCents: number;
   labourCostCents: number;
@@ -308,6 +310,8 @@ type PaymentInput = {
   amountCents: number;
   paidAt: string | null;
   reference: string | null;
+  /** Xero import status — DELETED/VOIDED/FAILED rows are excluded from cash collected. */
+  xeroPaymentStatus?: string | null;
 };
 
 export type ComputeJobProfitabilityInput = {
@@ -348,6 +352,45 @@ const OTHER_QUOTE_CATEGORIES: QuoteLineCategory[] = [
 /** PO/material direct-cost rows track cash payment evidence — not additive economic cost. */
 function isCashPaymentTrackingDirectCost(cost: Pick<DirectCostInput, 'sourceType'>): boolean {
   return cost.sourceType === 'purchase_order' || cost.sourceType === 'material_line';
+}
+
+/** Draft and cancelled/void invoices are not authoritative job revenue sources. */
+export function isAuthoritativeInvoiceForRevenue(status: string): boolean {
+  return status !== 'draft' && status !== 'cancelled';
+}
+
+/** Settled/successful payment rows count toward cash collected; voided/failed do not. */
+export function isPaymentCountedForCashCollection(payment: Pick<PaymentInput, 'amountCents' | 'xeroPaymentStatus'>): boolean {
+  const status = (payment.xeroPaymentStatus ?? '').trim().toUpperCase();
+  if (status === 'DELETED' || status === 'VOIDED' || status === 'FAILED') {
+    return false;
+  }
+  return payment.amountCents !== 0;
+}
+
+export function sumCashCollectedCents(payments: PaymentInput[]): number {
+  return payments
+    .filter(isPaymentCountedForCashCollection)
+    .reduce((sum, row) => sum + row.amountCents, 0);
+}
+
+/**
+ * Historical labour rate hierarchy:
+ * 1. rate locked on the time entry metadata at capture/approval
+ * 2. company default (fallback only when no entry-level rate exists)
+ */
+export function resolveLabourHourlyCostCents(
+  entry: { metadata?: Record<string, unknown> | null },
+  companyDefaultRateCentsPerHour: number,
+): number {
+  const meta = entry.metadata ?? {};
+  for (const key of ['hourlyCostCents', 'internalRateCentsPerHour', 'labourRateCentsPerHour'] as const) {
+    const value = meta[key];
+    if (typeof value === 'number' && Number.isFinite(value) && value >= 0) {
+      return Math.round(value);
+    }
+  }
+  return companyDefaultRateCentsPerHour;
 }
 
 export function canAccessJobProfitability(identity: {
@@ -545,33 +588,38 @@ export function resolveJobRevenue(input: {
   approvedAmountCents: number;
   invoiceAmountCents: number;
   jobRevenueCents: number;
+  economicRevenueCents: number;
   jobRevenueExVatCents: number | null;
 } {
   const quotedAmountCents = input.primaryQuote?.totalCents ?? 0;
   const approvedAmountCents =
     input.primaryQuote?.status === 'accepted' ? input.primaryQuote.totalCents : 0;
+  const approvedSubtotalCents =
+    input.primaryQuote?.status === 'accepted' ? input.primaryQuote.subtotalCents : 0;
 
-  const activeInvoices = input.invoices.filter(
-    (inv) => inv.status !== 'cancelled' && inv.status !== 'draft',
-  );
+  const activeInvoices = input.invoices.filter((inv) => isAuthoritativeInvoiceForRevenue(inv.status));
   const invoiceAmountCents = activeInvoices.reduce((sum, inv) => sum + inv.totalCents, 0);
   const invoiceSubtotalCents = activeInvoices.reduce((sum, inv) => sum + inv.subtotalCents, 0);
 
   let revenueSource: JobRevenueSource = 'none';
   let baseRevenueCents = 0;
+  let economicBaseCents = 0;
   let jobRevenueExVatCents: number | null = null;
 
   if (invoiceAmountCents > 0) {
     revenueSource = 'invoice';
     baseRevenueCents = invoiceAmountCents;
+    economicBaseCents = invoiceSubtotalCents > 0 ? invoiceSubtotalCents : invoiceAmountCents;
     jobRevenueExVatCents = invoiceSubtotalCents > 0 ? invoiceSubtotalCents : null;
   } else if (approvedAmountCents > 0) {
     revenueSource = 'approved_quote';
     baseRevenueCents = approvedAmountCents;
-    jobRevenueExVatCents = input.primaryQuote?.subtotalCents ?? null;
+    economicBaseCents = approvedSubtotalCents > 0 ? approvedSubtotalCents : approvedAmountCents;
+    jobRevenueExVatCents = approvedSubtotalCents > 0 ? approvedSubtotalCents : null;
   }
 
   const jobRevenueCents = baseRevenueCents + input.revenueAdjustmentsCents;
+  const economicRevenueCents = economicBaseCents + input.revenueAdjustmentsCents;
 
   if (baseRevenueCents === 0 && input.revenueAdjustmentsCents !== 0) {
     revenueSource = 'manual_adjustment';
@@ -585,6 +633,7 @@ export function resolveJobRevenue(input: {
     approvedAmountCents,
     invoiceAmountCents,
     jobRevenueCents,
+    economicRevenueCents,
     jobRevenueExVatCents,
   };
 }
@@ -861,8 +910,9 @@ export function computeJobProfitability(input: ComputeJobProfitabilityInput): Jo
   const materialCostCents = material.materialCostCents + materialAdjustmentsCents;
   const labourCostCents = labour.labourCostCents + labourAdjustmentsCents;
   const totalDirectCostCents = materialCostCents + labourCostCents + otherDirectCostCents;
-  const grossProfitCents = revenue.jobRevenueCents - totalDirectCostCents;
-  const grossMarginPct = safeMarginPct(grossProfitCents, revenue.jobRevenueCents);
+  /** Margin uses ex-VAT economic revenue vs ex-VAT direct costs; cash metrics stay VAT-inclusive. */
+  const grossProfitCents = revenue.economicRevenueCents - totalDirectCostCents;
+  const grossMarginPct = safeMarginPct(grossProfitCents, revenue.economicRevenueCents);
 
   const expectedBase = computeExpectedFromQuote(primaryQuote);
   const expectedTotalCostCents =
@@ -908,7 +958,7 @@ export function computeJobProfitability(input: ComputeJobProfitabilityInput): Jo
         : null,
   };
 
-  const cashCollectedCents = input.payments.reduce((sum, row) => sum + row.amountCents, 0);
+  const cashCollectedCents = sumCashCollectedCents(input.payments);
   const paidDirectCosts = input.directCosts.filter((row) => row.isPaid);
   const cashSpentCents = paidDirectCosts.reduce((sum, row) => sum + row.amountCents, 0);
   const unpaidDirectCostCents = input.directCosts
@@ -946,12 +996,14 @@ export function computeJobProfitability(input: ComputeJobProfitabilityInput): Jo
       collectedPaymentCents: cashCollectedCents,
       paidDirectCostCents: cashSpentCents,
       labourIncludedInCashSpent: false,
-      paymentReferences: input.payments.map((row) => ({
-        id: row.id,
-        amountCents: row.amountCents,
-        paidAt: row.paidAt,
-        reference: row.reference,
-      })),
+      paymentReferences: input.payments
+        .filter(isPaymentCountedForCashCollection)
+        .map((row) => ({
+          id: row.id,
+          amountCents: row.amountCents,
+          paidAt: row.paidAt,
+          reference: row.reference,
+        })),
       paidCostReferences: paidDirectCosts.map((row) => ({
         id: row.id,
         amountCents: row.amountCents,
@@ -1077,6 +1129,7 @@ export function computeJobProfitability(input: ComputeJobProfitabilityInput): Jo
     invoiceAmountCents: revenue.invoiceAmountCents,
     creditAdjustmentCents: revenueAdjustmentsCents < 0 ? revenueAdjustmentsCents : 0,
     jobRevenueCents: revenue.jobRevenueCents,
+    economicRevenueCents: revenue.economicRevenueCents,
     jobRevenueExVatCents: revenue.jobRevenueExVatCents,
     materialCostCents: input.includeSensitiveCosts ? materialCostCents : 0,
     labourCostCents: input.includeSensitiveCosts ? labourCostCents : 0,
@@ -1085,13 +1138,13 @@ export function computeJobProfitability(input: ComputeJobProfitabilityInput): Jo
     grossProfitCents: input.includeSensitiveCosts ? grossProfitCents : 0,
     grossMarginPct: input.includeSensitiveCosts ? grossMarginPct : null,
     materialPctOfRevenue: input.includeSensitiveCosts
-      ? safePctOfRevenue(materialCostCents, revenue.jobRevenueCents)
+      ? safePctOfRevenue(materialCostCents, revenue.economicRevenueCents)
       : null,
     labourPctOfRevenue: input.includeSensitiveCosts
-      ? safePctOfRevenue(labourCostCents, revenue.jobRevenueCents)
+      ? safePctOfRevenue(labourCostCents, revenue.economicRevenueCents)
       : null,
     otherCostPctOfRevenue: input.includeSensitiveCosts
-      ? safePctOfRevenue(otherDirectCostCents, revenue.jobRevenueCents)
+      ? safePctOfRevenue(otherDirectCostCents, revenue.economicRevenueCents)
       : null,
     status: input.includeSensitiveCosts
       ? classifyProfitabilityStatus(grossMarginPct, input.thresholds)

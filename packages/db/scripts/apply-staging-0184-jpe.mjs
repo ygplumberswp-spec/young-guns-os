@@ -1,6 +1,12 @@
 /**
- * JPE-001B — apply ONLY 0184_job_profitability_engine to staging.
+ * JPE-001B/001C — apply ONLY 0184_job_profitability_engine to staging.
  * Skips 0183 (Xero rate-budget) per Xero isolation rules.
+ *
+ * Journal semantics: this repo uses hash-presence (see apply-staging-journal-chain.mjs),
+ * not migration row count or numeric filename order. Applying 0184 before 0183 is safe —
+ * when 0183 is later registered in meta/_journal.json it will still apply because its
+ * hash is absent. Already-applied 0184 is skipped by hash. Do NOT use drizzle-kit migrate
+ * on staging without the journal-chain script.
  */
 import fs from 'node:fs';
 import path from 'node:path';
