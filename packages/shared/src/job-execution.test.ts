@@ -11,12 +11,20 @@ describe('UX-B job execution contract', () => {
   it('maps execution phases onto canonical job statuses', () => {
     assert.equal(phaseToJobStatus('en_route'), 'scheduled');
     assert.equal(phaseToJobStatus('in_progress'), 'in_progress');
+    assert.equal(phaseToJobStatus('work_continues'), 'in_progress');
     assert.equal(phaseToJobStatus('completed'), 'completed');
   });
 
   it('blocks complete from assigned phase via transition table', () => {
     assert.equal(JOB_EXECUTION_TRANSITIONS.complete.includes('assigned'), false);
     assert.equal(JOB_EXECUTION_TRANSITIONS.accept.includes('assigned'), true);
+  });
+
+  it('keeps Still Busy off final complete and Ready for Invoicing', () => {
+    assert.equal(JOB_EXECUTION_TRANSITIONS.still_busy.includes('in_progress'), true);
+    assert.equal(JOB_EXECUTION_TRANSITIONS.complete.includes('work_continues'), false);
+    assert.equal(JOB_EXECUTION_TRANSITIONS.ready_to_complete.includes('work_continues'), true);
+    assert.equal(JOB_EXECUTION_TRANSITIONS.start_work.includes('work_continues'), true);
   });
 
   it('requires gas-specific checklist items for geyser work', () => {

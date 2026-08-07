@@ -298,6 +298,7 @@ import { PortalExperienceService } from './services/portal-experience.service.js
 import { PortalExpansionService } from './services/portal-expansion.service.js';
 import { MobileWorkforceService } from './services/mobile-workforce.service.js';
 import { PaperlessFieldCashService } from './services/paperless-field-cash.service.js';
+import { JobVisitsService } from './services/job-visits.service.js';
 import { QualityAssuranceService } from './services/quality-assurance.service.js';
 import { CommunicationsIntelligenceService } from './services/communications-intelligence.service.js';
 import { AssetEquipmentIntelligenceService } from './services/asset-equipment-intelligence.service.js';
@@ -1001,6 +1002,8 @@ const paperlessFieldCashService = new PaperlessFieldCashService(
   financeService,
   notificationService,
 );
+const jobVisitsService = new JobVisitsService(db, notificationService, mobileWorkforceService);
+dashboardExecutiveService.setJobVisitsService(jobVisitsService);
 const qualityAssuranceService = new QualityAssuranceService(
   db,
   jobsService,
@@ -1948,6 +1951,7 @@ app.use(
     jobProfitabilityService,
     jobCostControlService,
     mobileWorkforceService,
+    jobVisitsService,
     teamService,
     db,
     jwtSecret: env.JWT_SECRET,
@@ -2526,6 +2530,7 @@ app.use(
     jobExecutionService,
     jobCostCaptureService,
     paperlessFieldCashService,
+    jobVisitsService,
     recommendationsService,
     teamService,
     portalAuthService,

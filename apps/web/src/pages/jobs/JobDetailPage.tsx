@@ -11,6 +11,7 @@ import type {
   JobPriority,
   JobStatus,
   JobTimelineEventSummary,
+  JobVisitRollup,
   PurchaseOrderSummary,
 } from '@titan/shared';
 import { AI_NAME, JOB_PRIORITY_OPTIONS, JOB_STATUS_OPTIONS, formatMoney } from '@titan/shared';
@@ -21,6 +22,7 @@ import {
   fetchJobExecution,
   fetchJobMaterialLines,
   fetchJobTimeline,
+  fetchJobVisitsRollup,
   newJobsClientActionId,
   reopenJob,
   returnJobMaterialLine,
@@ -65,6 +67,7 @@ export function JobDetailPage() {
   const [materialLines, setMaterialLines] = useState<JobMaterialLineSummary[]>([]);
   const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrderSummary[]>([]);
   const [timeline, setTimeline] = useState<JobTimelineEventSummary[]>([]);
+  const [visitRollup, setVisitRollup] = useState<JobVisitRollup | null>(null);
   const [inventoryItems, setInventoryItems] = useState<InventoryItemSummary[]>([]);
   const [inventoryLocations, setInventoryLocations] = useState<InventoryLocationSummary[]>([]);
   const [stockSelections, setStockSelections] = useState<Record<string, StockSelection>>({});
@@ -158,6 +161,12 @@ export function JobDetailPage() {
       setTimeline(await fetchJobTimeline(accessToken, jobId));
     } catch {
       setTimeline([]);
+    }
+    try {
+      const visitsPayload = await fetchJobVisitsRollup(accessToken, jobId);
+      setVisitRollup(visitsPayload.rollup);
+    } catch {
+      setVisitRollup(null);
     }
     try {
       const lines = await fetchJobMaterialLines(accessToken, jobId);
@@ -449,6 +458,7 @@ export function JobDetailPage() {
         canViewFinance={canViewFinance}
         canViewInternalNotes={canWrite}
         overviewPanel={
+          <>
           <Panel title="Operational Snapshot">
             <dl className="jobs-detail-list">
               <div>
@@ -579,6 +589,95 @@ export function JobDetailPage() {
               snapshot. Office job status may differ until that handoff lands.
             </p>
           </Panel>
+          {visitRollup && visitRollup.visitCount > 0 ? (
+            <Panel title="Multi-day visits" description="One canonical job — Visit 1..N work sessions">
+              <dl className="jobs-detail-list">
+                <div>
+                  <dt>Visits</dt>
+                  <dd>{visitRollup.visitCount}</dd>
+                </div>
+                <div>
+                  <dt>Total labour</dt>
+                  <dd>{visitRollup.totalLabourMinutes} min</dd>
+                </div>
+                <div>
+                  <dt>Labour by technician</dt>
+                  <dd>
+                    {visitRollup.labourByTechnician.length
+                      ? visitRollup.labourByTechnician
+                          .map((row) => `${row.userName ?? row.userId}: ${row.minutes} min`)
+                          .join(' · ')
+                      : '—'}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Total travel</dt>
+                  <dd>{visitRollup.totalTravelMinutes} min</dd>
+                </div>
+                <div>
+                  <dt>Materials / slips / photos</dt>
+                  <dd>
+                    {visitRollup.materialCount} / {visitRollup.slipCount} / {visitRollup.photoCount}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Cumulative job cost</dt>
+                  <dd>{formatMoney(visitRollup.cumulativeJobCostCents)}</dd>
+                </div>
+                <div>
+                  <dt>Cumulative JPE</dt>
+                  <dd>
+                    {visitRollup.cumulativeJpePercent != null
+                      ? `${visitRollup.cumulativeJpePercent}%`
+                      : '—'}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Work completed so far</dt>
+                  <dd>{visitRollup.workCompletedSoFar ?? '—'}</dd>
+                </div>
+                <div>
+                  <dt>Remaining work</dt>
+                  <dd>{visitRollup.remainingWork ?? '—'}</dd>
+                </div>
+                <div>
+                  <dt>Next scheduled visit</dt>
+                  <dd>
+                    {visitRollup.nextScheduledAt
+                      ? new Date(visitRollup.nextScheduledAt).toLocaleString()
+                      : '—'}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Invoice gate</dt>
+                  <dd>
+                    {visitRollup.invoiceBlocked
+                      ? visitRollup.invoiceBlockReason ?? 'Blocked until final complete'
+                      : 'Clear'}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Reschedule requests</dt>
+                  <dd>
+                    {visitRollup.rescheduleRequestCount}
+                    {visitRollup.pendingRescheduleCount
+                      ? ` (${visitRollup.pendingRescheduleCount} pending approval)`
+                      : ''}
+                  </dd>
+                </div>
+              </dl>
+              <ul>
+                {visitRollup.visits.map((visit) => (
+                  <li key={visit.id}>
+                    Visit {visit.visitNumber} — {visit.status}
+                    {visit.closeReason ? ` · ${visit.closeReason.replace(/_/g, ' ')}` : ''}
+                    {` · ${visit.labourMinutes} min labour`}
+                  </li>
+                ))}
+              </ul>
+            </Panel>
+          ) : null}
+          </>
         }
         schedulePanel={
           canViewSchedule && accessToken ? (

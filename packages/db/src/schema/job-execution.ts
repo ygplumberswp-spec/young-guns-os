@@ -3,6 +3,7 @@ import {
   integer,
   jsonb,
   numeric,
+  pgEnum,
   pgTable,
   text,
   timestamp,
@@ -180,9 +181,50 @@ export const jobMaterialLines = pgTable('job_material_lines', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
+/** Multi-day work sessions — one canonical job, Visit 1..N. */
+export const jobVisitStatusEnum = pgEnum('job_visit_status', ['open', 'closed']);
+export const jobVisitCloseReasonEnum = pgEnum('job_visit_close_reason', [
+  'still_busy',
+  'completed',
+  'rescheduled',
+  'cancelled',
+]);
+
+export const jobVisits = pgTable('job_visits', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  companyId: uuid('company_id')
+    .notNull()
+    .references(() => companies.id, { onDelete: 'cascade' }),
+  jobId: uuid('job_id')
+    .notNull()
+    .references(() => jobs.id, { onDelete: 'cascade' }),
+  visitNumber: integer('visit_number').notNull(),
+  status: jobVisitStatusEnum('status').notNull().default('open'),
+  technicianUserId: uuid('technician_user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  arrivedAt: timestamp('arrived_at', { withTimezone: true }),
+  startedAt: timestamp('started_at', { withTimezone: true }),
+  endedAt: timestamp('ended_at', { withTimezone: true }),
+  labourMinutes: integer('labour_minutes').notNull().default(0),
+  travelMinutes: integer('travel_minutes').notNull().default(0),
+  notes: text('notes'),
+  workCompletedSummary: text('work_completed_summary'),
+  remainingWorkSummary: text('remaining_work_summary'),
+  closeReason: jobVisitCloseReasonEnum('close_reason'),
+  materialCount: integer('material_count').notNull().default(0),
+  photoCount: integer('photo_count').notNull().default(0),
+  slipCount: integer('slip_count').notNull().default(0),
+  clientActionId: text('client_action_id'),
+  metadata: jsonb('metadata').$type<Record<string, unknown>>().notNull().default({}),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
 export type JobCrewMember = typeof jobCrewMembers.$inferSelect;
 export type JobVehicleAssignment = typeof jobVehicleAssignments.$inferSelect;
 export type JobWorkflowEvent = typeof jobWorkflowEvents.$inferSelect;
 export type JobVariation = typeof jobVariations.$inferSelect;
 export type JobCompletionSnapshot = typeof jobCompletionSnapshots.$inferSelect;
 export type JobMaterialLine = typeof jobMaterialLines.$inferSelect;
+export type JobVisit = typeof jobVisits.$inferSelect;

@@ -120,7 +120,8 @@ export type AuraFinancePackIssueCode =
   | 'missing_before_after'
   | 'no_accepted_quote'
   | 'open_labour'
-  | 'pending_variation';
+  | 'pending_variation'
+  | 'work_continues';
 
 export type AuraFinancePackIssue = {
   code: AuraFinancePackIssueCode;

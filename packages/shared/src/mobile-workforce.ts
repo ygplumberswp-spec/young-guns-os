@@ -21,6 +21,7 @@ export type MobileWorkforceRequestType =
   | 'inventory_shortage'
   | 'overtime_request'
   | 'schedule_change'
+  | 'job_reschedule'
   | 'general_request';
 
 export type MobileWorkforceRequestStatus =

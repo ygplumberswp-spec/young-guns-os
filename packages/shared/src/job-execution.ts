@@ -10,6 +10,7 @@ export type JobExecutionPhase =
   | 'awaiting_customer'
   | 'awaiting_parts'
   | 'awaiting_approval'
+  | 'work_continues'
   | 'ready_to_complete'
   | 'completed';
 
@@ -48,6 +49,7 @@ export type JobWorkflowAction =
   | 'await_customer'
   | 'await_parts'
   | 'await_approval'
+  | 'still_busy'
   | 'ready_to_complete'
   | 'complete'
   | 'reopen';
@@ -55,15 +57,32 @@ export type JobWorkflowAction =
 /** Allowed phase transitions for technician/office workflow. */
 export const JOB_EXECUTION_TRANSITIONS: Record<JobWorkflowAction, readonly JobExecutionPhase[]> = {
   accept: ['assigned'],
-  en_route: ['accepted', 'assigned', 'paused'],
-  arrive: ['en_route', 'accepted'],
-  start_work: ['on_site', 'en_route', 'accepted', 'paused', 'awaiting_customer', 'awaiting_parts'],
+  en_route: ['accepted', 'assigned', 'paused', 'work_continues'],
+  arrive: ['en_route', 'accepted', 'work_continues'],
+  start_work: [
+    'on_site',
+    'en_route',
+    'accepted',
+    'paused',
+    'awaiting_customer',
+    'awaiting_parts',
+    'work_continues',
+  ],
   pause: ['in_progress'],
   resume: ['paused'],
-  await_customer: ['in_progress', 'on_site', 'paused'],
-  await_parts: ['in_progress', 'on_site', 'paused'],
+  await_customer: ['in_progress', 'on_site', 'paused', 'work_continues'],
+  await_parts: ['in_progress', 'on_site', 'paused', 'work_continues'],
   await_approval: ['in_progress', 'ready_to_complete'],
-  ready_to_complete: ['in_progress', 'awaiting_approval', 'awaiting_customer', 'awaiting_parts'],
+  /** End current visit; keep canonical job open — never Ready for Invoicing. */
+  still_busy: ['in_progress', 'on_site', 'paused', 'ready_to_complete', 'awaiting_approval'],
+  ready_to_complete: [
+    'in_progress',
+    'awaiting_approval',
+    'awaiting_customer',
+    'awaiting_parts',
+    'work_continues',
+  ],
+  /** Final COMPLETE only — not available from work_continues without ready_to_complete. */
   complete: ['ready_to_complete', 'in_progress', 'awaiting_approval'],
   reopen: ['completed'],
 };
@@ -76,6 +95,7 @@ export function phaseToJobStatus(phase: JobExecutionPhase): 'scheduled' | 'in_pr
     phase === 'awaiting_customer' ||
     phase === 'awaiting_parts' ||
     phase === 'awaiting_approval' ||
+    phase === 'work_continues' ||
     phase === 'ready_to_complete' ||
     phase === 'on_site'
   ) {

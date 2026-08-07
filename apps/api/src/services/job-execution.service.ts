@@ -86,6 +86,7 @@ export const ACTION_TARGET_PHASE: Record<JobWorkflowAction, JobExecutionPhase> =
   await_customer: 'awaiting_customer',
   await_parts: 'awaiting_parts',
   await_approval: 'awaiting_approval',
+  still_busy: 'work_continues',
   ready_to_complete: 'ready_to_complete',
   complete: 'completed',
   reopen: 'assigned',
@@ -413,6 +414,12 @@ export class JobExecutionService {
 
     if (input.action === 'complete') {
       throw new JobExecutionError('COMPLETION_GATE_REQUIRED', 'Use the gated completion endpoint to complete a job');
+    }
+    if (input.action === 'still_busy') {
+      throw new JobExecutionError(
+        'VALIDATION_ERROR',
+        'Use the Still Busy endpoint to end the current visit without completing the job',
+      );
     }
     if (input.action === 'reopen') {
       throw new JobExecutionError('VALIDATION_ERROR', 'Use the reopen endpoint to reopen a completed job');

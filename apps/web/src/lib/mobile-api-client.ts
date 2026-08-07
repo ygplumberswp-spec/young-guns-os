@@ -6,7 +6,10 @@ import type {
   JobDetail,
   JobEvidenceContentResponse,
   JobMaterialLineSummary,
+  JobRescheduleReason,
   JobVariationSummary,
+  JobVisitRollup,
+  JobVisitSummary,
   JobWorkflowAction,
   JobWorkflowTransitionRequest,
   MobileJobDocumentationSummary,
@@ -22,6 +25,7 @@ import type {
   MobileWorkforceRequestSummary,
   NotificationSummary,
   RecordJobMaterialLineRequest,
+  StillBusyInput,
   SubmitGatedJobCompletionRequest,
   SubmitMobileJobDocumentationRequest,
   UploadJobEvidenceRequest,
@@ -282,6 +286,55 @@ export async function transitionMobileJob(
     body,
   });
   return data.job;
+}
+
+export async function stillBusyMobileJob(
+  accessToken: string,
+  jobId: string,
+  body: Omit<StillBusyInput, 'clientActionId'>,
+) {
+  const data = await request<{
+    job: JobDetail;
+    visit: JobVisitSummary;
+  }>(`/mobile/technician/jobs/${jobId}/still-busy`, {
+    accessToken,
+    method: 'POST',
+    body: {
+      ...body,
+      clientActionId: newClientActionId('still-busy'),
+    },
+  });
+  return data;
+}
+
+export async function requestMobileJobReschedule(
+  accessToken: string,
+  jobId: string,
+  body: {
+    reason: JobRescheduleReason;
+    notes: string;
+    proposedScheduledAt?: string | null;
+  },
+) {
+  const data = await request<{ request: MobileWorkforceRequestSummary; job: JobDetail }>(
+    `/mobile/technician/jobs/${jobId}/reschedule-request`,
+    {
+      accessToken,
+      method: 'POST',
+      body: {
+        ...body,
+        clientActionId: newClientActionId('reschedule'),
+      },
+    },
+  );
+  return data;
+}
+
+export async function fetchMobileJobVisits(accessToken: string, jobId: string) {
+  return request<{ visits: JobVisitSummary[]; rollup: JobVisitRollup }>(
+    `/mobile/technician/jobs/${jobId}/visits`,
+    { accessToken },
+  );
 }
 
 export async function fetchMobileCompletionGate(accessToken: string, jobId: string) {

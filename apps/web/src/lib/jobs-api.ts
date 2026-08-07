@@ -83,6 +83,35 @@ export async function fetchJobExecution(
   return data.summary;
 }
 
+export async function fetchJobVisitsRollup(accessToken: string, jobId: string) {
+  return request<{
+    visits: import('@titan/shared').JobVisitSummary[];
+    rollup: import('@titan/shared').JobVisitRollup;
+  }>(`/jobs/${jobId}/visits`, { accessToken });
+}
+
+export async function approveJobRescheduleRequest(
+  accessToken: string,
+  requestId: string,
+  body: {
+    scheduledAt: string;
+    scheduledEndAt?: string | null;
+    notes?: string | null;
+  },
+) {
+  return request<{ job: import('@titan/shared').JobDetail; requestId: string }>(
+    `/jobs/reschedule-requests/${requestId}/approve`,
+    {
+      accessToken,
+      method: 'POST',
+      body: {
+        ...body,
+        clientActionId: newJobsClientActionId('approve-reschedule'),
+      },
+    },
+  );
+}
+
 export async function uploadOfficeJobEvidence(
   accessToken: string,
   jobId: string,
