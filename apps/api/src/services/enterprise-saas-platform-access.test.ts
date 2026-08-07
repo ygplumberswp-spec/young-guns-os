@@ -11,11 +11,9 @@ import {
   CLIENT_ROLE_NAME,
   COMPANY_OWNER_ROLE_NAME,
   MANAGER_PERMISSIONS,
-  MANAGER_ROLE_NAME,
   OWNER_PERMISSIONS,
   PLATFORM_OWNER_ROLE_NAME,
   TECHNICIAN_PERMISSIONS,
-  TECHNICIAN_ROLE_NAME,
   hasAnyPermission,
   hasCrossTenantPlatformAccess,
   isPlatformOwnerRole,
@@ -40,7 +38,7 @@ describe('Department 21 SaaS Platform Owner access control', () => {
       tenantKind: 'customer',
       lifecycleStatus: 'active',
       subscriptionStatus: 'active',
-      currentPeriodEnd: '2026-08-31T23:59:59.000Z',
+      currentPeriodEnd: '2026-10-31T23:59:59.000Z',
       now,
     });
     assert.equal(decision.allowed, true);

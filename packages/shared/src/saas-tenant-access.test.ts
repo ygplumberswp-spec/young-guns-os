@@ -14,11 +14,12 @@ describe('saas tenant access / paid-through', () => {
       tenantKind: 'customer',
       lifecycleStatus: 'active',
       subscriptionStatus: 'active',
-      currentPeriodEnd: '2026-08-31T23:59:59.000Z',
+      currentPeriodEnd: '2026-10-31T23:59:59.000Z',
       now,
     });
     assert.equal(decision.allowed, true);
     assert.equal(decision.accessState, 'allowed');
+    assert.equal(decision.subscriptionStatus, 'active');
     assert.equal(saasAccessStatusChip(decision), 'ACTIVE');
   });
 
