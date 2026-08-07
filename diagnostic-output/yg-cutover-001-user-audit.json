@@ -1,0 +1,32 @@
+{
+  "label": "YG-CUTOVER-001-user-audit",
+  "status": "blocked_no_credentials",
+  "companyId": "095aef76-fef5-4139-af37-a42f2d7e2faf",
+  "auditedAt": null,
+  "users": [],
+  "roleCounts": {},
+  "missingSlots": [
+    "admin-office",
+    "technician"
+  ],
+  "p0Closed": false,
+  "note": "DATABASE_URL / STAGING_DATABASE_URL unavailable — Owner must supply roster + staging DB for live audit/invites.",
+  "decision": {
+    "p0Closed": "NO",
+    "productionReady": "NO",
+    "explicitOwnerApprovalRequired": "YES",
+    "thisPromptIsNotApproval": true,
+    "verdict": "BLOCKED",
+    "verdictLabel": "BLOCKED — required Owner/user information unavailable",
+    "blockers": [
+      "Required Owner/user information unavailable — cannot verify or provision real individual Admin/Technician accounts without Owner roster + staging credentials",
+      "Missing required individual account slot: admin-office",
+      "Missing required individual account slot: technician"
+    ]
+  },
+  "safety": {
+    "productionTouched": 0,
+    "mutations": 0,
+    "invitesCreated": 0
+  }
+}

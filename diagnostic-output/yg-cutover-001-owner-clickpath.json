@@ -1,0 +1,34 @@
+{
+  "phase": "YG-CUTOVER-001",
+  "title": "Owner click-path acceptance (non-technical)",
+  "stagingWeb": "https://comfortable-determination-staging.up.railway.app",
+  "instructions": [
+    "One action at a time.",
+    "Use your individual Owner login.",
+    "Do not send customer messages.",
+    "Do not migrate real WhatsApp.",
+    "Do not enable live Yoco.",
+    "Do not deploy production."
+  ],
+  "steps": [
+    { "order": 1, "title": "Owner login", "action": "Sign in with your Owner email" },
+    { "order": 2, "title": "Owner Dashboard", "action": "Confirm AURA and business pulse near top" },
+    { "order": 3, "title": "AURA", "action": "Ask: What needs my attention today?" },
+    { "order": 4, "title": "Customer", "action": "Open one real CRM customer" },
+    { "order": 5, "title": "Property", "action": "Open/confirm that customer’s property/site" },
+    { "order": 6, "title": "Job", "action": "Open one real job" },
+    { "order": 7, "title": "Dispatch", "action": "Open today’s Dispatch / Schedule" },
+    { "order": 8, "title": "Technician Job Card", "action": "Open Job Card / execution view" },
+    { "order": 9, "title": "Quote / Invoice", "action": "Open a real quote or invoice" },
+    { "order": 10, "title": "Finance drill-down", "action": "Open Owner Financial Command / Cash / Profit" },
+    { "order": 11, "title": "Fleet", "action": "Open Fleet — check GPS honesty" },
+    { "order": 12, "title": "Communications", "action": "Open Communications Hub — review only" },
+    { "order": 13, "title": "Integrations", "action": "Confirm Xero = Young Guns Plumbing; WhatsApp still Test Number" }
+  ],
+  "signOff": {
+    "ownerName": "",
+    "date": "",
+    "allStepsPass": null,
+    "notes": ""
+  }
+}
