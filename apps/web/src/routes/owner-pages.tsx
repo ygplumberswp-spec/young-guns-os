@@ -79,6 +79,10 @@ export const JobCreatePage = lazyNamed(
   () => import('../pages/jobs/JobCreatePage'),
   'JobCreatePage',
 );
+export const QuickCallIntakePage = lazyNamed(
+  () => import('../pages/jobs/QuickCallIntakePage'),
+  'QuickCallIntakePage',
+);
 export const JobDetailPage = lazyNamed(
   () => import('../pages/jobs/JobDetailPage'),
   'JobDetailPage',

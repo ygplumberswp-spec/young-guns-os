@@ -455,6 +455,10 @@ export class JobsService {
           snapshotSiteContactMobile: siteMobile,
           snapshotSiteContactEmail: siteEmailRaw,
           snapshotCustomerName: customer.name,
+          intakeSource: input.intakeSource ?? null,
+          intakeStatus: input.intakeStatus ?? null,
+          createdByUserId: actor.userId,
+          intakeMetadata: input.intakeMetadata ?? {},
         })
         .returning();
 

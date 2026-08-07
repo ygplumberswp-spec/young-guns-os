@@ -112,6 +112,28 @@ export async function approveJobRescheduleRequest(
   );
 }
 
+export async function prepareOwnerQuickCall(
+  accessToken: string,
+  body: import('@titan/shared').OwnerQuickCallIntakeRequest,
+) {
+  return request<import('@titan/shared').QuickIntakePrepareResult>('/jobs/intake/quick-call', {
+    accessToken,
+    method: 'POST',
+    body: { ...body, prepareOnly: true },
+  });
+}
+
+export async function createOwnerQuickCallJob(
+  accessToken: string,
+  body: import('@titan/shared').OwnerQuickCallIntakeRequest,
+) {
+  return request<import('@titan/shared').QuickIntakeCreateResult>('/jobs/intake/quick-call', {
+    accessToken,
+    method: 'POST',
+    body,
+  });
+}
+
 export async function uploadOfficeJobEvidence(
   accessToken: string,
   jobId: string,

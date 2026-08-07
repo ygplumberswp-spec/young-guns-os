@@ -299,6 +299,9 @@ import { PortalExpansionService } from './services/portal-expansion.service.js';
 import { MobileWorkforceService } from './services/mobile-workforce.service.js';
 import { PaperlessFieldCashService } from './services/paperless-field-cash.service.js';
 import { JobVisitsService } from './services/job-visits.service.js';
+import { QuickJobIntakeService } from './services/quick-job-intake.service.js';
+import { SchedulingConflictService } from './services/scheduling-conflict.service.js';
+import { TravelTimeService } from './services/travel-time.service.js';
 import { QualityAssuranceService } from './services/quality-assurance.service.js';
 import { CommunicationsIntelligenceService } from './services/communications-intelligence.service.js';
 import { AssetEquipmentIntelligenceService } from './services/asset-equipment-intelligence.service.js';
@@ -1063,6 +1066,18 @@ const dispatchIntelligenceService = new DispatchIntelligenceService(
   communicationsIntelligenceService,
   schedulingService,
   qualityAssuranceService,
+);
+const schedulingConflictService = new SchedulingConflictService(db, googleMapsService);
+const travelTimeService = new TravelTimeService(db, googleMapsService);
+const quickJobIntakeService = new QuickJobIntakeService(
+  db,
+  jobsService,
+  crmService,
+  notificationService,
+  dispatchIntelligenceService,
+  schedulingService,
+  schedulingConflictService,
+  travelTimeService,
 );
 const opsIntelligenceService = new OpsIntelligenceService(
   db,
@@ -1952,6 +1967,7 @@ app.use(
     jobCostControlService,
     mobileWorkforceService,
     jobVisitsService,
+    quickJobIntakeService,
     teamService,
     db,
     jwtSecret: env.JWT_SECRET,
@@ -2531,6 +2547,7 @@ app.use(
     jobCostCaptureService,
     paperlessFieldCashService,
     jobVisitsService,
+    quickJobIntakeService,
     recommendationsService,
     teamService,
     portalAuthService,

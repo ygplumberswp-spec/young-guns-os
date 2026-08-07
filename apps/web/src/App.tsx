@@ -112,6 +112,7 @@ export function App() {
                   {/* Nested paths are relative to `/mobile` (Wouter nest base). */}
                   <Suspense fallback={<PageRouteSuspense />}>
                     <Switch>
+                      <Route path="/jobs/add" component={MobilePages.MobileQuickAddJobPage} />
                       <Route path="/jobs/:jobId" component={MobilePages.MobileJobDetailPage} />
                       <Route path="/jobs" component={MobilePages.MobileJobsPage} />
                       <Route path="/route" component={MobilePages.MobileRoutePage} />
@@ -460,6 +461,7 @@ export function App() {
                           component={OwnerPages.BusinessDayTimelinePage}
                         />
                         <Route path="/jobs/new" component={OwnerPages.JobCreatePage} />
+                        <Route path="/jobs/quick-call" component={OwnerPages.QuickCallIntakePage} />
                         <Route path="/jobs/:id" component={OwnerPages.JobDetailPage} />
                         <Route path="/jobs" component={OwnerPages.JobListPage} />
                         <Route path="/drafts" component={OwnerPages.DraftsPage} />

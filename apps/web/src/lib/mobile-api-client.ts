@@ -337,6 +337,34 @@ export async function fetchMobileJobVisits(accessToken: string, jobId: string) {
   );
 }
 
+export async function matchMobileIntakePhone(accessToken: string, phone: string) {
+  return request<{
+    matches: import('@titan/shared').QuickIntakeCustomerMatch[];
+    crmBrowse: false;
+  }>('/mobile/technician/workforce/match-phone', {
+    accessToken,
+    method: 'POST',
+    body: { phone },
+  });
+}
+
+export async function technicianQuickAddJob(
+  accessToken: string,
+  body: import('@titan/shared').TechnicianQuickAddJobRequest,
+) {
+  return request<import('@titan/shared').QuickIntakeCreateResult>(
+    '/mobile/technician/workforce/quick-add',
+    {
+      accessToken,
+      method: 'POST',
+      body: {
+        ...body,
+        clientActionId: newClientActionId('quick-add'),
+      },
+    },
+  );
+}
+
 export async function fetchMobileCompletionGate(accessToken: string, jobId: string) {
   const data = await request<{ gate: JobCompletionGateResult }>(
     `/mobile/technician/jobs/${jobId}/completion-gate`,

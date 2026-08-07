@@ -2,6 +2,7 @@ import {
   boolean,
   doublePrecision,
   integer,
+  jsonb,
   pgEnum,
   pgTable,
   text,
@@ -22,6 +23,20 @@ export const jobStatusEnum = pgEnum('job_status', [
 ]);
 
 export const jobPriorityEnum = pgEnum('job_priority', ['low', 'normal', 'high', 'urgent']);
+
+export const jobIntakeSourceEnum = pgEnum('job_intake_source', [
+  'technician',
+  'owner',
+  'office',
+  'aura',
+  'business_call',
+  'personal_call_manual',
+]);
+
+export const jobIntakeStatusEnum = pgEnum('job_intake_status', [
+  'needs_office_confirmation',
+  'confirmed',
+]);
 
 export const jobNumberCounters = pgTable('job_number_counters', {
   companyId: uuid('company_id')
@@ -74,6 +89,11 @@ export const jobs = pgTable('jobs', {
   reopenReason: text('reopen_reason'),
   reopenAt: timestamp('reopen_at', { withTimezone: true }),
   reopenByUserId: uuid('reopen_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  /** Last-minute / call intake attribution — never a parallel jobs store. */
+  intakeSource: jobIntakeSourceEnum('intake_source'),
+  intakeStatus: jobIntakeStatusEnum('intake_status'),
+  createdByUserId: uuid('created_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  intakeMetadata: jsonb('intake_metadata').$type<Record<string, unknown>>().notNull().default({}),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });

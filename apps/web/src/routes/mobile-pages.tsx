@@ -18,6 +18,10 @@ export const MobileJobsPage = lazyNamed(
   () => import('../pages/mobile/MobileJobsPage'),
   'MobileJobsPage',
 );
+export const MobileQuickAddJobPage = lazyNamed(
+  () => import('../pages/mobile/MobileQuickAddJobPage'),
+  'MobileQuickAddJobPage',
+);
 export const MobileJobDetailPage = lazyNamed(
   () => import('../pages/mobile/MobileJobDetailPage'),
   'MobileJobDetailPage',
