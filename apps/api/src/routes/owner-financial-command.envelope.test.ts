@@ -25,12 +25,17 @@ describe('FIN-001 owner-financial-command route envelope', () => {
     assert.ok(indexSource.includes('createOwnerFinancialCommandRouter'));
   });
 
-  it('technician and client are blocked', () => {
+  it('technician and client are blocked via canViewCashControl gate', () => {
     const sharedSource = readFileSync(
       join(root, '../../packages/shared/src/owner-financial-command.ts'),
       'utf8',
     );
-    assert.ok(sharedSource.includes("roleName === 'Technician'"));
-    assert.ok(sharedSource.includes("roleName === 'Client'"));
+    const cashSource = readFileSync(
+      join(root, '../../packages/shared/src/cash-control.ts'),
+      'utf8',
+    );
+    assert.ok(sharedSource.includes('canViewCashControl(identity)'));
+    assert.ok(cashSource.includes("roleName === 'Technician'"));
+    assert.ok(cashSource.includes("roleName === 'Client'"));
   });
 });
