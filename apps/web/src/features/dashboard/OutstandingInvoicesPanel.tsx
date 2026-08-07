@@ -216,7 +216,8 @@ export function OutstandingInvoicesPanel({
         />
       ) : !hasOutstanding ? (
         <EmptyState
-          title="No Outstanding Invoices"
+          className="titan-empty-state--compact exec-panel-empty--compact"
+          title="No outstanding invoices"
           description={buildOpenArEmptyDescription(xeroFinance)}
           action={
             <Link href={xeroFinance?.connected ? '/integrations/xero' : '/finance/invoices'}>
