@@ -6,6 +6,9 @@ import type {
   DmMigrationAlertSummary,
   DmSourceFormat,
   EnterpriseDataMigrationDashboard,
+  HistoricalDocumentMatchProposal,
+  ProposeHistoricalDocumentMatchRequest,
+  ResolveHistoricalDocumentMatchRequest,
 } from '@titan/shared';
 import { request } from './api-client';
 
@@ -155,4 +158,29 @@ export async function fetchImportJobDetail(
     { accessToken },
   );
   return data.importJob;
+}
+
+export async function proposeHistoricalDocumentMatch(
+  accessToken: string,
+  input: ProposeHistoricalDocumentMatchRequest,
+): Promise<HistoricalDocumentMatchProposal & { matchId: string }> {
+  const data = await request<{ proposal: HistoricalDocumentMatchProposal & { matchId: string } }>(
+    '/enterprise-data-migration/historical-document-matches/propose',
+    { accessToken, method: 'POST', body: input },
+  );
+  return data.proposal;
+}
+
+export async function resolveHistoricalDocumentMatch(
+  accessToken: string,
+  input: ResolveHistoricalDocumentMatchRequest,
+): Promise<{ matchId: string; action: string; targetEntityId: string | null }> {
+  const data = await request<{
+    resolution: { matchId: string; action: string; targetEntityId: string | null };
+  }>('/enterprise-data-migration/historical-document-matches/resolve', {
+    accessToken,
+    method: 'POST',
+    body: input,
+  });
+  return data.resolution;
 }

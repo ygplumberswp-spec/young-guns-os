@@ -26,6 +26,7 @@ import {
   displayOfficialInvoiceNumber,
   displayOfficialQuoteNumber,
   deriveJobPaymentLedger,
+  deriveJob360HistoricalCompleteness,
   formatInternalInvoiceNumber,
   formatMoney,
   inventoryItemToFinanceCatalogue,
@@ -54,6 +55,7 @@ import {
   companyFinanceSettings,
   companies,
   customers,
+  documents,
   invoiceLineItems,
   invoices,
   inventoryItems,
@@ -760,10 +762,15 @@ export class FinanceService {
   }
 
   async getJobFinanceSummary(companyId: string, jobId: string, options: { includeProfit?: boolean } = {}): Promise<JobFinanceSummary> {
-    const [quoteRows, invoiceRows, paymentRows] = await Promise.all([
+    const [quoteRows, invoiceRows, paymentRows, jobRow, documentRows] = await Promise.all([
       this.db.query.quotes.findMany({ where: and(eq(quotes.companyId, companyId), eq(quotes.jobId, jobId)), with: { customer: true, job: true } }),
       this.db.query.invoices.findMany({ where: and(eq(invoices.companyId, companyId), eq(invoices.jobId, jobId)), with: { customer: true, job: true, quote: true } }),
       this.db.query.payments.findMany({ where: and(eq(payments.companyId, companyId), sql`exists (select 1 from invoices where invoices.id = ${payments.invoiceId} and invoices.job_id = ${jobId})`), with: { invoice: { with: { customer: true } } } }),
+      this.db.query.jobs.findFirst({ where: and(eq(jobs.companyId, companyId), eq(jobs.id, jobId)) }),
+      this.db.query.documents.findMany({
+        where: and(eq(documents.companyId, companyId), eq(documents.jobId, jobId)),
+        limit: 200,
+      }),
     ]);
     const quotesOut = quoteRows.map(row => toQuoteSummary(row, options.includeProfit ? profitFromQuote(row) : null));
     const invoicesOut = invoiceRows.map(toInvoiceSummary); const paymentsOut = paymentRows.map(toPaymentSummary);
@@ -774,6 +781,31 @@ export class FinanceService {
     const paidCents = paymentsOut.reduce((sum, item) => sum + item.amountCents, 0);
     const outstanding = invoicesOut.reduce((sum, item) => sum + item.outstandingCents, 0);
     const overdueCount = invoicesOut.filter((item) => item.isOverdue).length;
+    const docText = documentRows.map((doc) => `${doc.title} ${doc.fileName} ${doc.description ?? ''}`.toLowerCase());
+    const photoCount = docText.filter((text) => text.includes('photo') || text.includes('photophase=')).length;
+    const hasPaymentProof = docText.some((text) => text.includes('proof of payment') || text.includes('payment_proof') || text.includes('pop'));
+    const hasCoc = docText.some((text) => text.includes('coc') || text.includes('certificate of compliance'));
+    const hasJobCard = docText.some((text) => text.includes('job card'));
+    const hasReport = docText.some((text) => text.includes('report'));
+    const hasSignature = docText.some((text) => text.includes('signature'));
+    const isHistorical = Boolean(
+      jobRow?.sourceProvider ||
+        (Array.isArray(jobRow?.historicalFlags) && jobRow.historicalFlags.length > 0) ||
+        quoteRows.some((row) => row.sourceProvider) ||
+        invoiceRows.some((row) => row.sourceProvider),
+    );
+    const historicalCompleteness = deriveJob360HistoricalCompleteness({
+      isHistorical,
+      quoteCount: quotesOut.length,
+      invoiceCount: invoicesOut.length,
+      paymentCount: paymentsOut.length,
+      hasPaymentProof,
+      photoCount,
+      hasCoc,
+      hasJobCard,
+      hasReport,
+      hasSignature,
+    });
     const chips: JobFinanceChip[] = [
       {
         kind: 'quoted',
@@ -840,6 +872,7 @@ export class FinanceService {
         payments: paymentsOut,
         currency,
       }),
+      historicalCompleteness,
     };
   }
 

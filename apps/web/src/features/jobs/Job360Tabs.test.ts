@@ -31,4 +31,11 @@ describe('Job 360 tabs', () => {
     assert.equal(JOB_360_TABS[0]?.id, 'overview');
     assert.equal(JOB_360_TABS.at(-1)?.id, 'activity');
   });
+
+  it('Job 360 retains commercial + evidence sections for historical archive chains', () => {
+    const ids = JOB_360_TABS.map((tab) => tab.id);
+    for (const required of ['quote', 'invoice', 'payment', 'photos', 'documents', 'coc'] as const) {
+      assert.ok(ids.includes(required), `missing archive tab ${required}`);
+    }
+  });
 });

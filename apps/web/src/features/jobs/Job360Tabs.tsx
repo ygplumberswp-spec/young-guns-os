@@ -122,7 +122,19 @@ export function Job360Tabs({
         <p className="job-360__banner" role="status">
           This job is completed. Final execution evidence is preserved in the completion snapshot.
           Structural edits require reopen with a reason; permitted note updates are audited as
-          post-completion.
+          post-completion. Historical Job 360 records remain searchable indefinitely.
+        </p>
+      ) : null}
+
+      {financeSummary?.historicalCompleteness?.isHistorical ? (
+        <p className="job-360__banner" role="status">
+          Historical Job 360 archive —{' '}
+          {financeSummary.historicalCompleteness.quoteCount} quote(s),{' '}
+          {financeSummary.historicalCompleteness.invoiceCount} invoice(s),{' '}
+          {financeSummary.historicalCompleteness.paymentCount} payment(s).{' '}
+          {financeSummary.historicalCompleteness.partialStates
+            .map((state) => state.replace(/_/g, ' '))
+            .join(' · ')}
         </p>
       ) : null}
 

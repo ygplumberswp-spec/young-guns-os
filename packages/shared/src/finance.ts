@@ -311,6 +311,8 @@ export type JobFinanceSummary = {
   payments: PaymentSummary[];
   /** Derived payment ledger for Job 360 finance strip (read-only; no Xero writes). */
   ledger: JobPaymentLedger;
+  /** Honest historical/partial archive states for Job 360 — never invents missing evidence. */
+  historicalCompleteness?: import('./historical-import.js').Job360HistoricalCompleteness;
 };
 
 export type CreateQuoteRequest = {

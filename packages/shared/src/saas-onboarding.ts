@@ -235,14 +235,14 @@ export const SAAS_ONBOARDING_IMPORT_ENTITIES: SaasOnboardingImportEntity[] = [
   {
     entityType: 'property',
     label: 'Properties / Sites',
-    supported: false,
-    note: 'Mapping exists; commit import not yet available — use skip or import later.',
+    supported: true,
+    note: 'Safe historical site import with customer match + duplicate review.',
   },
   {
     entityType: 'contact',
     label: 'Contacts',
-    supported: false,
-    note: 'Mapping exists; commit import not yet available — use skip or import later.',
+    supported: true,
+    note: 'Links onto the customer contact fields (no separate contacts archive).',
   },
   { entityType: 'supplier', label: 'Suppliers', supported: true },
   {
@@ -254,26 +254,26 @@ export const SAAS_ONBOARDING_IMPORT_ENTITIES: SaasOnboardingImportEntity[] = [
   {
     entityType: 'price_book',
     label: 'Price Book',
-    supported: false,
-    note: 'Price Book remains separate from physical inventory; safe import not available yet.',
+    supported: true,
+    note: 'Catalogue sell prices only — never creates stock on hand; does not overwrite current pricing on match.',
   },
   {
     entityType: 'job',
     label: 'Jobs',
-    supported: false,
-    note: 'Job history import not safely available yet.',
+    supported: true,
+    note: 'Historical jobs retain original job numbers and feed one Job 360 archive.',
   },
   {
     entityType: 'quote',
     label: 'Quotes',
-    supported: false,
-    note: 'Quote import not safely available yet.',
+    supported: true,
+    note: 'Preserves original quote numbers; prefers existing Xero-imported quotes when matched.',
   },
   {
     entityType: 'invoice',
     label: 'Invoices',
-    supported: false,
-    note: 'Invoice import not safely available yet — prefer accounting sync when connected.',
+    supported: true,
+    note: 'Preserves original invoice numbers; prefers existing Xero-imported invoices when matched.',
   },
 ];
 

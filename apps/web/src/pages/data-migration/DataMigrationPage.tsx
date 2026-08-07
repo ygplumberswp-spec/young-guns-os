@@ -197,7 +197,7 @@ export function DataMigrationPage() {
     <div className="automation-page">
       <PageHeader
         title="Data Migration"
-        description="Enterprise data import, export, and migration — built on existing CRM, Finance, Jobs, Inventory, Fleet, and Integration services. No fake imports or demo migration jobs."
+        description="Enterprise data import, export, and historical Job 360 archive — reuses Customers, Sites, Jobs, Quotes, Invoices, Payments, and Documents. Original quote/invoice numbers are retained; Xero matches are preferred over duplicates. No demo data."
         actions={
           canWrite ? (
             <div className="page-header-actions">
@@ -309,9 +309,17 @@ export function DataMigrationPage() {
                     onChange={(e) => setWizardEntity(e.target.value as DmEntityType)}
                   >
                     <option value="customer">Customer</option>
+                    <option value="contact">Contact</option>
+                    <option value="property">Property / Site</option>
                     <option value="lead">Lead</option>
                     <option value="supplier">Supplier</option>
-                    <option value="inventory">Inventory</option>
+                    <option value="inventory">Inventory (stock)</option>
+                    <option value="price_book">Price Book (catalogue)</option>
+                    <option value="job">Job (historical)</option>
+                    <option value="quote">Quote (historical)</option>
+                    <option value="invoice">Invoice (historical)</option>
+                    <option value="payment">Payment / proof</option>
+                    <option value="document">Document / photo link</option>
                   </select>
                 </label>
                 <label>

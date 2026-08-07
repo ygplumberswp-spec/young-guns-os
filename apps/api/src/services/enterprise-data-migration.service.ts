@@ -1,5 +1,4 @@
-import { and, desc, eq } from 'drizzle-orm';
-import type {
+import { and, desc, eq, or } from 'drizzle-orm';import type {
   CreateDmActionDraftRequest,
   CreateDmExportJobRequest,
   CreateDmImportJobRequest,
@@ -21,19 +20,30 @@ import type {
   DmValidationResultSummary,
   EnterpriseDataMigrationAuraContext,
   EnterpriseDataMigrationDashboard,
+  HistoricalDocumentMatchProposal,
+  HistoricalRecordMatchCandidate,
+  ProposeHistoricalDocumentMatchRequest,
   ResolveDmDuplicateRequest,
+  ResolveHistoricalDocumentMatchRequest,
   UpdateDmFieldMappingsRequest,
   UpdateDmPlatformConfigRequest,
   UploadDmImportFileRequest,
 } from '@titan/shared';
+import {
+  buildHistoricalDocumentMatchProposal,
+  extractDocumentNumberHint,
+  scoreHistoricalRecordMatch,
+} from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
 import {
+  cxCustomerProperties,
   dmActionDrafts,
   dmAnalyticsSnapshots,
   dmAuditLogs,
   dmDuplicateReviews,
   dmExportJobs,
   dmFieldMappings,
+  dmHistoricalDocumentMatches,
   dmImportJobs,
   dmImportRecords,
   dmMigrationAlerts,
@@ -41,6 +51,10 @@ import {
   dmPlatformConfig,
   dmRollbackRequests,
   dmValidationResults,
+  invoices,
+  jobs,
+  payments,
+  quotes,
 } from '@titan/db';
 import type { CrmService } from './crm.service.js';
 import type { LeadsService } from './leads.service.js';
@@ -50,6 +64,7 @@ import type { InventoryService } from './inventory.service.js';
 import type { ProcurementService } from './procurement.service.js';
 import type { FleetService } from './fleet.service.js';
 import type { EnterpriseMissionControlService } from './enterprise-mission-control.service.js';
+import type { DocumentsService } from './documents.service.js';
 import { EnterpriseDataMigrationMappingService } from './enterprise-data-migration-mapping.service.js';
 import {
   buildDuplicateKey,
@@ -82,6 +97,7 @@ type MigrationDeps = {
   procurementService: ProcurementService;
   fleetService: FleetService;
   enterpriseMissionControlService: EnterpriseMissionControlService;
+  documentsService: DocumentsService;
 };
 
 export class EnterpriseDataMigrationService {
@@ -93,10 +109,12 @@ export class EnterpriseDataMigrationService {
 
   constructor(private readonly deps: MigrationDeps) {
     this.importService = new EnterpriseDataMigrationImportService({
+      db: deps.db,
       crmService: deps.crmService,
       leadsService: deps.leadsService,
       procurementService: deps.procurementService,
       inventoryService: deps.inventoryService,
+      documentsService: deps.documentsService,
     });
     this.exportService = new EnterpriseDataMigrationExportService({
       crmService: deps.crmService,
@@ -331,7 +349,10 @@ export class EnterpriseDataMigrationService {
       parsedRows,
       job.fieldMappings as Record<string, string>,
     );
-    const existingKeys = await this.buildExistingDuplicateKeys(scope.companyId, job.entityType);
+    const { keys: existingKeys, keyToEntityId } = await this.buildExistingDuplicateKeys(
+      scope.companyId,
+      job.entityType,
+    );
     const issues = this.validationService.validateRows(job.entityType, mappedRows, existingKeys);
 
     await this.deps.db
@@ -352,7 +373,7 @@ export class EnterpriseDataMigrationService {
     await this.deps.db
       .delete(dmDuplicateReviews)
       .where(eq(dmDuplicateReviews.importJobId, importJobId));
-    const duplicates = findDuplicates(job.entityType, mappedRows, existingKeys);
+    const duplicates = findDuplicates(job.entityType, mappedRows, existingKeys, keyToEntityId);
     for (const duplicate of duplicates) {
       await this.deps.db.insert(dmDuplicateReviews).values({
         companyId: scope.companyId,
@@ -360,6 +381,7 @@ export class EnterpriseDataMigrationService {
         rowNumber: duplicate.rowNumber,
         duplicateKey: duplicate.duplicateKey,
         existingEntityId: duplicate.existingEntityId,
+        proposedAction: 'pending',
       });
     }
 
@@ -458,11 +480,23 @@ export class EnterpriseDataMigrationService {
     const duplicateReviews = await this.deps.db.query.dmDuplicateReviews.findMany({
       where: eq(dmDuplicateReviews.importJobId, importJobId),
     });
-    const skipRows = new Set(
-      duplicateReviews
-        .filter((review) => review.resolvedAction === 'skip' || review.proposedAction === 'skip')
-        .map((review) => review.rowNumber),
-    );
+    const skipRows = new Set<number>();
+    const linkRows = new Map<number, string>();
+    for (const review of duplicateReviews) {
+      const action = review.resolvedAction ?? review.proposedAction;
+      // Unresolved or explicit skip — never silently create a duplicate historical record.
+      if (!review.resolvedAction || action === 'skip' || action === 'pending') {
+        skipRows.add(review.rowNumber);
+        continue;
+      }
+      if (
+        (action === 'merge' || action === 'replace') &&
+        review.existingEntityId
+      ) {
+        linkRows.set(review.rowNumber, review.existingEntityId);
+      }
+      // create_new proceeds to importRow (idempotent match still applies inside importer).
+    }
 
     const results = await this.importService.importApprovedRows(
       scope.companyId,
@@ -470,6 +504,11 @@ export class EnterpriseDataMigrationService {
       job.entityType,
       mappedRows,
       skipRows,
+      {
+        importJobId,
+        sourceFormat: job.sourceFormat,
+        linkRows,
+      },
     );
 
     await this.deps.db.delete(dmImportRecords).where(eq(dmImportRecords.importJobId, importJobId));
@@ -558,9 +597,205 @@ export class EnterpriseDataMigrationService {
       input.duplicateReviewId,
       {
         action: input.action,
+        before: review.resolvedAction,
+        after: input.action,
       },
     );
     return toDuplicateReviewSummary(updated!);
+  }
+
+  async proposeHistoricalDocumentMatch(
+    scope: StaffScope,
+    input: ProposeHistoricalDocumentMatchRequest,
+  ): Promise<HistoricalDocumentMatchProposal & { matchId: string }> {
+    const fileName = input.fileName.trim();
+    if (!fileName) {
+      throw new EnterpriseDataMigrationError('VALIDATION_ERROR', 'fileName is required');
+    }
+
+    const hint = extractDocumentNumberHint(fileName);
+    const candidates: HistoricalRecordMatchCandidate[] = [];
+
+    if (hint.detectedNumber && (hint.detectedEntityHint === 'quote' || hint.detectedEntityHint === 'other')) {
+      const quoteRows = await this.deps.db.query.quotes.findMany({
+        where: and(eq(quotes.companyId, scope.companyId), eq(quotes.quoteNumber, hint.detectedNumber)),
+        with: { customer: true },
+        limit: 5,
+      });
+      for (const quote of quoteRows) {
+        const scored = scoreHistoricalRecordMatch({
+          signals: {
+            numberMatch: true,
+            customerMatch: input.customerName
+              ? quote.customer?.name?.toLowerCase() === input.customerName.toLowerCase()
+              : false,
+            amountMatch:
+              input.amountCents != null ? quote.totalCents === input.amountCents : false,
+            dateMatch: Boolean(input.issuedAt && quote.issuedAt),
+          },
+        });
+        candidates.push({
+          entityType: 'quote',
+          entityId: quote.id,
+          label: `Quote ${quote.quoteNumber}`,
+          customerName: quote.customer?.name ?? null,
+          documentNumber: quote.quoteNumber,
+          issuedAt: quote.issuedAt?.toISOString() ?? null,
+          amountCents: quote.totalCents,
+          sourceProvider: quote.sourceProvider,
+          ...scored,
+          reasons: scored.confidence === 'none' ? ['weak signals'] : ['quote number'],
+        });
+      }
+    }
+
+    if (hint.detectedNumber && (hint.detectedEntityHint === 'invoice' || hint.detectedEntityHint === 'other')) {
+      const invoiceRows = await this.deps.db.query.invoices.findMany({
+        where: and(
+          eq(invoices.companyId, scope.companyId),
+          or(eq(invoices.invoiceNumber, hint.detectedNumber), eq(invoices.xeroInvoiceNumber, hint.detectedNumber)),
+        ),
+        with: { customer: true },
+        limit: 5,
+      });
+      for (const invoice of invoiceRows) {
+        const scored = scoreHistoricalRecordMatch({
+          signals: {
+            numberMatch: true,
+            customerMatch: input.customerName
+              ? invoice.customer?.name?.toLowerCase() === input.customerName.toLowerCase()
+              : false,
+            amountMatch:
+              input.amountCents != null ? invoice.totalCents === input.amountCents : false,
+          },
+        });
+        candidates.push({
+          entityType: 'invoice',
+          entityId: invoice.id,
+          label: `Invoice ${invoice.invoiceNumber}`,
+          customerName: invoice.customer?.name ?? null,
+          documentNumber: invoice.invoiceNumber,
+          issuedAt: invoice.issuedAt?.toISOString() ?? null,
+          amountCents: invoice.totalCents,
+          sourceProvider: invoice.sourceProvider,
+          ...scored,
+          reasons: ['invoice number'],
+        });
+      }
+    }
+
+    if (hint.detectedNumber && hint.detectedEntityHint === 'job') {
+      const jobRows = await this.deps.db.query.jobs.findMany({
+        where: and(eq(jobs.companyId, scope.companyId), eq(jobs.jobNumber, hint.detectedNumber)),
+        limit: 5,
+      });
+      for (const job of jobRows) {
+        const scored = scoreHistoricalRecordMatch({
+          signals: { numberMatch: true },
+        });
+        candidates.push({
+          entityType: 'job',
+          entityId: job.id,
+          label: `Job ${job.jobNumber ?? job.title}`,
+          documentNumber: job.jobNumber,
+          sourceProvider: job.sourceProvider,
+          ...scored,
+          reasons: ['job number'],
+        });
+      }
+    }
+
+    const proposal = buildHistoricalDocumentMatchProposal({ fileName, candidates });
+    const [created] = await this.deps.db
+      .insert(dmHistoricalDocumentMatches)
+      .values({
+        companyId: scope.companyId,
+        fileName: proposal.fileName,
+        detectedNumber: proposal.detectedNumber,
+        detectedEntityHint: proposal.detectedEntityHint,
+        candidates: proposal.candidates,
+        recommendedAction: proposal.recommendedAction,
+        recommendedCandidateId: proposal.recommendedCandidateId,
+        allowSilentLink: proposal.allowSilentLink,
+      })
+      .returning();
+
+    if (!created) {
+      throw new EnterpriseDataMigrationError('CREATE_FAILED', 'Unable to create document match proposal');
+    }
+
+    await this.logAudit(scope, 'historical_document_match_proposed', 'dm_historical_document_matches', created.id, {
+      fileName,
+      candidateCount: candidates.length,
+      allowSilentLink: proposal.allowSilentLink,
+    });
+
+    return { ...proposal, matchId: created.id };
+  }
+
+  async resolveHistoricalDocumentMatch(
+    scope: StaffScope,
+    input: ResolveHistoricalDocumentMatchRequest,
+  ): Promise<{ matchId: string; action: string; targetEntityId: string | null }> {
+    const existing = await this.deps.db.query.dmHistoricalDocumentMatches.findFirst({
+      where: and(
+        eq(dmHistoricalDocumentMatches.id, input.matchId),
+        eq(dmHistoricalDocumentMatches.companyId, scope.companyId),
+      ),
+    });
+    if (!existing) {
+      throw new EnterpriseDataMigrationError('NOT_FOUND', 'Document match proposal not found');
+    }
+
+    if (input.action === 'LINK' && !input.targetEntityId && !existing.allowSilentLink) {
+      throw new EnterpriseDataMigrationError(
+        'VALIDATION_ERROR',
+        'Low-confidence matches require an explicit target record — silent link refused.',
+      );
+    }
+
+    const actionMap = {
+      LINK: 'link',
+      CHOOSE_DIFFERENT: 'choose_different',
+      CREATE_HISTORICAL_RECORD: 'create_historical_record',
+      SKIP: 'skip',
+    } as const;
+
+    const targetEntityId =
+      input.targetEntityId ??
+      (input.action === 'LINK' ? existing.recommendedCandidateId : null);
+
+    const [updated] = await this.deps.db
+      .update(dmHistoricalDocumentMatches)
+      .set({
+        resolvedAction: actionMap[input.action],
+        resolvedEntityType: input.targetEntityType ?? null,
+        resolvedEntityId: targetEntityId,
+        resolvedByUserId: scope.userId,
+        resolvedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(dmHistoricalDocumentMatches.id, input.matchId))
+      .returning();
+
+    await this.logAudit(
+      scope,
+      'historical_document_match_resolved',
+      'dm_historical_document_matches',
+      input.matchId,
+      {
+        action: input.action,
+        targetEntityId,
+        before: existing.resolvedAction,
+        after: actionMap[input.action],
+      },
+    );
+
+    return {
+      matchId: updated!.id,
+      action: input.action,
+      targetEntityId,
+    };
   }
 
   async createExportJob(
@@ -916,43 +1151,152 @@ export class EnterpriseDataMigrationService {
   private async buildExistingDuplicateKeys(
     companyId: string,
     entityType: DmImportJobSummary['entityType'],
-  ) {
+  ): Promise<{ keys: Set<string>; keyToEntityId: Map<string, string> }> {
     const keys = new Set<string>();
+    const keyToEntityId = new Map<string, string>();
+    const remember = (key: string, entityId: string) => {
+      if (!key || key.endsWith(':') || key.endsWith('|')) return;
+      keys.add(key);
+      keyToEntityId.set(key, entityId);
+    };
+
     switch (entityType) {
       case 'customer':
+      case 'contact':
         for (const customer of await this.deps.crmService.listCustomers(companyId)) {
-          keys.add(
-            buildDuplicateKey('customer', { name: customer.name, email: customer.email ?? '' }),
+          remember(
+            buildDuplicateKey(entityType, {
+              name: customer.name,
+              email: customer.email ?? '',
+            }),
+            customer.id,
           );
         }
         break;
       case 'lead':
         for (const lead of await this.deps.leadsService.listLeads(companyId)) {
-          keys.add(
+          remember(
             buildDuplicateKey('lead', {
               contactEmail: lead.contactEmail ?? '',
               contactName: lead.contactName,
               title: lead.title,
             }),
+            lead.id,
           );
         }
         break;
       case 'supplier':
         for (const supplier of await this.deps.procurementService.listSuppliers(companyId)) {
-          keys.add(
+          remember(
             buildDuplicateKey('supplier', { name: supplier.name, email: supplier.email ?? '' }),
+            supplier.id,
           );
         }
         break;
       case 'inventory':
+      case 'price_book':
         for (const item of await this.deps.inventoryService.listItems(companyId)) {
-          keys.add(buildDuplicateKey('inventory', { sku: item.sku }));
+          remember(
+            buildDuplicateKey(entityType === 'price_book' ? 'price_book' : 'inventory', {
+              sku: item.sku,
+              code: item.sku,
+            }),
+            item.id,
+          );
         }
         break;
+      case 'property': {
+        const customers = await this.deps.crmService.listCustomers(companyId);
+        const customerById = new Map(customers.map((customer) => [customer.id, customer]));
+        const properties = await this.deps.db.query.cxCustomerProperties.findMany({
+          where: eq(cxCustomerProperties.companyId, companyId),
+          limit: 5000,
+        });
+        for (const property of properties) {
+          const customer = customerById.get(property.customerId);
+          remember(
+            buildDuplicateKey('property', {
+              customerName: customer?.name ?? '',
+              customerEmail: customer?.email ?? '',
+              propertyName: property.propertyName,
+              name: property.propertyName,
+              address: property.addressLine1 ?? '',
+            }),
+            property.id,
+          );
+        }
+        break;
+      }
+      case 'job': {
+        const jobRows = await this.deps.db.query.jobs.findMany({
+          where: eq(jobs.companyId, companyId),
+          with: { customer: true },
+          limit: 5000,
+        });
+        for (const job of jobRows) {
+          remember(
+            buildDuplicateKey('job', {
+              jobNumber: job.jobNumber ?? '',
+              title: job.title,
+              customerName: job.customer?.name ?? '',
+              customerEmail: job.customer?.email ?? '',
+            }),
+            job.id,
+          );
+        }
+        break;
+      }
+      case 'quote': {
+        const quoteRows = await this.deps.db.query.quotes.findMany({
+          where: eq(quotes.companyId, companyId),
+          limit: 5000,
+        });
+        for (const quote of quoteRows) {
+          remember(buildDuplicateKey('quote', { quoteNumber: quote.quoteNumber }), quote.id);
+        }
+        break;
+      }
+      case 'invoice': {
+        const invoiceRows = await this.deps.db.query.invoices.findMany({
+          where: eq(invoices.companyId, companyId),
+          limit: 5000,
+        });
+        for (const invoice of invoiceRows) {
+          remember(
+            buildDuplicateKey('invoice', { invoiceNumber: invoice.invoiceNumber }),
+            invoice.id,
+          );
+          if (invoice.xeroInvoiceNumber) {
+            remember(
+              buildDuplicateKey('invoice', { invoiceNumber: invoice.xeroInvoiceNumber }),
+              invoice.id,
+            );
+          }
+        }
+        break;
+      }
+      case 'payment': {
+        const paymentRows = await this.deps.db.query.payments.findMany({
+          where: eq(payments.companyId, companyId),
+          with: { invoice: true },
+          limit: 5000,
+        });
+        for (const payment of paymentRows) {
+          remember(
+            buildDuplicateKey('payment', {
+              invoiceNumber: payment.invoice?.invoiceNumber ?? '',
+              reference: payment.reference ?? '',
+              amountCents: String(payment.amountCents),
+            }),
+            payment.id,
+          );
+        }
+        break;
+      }
       default:
         break;
     }
-    return keys;
+    return { keys, keyToEntityId };
   }
 
   private async getValidationIssues(importJobId: string) {

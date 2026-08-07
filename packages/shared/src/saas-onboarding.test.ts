@@ -36,9 +36,13 @@ describe('SaaS onboarding shared model', () => {
     assert.equal(byType.supplier?.supported, true);
     assert.equal(byType.inventory?.supported, true);
     assert.match(byType.inventory?.note ?? '', /Physical stock/i);
-    assert.equal(byType.price_book?.supported, false);
-    assert.equal(byType.job?.supported, false);
-    assert.equal(byType.invoice?.supported, false);
+    assert.equal(byType.price_book?.supported, true);
+    assert.match(byType.price_book?.note ?? '', /never creates stock/i);
+    assert.equal(byType.property?.supported, true);
+    assert.equal(byType.contact?.supported, true);
+    assert.equal(byType.job?.supported, true);
+    assert.equal(byType.quote?.supported, true);
+    assert.equal(byType.invoice?.supported, true);
   });
 
   it('integration catalog covers accounting/payments/maps/fleet/email/comms', () => {

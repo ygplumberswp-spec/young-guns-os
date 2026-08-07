@@ -20,6 +20,7 @@ const entityTypeSchema = z.enum([
   'invoice',
   'payment',
   'inventory',
+  'price_book',
   'purchase_order',
   'document',
   'knowledge_article',
@@ -28,6 +29,12 @@ const entityTypeSchema = z.enum([
   'settings',
 ]);
 const duplicateActionSchema = z.enum(['merge', 'skip', 'replace', 'create_new']);
+const historicalDocMatchActionSchema = z.enum([
+  'LINK',
+  'CHOOSE_DIFFERENT',
+  'CREATE_HISTORICAL_RECORD',
+  'SKIP',
+]);
 
 const platformConfigSchema = z.object({
   importPolicy: z.record(z.unknown()).optional(),
@@ -57,6 +64,20 @@ const fieldMappingsSchema = z.object({
 const duplicateResolveSchema = z.object({
   duplicateReviewId: z.string().uuid(),
   action: duplicateActionSchema,
+});
+
+const proposeHistoricalDocMatchSchema = z.object({
+  fileName: z.string().trim().min(1).max(500),
+  customerName: z.string().trim().max(300).nullable().optional(),
+  amountCents: z.number().int().nullable().optional(),
+  issuedAt: z.string().trim().max(100).nullable().optional(),
+});
+
+const resolveHistoricalDocMatchSchema = z.object({
+  matchId: z.string().uuid(),
+  action: historicalDocMatchActionSchema,
+  targetEntityType: z.string().trim().max(100).nullable().optional(),
+  targetEntityId: z.string().uuid().nullable().optional(),
 });
 
 const exportJobSchema = z.object({
@@ -302,6 +323,32 @@ export function createEnterpriseDataMigrationRouter(deps: RouterDeps): Router {
         input,
       );
       res.json({ data: { duplicateReview } });
+    } catch (error) {
+      handleError(error, res);
+    }
+  });
+
+  router.post('/historical-document-matches/propose', requireWrite, async (req, res) => {
+    try {
+      const input = proposeHistoricalDocMatchSchema.parse(req.body);
+      const proposal = await deps.enterpriseDataMigrationService.proposeHistoricalDocumentMatch(
+        staffScope(req),
+        input,
+      );
+      res.status(201).json({ data: { proposal } });
+    } catch (error) {
+      handleError(error, res);
+    }
+  });
+
+  router.post('/historical-document-matches/resolve', requireWrite, async (req, res) => {
+    try {
+      const input = resolveHistoricalDocMatchSchema.parse(req.body);
+      const resolution = await deps.enterpriseDataMigrationService.resolveHistoricalDocumentMatch(
+        staffScope(req),
+        input,
+      );
+      res.json({ data: { resolution } });
     } catch (error) {
       handleError(error, res);
     }
