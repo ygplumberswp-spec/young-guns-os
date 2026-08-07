@@ -11,6 +11,7 @@ export type Job360TabId =
   | 'quote'
   | 'invoice'
   | 'payment'
+  | 'profitability'
   | 'signature'
   | 'coc'
   | 'documents'
@@ -30,6 +31,7 @@ export const JOB_360_TABS: Array<{ id: Job360TabId; label: string }> = [
   { id: 'quote', label: 'Quote' },
   { id: 'invoice', label: 'Invoice' },
   { id: 'payment', label: 'Payment' },
+  { id: 'profitability', label: 'Profitability' },
   { id: 'signature', label: 'Signature' },
   { id: 'coc', label: 'COC' },
   { id: 'documents', label: 'Documents' },

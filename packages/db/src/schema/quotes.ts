@@ -52,6 +52,20 @@ export const companyFinanceSettings = pgTable('company_finance_settings', {
   profitFloorMarginBps: integer('profit_floor_margin_bps').notNull().default(2000),
   allowBelowFloorWithOverride: boolean('allow_below_floor_with_override').notNull().default(true),
   currency: text('currency').notNull().default('ZAR'),
+  /** Internal labour cost rate for job profitability (cents per hour). */
+  defaultInternalLabourRateCentsPerHour: integer('default_internal_labour_rate_cents_per_hour')
+    .notNull()
+    .default(8000),
+  /** Configurable margin thresholds (basis points) for profitability status. */
+  profitabilityExcellentMarginBps: integer('profitability_excellent_margin_bps')
+    .notNull()
+    .default(3500),
+  profitabilityHealthyMarginBps: integer('profitability_healthy_margin_bps')
+    .notNull()
+    .default(2500),
+  profitabilityWarningMarginBps: integer('profitability_warning_margin_bps')
+    .notNull()
+    .default(1500),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });

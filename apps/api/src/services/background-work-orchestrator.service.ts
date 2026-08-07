@@ -24,10 +24,17 @@ export type BackgroundWorkOrchestratorDeps = {
   xeroSyncService: XeroSyncService;
   customerValueClassificationService: CustomerValueClassificationService;
   xeroTwoWayVerifyService?: XeroTwoWayVerifyService;
+  jobProfitabilityService?: import('./job-profitability.service.js').JobProfitabilityService;
 };
 
 export class BackgroundWorkOrchestratorService {
   constructor(private readonly deps: BackgroundWorkOrchestratorDeps) {}
+
+  attachJobProfitabilityService(
+    jobProfitabilityService: NonNullable<BackgroundWorkOrchestratorDeps['jobProfitabilityService']>,
+  ): void {
+    this.deps.jobProfitabilityService = jobProfitabilityService;
+  }
 
   registerDomainEventHandlers(): void {
     const { domainEventBus, backgroundWorkQueue } = this.deps;
@@ -236,6 +243,18 @@ export class BackgroundWorkOrchestratorService {
     queue: BackgroundWorkQueueService,
   ): Promise<void> {
     invalidateBackgroundWorkReadCaches(event.companyId);
+
+    if (this.deps.jobProfitabilityService) {
+      try {
+        await this.deps.jobProfitabilityService.recalculateJobProfitability(
+          event.companyId,
+          event.entityId,
+          { includeSensitiveCosts: true },
+        );
+      } catch {
+        // Profitability must not block completion follow-up when financial data is incomplete.
+      }
+    }
 
     await queue.enqueueDomainFollowup({
       companyId: event.companyId,

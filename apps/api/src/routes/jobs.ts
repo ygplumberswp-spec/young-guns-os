@@ -1,11 +1,18 @@
 import { Router } from 'express';
 import { z } from 'zod';
+import {
+  canAccessJobProfitability,
+  canManageJobProfitabilityAdjustments,
+  canViewJobProfitabilityMargin,
+} from '@titan/shared';
 import type { JobsService } from '../services/jobs.service.js';
 import { JobsError } from '../services/jobs.service.js';
 import type { TeamService } from '../services/team.service.js';
 import type { JobExecutionService } from '../services/job-execution.service.js';
 import { JobExecutionError } from '../services/job-execution.service.js';
 import type { JobCostingService } from '../services/job-costing.service.js';
+import type { JobProfitabilityService } from '../services/job-profitability.service.js';
+import { JobProfitabilityError } from '../services/job-profitability.service.js';
 import type { MobileWorkforceService } from '../services/mobile-workforce.service.js';
 import { MobileWorkforceError } from '../services/mobile-workforce.service.js';
 import type { DatabaseClient } from '@titan/db';
@@ -154,6 +161,18 @@ const returnMaterialLineSchema = z.object({
   clientActionId: z.string().trim().min(1).max(200),
 });
 
+const costAdjustmentSchema = z.object({
+  kind: z.enum([
+    'revenue',
+    'material_cost',
+    'labour_cost',
+    'other_direct_cost',
+    'total_cost',
+  ]),
+  amountCents: z.number().int(),
+  reason: z.string().trim().min(1).max(2000),
+});
+
 function hasCostVisibility(auth: { permissions: string[]; roleName?: string | null }): boolean {
   return (
     auth.permissions.includes('*') ||
@@ -173,6 +192,7 @@ type JobsRouterDeps = {
   jobsService: JobsService;
   jobExecutionService: JobExecutionService;
   jobCostingService: JobCostingService;
+  jobProfitabilityService: JobProfitabilityService;
   mobileWorkforceService: MobileWorkforceService;
   teamService: TeamService;
   db: DatabaseClient;
@@ -192,6 +212,7 @@ export function createJobsRouter({
   jobsService,
   jobExecutionService,
   jobCostingService,
+  jobProfitabilityService,
   mobileWorkforceService,
   teamService,
   db,
@@ -625,7 +646,117 @@ export function createJobsRouter({
     },
   );
 
+  router.get(
+    '/:jobId/profitability',
+    requireAnyPermission('jobs:read', 'jobs:write', 'finance:read', 'finance:write'),
+    requireAssignedJob,
+    async (req, res) => {
+      const auth = getAuth(req);
+      if (!canAccessJobProfitability(auth)) {
+        res.status(403).json({
+          error: {
+            code: 'FORBIDDEN',
+            message: 'Job profitability is restricted to authorized finance roles',
+          },
+        });
+        return;
+      }
+
+      try {
+        const profitability = await jobProfitabilityService.getJobProfitability(
+          auth.companyId,
+          getRouteParam(req.params.jobId),
+          { includeSensitiveCosts: canViewJobProfitabilityMargin(auth.permissions, auth.roleName) },
+        );
+        res.json({ data: { profitability } });
+      } catch (error) {
+        handleJobsError(res, error);
+      }
+    },
+  );
+
+  router.post(
+    '/:jobId/cost-adjustments',
+    requireAnyPermission('finance:write', '*'),
+    requireAssignedJob,
+    async (req, res) => {
+      const auth = getAuth(req);
+      if (!canManageJobProfitabilityAdjustments(auth)) {
+        res.status(403).json({
+          error: {
+            code: 'FORBIDDEN',
+            message: 'Cost adjustments require finance write access',
+          },
+        });
+        return;
+      }
+
+      const parsed = costAdjustmentSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({
+          error: { code: 'VALIDATION_ERROR', message: 'Invalid cost adjustment payload' },
+        });
+        return;
+      }
+
+      try {
+        const adjustment = await jobProfitabilityService.createCostAdjustment(
+          {
+            companyId: auth.companyId,
+            userId: auth.userId,
+            roleName: auth.roleName,
+            permissions: auth.permissions,
+          },
+          getRouteParam(req.params.jobId),
+          parsed.data,
+        );
+        res.status(201).json({ data: { adjustment } });
+      } catch (error) {
+        handleJobProfitabilityError(res, error);
+      }
+    },
+  );
+
+  router.post(
+    '/:jobId/profitability/recalculate',
+    requireAnyPermission('finance:write', '*'),
+    requireAssignedJob,
+    async (req, res) => {
+      const auth = getAuth(req);
+      if (!canManageJobProfitabilityAdjustments(auth)) {
+        res.status(403).json({
+          error: {
+            code: 'FORBIDDEN',
+            message: 'Manual profitability recalculation requires finance write access',
+          },
+        });
+        return;
+      }
+
+      try {
+        const profitability = await jobProfitabilityService.recalculateJobProfitability(
+          auth.companyId,
+          getRouteParam(req.params.jobId),
+          { includeSensitiveCosts: true },
+        );
+        res.json({ data: { profitability } });
+      } catch (error) {
+        handleJobsError(res, error);
+      }
+    },
+  );
+
   return router;
+}
+
+function handleJobProfitabilityError(res: import('express').Response, error: unknown) {
+  if (error instanceof JobProfitabilityError) {
+    res.status(error.code === 'FORBIDDEN' ? 403 : 400).json({
+      error: { code: error.code, message: error.message },
+    });
+    return;
+  }
+  handleJobsError(res, error);
 }
 
 function handleJobsError(res: import('express').Response, error: unknown) {

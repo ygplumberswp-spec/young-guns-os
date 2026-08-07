@@ -32,8 +32,10 @@ import { fetchJobFinanceSummary } from '../../lib/finance-api';
 import { fetchPurchaseOrders } from '../../lib/procurement-api';
 import { useAuth } from '../../lib/auth-context';
 import { canManageJobs, formatJobStatus } from '../../features/jobs/JobList';
-import { canAccessFinance, canManageFinance } from '../../features/finance/utils';
+import { canAccessFinance, canManageFinance, canViewJobCosting } from '../../features/finance/utils';
+import { canViewFinanceProfit } from '@titan/shared';
 import { JobCompletionFinancePanel } from '../../features/finance/JobCompletionFinancePanel';
+import { JobProfitabilityPanel } from '../../features/jobs/JobProfitabilityPanel';
 import { JobCompletionReportPanel } from '../../features/jobs/JobCompletionReportPanel';
 import { JobDocumentPackPanel } from '../../features/jobs/JobDocumentPackPanel';
 import { ReportExportActions } from '../../features/reports/ReportExportActions';
@@ -109,6 +111,14 @@ export function JobDetailPage() {
   );
   const canViewProcurement = useMemo(
     () => (user ? canAccessProcurement(user.permissions) : false),
+    [user],
+  );
+  const canViewJobProfitability = useMemo(
+    () => (user ? canViewJobCosting(user.permissions) : false),
+    [user],
+  );
+  const canViewProfitMargin = useMemo(
+    () => (user ? canViewFinanceProfit(user.permissions, user.roleName) : false),
     [user],
   );
 
@@ -1171,6 +1181,16 @@ export function JobDetailPage() {
               <p className="page-muted">No COC/warranty documents linked yet.</p>
             )}
           </Panel>
+        }
+        profitabilityPanel={
+          accessToken && canViewJobProfitability ? (
+            <JobProfitabilityPanel
+              accessToken={accessToken}
+              jobId={job.id}
+              canViewMargin={canViewProfitMargin}
+              canManageAdjustments={canWriteFinance}
+            />
+          ) : undefined
         }
       />
     </div>

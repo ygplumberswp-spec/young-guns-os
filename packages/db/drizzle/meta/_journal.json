@@ -1254,6 +1254,13 @@
       "when": 1785867000000,
       "tag": "0182_bank_statement_manual_import",
       "breakpoints": true
+    },
+    {
+      "idx": 179,
+      "version": "7",
+      "when": 1785868000000,
+      "tag": "0184_job_profitability_engine",
+      "breakpoints": true
     }
   ]
 }

@@ -19,6 +19,7 @@ export * from './job-execution-enums';
 export * from './jobs';
 export * from './scheduling';
 export * from './job-execution';
+export * from './job-profitability';
 export * from './quotes';
 export * from './boq';
 export * from './draft-workspace';

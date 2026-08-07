@@ -204,6 +204,40 @@ export async function fetchJobCostingSummary(
   return data.summary;
 }
 
+export async function fetchJobProfitability(
+  accessToken: string,
+  jobId: string,
+): Promise<import('@titan/shared').JobProfitabilityResult> {
+  const data = await request<{ profitability: import('@titan/shared').JobProfitabilityResult }>(
+    `/jobs/${jobId}/profitability`,
+    { accessToken },
+  );
+  return data.profitability;
+}
+
+export async function recalculateJobProfitability(
+  accessToken: string,
+  jobId: string,
+): Promise<import('@titan/shared').JobProfitabilityResult> {
+  const data = await request<{ profitability: import('@titan/shared').JobProfitabilityResult }>(
+    `/jobs/${jobId}/profitability/recalculate`,
+    { accessToken, method: 'POST' },
+  );
+  return data.profitability;
+}
+
+export async function createJobCostAdjustment(
+  accessToken: string,
+  jobId: string,
+  body: import('@titan/shared').CreateJobProfitabilityAdjustmentRequest,
+): Promise<import('@titan/shared').JobProfitabilityAdjustmentSummary> {
+  const data = await request<{ adjustment: import('@titan/shared').JobProfitabilityAdjustmentSummary }>(
+    `/jobs/${jobId}/cost-adjustments`,
+    { accessToken, method: 'POST', body },
+  );
+  return data.adjustment;
+}
+
 export function newJobsClientActionId(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }

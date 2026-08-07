@@ -58,6 +58,7 @@ import { SupplierPriceIntelligenceService } from './services/supplier-price-inte
 import { MarketingEligibilityService } from './services/marketing-eligibility.service.js';
 import { JobsService } from './services/jobs.service.js';
 import { JobCostingService } from './services/job-costing.service.js';
+import { JobProfitabilityService } from './services/job-profitability.service.js';
 import { JobDocumentPackService } from './services/job-document-pack.service.js';
 import { CompletionReportService } from './services/completion-report.service.js';
 import { ReportExportService } from './services/report-export.service.js';
@@ -887,6 +888,8 @@ const leadConversionService = new LeadConversionService(db, notificationService,
 const mobileSyncService = new MobileSyncService(db);
 const jobExecutionService = new JobExecutionService(db, stockMovementsService);
 const jobCostingService = new JobCostingService(db);
+const jobProfitabilityService = new JobProfitabilityService(db);
+backgroundWorkOrchestratorService.attachJobProfitabilityService(jobProfitabilityService);
 const jobDocumentPackService = new JobDocumentPackService(db);
 const technicianWorkflowService = new TechnicianWorkflowService(
   db,
@@ -1856,6 +1859,7 @@ app.use(
     jobsService,
     jobExecutionService,
     jobCostingService,
+    jobProfitabilityService,
     mobileWorkforceService,
     teamService,
     db,

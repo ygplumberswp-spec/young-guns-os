@@ -36,6 +36,7 @@ type Job360TabsProps = {
   financePanel: ReactNode;
   documentsPanel: ReactNode;
   compliancePanel: ReactNode;
+  profitabilityPanel?: ReactNode;
 };
 
 function formatLedgerMoney(cents: number | null | undefined, currency: string): string {
@@ -63,6 +64,7 @@ export function Job360Tabs({
   financePanel,
   documentsPanel,
   compliancePanel,
+  profitabilityPanel,
 }: Job360TabsProps) {
   const [activeTab, setActiveTab] = useState<Job360TabId>('overview');
 
@@ -352,6 +354,17 @@ export function Job360Tabs({
           <EmptyState
             title="Finance Permission Required"
             description="You do not have permission to view quote, invoice or payment details."
+          />
+        )
+      ) : null}
+
+      {activeTab === 'profitability' ? (
+        canViewFinance && profitabilityPanel ? (
+          <div className="customer-360__stack">{profitabilityPanel}</div>
+        ) : (
+          <EmptyState
+            title="Profitability Permission Required"
+            description="Job profitability is restricted to authorized finance roles."
           />
         )
       ) : null}
