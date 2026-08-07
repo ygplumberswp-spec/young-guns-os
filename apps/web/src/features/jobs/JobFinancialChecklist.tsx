@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'wouter';
 import type { JobCostChecklist } from '@titan/shared';
 import { Panel } from '@titan/ui';
 import { ApiClientError } from '../../lib/api-client';
@@ -64,6 +65,11 @@ export function JobFinancialChecklist({ accessToken, jobId }: JobFinancialCheckl
           </div>
         ))}
       </dl>
+      <p className="page-muted">
+        <Link href="/finance/job-linkage-control" className="jobs-link">
+          Link existing financial document
+        </Link>
+      </p>
     </Panel>
   );
 }

@@ -60,8 +60,10 @@ import { JobsService } from './services/jobs.service.js';
 import { JobCostingService } from './services/job-costing.service.js';
 import { JobProfitabilityService } from './services/job-profitability.service.js';
 import { JobCostControlService } from './services/job-cost-control.service.js';
+import { JobLinkageControlService } from './services/job-linkage-control.service.js';
 import { JobProfitabilityRefreshBridge } from './services/job-profitability-refresh.bridge.js';
 import { createJobCostControlRouter } from './routes/job-cost-control.js';
+import { createJobLinkageControlRouter } from './routes/job-linkage-control.js';
 import { JobDocumentPackService } from './services/job-document-pack.service.js';
 import { CompletionReportService } from './services/completion-report.service.js';
 import { ReportExportService } from './services/report-export.service.js';
@@ -893,6 +895,11 @@ const jobExecutionService = new JobExecutionService(db, stockMovementsService);
 const jobCostingService = new JobCostingService(db);
 const jobProfitabilityService = new JobProfitabilityService(db);
 const jobCostControlService = new JobCostControlService(db, jobProfitabilityService);
+const jobLinkageControlService = new JobLinkageControlService(
+  db,
+  jobProfitabilityService,
+  jobCostControlService,
+);
 const jobProfitabilityRefreshBridge = new JobProfitabilityRefreshBridge(
   db,
   jobProfitabilityService,
@@ -1905,6 +1912,15 @@ app.use(
   '/api/v1/finance',
   createJobCostControlRouter({
     jobCostControlService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/finance',
+  createJobLinkageControlRouter({
+    jobLinkageControlService,
     teamService,
     jwtSecret: env.JWT_SECRET,
     authService,
