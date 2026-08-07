@@ -1,0 +1,81 @@
+{
+  "label": "LIVE-001B",
+  "title": "Final Live Proof Closure",
+  "generatedAt": "2026-08-07T14:30:00.000Z",
+  "branch": "cursor/live-001-integrations-663e",
+  "ownerEvidence": {
+    "xero": {
+      "testConnection": "PASS",
+      "organisation": "Young Guns Plumbing",
+      "syncNow": false,
+      "providerWrite": false
+    },
+    "gmail": {
+      "connected": true,
+      "manualSyncNow": true,
+      "lastSynced": "2026-08-07T16:16:00+02:00",
+      "inboxCountChange": "40→80",
+      "emailSent": false
+    },
+    "cartrack": {
+      "connected": true,
+      "mappedVehicles": 2,
+      "gpsPositionsStored": 377,
+      "lastSuccessfulSync": "2026-08-07T16:16:28+02:00",
+      "providerWrite": false
+    },
+    "whatsapp": {
+      "connected": true,
+      "outgoingPaused": true,
+      "messagesSent": 0,
+      "freshReadOnlyMetaProofBeforeThisChange": false
+    },
+    "yoco": {
+      "connected": true,
+      "environment": "test",
+      "lastSync": "2026-08-07T16:17:21+02:00",
+      "paymentLinkCreated": false,
+      "cardCharge": false
+    }
+  },
+  "gmailDedupAudit": {
+    "verdict": "PASS_NO_DUPLICATION_EVIDENCE",
+    "explanation": "Sync skips existing Gmail message IDs (externalMessageId) before insert. Owner Sync Now uses maxMessages=40. 40→80 is consistent with two batches of unique newest-40 imports, not re-import of the same IDs. No DB UNIQUE(company_id, external_message_id) yet — race-only P2 debt.",
+    "automaticUpdate": "manual_sync_now_only",
+    "gmailWatchPush": false,
+    "schedulerGmailJob": false
+  },
+  "whatsappTestConnection": {
+    "endpoint": "POST /api/v1/integrations/whatsapp/test-connection",
+    "ui": "/integrations/whatsapp → Test Connection",
+    "method": "GET /{phoneNumberId}?fields=id,display_phone_number,verified_name",
+    "outbound": false,
+    "ownerFreshProofPending": true
+  },
+  "gates": {
+    "sharedTests": { "pass": 1428, "fail": 0 },
+    "authTests": { "pass": 24, "fail": 0 },
+    "apiTests": { "pass": 1427, "fail": 0 },
+    "dbTests": { "pass": 8, "fail": 0 },
+    "webTests": { "pass": 444, "fail": 0 },
+    "secSysLiveWebhookSubset": { "pass": 68, "fail": 0 },
+    "monorepoTypecheck": "pass",
+    "webProductionBuild": "pass"
+  },
+  "verdict": "BLOCKED",
+  "verdictReason": "WhatsApp read-only Test Connection is shipped; fresh Owner Meta GET proof still required (one click).",
+  "safety": {
+    "productionTouched": 0,
+    "xeroSync": 0,
+    "xeroWrites": 0,
+    "realCustomerWhatsApps": 0,
+    "realCustomerEmails": 0,
+    "yocoPaymentLinks": 0,
+    "cardCharges": 0,
+    "bankWrites": 0,
+    "creativeStudio": 0,
+    "newAgents": 0,
+    "mobileWork": 0,
+    "unrelatedWork": 0
+  }
+}

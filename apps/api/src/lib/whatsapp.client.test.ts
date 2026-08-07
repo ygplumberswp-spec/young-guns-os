@@ -33,7 +33,7 @@ describe('WhatsAppClient.verifyConnection (LIVE-001B read-only)', () => {
   it('performs a single GET on the phone number resource and never hits /messages', async () => {
     const calls: Array<{ url: string; method: string }> = [];
     const originalFetch = globalThis.fetch;
-    globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) => {
       const url = String(input);
       calls.push({ url, method: (init?.method ?? 'GET').toUpperCase() });
       return new Response(
