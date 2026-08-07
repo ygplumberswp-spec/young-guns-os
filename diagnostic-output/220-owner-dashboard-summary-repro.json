@@ -1,0 +1,211 @@
+{
+  "label": "220-owner-dashboard-summary-repro",
+  "ranAt": "2026-08-04T00:08:25.552Z",
+  "results": [
+    {
+      "name": "seed company",
+      "status": "PASS",
+      "detail": "54ff4615-a6fa-40e7-96ab-ded9bbac3046"
+    },
+    {
+      "name": "seed data",
+      "status": "PASS",
+      "detail": "27 invoices, 1 early-SAST completed job"
+    },
+    {
+      "name": "jobsService.getStats",
+      "status": "PASS",
+      "detail": "object"
+    },
+    {
+      "name": "jobsService.listTodaysScheduledJobs",
+      "status": "PASS",
+      "detail": "0 rows"
+    },
+    {
+      "name": "financeService.getStats",
+      "status": "PASS",
+      "detail": "object"
+    },
+    {
+      "name": "inventoryService.getStats",
+      "status": "PASS",
+      "detail": "object"
+    },
+    {
+      "name": "automationService.getStats",
+      "status": "PASS",
+      "detail": "object"
+    },
+    {
+      "name": "dayPlanService.getTodayPlan",
+      "status": "PASS",
+      "detail": "object"
+    },
+    {
+      "name": "schedulingService.getCalendar",
+      "status": "PASS",
+      "detail": "object"
+    },
+    {
+      "name": "intelligenceService.getDashboard",
+      "status": "PASS",
+      "detail": "object"
+    },
+    {
+      "name": "DashboardExecutiveService.getExecutiveSummary",
+      "status": "PASS",
+      "detail": "object"
+    },
+    {
+      "name": "summary.outstandingInvoices",
+      "status": "PASS",
+      "detail": "{\"outstandingCents\":257000,\"invoiceCount\":26,\"currency\":\"ZAR\",\"oldestOverdue\":{\"id\":\"cc28fcdf-eda5-4f2b-a9cd-a9f9a57d188a\",\"invoiceNumber\":\"INV-24\",\"customerName\":\"Probe Customer\",\"dueDate\":\"2026-07-10T00:08:25.257Z\",\"outstandingCents\":10000},\"largestOutstanding\":{\"id\":\"8411ae32-67c1-4a80-84c9-8c308c798f65\",\"invoiceNumber\":\"INV-0\",\"customerName\":\"Probe Customer\",\"dueDate\":\"2026-08-03T00:08:25.247Z"
+    },
+    {
+      "name": "summary.todayAtAGlance.customerActivity",
+      "status": "PASS",
+      "detail": "{\"leads\":0,\"followUps\":1,\"messages\":0,\"returning\":0}"
+    },
+    {
+      "name": "summary.priorities.summaryLine",
+      "status": "PASS",
+      "detail": "All clear for today"
+    },
+    {
+      "name": "summary.completedToday",
+      "status": "PASS",
+      "detail": "1 rows"
+    },
+    {
+      "name": "AR counts all 26 open invoices (not capped at 20)",
+      "status": "PASS",
+      "detail": "invoiceCount=26"
+    },
+    {
+      "name": "AR total is 25*10000 + 7000",
+      "status": "PASS",
+      "detail": "257000"
+    },
+    {
+      "name": "AR excludes the unusable record",
+      "status": "PASS",
+      "detail": "excluded=1"
+    },
+    {
+      "name": "AR reports the undated invoice",
+      "status": "PASS",
+      "detail": "undated=1"
+    },
+    {
+      "name": "AR oldest overdue is the earliest due date",
+      "status": "PASS",
+      "detail": "INV-24"
+    },
+    {
+      "name": "outstanding section marked partial due to excluded record",
+      "status": "PASS",
+      "detail": "partial · All open invoices except 1 with unusable amounts · 1 without a due date"
+    },
+    {
+      "name": "early-SAST job counted in Completed Today (Cape Town day)",
+      "status": "PASS",
+      "detail": "1 completed"
+    },
+    {
+      "name": "section:todayAtAGlance",
+      "status": "PASS",
+      "detail": "live"
+    },
+    {
+      "name": "section:money",
+      "status": "PASS",
+      "detail": "live"
+    },
+    {
+      "name": "section:customerActivity",
+      "status": "PASS",
+      "detail": "live"
+    },
+    {
+      "name": "section:priorities",
+      "status": "PASS",
+      "detail": "live"
+    },
+    {
+      "name": "section:activeJobs",
+      "status": "PASS",
+      "detail": "live"
+    },
+    {
+      "name": "section:completedToday",
+      "status": "PASS",
+      "detail": "live"
+    },
+    {
+      "name": "section:outstandingInvoices",
+      "status": "WARN",
+      "detail": "partial"
+    },
+    {
+      "name": "section:team",
+      "status": "PASS",
+      "detail": "live"
+    },
+    {
+      "name": "getExecutiveSummary with 2 providers down",
+      "status": "PASS",
+      "detail": "object"
+    },
+    {
+      "name": "degraded:todayAtAGlance",
+      "status": "PASS",
+      "detail": "live"
+    },
+    {
+      "name": "degraded:money",
+      "status": "PASS",
+      "detail": "partial (forced finance outage for isolation test)"
+    },
+    {
+      "name": "degraded:customerActivity",
+      "status": "PASS",
+      "detail": "partial (forced intelligence outage for isolation test)"
+    },
+    {
+      "name": "degraded:priorities",
+      "status": "PASS",
+      "detail": "live"
+    },
+    {
+      "name": "degraded:activeJobs",
+      "status": "PASS",
+      "detail": "live"
+    },
+    {
+      "name": "degraded:completedToday",
+      "status": "PASS",
+      "detail": "live"
+    },
+    {
+      "name": "degraded:outstandingInvoices",
+      "status": "PASS",
+      "detail": "live"
+    },
+    {
+      "name": "degraded:team",
+      "status": "PASS",
+      "detail": "live"
+    },
+    {
+      "name": "degraded: priorities still operational",
+      "status": "PASS",
+      "detail": "All clear for today"
+    },
+    {
+      "name": "degraded: activeJobs section",
+      "status": "PASS",
+      "detail": "live"
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { boolean, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { companies } from './companies';
 import { users } from './users';
 
@@ -14,7 +14,10 @@ export const sessions = pgTable('sessions', {
   userAgent: text('user_agent'),
   ipAddress: text('ip_address'),
   expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  lastActivityAt: timestamp('last_activity_at', { withTimezone: true }),
+  isTrustedDevice: boolean('is_trusted_device').notNull().default(false),
   revokedAt: timestamp('revoked_at', { withTimezone: true }),
+  revokedReason: text('revoked_reason'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 

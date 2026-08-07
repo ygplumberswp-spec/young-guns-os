@@ -1,0 +1,67 @@
+{
+  "label": "AURA-QUICK-MEMORY-208",
+  "startedAt": "2026-08-01T15:34:00.000Z",
+  "finishedAt": "2026-08-01T15:41:00.000Z",
+  "environment": "staging",
+  "productionTouched": false,
+  "targetBranch": "cursor/titan-frozen-scope-completion",
+  "commitsExpected": ["23284ea", "b4b5ca9", "5525e1c"],
+  "migration": {
+    "tag": "0111_aura_memory_quick_entry",
+    "applied": true,
+    "method": "isolated_staging_apply (0108 pattern; not full drizzle-kit migrate)",
+    "journalRowCountBefore": 107,
+    "journalRowCountAfter": 108,
+    "journalRecorded": true,
+    "schemaAddedColumns": ["enabled", "updated_by_user_id"],
+    "repoJournalAtHeadIncludes0111": false,
+    "note": "0111 hash inserted in drizzle.__drizzle_migrations on staging; repo _journal.json at 23284ea still ends at 0109 until a follow-up commit syncs 0107/0110/0111 tags."
+  },
+  "pendingStagingMigrations": {
+    "0107_whatsapp_contact_enrichment": "not_applied",
+    "0109_xero_two_way_sync_scaffolding": "not_applied_by_hash",
+    "0110_supplier_price_intelligence": "not_applied"
+  },
+  "xeroImportGate": {
+    "blocked": false,
+    "detail": "No active Xero background_jobs rows observed; applied 0111 only (non-destructive ALTER on aura_memory)."
+  },
+  "deploy": {
+    "railwayProject": "sweet-victory",
+    "railwayEnvironment": "staging",
+    "services": [
+      {
+        "name": "young-guns-os",
+        "role": "api",
+        "url": "https://young-guns-os-staging.up.railway.app",
+        "status": "SUCCESS",
+        "branch": "cursor/titan-frozen-scope-completion",
+        "commit": "23284ea5",
+        "note": "Initial --from-source picked cursor/ux-hardening-phase1; auto-build on frozen-scope branch completed SUCCESS at 23284ea."
+      },
+      {
+        "name": "comfortable-determination",
+        "role": "web",
+        "url": "https://comfortable-determination-staging.up.railway.app",
+        "status": "SUCCESS",
+        "branch": "cursor/titan-frozen-scope-completion",
+        "commit": "23284ea5"
+      }
+    ]
+  },
+  "verify": {
+    "api_health_ready": { "url": "/api/v1/health/ready", "status": 200, "database": "connected" },
+    "web_root": { "url": "/", "status": 200 },
+    "web_aura_route": { "url": "/aura", "status": 200 },
+    "memory_api_unauthenticated": { "url": "/api/v1/intelligence/memory", "status": 401, "expected": true }
+  },
+  "ownerManualVerify": [
+    "Sign in to staging web as company Owner (comfortable-determination-staging).",
+    "Open Executive Chat / AURA page (/aura) and confirm compact quick-entry row: placeholder “Add a quick business rule for AURA…”, Save on the right.",
+    "Submit a rule with Enter; expect toast “Saved to company memory.” and row in recent rules list.",
+    "Use Shift+Enter to expand for longer text; save again.",
+    "Edit, disable (enabled=false stays listed), and delete a rule; confirm disabled rules do not affect chat context.",
+    "Non-owner roles: POST/PATCH/DELETE /api/v1/intelligence/memory should be denied (403)."
+  ],
+  "overall": "PASS"
+}

@@ -26,7 +26,7 @@ import {
   securityAuditLogs,
   users,
 } from '@titan/db';
-import { emitBusinessEvent } from '../lib/automation-events.js';
+import { publishTenantDomainEvent } from '../lib/tenant-domain-event-publisher.js';
 import { allocateJobNumber } from './job-number.js';
 import { upsertPrimaryCrewMember } from './job-execution.service.js';
 import { LeadsError, type LeadMapper } from './leads.service.js';
@@ -277,7 +277,7 @@ export class LeadConversionService {
       });
     }
 
-    emitBusinessEvent({
+    publishTenantDomainEvent({
       companyId: scope.companyId,
       eventType: 'lead.converted',
       entityType: 'lead',
@@ -294,7 +294,7 @@ export class LeadConversionService {
     });
 
     if (created.jobId) {
-      emitBusinessEvent({
+      publishTenantDomainEvent({
         companyId: scope.companyId,
         eventType: 'job.created',
         entityType: 'job',
@@ -314,7 +314,7 @@ export class LeadConversionService {
       });
 
       if (created.appointmentAt) {
-        emitBusinessEvent({
+        publishTenantDomainEvent({
           companyId: scope.companyId,
           eventType: 'job.scheduled',
           entityType: 'job',
@@ -330,7 +330,7 @@ export class LeadConversionService {
           actorUserId: scope.userId,
         });
 
-        emitBusinessEvent({
+        publishTenantDomainEvent({
           companyId: scope.companyId,
           eventType: 'dispatch.handoff',
           entityType: 'job',

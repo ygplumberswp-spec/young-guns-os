@@ -1,15 +1,17 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'wouter';
-import { Button, PageHeader, PageLoadState } from '@titan/ui';
+import { PageLoadState } from '@titan/ui';
 import { fetchJobs } from '../../lib/jobs-api';
 import { useAuth } from '../../lib/auth-context';
 import { useStaffCachedQuery } from '../../lib/use-scoped-cached-query';
 import { canAccessJobs, canManageJobs, JobList } from '../../features/jobs/JobList';
+import { PageHeader, PrimaryAction } from '../../components/ux';
 
 export function JobListPage() {
   const { accessToken, user } = useAuth();
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const canView = useMemo(() => (user ? canAccessJobs(user.permissions) : false), [user]);
   const canWrite = useMemo(() => (user ? canManageJobs(user.permissions) : false), [user]);
@@ -23,6 +25,7 @@ export function JobListPage() {
     data: jobs,
     error,
     isLoading,
+    refetch,
   } = useStaffCachedQuery({
     queryKey: `jobs/list:${debouncedSearch}`,
     enabled: canView,
@@ -42,12 +45,13 @@ export function JobListPage() {
       <PageHeader
         title="Jobs"
         description="Operational job board — number, site, priority and technician."
+        breadcrumbs={[{ label: 'Operations', href: '/jobs' }, { label: 'Jobs' }]}
         actions={
           canWrite ? (
             <Link href="/jobs/new">
-              <Button>Create job</Button>
+              <PrimaryAction>Create job</PrimaryAction>
             </Link>
-          ) : undefined
+          ) : null
         }
       />
 
@@ -55,11 +59,22 @@ export function JobListPage() {
         isLoading={isLoading && jobs === undefined}
         error={error && jobs === undefined ? error : null}
         isEmpty={false}
-        emptyTitle="No jobs yet"
+        emptyTitle="No Jobs Yet"
         emptyDescription="Create a job to track work for your customers."
         loadingLabel="Loading jobs…"
       >
-        <JobList jobs={jobs ?? []} canWrite={canWrite} search={search} onSearchChange={setSearch} />
+        <JobList
+          jobs={jobs ?? []}
+          canWrite={canWrite}
+          accessToken={accessToken}
+          search={search}
+          onSearchChange={setSearch}
+          selectedIds={selectedIds}
+          onSelectedIdsChange={setSelectedIds}
+          onRefresh={async () => {
+            await refetch();
+          }}
+        />
       </PageLoadState>
     </div>
   );

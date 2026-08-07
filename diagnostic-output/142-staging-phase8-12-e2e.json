@@ -1,0 +1,113 @@
+{
+  "label": "STAGING-P8-12",
+  "phases": [
+    8,
+    9,
+    10,
+    11,
+    12
+  ],
+  "startedAt": "2026-08-01T09:09:06.356Z",
+  "apiOrigin": "https://young-guns-os-staging.up.railway.app",
+  "forbiddenRefChecked": true,
+  "productionRefTouched": false,
+  "results": [
+    {
+      "name": "staging_api_ready",
+      "status": "PASS",
+      "detail": "database=connected"
+    },
+    {
+      "name": "owner_signup",
+      "status": "PASS",
+      "detail": "d83d2d38-92b2-4e65-8b9c-3f3e4836ee5a"
+    },
+    {
+      "name": "p8_timeline_validation",
+      "status": "PASS",
+      "detail": "date required"
+    },
+    {
+      "name": "p8_day_timeline",
+      "status": "PASS",
+      "detail": "date=2026-08-01"
+    },
+    {
+      "name": "p8_timeline_tenant_isolated",
+      "status": "PASS",
+      "detail": "each tenant gets own timeline"
+    },
+    {
+      "name": "fixture_job",
+      "status": "PASS",
+      "detail": "b65c238e-bee1-4050-a5b9-d4ab287109b0"
+    },
+    {
+      "name": "p9_boq_route_mounted",
+      "status": "PASS",
+      "detail": "auth required"
+    },
+    {
+      "name": "p9_boq_list",
+      "status": "PASS",
+      "detail": "count=0"
+    },
+    {
+      "name": "p9_boq_create",
+      "status": "PASS",
+      "detail": "BOQ-00001"
+    },
+    {
+      "name": "p10_job_costing",
+      "status": "PASS",
+      "detail": "summary returned"
+    },
+    {
+      "name": "p10_stock_movements_list",
+      "status": "PASS",
+      "detail": "count=0"
+    },
+    {
+      "name": "p10_stock_levels",
+      "status": "PASS",
+      "detail": "count=0"
+    },
+    {
+      "name": "p11_packs_route_mounted",
+      "status": "PASS",
+      "detail": "auth required"
+    },
+    {
+      "name": "p11_packs_list",
+      "status": "PASS",
+      "detail": "count=0"
+    },
+    {
+      "name": "p11_pack_create",
+      "status": "PASS",
+      "detail": "validates linked documents required"
+    },
+    {
+      "name": "p12_finance_summary",
+      "status": "PASS",
+      "detail": "summary returned"
+    },
+    {
+      "name": "p12_invoice_from_job",
+      "status": "PASS",
+      "detail": "validates accepted quote required"
+    },
+    {
+      "name": "p12_invoice_idempotent",
+      "status": "PASS",
+      "detail": "skipped — no invoice created"
+    }
+  ],
+  "totals": {
+    "passed": 18,
+    "failed": 0,
+    "blocked": 0
+  },
+  "verdict": "GO",
+  "completedAt": "2026-08-01T09:09:47.918Z"
+}

@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'wouter';
-import { Button, EmptyState, PageHeader, Panel } from '@titan/ui';
+import { Button, EmptyState, Panel } from '@titan/ui';
 import type { DocumentCategorySummary } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import { fetchDocumentCategories } from '../../lib/documents-api';
@@ -63,7 +64,7 @@ export function CategoryListPage() {
         actions={
           canWrite ? (
             <Link href="/documents/categories/new">
-              <Button>New category</Button>
+              <Button>New Category</Button>
             </Link>
           ) : undefined
         }
@@ -76,18 +77,18 @@ export function CategoryListPage() {
       {!isLoading && !error ? (
         categories.length === 0 ? (
           <EmptyState
-            title="No categories yet"
+            title="No Categories Yet"
             description="Create categories to organise contracts, certificates, and other business documents."
             action={
               canWrite ? (
                 <Link href="/documents/categories/new">
-                  <Button>New category</Button>
+                  <Button>New Category</Button>
                 </Link>
               ) : undefined
             }
           />
         ) : (
-          <Panel title="Document categories">
+          <Panel title="Document Categories">
             <div className="documents-table-wrap">
               <table className="documents-table">
                 <thead>

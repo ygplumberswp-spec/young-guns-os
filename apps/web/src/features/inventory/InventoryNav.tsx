@@ -3,13 +3,14 @@ import { Link, useLocation } from 'wouter';
 const tabs = [
   { href: '/inventory/products', label: 'Products' },
   { href: '/inventory/stock', label: 'Stock' },
+  { href: '/inventory/movements', label: 'Movements' },
 ];
 
 export function InventoryNav() {
   const [location] = useLocation();
 
   return (
-    <nav className="inventory-nav" aria-label="Inventory sections">
+    <nav className="inventory-nav" aria-label="Inventory Sections">
       {tabs.map((tab) => (
         <Link
           key={tab.href}
