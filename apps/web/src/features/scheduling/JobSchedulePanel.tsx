@@ -110,7 +110,7 @@ export function JobSchedulePanel({ accessToken, job, canWrite, onUpdated }: JobS
   }
 
   return (
-    <Panel title="Schedule & assignment">
+    <Panel title="Schedule & Assignment">
       {error ? <p className="form-error">{error}</p> : null}
       {success ? <p className="form-success">{success}</p> : null}
 
@@ -140,7 +140,7 @@ export function JobSchedulePanel({ accessToken, job, canWrite, onUpdated }: JobS
           />
 
           <Input
-            label="End (optional)"
+            label="End (Optional)"
             type="datetime-local"
             value={scheduledEndAt}
             onChange={(event) => setScheduledEndAt(event.target.value)}

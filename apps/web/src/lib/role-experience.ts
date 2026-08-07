@@ -49,7 +49,13 @@ export function filterPortalNav(permissions: PortalAccessPermission[]): NavItemC
   return CLIENT_PORTAL_NAV_ITEMS.filter((item) => {
     const key = `${item.href}:${item.label}`;
     if (seen.has(key)) return false;
-    if (item.portalPermission && !permissions.includes(item.portalPermission)) return false;
+    if (item.portalPermissions?.length) {
+      if (!item.portalPermissions.some((permission) => permissions.includes(permission))) {
+        return false;
+      }
+    } else if (item.portalPermission && !permissions.includes(item.portalPermission)) {
+      return false;
+    }
     seen.add(key);
     return true;
   });

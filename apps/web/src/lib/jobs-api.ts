@@ -2,12 +2,14 @@ import type {
   AssignJobCrewRequest,
   AuthorizeJobMaterialLineRequest,
   CreateJobRequest,
+  JobCostingSummary,
   JobCrewMemberSummary,
   JobDetail,
   JobExecutionSummary,
   JobMaterialLineSummary,
   JobsStats,
   JobSummary,
+  JobTimelineEventSummary,
   JobVehicleAssignmentSummary,
   ReturnJobMaterialLineRequest,
   UpdateJobRequest,
@@ -18,8 +20,14 @@ export async function fetchJobsStats(accessToken: string): Promise<JobsStats> {
   return request<JobsStats>('/jobs/stats', { accessToken });
 }
 
-export async function fetchTodaysJobs(accessToken: string): Promise<JobSummary[]> {
-  const data = await request<{ jobs: JobSummary[] }>('/jobs/today', { accessToken });
+export async function fetchTodaysJobs(
+  accessToken: string,
+  options?: { includeCompleted?: boolean },
+): Promise<JobSummary[]> {
+  const params = new URLSearchParams();
+  if (options?.includeCompleted) params.set('includeCompleted', '1');
+  const query = params.size > 0 ? `?${params.toString()}` : '';
+  const data = await request<{ jobs: JobSummary[] }>(`/jobs/today${query}`, { accessToken });
   return data.jobs;
 }
 
@@ -58,6 +66,13 @@ export async function updateJob(
   return data.job;
 }
 
+export async function deleteJob(accessToken: string, jobId: string): Promise<void> {
+  await request<Record<string, never>>(`/jobs/${jobId}`, {
+    method: 'DELETE',
+    accessToken,
+  });
+}
+
 export async function fetchJobExecution(
   accessToken: string,
   jobId: string,
@@ -66,6 +81,47 @@ export async function fetchJobExecution(
     accessToken,
   });
   return data.summary;
+}
+
+export async function uploadOfficeJobEvidence(
+  accessToken: string,
+  jobId: string,
+  body: {
+    documentationType: 'photo' | 'document';
+    title: string;
+    mimeType: string;
+    dataBase64: string;
+    fileName?: string;
+    clientActionId?: string;
+  },
+): Promise<{ id: string; fileName: string | null; mimeType: string | null; sizeBytes: number | null }> {
+  const data = await request<{
+    documentation: {
+      id: string;
+      fileName: string | null;
+      mimeType: string | null;
+      sizeBytes: number | null;
+    };
+  }>(`/jobs/${jobId}/evidence/upload`, {
+    method: 'POST',
+    accessToken,
+    body,
+  });
+  return data.documentation;
+}
+
+export function jobEvidenceContentUrl(jobId: string, documentationId: string): string {
+  return `/api/v1/jobs/${jobId}/evidence/${documentationId}/content`;
+}
+
+export async function fetchJobTimeline(
+  accessToken: string,
+  jobId: string,
+): Promise<JobTimelineEventSummary[]> {
+  const data = await request<{ events: JobTimelineEventSummary[] }>(`/jobs/${jobId}/timeline`, {
+    accessToken,
+  });
+  return data.events;
 }
 
 export async function assignJobCrew(
@@ -136,6 +192,61 @@ export async function returnJobMaterialLine(
     { accessToken, method: 'POST', body },
   );
   return data.materialLine;
+}
+
+export async function fetchJobCostingSummary(
+  accessToken: string,
+  jobId: string,
+): Promise<JobCostingSummary> {
+  const data = await request<{ summary: JobCostingSummary }>(`/jobs/${jobId}/costing`, {
+    accessToken,
+  });
+  return data.summary;
+}
+
+export async function fetchJobProfitability(
+  accessToken: string,
+  jobId: string,
+): Promise<import('@titan/shared').JobProfitabilityResult> {
+  const data = await request<{ profitability: import('@titan/shared').JobProfitabilityResult }>(
+    `/jobs/${jobId}/profitability`,
+    { accessToken },
+  );
+  return data.profitability;
+}
+
+export async function recalculateJobProfitability(
+  accessToken: string,
+  jobId: string,
+): Promise<import('@titan/shared').JobProfitabilityResult> {
+  const data = await request<{ profitability: import('@titan/shared').JobProfitabilityResult }>(
+    `/jobs/${jobId}/profitability/recalculate`,
+    { accessToken, method: 'POST' },
+  );
+  return data.profitability;
+}
+
+export async function createJobCostAdjustment(
+  accessToken: string,
+  jobId: string,
+  body: import('@titan/shared').CreateJobProfitabilityAdjustmentRequest,
+): Promise<import('@titan/shared').JobProfitabilityAdjustmentSummary> {
+  const data = await request<{ adjustment: import('@titan/shared').JobProfitabilityAdjustmentSummary }>(
+    `/jobs/${jobId}/cost-adjustments`,
+    { accessToken, method: 'POST', body },
+  );
+  return data.adjustment;
+}
+
+export async function fetchJobCostChecklist(
+  accessToken: string,
+  jobId: string,
+): Promise<import('@titan/shared').JobCostChecklist> {
+  const data = await request<{ checklist: import('@titan/shared').JobCostChecklist }>(
+    `/jobs/${jobId}/cost-checklist`,
+    { accessToken },
+  );
+  return data.checklist;
 }
 
 export function newJobsClientActionId(prefix: string): string {

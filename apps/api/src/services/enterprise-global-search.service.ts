@@ -254,7 +254,15 @@ export class EnterpriseGlobalSearchService {
     if (canAccess(userPermissions, 'jobs:read')) {
       const jobs = await this.deps.jobsService.listJobs(scope.companyId);
       for (const job of jobs) {
-        const score = scoreMatch(query, mode, job.title, job.customerName, job.status);
+        const score = scoreMatch(
+          query,
+          mode,
+          job.jobNumber ?? '',
+          job.title,
+          job.customerName,
+          job.status,
+          job.addressDisplay ?? '',
+        );
         addResult(
           {
             entityType: 'job',
@@ -282,8 +290,8 @@ export class EnterpriseGlobalSearchService {
         const score = scoreMatch(
           query,
           mode,
+          quote.displayQuoteNumber,
           quote.quoteNumber,
-          quote.title,
           quote.customerName,
           quote.status,
         );
@@ -292,7 +300,7 @@ export class EnterpriseGlobalSearchService {
             entityType: 'quote',
             sourceModule: 'finance',
             sourceEntityId: quote.id,
-            title: `${quote.quoteNumber} — ${quote.title}`,
+            title: `${quote.displayQuoteNumber} — ${quote.customerName}`,
             summary: quote.customerName,
             relevanceScore: score,
             searchMode: mode,
@@ -306,8 +314,8 @@ export class EnterpriseGlobalSearchService {
         const score = scoreMatch(
           query,
           mode,
+          invoice.displayOfficialInvoiceNumber,
           invoice.invoiceNumber,
-          invoice.title,
           invoice.customerName,
           invoice.status,
         );
@@ -316,7 +324,7 @@ export class EnterpriseGlobalSearchService {
             entityType: 'invoice',
             sourceModule: 'finance',
             sourceEntityId: invoice.id,
-            title: `${invoice.invoiceNumber} — ${invoice.title}`,
+            title: `${invoice.displayOfficialInvoiceNumber} — ${invoice.customerName}`,
             summary: invoice.customerName,
             relevanceScore: score,
             searchMode: mode,
@@ -327,7 +335,13 @@ export class EnterpriseGlobalSearchService {
       }
 
       for (const payment of payments) {
-        const score = scoreMatch(query, mode, payment.invoiceNumber, payment.customerName);
+        const score = scoreMatch(
+          query,
+          mode,
+          payment.invoiceNumber,
+          payment.customerName,
+          payment.reference ?? '',
+        );
         addResult(
           {
             entityType: 'payment',

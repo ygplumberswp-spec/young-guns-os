@@ -9,6 +9,9 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { PortalRouteShell } from './components/PortalRouteShell';
 import { AppLayout } from './layouts/AppLayout';
 import { PageRouteSuspense } from './components/PageRouteSuspense';
+import { TitanNotificationsProvider } from './components/ux';
+import { LiveUpdatesBanner, LiveUpdatesProvider } from './lib/live-updates/LiveUpdatesProvider';
+import { TitanNavigationHistoryProvider } from './hooks/useTitanNavigationHistory';
 import * as OwnerPages from './routes/owner-pages';
 import { LoginPage } from './pages/auth/LoginPage';
 import { SignupPage } from './pages/auth/SignupPage';
@@ -39,6 +42,7 @@ import { PortalFeedbackPage } from './pages/portal/PortalFeedbackPage';
 import { PortalLoyaltyPage } from './pages/portal/PortalLoyaltyPage';
 import { PortalAssetsPage } from './pages/portal/PortalAssetsPage';
 import { PortalNotFoundPage } from './pages/portal/PortalNotFoundPage';
+import { PortalHomeshieldPage } from './pages/portal/PortalHomeshieldPage';
 import { MobileLayout } from './layouts/MobileLayout';
 import { MobileDashboardPage } from './pages/mobile/MobileDashboardPage';
 import { MobileJobsPage } from './pages/mobile/MobileJobsPage';
@@ -48,14 +52,20 @@ import { MobileInventoryPage } from './pages/mobile/MobileInventoryPage';
 import { MobileTimePage } from './pages/mobile/MobileTimePage';
 import { MobileNotificationsPage } from './pages/mobile/MobileNotificationsPage';
 import { MobileSyncPage } from './pages/mobile/MobileSyncPage';
+import { MobileSchedulePage } from './pages/mobile/MobileSchedulePage';
+import { MobilePerformancePage } from './pages/mobile/MobilePerformancePage';
 import { DevErrorBoundaryTestPage } from './pages/dev/DevErrorBoundaryTestPage';
 
 export function App() {
   return (
     <ErrorBoundary>
       <AuthProvider>
-        <PreloadCoordinator />
-        <Switch>
+        <LiveUpdatesProvider>
+        <TitanNotificationsProvider>
+          <LiveUpdatesBanner />
+          <TitanNavigationHistoryProvider>
+          <PreloadCoordinator />
+          <Switch>
           <Route path="/auth/login" component={LoginPage} />
           <Route path="/auth/signup" component={SignupPage} />
           <Route path="/auth/accept-invite" component={AcceptInvitePage} />
@@ -103,6 +113,7 @@ export function App() {
                     <Route path="/loyalty" component={PortalLoyaltyPage} />
                     <Route path="/assets" component={PortalAssetsPage} />
                     <Route path="/" component={PortalDashboardPage} />
+                    <Route path="/homeshield" component={PortalHomeshieldPage} />
                     <Route path="/:rest*" component={PortalNotFoundPage} />
                   </Switch>
                 </PortalLayout>
@@ -120,7 +131,9 @@ export function App() {
                     <Route path="/route" component={MobileRoutePage} />
                     <Route path="/inventory" component={MobileInventoryPage} />
                     <Route path="/time" component={MobileTimePage} />
+                    <Route path="/performance" component={MobilePerformancePage} />
                     <Route path="/notifications" component={MobileNotificationsPage} />
+                    <Route path="/schedule" component={MobileSchedulePage} />
                     <Route path="/sync" component={MobileSyncPage} />
                     <Route path="/" component={MobileDashboardPage} />
                   </Switch>
@@ -149,6 +162,11 @@ export function App() {
                         <Route
                           path="/communications-hub"
                           component={OwnerPages.CommunicationsHubPage}
+                        />
+                        <Route path="/email-centre" component={OwnerPages.EmailCentrePage} />
+                        <Route
+                          path="/communication-timeline"
+                          component={OwnerPages.CommunicationTimelinePage}
                         />
                         <Route
                           path="/customer-experience"
@@ -201,6 +219,62 @@ export function App() {
                         <Route path="/developer" component={OwnerPages.DeveloperPortalPage} />
                         <Route path="/saas-management" component={OwnerPages.SaasManagementPage} />
                         <Route path="/voice-reception" component={OwnerPages.VoiceReceptionPage} />
+                        <Route
+                          path="/voice-ai-receptionist"
+                          component={OwnerPages.VoiceAiReceptionistPage}
+                        />
+                        <Route
+                          path="/call-intelligence"
+                          component={OwnerPages.CallIntelligencePage}
+                        />
+                        <Route
+                          path="/sales-intelligence-agent"
+                          component={OwnerPages.SalesIntelligenceAgentPage}
+                        />
+                        <Route
+                          path="/sales-followup-intelligence"
+                          component={OwnerPages.SalesFollowupIntelligencePage}
+                        />
+                        <Route
+                          path="/sales-analytics-intelligence"
+                          component={OwnerPages.SalesAnalyticsIntelligencePage}
+                        />
+                        <Route
+                          path="/customer-360-intelligence"
+                          component={OwnerPages.Customer360IntelligencePage}
+                        />
+                        <Route
+                          path="/property-intelligence"
+                          component={OwnerPages.PropertyIntelligencePage}
+                        />
+                        <Route
+                          path="/document-intelligence"
+                          component={OwnerPages.DocumentIntelligencePage}
+                        />
+                        <Route
+                          path="/compliance-intelligence"
+                          component={OwnerPages.ComplianceIntelligencePage}
+                        />
+                        <Route
+                          path="/executive-command-centre"
+                          component={OwnerPages.ExecutiveCommandCentrePage}
+                        />
+                        <Route
+                          path="/smart-notifications"
+                          component={OwnerPages.SmartNotificationsPage}
+                        />
+                        <Route
+                          path="/market-intelligence"
+                          component={OwnerPages.MarketIntelligencePage}
+                        />
+                        <Route
+                          path="/security-monitoring"
+                          component={OwnerPages.SecurityMonitoringPage}
+                        />
+                        <Route
+                          path="/industry-templates"
+                          component={OwnerPages.IndustryTemplatesPage}
+                        />
                         <Route path="/document-ai" component={OwnerPages.DocumentAiPage} />
                         <Route
                           path="/business-continuity"
@@ -214,7 +288,21 @@ export function App() {
                         <Route path="/release-center" component={OwnerPages.ReleaseCenterPage} />
                         <Route path="/go-live" component={OwnerPages.GoLivePage} />
                         <Route path="/release" component={OwnerPages.ReleasePage} />
+                        <Route path="/settings" component={OwnerPages.SettingsIndexPage} />
                         <Route path="/settings/billing" component={OwnerPages.OwnerBillingPage} />
+                        <Route
+                          path="/settings/documents-records"
+                          component={OwnerPages.DocumentsRecordsSettingsPage}
+                        />
+                        <Route
+                          path="/settings/notifications"
+                          component={OwnerPages.NotificationsSettingsPage}
+                        />
+                        <Route
+                          path="/settings/advanced/data-protection"
+                          component={OwnerPages.DataProtectionSettingsPage}
+                        />
+                        <Route path="/drafts" component={OwnerPages.DraftsPage} />
                         <Route path="/evolution" component={OwnerPages.EvolutionPage} />
                         <Route path="/mission-control" component={OwnerPages.MissionControlPage} />
                         <Route path="/knowledge" component={OwnerPages.KnowledgeGraphPage} />
@@ -244,6 +332,22 @@ export function App() {
                           path="/documents/categories"
                           component={OwnerPages.CategoryListPage}
                         />
+                        <Route
+                          path="/documents/job-packs/:id"
+                          component={OwnerPages.JobPackDetailPage}
+                        />
+                        <Route
+                          path="/documents/job-packs"
+                          component={OwnerPages.JobPackListPage}
+                        />
+                        <Route
+                          path="/documents/completion-reports/:id"
+                          component={OwnerPages.CompletionReportDetailPage}
+                        />
+                        <Route
+                          path="/documents/completion-reports"
+                          component={OwnerPages.CompletionReportListPage}
+                        />
                         <Route path="/documents/:id" component={OwnerPages.DocumentDetailPage} />
                         <Route path="/documents" component={OwnerPages.DocumentListPage} />
                         <Route
@@ -272,6 +376,10 @@ export function App() {
                         <Route path="/inventory/products" component={OwnerPages.ProductListPage} />
                         <Route path="/inventory/stock" component={OwnerPages.StockOverviewPage} />
                         <Route
+                          path="/inventory/movements"
+                          component={OwnerPages.StockMovementsPage}
+                        />
+                        <Route
                           path="/procurement/purchase-orders/new"
                           component={OwnerPages.PurchaseOrderCreatePage}
                         />
@@ -290,17 +398,29 @@ export function App() {
                         />
                         <Route path="/procurement" component={OwnerPages.PurchaseOrderListPage} />
                         <Route path="/finance/quotes/new" component={OwnerPages.QuoteCreatePage} />
+                        <Route path="/finance/quotes/:id/edit" component={OwnerPages.QuoteEditPage} />
                         <Route path="/finance/quotes/:id" component={OwnerPages.QuoteDetailPage} />
                         <Route path="/finance/quotes" component={OwnerPages.QuoteListPage} />
+                        <Route path="/finance/boq/new" component={OwnerPages.BoqCreatePage} />
+                        <Route path="/finance/boq/:id" component={OwnerPages.BoqDetailPage} />
+                        <Route path="/finance/boq" component={OwnerPages.BoqListPage} />
                         <Route
                           path="/finance/invoices/new"
                           component={OwnerPages.InvoiceCreatePage}
+                        />
+                        <Route
+                          path="/finance/invoices/:id/edit"
+                          component={OwnerPages.InvoiceEditPage}
                         />
                         <Route
                           path="/finance/invoices/:id"
                           component={OwnerPages.InvoiceDetailPage}
                         />
                         <Route path="/finance/invoices" component={OwnerPages.InvoiceListPage} />
+                        <Route
+                          path="/documents/:documentId"
+                          component={OwnerPages.TitanDocumentPage}
+                        />
                         <Route
                           path="/finance/payments/new"
                           component={OwnerPages.PaymentCreatePage}
@@ -310,11 +430,28 @@ export function App() {
                           component={OwnerPages.PaymentDetailPage}
                         />
                         <Route path="/finance/payments" component={OwnerPages.PaymentListPage} />
+                        <Route
+                          path="/finance/bank-transactions/import"
+                          component={OwnerPages.BankStatementImportPage}
+                        />
+                        <Route
+                          path="/finance/bank-control"
+                          component={OwnerPages.BankControlPage}
+                        />
                         <Route path="/scheduling" component={OwnerPages.SchedulingPage} />
+                        <Route
+                          path="/workforce/day-timeline"
+                          component={OwnerPages.BusinessDayTimelinePage}
+                        />
                         <Route path="/jobs/new" component={OwnerPages.JobCreatePage} />
                         <Route path="/jobs/:id" component={OwnerPages.JobDetailPage} />
                         <Route path="/jobs" component={OwnerPages.JobListPage} />
+                        <Route path="/drafts" component={OwnerPages.DraftsPage} />
                         <Route path="/crm/new" component={OwnerPages.CustomerCreatePage} />
+                        <Route
+                          path="/crm/duplicates"
+                          component={OwnerPages.CustomerDuplicateMergePage}
+                        />
                         <Route path="/crm/:id" component={OwnerPages.CustomerDetailPage} />
                         <Route path="/crm" component={OwnerPages.CustomerListPage} />
                         <Route
@@ -334,6 +471,20 @@ export function App() {
                           component={OwnerPages.AgentProfileDetailPage}
                         />
                         <Route path="/aura/agents" component={OwnerPages.AgentDashboardPage} />
+                        <Route path="/aura/business-rules" component={OwnerPages.BusinessRulesPage} />
+                        <Route path="/aura/todays-plan" component={OwnerPages.TodaysPlanPage} />
+                        <Route
+                          path="/aura/command-centre"
+                          component={OwnerPages.AuraCommandCentrePage}
+                        />
+                        <Route
+                          path="/aura-agent-network"
+                          component={OwnerPages.AuraAgentNetworkPage}
+                        />
+                        <Route
+                          path="/aura/evolution"
+                          component={OwnerPages.AuraEvolutionPage}
+                        />
                         <Route path="/aura" component={OwnerPages.AuraPage} />
                         <Route path="/analytics" component={OwnerPages.AnalyticsPage} />
                         <Route path="/quality" component={OwnerPages.QualityPage} />
@@ -351,23 +502,147 @@ export function App() {
                           component={OwnerPages.DispatchIntelligencePage}
                         />
                         <Route
+                          path="/technician-intelligence"
+                          component={OwnerPages.TechnicianIntelligencePage}
+                        />
+                        <Route
+                          path="/payroll-timesheet-intelligence"
+                          component={OwnerPages.PayrollTimesheetIntelligencePage}
+                        />
+                        <Route
+                          path="/workflow-automation"
+                          component={OwnerPages.WorkflowAutomationPage}
+                        />
+                        <Route
+                          path="/recurring-maintenance"
+                          component={OwnerPages.RecurringMaintenancePage}
+                        />
+                        <Route
+                          path="/homeshield-experience"
+                          component={OwnerPages.HomeshieldExperiencePage}
+                        />
+                        <Route
+                          path="/customer-engagement-intelligence"
+                          component={OwnerPages.CustomerEngagementIntelligencePage}
+                        />
+                        <Route
                           path="/fleet-intelligence"
                           component={OwnerPages.FleetIntelligencePage}
+                        />
+                        <Route
+                          path="/vehicle-intelligence"
+                          component={OwnerPages.VehicleIntelligencePage}
+                        />
+                        <Route
+                          path="/fleet-ai-recommendations"
+                          component={OwnerPages.FleetAiRecommendationsPage}
+                        />
+                        <Route
+                          path="/driver-intelligence"
+                          component={OwnerPages.DriverIntelligencePage}
                         />
                         <Route path="/security" component={OwnerPages.EnterpriseSecurityPage} />
                         <Route
                           path="/personal-communications-intelligence"
                           component={OwnerPages.PersonalCommunicationsIntelligencePage}
                         />
+                        <Route
+                          path="/personal-whatsapp-intelligence"
+                          component={OwnerPages.PersonalWhatsappIntelligencePage}
+                        />
+                        <Route
+                          path="/personal-whatsapp-connection"
+                          component={OwnerPages.PersonalWhatsappConnectionPage}
+                        />
+                        <Route
+                          path="/communication-aura-intelligence"
+                          component={OwnerPages.CommunicationAuraIntelligencePage}
+                        />
+                        <Route
+                          path="/communication-aura-intelligence"
+                          component={OwnerPages.CommunicationAuraIntelligencePage}
+                        />
+                        <Route
+                          path="/marketing-agent"
+                          component={OwnerPages.MarketingAgentPage}
+                        />
+                        <Route
+                          path="/finance-aura-agent"
+                          component={OwnerPages.FinanceAuraAgentPage}
+                        />
+                        <Route
+                          path="/finance/job-cost-control"
+                          component={OwnerPages.JobCostControlPage}
+                        />
+                        <Route
+                          path="/finance/job-linkage-control"
+                          component={OwnerPages.JobLinkageControlPage}
+                        />
+                        <Route
+                          path="/finance-cashflow-profit"
+                          component={OwnerPages.FinanceCashflowProfitPage}
+                        />
+                        <Route
+                          path="/finance-reporting-forecast"
+                          component={OwnerPages.FinanceReportingForecastPage}
+                        />
+                        <Route
+                          path="/inventory-intelligence"
+                          component={OwnerPages.InventoryIntelligencePage}
+                        />
+                        <Route
+                          path="/hr-employee-intelligence"
+                          component={OwnerPages.HrEmployeeIntelligencePage}
+                        />
+                        <Route
+                          path="/recruitment-performance-intelligence"
+                          component={OwnerPages.RecruitmentPerformanceIntelligencePage}
+                        />
+                        <Route
+                          path="/procurement-intelligence"
+                          component={OwnerPages.ProcurementIntelligencePage}
+                        />
+                          <Route
+                          path="/stock-forecasting"
+                          component={OwnerPages.StockForecastingPage}
+                        />
+                        <Route
+                          path="/social-media-integrations"
+                          component={OwnerPages.SocialMediaIntegrationsPage}
+                        />
+                        <Route
+                          path="/facebook-business"
+                          component={OwnerPages.FacebookBusinessPage}
+                        />
+                        <Route
+                          path="/content-reputation-intelligence"
+                          component={OwnerPages.ContentReputationIntelligencePage}
+                        />
                         <Route path="/recruiting" component={OwnerPages.RecruitingPage} />
                         <Route
                           path="/integrations/cartrack"
                           component={OwnerPages.CartrackSettingsPage}
                         />
+                        <Route
+                          path="/integrations/google-maps"
+                          component={OwnerPages.GoogleMapsSettingsPage}
+                        />
+                        <Route
+                          path="/integrations/google-calendar"
+                          component={OwnerPages.GoogleCalendarSettingsPage}
+                        />
                         <Route path="/integrations/xero" component={OwnerPages.XeroSettingsPage} />
+                        <Route
+                          path="/integrations/xero/write-approvals"
+                          component={OwnerPages.XeroWriteApprovalsPage}
+                        />
                         <Route
                           path="/integrations/email"
                           component={OwnerPages.EmailSettingsPage}
+                        />
+                        <Route
+                          path="/integrations/resend"
+                          component={OwnerPages.ResendSettingsPage}
                         />
                         <Route path="/integrations/yoco" component={OwnerPages.YocoSettingsPage} />
                         <Route
@@ -397,6 +672,11 @@ export function App() {
                         />
                         <Route path="/settings/about" component={OwnerPages.AboutSettingsPage} />
                         <Route path="/settings/team" component={OwnerPages.TeamSettingsPage} />
+                        <Route
+                          path="/settings/dashboard"
+                          component={OwnerPages.DashboardSettingsPage}
+                        />
+                        <Route path="/settings/security" component={OwnerPages.SecuritySettingsPage} />
                         <Route path="/" component={OwnerPages.DashboardPage} />
                         <Route path="/:rest*" component={OwnerPages.NotFoundPage} />
                       </Switch>
@@ -407,6 +687,9 @@ export function App() {
             </ProtectedRoute>
           </Route>
         </Switch>
+          </TitanNavigationHistoryProvider>
+        </TitanNotificationsProvider>
+        </LiveUpdatesProvider>
       </AuthProvider>
     </ErrorBoundary>
   );

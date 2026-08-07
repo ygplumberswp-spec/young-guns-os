@@ -729,6 +729,580 @@
       "when": 1754146800000,
       "tag": "0104_n8n_hybrid_orchestration",
       "breakpoints": true
+    },
+    {
+      "idx": 104,
+      "version": "7",
+      "when": 1754150400000,
+      "tag": "0105_boq_workspace",
+      "breakpoints": true
+    },
+    {
+      "idx": 105,
+      "version": "7",
+      "when": 1754154000000,
+      "tag": "0106_job_document_packs",
+      "breakpoints": true
+    },
+    {
+      "idx": 106,
+      "version": "7",
+      "when": 1754157600000,
+      "tag": "0108_secure_session_enhancements",
+      "breakpoints": true
+    },
+    {
+      "idx": 107,
+      "version": "7",
+      "when": 1754161200000,
+      "tag": "0109_xero_two_way_sync_scaffolding",
+      "breakpoints": true
+    },
+    {
+      "idx": 108,
+      "version": "7",
+      "when": 1754164800000,
+      "tag": "0110_supplier_price_intelligence",
+      "breakpoints": true
+    },
+    {
+      "idx": 109,
+      "version": "7",
+      "when": 1754168400000,
+      "tag": "0111_aura_memory_quick_entry",
+      "breakpoints": true
+    },
+    {
+      "idx": 110,
+      "version": "7",
+      "when": 1754172000000,
+      "tag": "0112_draft_workspace",
+      "breakpoints": true
+    },
+    {
+      "idx": 111,
+      "version": "7",
+      "when": 1754175600000,
+      "tag": "0113_company_day_plans",
+      "breakpoints": true
+    },
+    {
+      "idx": 112,
+      "version": "7",
+      "when": 1754179200000,
+      "tag": "0114_company_business_rules",
+      "breakpoints": true
+    },
+    {
+      "idx": 113,
+      "version": "7",
+      "when": 1754182800000,
+      "tag": "0115_company_day_plan_extend",
+      "breakpoints": true
+    },
+    {
+      "idx": 114,
+      "version": "7",
+      "when": 1754186400000,
+      "tag": "0116_company_day_plan_follow_ups",
+      "breakpoints": true
+    },
+    {
+      "idx": 115,
+      "version": "7",
+      "when": 1754251200000,
+      "tag": "0117_scheduling_calendar",
+      "breakpoints": true
+    },
+    {
+      "idx": 116,
+      "version": "7",
+      "when": 1754265600000,
+      "tag": "0118_customer_duplicate_merge",
+      "breakpoints": true
+    },
+    {
+      "idx": 117,
+      "version": "7",
+      "when": 1754272800000,
+      "tag": "0119_google_maps_geo",
+      "breakpoints": true
+    },
+    {
+      "idx": 118,
+      "version": "7",
+      "when": 1754276400000,
+      "tag": "0120_ops_intelligence_reminders",
+      "breakpoints": true
+    },
+    {
+      "idx": 119,
+      "version": "7",
+      "when": 1754280000000,
+      "tag": "0121_communications_platform_v1",
+      "breakpoints": true
+    },
+    {
+      "idx": 120,
+      "version": "7",
+      "when": 1754283600000,
+      "tag": "0122_gmail_oauth_provider",
+      "breakpoints": true
+    },
+    {
+      "idx": 121,
+      "version": "7",
+      "when": 1754290800000,
+      "tag": "0124_resend_email_deliveries",
+      "breakpoints": true
+    },
+    {
+      "idx": 122,
+      "version": "7",
+      "when": 1754294400000,
+      "tag": "0125_email_centre_communication_timeline",
+      "breakpoints": true
+    },
+    {
+      "idx": 123,
+      "version": "7",
+      "when": 1754298000000,
+      "tag": "0126_completion_reports",
+      "breakpoints": true
+    },
+    {
+      "idx": 124,
+      "version": "7",
+      "when": 1754301600000,
+      "tag": "0127_personal_whatsapp_intelligence",
+      "breakpoints": true
+    },
+    {
+      "idx": 125,
+      "version": "7",
+      "when": 1754305200000,
+      "tag": "0128_technician_intelligence",
+      "breakpoints": true
+    },
+    {
+      "idx": 126,
+      "version": "7",
+      "when": 1754308800000,
+      "tag": "0129_workflow_automation_engine",
+      "breakpoints": true
+    },
+    {
+      "idx": 127,
+      "version": "7",
+      "when": 1754312400000,
+      "tag": "0130_recurring_maintenance_engine",
+      "breakpoints": true
+    },
+    {
+      "idx": 128,
+      "version": "7",
+      "when": 1754316000000,
+      "tag": "0131_personal_whatsapp_connection_layer",
+      "breakpoints": true
+    },
+    {
+      "idx": 129,
+      "version": "7",
+      "when": 1754319600000,
+      "tag": "0132_communication_aura_intelligence",
+      "breakpoints": true
+    },
+    {
+      "idx": 130,
+      "version": "7",
+      "when": 1754323200000,
+      "tag": "0133_aura_command_centre",
+      "breakpoints": true
+    },
+    {
+      "idx": 131,
+      "version": "7",
+      "when": 1754326800000,
+      "tag": "0134_aura_agent_network",
+      "breakpoints": true
+    },
+    {
+      "idx": 132,
+      "version": "7",
+      "when": 1754330400000,
+      "tag": "0135_aura_evolution",
+      "breakpoints": true
+    },
+    {
+      "idx": 133,
+      "version": "7",
+      "when": 1754334000000,
+      "tag": "0136_marketing_agent_foundation",
+      "breakpoints": true
+    },
+    {
+      "idx": 134,
+      "version": "7",
+      "when": 1754337600000,
+      "tag": "0137_social_media_integrations",
+      "breakpoints": true
+    },
+    {
+      "idx": 135,
+      "version": "7",
+      "when": 1754341200000,
+      "tag": "0138_content_reputation_intelligence",
+      "breakpoints": true
+    },
+    {
+      "idx": 136,
+      "version": "7",
+      "when": 1754344800000,
+      "tag": "0139_finance_aura_agent_foundation",
+      "breakpoints": true
+    },
+    {
+      "idx": 137,
+      "version": "7",
+      "when": 1754346000000,
+      "tag": "0140_finance_cashflow_profit_intelligence",
+      "breakpoints": true
+    },
+    {
+      "idx": 138,
+      "version": "7",
+      "when": 1754349000000,
+      "tag": "0141_finance_reporting_forecast",
+      "breakpoints": true
+    },
+    {
+      "idx": 139,
+      "version": "7",
+      "when": 1754352000000,
+      "tag": "0142_inventory_intelligence",
+      "breakpoints": true
+    },
+    {
+      "idx": 140,
+      "version": "7",
+      "when": 1754355600000,
+      "tag": "0143_procurement_intelligence",
+      "breakpoints": true
+    },
+    {
+      "idx": 141,
+      "version": "7",
+      "when": 1754236800000,
+      "tag": "0145_xero_finance_foundation_repair",
+      "breakpoints": true
+    },
+    {
+      "idx": 142,
+      "version": "7",
+      "when": 1754364000146,
+      "tag": "0146_portal_expansion",
+      "breakpoints": true
+    },
+    {
+      "idx": 143,
+      "version": "7",
+      "when": 1754372000000,
+      "tag": "0151_hr_employee_intelligence",
+      "breakpoints": true
+    },
+    {
+      "idx": 144,
+      "version": "7",
+      "when": 1754369000144,
+      "tag": "0150_vehicle_intelligence",
+      "breakpoints": true
+    },
+    {
+      "idx": 145,
+      "version": "7",
+      "when": 1754369000145,
+      "tag": "0144_stock_forecasting",
+      "breakpoints": true
+    },
+    {
+      "idx": 146,
+      "version": "7",
+      "when": 1754372000000,
+      "tag": "0149_payroll_timesheet_intelligence",
+      "breakpoints": true
+    },
+    {
+      "idx": 147,
+      "version": "7",
+      "when": 1754362800000,
+      "tag": "0148_homeshield_experience",
+      "breakpoints": true
+    },
+    {
+      "idx": 148,
+      "version": "7",
+      "when": 1754385000153,
+      "tag": "0153_voice_ai_receptionist",
+      "breakpoints": true
+    },
+    {
+      "idx": 149,
+      "version": "7",
+      "when": 1754376000154,
+      "tag": "0154_fleet_ai_recommendations",
+      "breakpoints": true
+    },
+    {
+      "idx": 150,
+      "version": "7",
+      "when": 1754386000152,
+      "tag": "0152_recruitment_performance_intelligence",
+      "breakpoints": true
+    },
+    {
+      "idx": 151,
+      "version": "7",
+      "when": 1754381000147,
+      "tag": "0147_customer_engagement_intelligence",
+      "breakpoints": true
+    },
+    {
+      "idx": 152,
+      "version": "7",
+      "when": 1754387000155,
+      "tag": "0155_driver_intelligence",
+      "breakpoints": true
+    },
+    {
+      "idx": 153,
+      "version": "7",
+      "when": 1754388000156,
+      "tag": "0156_call_intelligence",
+      "breakpoints": true
+    },
+    {
+      "idx": 154,
+      "version": "7",
+      "when": 1754389000157,
+      "tag": "0157_sales_intelligence_agent_foundation",
+      "breakpoints": true
+    },
+    {
+      "idx": 155,
+      "version": "7",
+      "when": 1754390000159,
+      "tag": "0159_sales_followup_intelligence",
+      "breakpoints": true
+    },
+    {
+      "idx": 156,
+      "version": "7",
+      "when": 1754391000158,
+      "tag": "0158_sales_analytics_intelligence",
+      "breakpoints": true
+    },
+    {
+      "idx": 157,
+      "version": "7",
+      "when": 1754392000165,
+      "tag": "0165_hr_employee_intelligence_compliance",
+      "breakpoints": true
+    },
+    {
+      "idx": 158,
+      "version": "7",
+      "when": 1754393000160,
+      "tag": "0160_customer_360_intelligence",
+      "breakpoints": true
+    },
+    {
+      "idx": 159,
+      "version": "7",
+      "when": 1754394000161,
+      "tag": "0161_property_intelligence",
+      "breakpoints": true
+    },
+    {
+      "idx": 160,
+      "version": "7",
+      "when": 1754395000163,
+      "tag": "0163_document_intelligence",
+      "breakpoints": true
+    },
+    {
+      "idx": 161,
+      "version": "7",
+      "when": 1754396000164,
+      "tag": "0164_compliance_intelligence",
+      "breakpoints": true
+    },
+    {
+      "idx": 162,
+      "version": "7",
+      "when": 1754397000166,
+      "tag": "0166_executive_command_centre",
+      "breakpoints": true
+    },
+    {
+      "idx": 163,
+      "version": "7",
+      "when": 1754398000167,
+      "tag": "0167_smart_notification_intelligence",
+      "breakpoints": true
+    },
+    {
+      "idx": 164,
+      "version": "7",
+      "when": 1754399000168,
+      "tag": "0168_market_intelligence",
+      "breakpoints": true
+    },
+    {
+      "idx": 165,
+      "version": "7",
+      "when": 1754485400169,
+      "tag": "0169_security_monitoring",
+      "breakpoints": true
+    },
+    {
+      "idx": 166,
+      "version": "7",
+      "when": 1754487000170,
+      "tag": "0170_industry_templates",
+      "breakpoints": true
+    },
+    {
+      "idx": 167,
+      "version": "7",
+      "when": 1754573400171,
+      "tag": "0171_xero_complete_historical_sync",
+      "breakpoints": true
+    },
+    {
+      "idx": 168,
+      "version": "7",
+      "when": 1754659800172,
+      "tag": "0172_payments_yoco_payment_id",
+      "breakpoints": true
+    },
+    {
+      "idx": 169,
+      "version": "7",
+      "when": 1754746200173,
+      "tag": "0173_google_calendar_live_scheduling",
+      "breakpoints": true
+    },
+    {
+      "idx": 170,
+      "version": "7",
+      "when": 1754746500174,
+      "tag": "0174_facebook_business_integration",
+      "breakpoints": true
+    },
+    {
+      "idx": 171,
+      "version": "7",
+      "when": 1754746800174,
+      "tag": "0175_titan_document_engine_yoco_links",
+      "breakpoints": true
+    },
+    {
+      "idx": 172,
+      "version": "7",
+      "when": 1785861000000,
+      "tag": "0176_titan_finance_editor_fields",
+      "breakpoints": true
+    },
+    {
+      "idx": 173,
+      "version": "7",
+      "when": 1785862000000,
+      "tag": "0177_finance_document_roundtrip_fields",
+      "breakpoints": true
+    },
+    {
+      "idx": 174,
+      "version": "7",
+      "when": 1785863000000,
+      "tag": "0178_finance_title_free_legacy",
+      "breakpoints": true
+    },
+    {
+      "idx": 175,
+      "version": "7",
+      "when": 1785864000000,
+      "tag": "0179_social_connection_foundation",
+      "breakpoints": true
+    },
+    {
+      "idx": 176,
+      "version": "7",
+      "when": 1785865000000,
+      "tag": "0180_fb_oauth_initiator_role",
+      "breakpoints": true
+    },
+    {
+      "idx": 177,
+      "version": "7",
+      "when": 1785866000000,
+      "tag": "0181_xero_realtime_intersync",
+      "breakpoints": true
+    },
+    {
+      "idx": 178,
+      "version": "7",
+      "when": 1785867000000,
+      "tag": "0182_bank_statement_manual_import",
+      "breakpoints": true
+    },
+    {
+      "idx": 179,
+      "version": "7",
+      "when": 1785868000000,
+      "tag": "0184_job_profitability_engine",
+      "breakpoints": true
+    },
+    {
+      "idx": 180,
+      "version": "7",
+      "when": 1785869000000,
+      "tag": "0185_job_cost_control",
+      "breakpoints": true
+    },
+    {
+      "idx": 181,
+      "version": "7",
+      "when": 1785870000000,
+      "tag": "0186_job_financial_linkage",
+      "breakpoints": true
+    },
+    {
+      "idx": 182,
+      "version": "7",
+      "when": 1785871000000,
+      "tag": "0187_job_cost_capture",
+      "breakpoints": true
+    },
+    {
+      "idx": 183,
+      "version": "7",
+      "when": 1785872000000,
+      "tag": "0188_bank_transaction_control",
+      "breakpoints": true
+    },
+    {
+      "idx": 184,
+      "version": "7",
+      "when": 1785873000000,
+      "tag": "0189_bank_transaction_integrity",
+      "breakpoints": true
+    },
+    {
+      "idx": 185,
+      "version": "7",
+      "when": 1785874000000,
+      "tag": "0190_finance_receipt_reconciliation",
+      "breakpoints": true
     }
   ]
 }

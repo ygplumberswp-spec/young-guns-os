@@ -1,6 +1,7 @@
-import { FormEvent, useEffect, useState } from 'react';
-import { Link, useLocation } from 'wouter';
-import { Button, Input, PageHeader } from '@titan/ui';
+import { PageHeader } from '../../components/ux';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { Link, useLocation, useSearch } from 'wouter';
+import { Button, Input } from '@titan/ui';
 import type { InvoiceSummary, PaymentMethod } from '@titan/shared';
 import { parseMoneyInput, PAYMENT_METHOD_OPTIONS } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
@@ -14,6 +15,9 @@ export function PaymentCreatePage() {
   const { accessToken, user } = useAuth();
   const { invalidatePayments } = useStaffMutationInvalidation();
   const [, navigate] = useLocation();
+  const search = useSearch();
+  const preJobId = useMemo(() => new URLSearchParams(search).get('jobId'), [search]);
+  const preInvoiceId = useMemo(() => new URLSearchParams(search).get('invoiceId'), [search]);
   const [invoices, setInvoices] = useState<InvoiceSummary[]>([]);
   const [invoiceId, setInvoiceId] = useState('');
   const [amount, setAmount] = useState('');
@@ -43,13 +47,21 @@ export function PaymentCreatePage() {
 
       try {
         const data = await fetchInvoices(accessToken);
-        const openInvoices = data.filter(
+        const jobScoped = preJobId ? data.filter((invoice) => invoice.jobId === preJobId) : data;
+        const openInvoices = jobScoped.filter(
           (invoice) => invoice.status !== 'cancelled' && invoice.status !== 'paid',
         );
 
         if (!cancelled) {
           setInvoices(openInvoices);
-          setInvoiceId(openInvoices[0]?.id ?? '');
+          const preferred =
+            (preInvoiceId
+              ? openInvoices.find((invoice) => invoice.id === preInvoiceId) ?? null
+              : null) ?? openInvoices[0] ?? null;
+          setInvoiceId(preferred?.id ?? '');
+          if (preferred && preferred.outstandingCents > 0) {
+            setAmount((preferred.outstandingCents / 100).toFixed(2));
+          }
         }
       } catch (err) {
         if (!cancelled) {
@@ -64,7 +76,7 @@ export function PaymentCreatePage() {
     return () => {
       cancelled = true;
     };
-  }, [accessToken]);
+  }, [accessToken, preInvoiceId, preJobId]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -103,13 +115,8 @@ export function PaymentCreatePage() {
   return (
     <div className="finance-page">
       <PageHeader
-        title="Record payment"
+        title="Record Payment"
         description="Record a payment against an invoice."
-        actions={
-          <Link href="/finance/payments">
-            <Button variant="secondary">Back to payments</Button>
-          </Link>
-        }
       />
       <FinanceNav />
       {error ? <p className="form-error">{error}</p> : null}
@@ -118,7 +125,7 @@ export function PaymentCreatePage() {
         <div>
           <p className="page-muted">Create an open invoice before recording a payment.</p>
           <Link href="/finance/invoices/new">
-            <Button>New invoice</Button>
+            <Button>New Invoice</Button>
           </Link>
         </div>
       ) : (
@@ -133,7 +140,7 @@ export function PaymentCreatePage() {
             >
               {invoices.map((invoice) => (
                 <option key={invoice.id} value={invoice.id}>
-                  {invoice.invoiceNumber} · {invoice.title} · {invoice.customerName}
+                  {invoice.displayOfficialInvoiceNumber} · {invoice.customerName}
                 </option>
               ))}
             </select>
@@ -165,7 +172,7 @@ export function PaymentCreatePage() {
             onChange={(e) => setReference(e.target.value)}
           />
           <Input
-            label="Paid at"
+            label="Paid At"
             type="datetime-local"
             value={paidAt}
             onChange={(e) => setPaidAt(e.target.value)}

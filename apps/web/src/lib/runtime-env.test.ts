@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { resolveApiBaseFrom } from './runtime-env';
+import { resolveApiBaseFrom, coerceSameOriginApiBase } from './runtime-env';
 
 describe('resolveApiBaseFrom', () => {
   it('uses same-origin when runtime override is empty string', () => {
@@ -17,6 +17,23 @@ describe('resolveApiBaseFrom', () => {
   it('strips accidental /api/v1 suffix from Vite value', () => {
     assert.equal(
       resolveApiBaseFrom('https://api.example.com/api/v1', false, undefined),
+      'https://api.example.com/api/v1',
+    );
+  });
+
+  it('prefers same-origin /api/v1 when configured API host differs from the page', () => {
+    assert.equal(
+      coerceSameOriginApiBase(
+        'https://young-guns-os-staging.up.railway.app/api/v1',
+        'https://comfortable-determination-staging.up.railway.app',
+      ),
+      '/api/v1',
+    );
+    assert.equal(
+      coerceSameOriginApiBase(
+        'https://api.example.com/api/v1',
+        'https://api.example.com',
+      ),
       'https://api.example.com/api/v1',
     );
   });

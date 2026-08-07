@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { FormEvent, useMemo, useState } from 'react';
 import { Link } from 'wouter';
-import { Button, Input, PageHeader, PageLoadState, Panel } from '@titan/ui';
+import { Button, Input, PageLoadState, Panel } from '@titan/ui';
 import { ApiClientError } from '../../lib/api-client';
 import { createSupplier, fetchSuppliers } from '../../lib/procurement-api';
 import { useAuth } from '../../lib/auth-context';
@@ -86,11 +87,11 @@ export function SupplierListPage() {
       {formError ? <p className="form-error">{formError}</p> : null}
 
       {canWrite && showForm ? (
-        <Panel title="New supplier">
+        <Panel title="New Supplier">
           <form className="inventory-form" onSubmit={(event) => void handleCreate(event)}>
             <Input label="Name" value={name} onChange={(e) => setName(e.target.value)} required />
             <Input
-              label="Contact name"
+              label="Contact Name"
               value={contactName}
               onChange={(e) => setContactName(e.target.value)}
             />
@@ -107,7 +108,7 @@ export function SupplierListPage() {
         isLoading={isLoading}
         error={error}
         isEmpty={(suppliers?.length ?? 0) === 0}
-        emptyTitle="No suppliers yet"
+        emptyTitle="No Suppliers Yet"
         emptyDescription="Add a supplier to start creating purchase orders."
         loadingLabel="Loading suppliers…"
       >

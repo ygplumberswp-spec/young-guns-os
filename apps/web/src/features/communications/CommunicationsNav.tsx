@@ -9,7 +9,7 @@ export function CommunicationsNav() {
   const [location] = useLocation();
 
   return (
-    <nav className="communications-nav" aria-label="Communications sections">
+    <nav className="communications-nav" aria-label="Communications Sections">
       {tabs.map((tab) => (
         <Link
           key={tab.href}

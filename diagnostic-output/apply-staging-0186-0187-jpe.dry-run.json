@@ -1,0 +1,41 @@
+{
+  "label": "apply-staging-0186-0187-jpe",
+  "mode": "dry-run",
+  "stagingRef": "cpkuwtaipjxeipvbssvn",
+  "tags": [
+    "0186_job_financial_linkage",
+    "0187_job_cost_capture"
+  ],
+  "startedAt": "2026-08-07T09:37:41.940Z",
+  "migrations": [
+    {
+      "tag": "0186_job_financial_linkage",
+      "hashPrefix": "319de0fad92c",
+      "alreadyApplied": false,
+      "destructive": true,
+      "action": "would_apply"
+    },
+    {
+      "tag": "0187_job_cost_capture",
+      "hashPrefix": "f057a93c5bb9",
+      "alreadyApplied": false,
+      "destructive": false,
+      "action": "would_apply"
+    }
+  ],
+  "appliedBefore": 179,
+  "timeEntryCountBefore": 0,
+  "clientActionColumnBefore": false,
+  "clientActionColumnAfter": false,
+  "clientActionIndexAfter": false,
+  "timeEntryCountAfter": 0,
+  "timeEntryCountUnchanged": true,
+  "appliedAfter": 179,
+  "finishedAt": "2026-08-07T09:37:43.168Z",
+  "migrationSafety": {
+    "additiveOnly": false,
+    "timeEntriesPreserved": true,
+    "clientActionIdReady": false,
+    "idempotencyIndexReady": false
+  }
+}

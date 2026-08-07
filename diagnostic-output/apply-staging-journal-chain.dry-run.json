@@ -1,0 +1,23 @@
+{
+  "label": "apply-staging-journal-chain",
+  "mode": "dry-run",
+  "startedAt": "2026-08-07T11:01:17.591Z",
+  "through": null,
+  "realignedRows": [],
+  "applied": [],
+  "skippedAlreadyApplied": 181,
+  "failure": null,
+  "appliedBefore": 181,
+  "plannedCount": 5,
+  "plannedTags": [
+    "0174_facebook_business_integration",
+    "0185_job_cost_control",
+    "0188_bank_transaction_control",
+    "0189_bank_transaction_integrity",
+    "0190_finance_receipt_reconciliation"
+  ],
+  "appliedAfter": 181,
+  "journalCount": 186,
+  "complete": false,
+  "finishedAt": "2026-08-07T11:01:18.324Z"
+}
