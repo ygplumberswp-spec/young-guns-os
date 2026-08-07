@@ -53,8 +53,11 @@ describe('FIN-003 OperatingProfitService invariants', () => {
 
   it('service source does not import Xero clients', () => {
     const src = readFileSync(join(here, 'operating-profit.service.ts'), 'utf8');
-    assert.equal(src.includes('xero'), false);
+    assert.equal(/from ['"].*xero/i.test(src), false);
+    assert.equal(src.includes('XeroClient'), false);
     assert.ok(src.includes('cashControlService'));
     assert.ok(src.includes('profitAnalyticsService'));
+    // Explicitly ignores parallel Xero amounts (set to 0) — no dual-sum.
+    assert.ok(src.includes('xeroBillExpenseCents: 0'));
   });
 });
