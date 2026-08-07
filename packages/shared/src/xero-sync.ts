@@ -28,6 +28,8 @@ export type XeroEntitySyncStats = {
 export type XeroImportEntityCounts = {
   createdCount: number;
   updatedCount: number;
+  /** Idempotent re-pull where the mapped record needed no material rewrite. */
+  unchangedCount?: number;
   pulledCount: number;
   failedCount: number;
   skippedCount: number;
@@ -79,6 +81,11 @@ export type XeroImportSyncResult = {
   failedStage?: XeroImportStage | null;
   completedStages?: XeroImportStage[];
   syncJobId?: string;
+  /**
+   * Owner-facing full-history migration report (oldest/newest dates, discovered,
+   * created/updated/unchanged/skipped/failed, provider limitations).
+   */
+  fullHistoryReport?: import('./historical-full-history.js').HistoricalMigrationReport;
 };
 
 export type XeroImportJobStatus =
@@ -127,9 +134,16 @@ export type XeroImportCheckpoint = {
   attachmentsOffset: number;
   /**
    * Modified-since watermark applied to this run. Null means a complete historical pull with no
-   * date floor. Set only for incremental runs, from the previous successful run's start time.
+   * date floor — required for Young Guns initial migration. Set only for incremental runs after
+   * every stage has a trustworthy full-history claim.
    */
   modifiedSince: string | null;
+};
+
+/** Running oldest/newest source-record dates observed during an import job. */
+export type XeroImportRecordDateBounds = {
+  oldestRecordDate: string | null;
+  newestRecordDate: string | null;
 };
 
 export type XeroImportJobProgress = {
@@ -620,6 +634,7 @@ export type XeroEntitySyncResult = {
   scope: XeroSyncScope;
   createdCount: number;
   updatedCount: number;
+  unchangedCount?: number;
   pulledCount: number;
   failedCount: number;
   skippedCount: number;

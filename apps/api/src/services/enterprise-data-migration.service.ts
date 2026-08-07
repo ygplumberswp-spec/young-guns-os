@@ -30,8 +30,12 @@ import { and, desc, eq, or } from 'drizzle-orm';import type {
   UploadDmImportFileRequest,
 } from '@titan/shared';
 import {
+  buildDmHistoricalMigrationReport,
   buildHistoricalDocumentMatchProposal,
   extractDocumentNumberHint,
+  HISTORICAL_IMPORT_UNSUPPORTED_MESSAGE,
+  isDmEntityExecutable,
+  mapDmFormatToHistoricalProvider,
   scoreHistoricalRecordMatch,
 } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
@@ -541,6 +545,25 @@ export class EnterpriseDataMigrationService {
     const failedCount = results.filter((r) => r.outcome === 'failed').length;
     const skippedCount = results.filter((r) => r.outcome === 'skipped').length;
     const rollbackAvailable = importedCount > 0;
+    const executable = isDmEntityExecutable(job.entityType);
+    const fullHistoryReport = buildDmHistoricalMigrationReport({
+      entityType: job.entityType,
+      sourceProvider: mapDmFormatToHistoricalProvider(job.sourceFormat),
+      executable,
+      unsupportedMessage: executable ? null : HISTORICAL_IMPORT_UNSUPPORTED_MESSAGE,
+      linkedRowNumbers: linkRows.keys(),
+      results: results.map((result) => ({
+        outcome: result.outcome,
+        mutation: linkRows.has(result.rowNumber) ? 'unchanged' : undefined,
+        sourceData: result.sourceData,
+      })),
+    });
+
+    const priorValidation = (job.validationSummary ?? {}) as Record<string, unknown>;
+    const validationSummary = {
+      ...priorValidation,
+      fullHistoryReport,
+    };
 
     const [updated] = await this.deps.db
       .update(dmImportJobs)
@@ -550,6 +573,7 @@ export class EnterpriseDataMigrationService {
         importedCount,
         failedCount,
         skippedCount,
+        validationSummary,
         rollbackStatus: rollbackAvailable ? 'available' : 'unavailable',
         completedAt: new Date(),
         updatedAt: new Date(),
@@ -564,7 +588,7 @@ export class EnterpriseDataMigrationService {
       actionType: 'import_completed',
       sourceFormat: job.sourceFormat,
       entityType: job.entityType,
-      summary: `Imported ${importedCount}, failed ${failedCount}, skipped ${skippedCount}.`,
+      summary: fullHistoryReport.summary,
       importedCount,
       failedCount,
       validationErrorCount: Number(
@@ -577,6 +601,7 @@ export class EnterpriseDataMigrationService {
       importedCount,
       failedCount,
       skippedCount,
+      fullHistoryReport,
     });
 
     return this.getImportJobDetail(scope.companyId, updated!.id);
@@ -991,16 +1016,24 @@ export class EnterpriseDataMigrationService {
         }),
       ]);
 
+    const validationSummary = job.validationSummary as Record<string, unknown>;
+    const fullHistoryReport =
+      validationSummary.fullHistoryReport &&
+      typeof validationSummary.fullHistoryReport === 'object'
+        ? (validationSummary.fullHistoryReport as DmImportJobDetailSummary['fullHistoryReport'])
+        : null;
+
     return {
       ...toImportJobSummary(job),
       detectedStructure: job.detectedStructure as Record<string, unknown>,
       fieldMappings: job.fieldMappings as Record<string, string>,
-      validationSummary: job.validationSummary as Record<string, unknown>,
+      validationSummary,
       previewRows: job.previewRows as Record<string, unknown>[],
       fieldMappingDetails: fieldMappingDetails.map(toFieldMappingSummary),
       validationResults: validationResults.map(toValidationResultSummary),
       duplicateReviews: duplicateReviews.map(toDuplicateReviewSummary),
       importRecords: importRecords.map(toImportRecordSummary),
+      fullHistoryReport,
     };
   }
 

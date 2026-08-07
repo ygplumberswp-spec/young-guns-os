@@ -322,6 +322,7 @@ export * from './enterprise-business-continuity.js';
 export * from './enterprise-global-search.js';
 export * from './enterprise-data-migration.js';
 export * from './historical-import.js';
+export * from './historical-full-history.js';
 export * from './enterprise-notifications.js';
 export * from './enterprise-platform-health.js';
 export * from './enterprise-launch-center.js';

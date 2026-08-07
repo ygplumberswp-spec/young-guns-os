@@ -315,6 +315,8 @@ export type DmImportJobDetailSummary = DmImportJobSummary & {
   validationResults: DmValidationResultSummary[];
   duplicateReviews: DmDuplicateReviewSummary[];
   importRecords: DmImportRecordSummary[];
+  /** Full-history migration report (oldest/newest, discovered, outcomes, limitations). */
+  fullHistoryReport?: import('./historical-full-history.js').HistoricalMigrationReport | null;
 };
 
 export const DM_ENTITY_FIELD_TARGETS: Record<DmEntityType, string[]> = {

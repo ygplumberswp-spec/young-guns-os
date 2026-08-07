@@ -9,6 +9,7 @@ import {
   findDuplicates,
 } from './enterprise-data-migration-validation.service.js';
 import {
+  buildDmHistoricalMigrationReport,
   buildHistoricalDocumentMatchProposal,
   buildHistoricalIdempotencyKey,
   decideHistoricalMatchAction,
@@ -18,6 +19,7 @@ import {
   paymentImportCreatesLedgerEntry,
   preferXeroCanonicalRecord,
   scoreHistoricalRecordMatch,
+  YOUNG_GUNS_FULL_HISTORY_POLICY,
 } from '@titan/shared';
 
 describe('historical import duplicate keys', () => {
@@ -150,5 +152,39 @@ describe('Job 360 historical chain honesty', () => {
     assert.equal(safe.quoteNumber, 'Q-1');
     assert.equal('jpe' in safe, false);
     assert.equal('estimatedCostCents' in safe, false);
+  });
+
+  it('full-history DM report includes required Owner fields and known gaps', () => {
+    assert.equal(YOUNG_GUNS_FULL_HISTORY_POLICY.noArbitraryDateCutoff, true);
+    const report = buildDmHistoricalMigrationReport({
+      entityType: 'invoice',
+      sourceProvider: 'CSV',
+      executable: true,
+      linkedRowNumbers: [2],
+      results: [
+        {
+          outcome: 'imported',
+          mutation: 'created',
+          sourceData: { issuedAt: '2016-02-01', invoiceNumber: 'INV-1' },
+        },
+        {
+          outcome: 'imported',
+          mutation: 'unchanged',
+          sourceData: { issuedAt: '2025-12-01', invoiceNumber: 'INV-2' },
+        },
+        { outcome: 'failed', sourceData: { issuedAt: '2015-01-01' } },
+        { outcome: 'skipped', sourceData: {} },
+      ],
+    });
+    assert.equal(report.syncMode, 'FULL_HISTORY');
+    assert.equal(report.noDateFloorApplied, true);
+    assert.equal(report.oldestRecordDateImported?.slice(0, 10), '2015-01-01');
+    assert.equal(report.newestRecordDateImported?.slice(0, 10), '2025-12-01');
+    assert.equal(report.totalRecordsDiscovered, 4);
+    assert.equal(report.createdCount, 1);
+    assert.equal(report.unchangedCount, 1);
+    assert.equal(report.failedCount, 1);
+    assert.equal(report.skippedCount, 1);
+    assert.ok(report.providerLimitations.length > 0);
   });
 });
