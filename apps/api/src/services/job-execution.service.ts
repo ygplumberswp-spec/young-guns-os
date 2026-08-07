@@ -867,6 +867,15 @@ export class JobExecutionService {
       },
     });
 
+    emitBusinessEvent({
+      companyId: actor.companyId,
+      eventType: 'job.material_line_recorded',
+      entityType: 'job_material_line',
+      entityId: createdRow.id,
+      actorUserId: actor.userId,
+      payload: { jobId, materialLineId: createdRow.id, status: createdRow.status },
+    });
+
     return this.hydrateMaterialLine(createdRow.id);
   }
 

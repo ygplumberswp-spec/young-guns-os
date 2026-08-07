@@ -3,7 +3,6 @@ import { z } from 'zod';
 import { canAccessJobLinkageControl, canManageJobLinkageControl } from '@titan/shared';
 import type { JobLinkageControlService } from '../services/job-linkage-control.service.js';
 import { JobLinkageControlError } from '../services/job-linkage-control.service.js';
-import type { TeamService } from '../services/team.service.js';
 import { createAuthMiddleware, type AuthenticatedRequest } from '../middleware/auth.js';
 import { requireAnyPermission } from '../middleware/rbac.js';
 
@@ -24,10 +23,13 @@ const rejectSchema = z.object({
 
 type RouterDeps = {
   jobLinkageControlService: JobLinkageControlService;
-  teamService: TeamService;
   jwtSecret: string;
   authService: import('../services/auth.service.js').AuthService;
 };
+
+function getRouteParam(value: string | string[]): string {
+  return Array.isArray(value) ? value[0]! : value;
+}
 
 function getAuth(req: import('express').Request) {
   return (req as AuthenticatedRequest).auth;
@@ -69,12 +71,11 @@ function handleError(res: import('express').Response, error: unknown): boolean {
 
 export function createJobLinkageControlRouter({
   jobLinkageControlService,
-  teamService,
   jwtSecret,
   authService,
 }: RouterDeps): Router {
   const router = Router();
-  const requireAuth = createAuthMiddleware({ teamService, jwtSecret, authService });
+  const requireAuth = createAuthMiddleware({ jwtSecret, authService });
   const requireFinanceRead = requireAnyPermission('finance:read', 'finance:write', '*');
   const requireFinanceWrite = requireAnyPermission('finance:write', '*');
 
@@ -134,7 +135,7 @@ export function createJobLinkageControlRouter({
     try {
       const result = await jobLinkageControlService.getInvoiceCandidates(
         auth.companyId,
-        req.params.invoiceId!,
+        getRouteParam(req.params.invoiceId),
       );
       res.json({ data: result });
     } catch (error) {
@@ -153,7 +154,7 @@ export function createJobLinkageControlRouter({
     try {
       const result = await jobLinkageControlService.getQuoteCandidates(
         auth.companyId,
-        req.params.quoteId!,
+        getRouteParam(req.params.quoteId),
       );
       res.json({ data: result });
     } catch (error) {
@@ -175,7 +176,7 @@ export function createJobLinkageControlRouter({
       return;
     }
     try {
-      const result = await jobLinkageControlService.linkInvoice(auth, req.params.invoiceId!, parsed.data);
+      const result = await jobLinkageControlService.linkInvoice(auth, getRouteParam(req.params.invoiceId), parsed.data);
       res.json({ data: result });
     } catch (error) {
       if (!handleError(res, error)) throw error;
@@ -196,7 +197,7 @@ export function createJobLinkageControlRouter({
       return;
     }
     try {
-      const result = await jobLinkageControlService.linkQuote(auth, req.params.quoteId!, parsed.data);
+      const result = await jobLinkageControlService.linkQuote(auth, getRouteParam(req.params.quoteId), parsed.data);
       res.json({ data: result });
     } catch (error) {
       if (!handleError(res, error)) throw error;
@@ -219,7 +220,7 @@ export function createJobLinkageControlRouter({
     try {
       const result = await jobLinkageControlService.unlinkInvoice(
         auth,
-        req.params.invoiceId!,
+        getRouteParam(req.params.invoiceId),
         parsed.data,
       );
       res.json({ data: result });

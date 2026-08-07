@@ -3,7 +3,6 @@ import { z } from 'zod';
 import { canAccessJobCostControl, canManageJobCostControl } from '@titan/shared';
 import type { JobCostControlService } from '../services/job-cost-control.service.js';
 import { JobCostControlError } from '../services/job-cost-control.service.js';
-import type { TeamService } from '../services/team.service.js';
 import { createAuthMiddleware, type AuthenticatedRequest } from '../middleware/auth.js';
 import { requireAnyPermission } from '../middleware/rbac.js';
 
@@ -24,7 +23,6 @@ const reopenReviewSchema = z.object({
 
 type RouterDeps = {
   jobCostControlService: JobCostControlService;
-  teamService: TeamService;
   jwtSecret: string;
   authService: import('../services/auth.service.js').AuthService;
 };
@@ -69,12 +67,11 @@ function handleError(res: import('express').Response, error: unknown): boolean {
 
 export function createJobCostControlRouter({
   jobCostControlService,
-  teamService,
   jwtSecret,
   authService,
 }: RouterDeps): Router {
   const router = Router();
-  const requireAuth = createAuthMiddleware({ teamService, jwtSecret, authService });
+  const requireAuth = createAuthMiddleware({ jwtSecret, authService });
   const requireFinanceRead = requireAnyPermission('finance:read', 'finance:write', '*');
   const requireFinanceWrite = requireAnyPermission('finance:write', '*');
 
@@ -166,12 +163,11 @@ export function createJobCostControlRouter({
 
 export function createJobFinancialReviewRouter({
   jobCostControlService,
-  teamService,
   jwtSecret,
   authService,
 }: RouterDeps): Router {
   const router = Router({ mergeParams: true });
-  const requireAuth = createAuthMiddleware({ teamService, jwtSecret, authService });
+  const requireAuth = createAuthMiddleware({ jwtSecret, authService });
   const requireFinanceRead = requireAnyPermission('finance:read', 'finance:write', '*');
   const requireFinanceWrite = requireAnyPermission('finance:write', '*');
 

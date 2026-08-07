@@ -71,6 +71,25 @@ const createTimeEntrySchema = z.object({
   endedAt: z.string().optional(),
   durationMinutes: z.number().int().positive().optional(),
   notes: z.string().optional(),
+  clientActionId: z.string().trim().min(1).max(200).optional(),
+});
+const startTimeSchema = z.object({
+  entryType: z.enum(['job_time', 'travel']),
+  jobId: z.string().uuid().optional(),
+  notes: z.string().optional(),
+  clientActionId: z.string().trim().min(1).max(200).optional(),
+});
+const stopTimeSchema = z.object({
+  endedAt: z.string().optional(),
+  clientActionId: z.string().trim().min(1).max(200).optional(),
+});
+const mobileDirectCostSchema = z.object({
+  category: z.string().trim().min(1),
+  description: z.string().trim().min(1).max(500),
+  amountCents: z.number().int().min(0).optional().nullable(),
+  receiptDocumentId: z.string().uuid().optional().nullable(),
+  notes: z.string().trim().max(2000).optional().nullable(),
+  clientActionId: z.string().trim().min(1).max(200),
 });
 const submitInventoryUsageSchema = z.object({
   inventoryItemId: z.string().uuid(),
@@ -218,6 +237,7 @@ type MobileRouterDeps = {
   technicianWorkflowService: TechnicianWorkflowService;
   mobileWorkforceService: MobileWorkforceService;
   jobExecutionService: JobExecutionService;
+  jobCostCaptureService: import('../services/job-cost-capture.service.js').JobCostCaptureService;
   recommendationsService: RecommendationsService;
   teamService: TeamService;
   portalAuthService: PortalAuthService;
@@ -245,6 +265,7 @@ export function createMobileRouter({
   technicianWorkflowService,
   mobileWorkforceService,
   jobExecutionService,
+  jobCostCaptureService,
   recommendationsService,
   teamService,
   portalAuthService,
@@ -480,6 +501,46 @@ export function createMobileRouter({
     } catch (error) {
       handleWorkforceError(res, error);
     }
+  });
+
+  technicianRouter.post('/workforce/time/start', requireMobileWrite, async (req, res) => {
+    const parsed = startTimeSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: parsed.error.message } });
+      return;
+    }
+    try {
+      const auth = getAuth(req);
+      const entry = await mobileWorkforceService.startTimedEntry(auth, parsed.data);
+      res.status(201).json({ data: { entry } });
+    } catch (error) {
+      handleWorkforceError(res, error);
+    }
+  });
+
+  technicianRouter.post('/workforce/time/:timeEntryId/stop', requireMobileWrite, async (req, res) => {
+    const parsed = stopTimeSchema.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: parsed.error.message } });
+      return;
+    }
+    try {
+      const auth = getAuth(req);
+      const entry = await mobileWorkforceService.stopTimeEntry(
+        auth,
+        getRouteParam(req.params.timeEntryId),
+        parsed.data,
+      );
+      res.json({ data: { entry } });
+    } catch (error) {
+      handleWorkforceError(res, error);
+    }
+  });
+
+  technicianRouter.get('/workforce/time/active', requireTechnicianAccess, async (req, res) => {
+    const auth = getAuth(req);
+    const entries = await mobileWorkforceService.getActiveTimeEntries(auth);
+    res.json({ data: { entries } });
   });
 
   technicianRouter.post(
@@ -1004,6 +1065,64 @@ export function createMobileRouter({
         includeCost,
       );
       res.json({ data: { materialLines } });
+    } catch (error) {
+      handleJobExecutionError(res, error);
+    }
+  });
+
+  technicianRouter.get('/jobs/:id/capture-checklist', requireTechnicianAccess, async (req, res) => {
+    try {
+      const auth = getAuth(req);
+      const checklist = await jobCostCaptureService.getTechnicianCompletionChecklist(
+        auth.companyId,
+        getRouteParam(req.params.id),
+      );
+      res.json({ data: { checklist } });
+    } catch (error) {
+      handleWorkforceError(res, error);
+    }
+  });
+
+  technicianRouter.post('/jobs/:id/direct-costs', requireMobileWrite, async (req, res) => {
+    const parsed = mobileDirectCostSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: parsed.error.message } });
+      return;
+    }
+    try {
+      const auth = getAuth(req);
+      const directCost = await jobCostCaptureService.createDirectCost(
+        auth,
+        getRouteParam(req.params.id),
+        parsed.data,
+      );
+      res.status(201).json({ data: { directCost } });
+    } catch (error) {
+      handleWorkforceError(res, error);
+    }
+  });
+
+  technicianRouter.post('/jobs/:id/material-lines/:materialLineId/return', requireMobileWrite, async (req, res) => {
+    const parsed = z
+      .object({
+        quantity: z.number().positive(),
+        reason: z.string().trim().min(1).max(2000),
+        clientActionId: z.string().trim().min(1).max(200),
+      })
+      .safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: parsed.error.message } });
+      return;
+    }
+    try {
+      const auth = getAuth(req);
+      const materialLine = await jobExecutionService.returnMaterialLine(
+        auth,
+        getRouteParam(req.params.id),
+        getRouteParam(req.params.materialLineId),
+        parsed.data,
+      );
+      res.json({ data: { materialLine } });
     } catch (error) {
       handleJobExecutionError(res, error);
     }

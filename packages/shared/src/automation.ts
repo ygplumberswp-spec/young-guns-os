@@ -19,6 +19,9 @@ export type BusinessEventType =
   | 'job.updated'
   | 'job.completed'
   | 'job.material_used'
+  | 'job.material_line_recorded'
+  | 'job.time_captured'
+  | 'job.direct_cost_captured'
   | 'quote.created'
   | 'invoice.created'
   | 'payment.received'
@@ -519,6 +522,9 @@ export const BUSINESS_EVENT_TO_TRIGGER: Record<BusinessEventType, WorkflowTrigge
   'job.updated': 'job_status_changed',
   'job.completed': 'job_completed',
   'job.material_used': 'job_material_used',
+  'job.material_line_recorded': 'job_material_used',
+  'job.time_captured': 'job_status_changed',
+  'job.direct_cost_captured': 'job_status_changed',
   'quote.created': 'quote_created',
   'invoice.created': 'invoice_created',
   'payment.received': 'payment_received',

@@ -11,6 +11,9 @@ const PROFITABILITY_REFRESH_EVENT_TYPES = new Set<string>([
   'payment.received',
   'quote.created',
   'job.material_used',
+  'job.material_line_recorded',
+  'job.time_captured',
+  'job.direct_cost_captured',
   'job.completed',
   'job.status_changed',
   'procurement.purchase_order_approved',
@@ -69,6 +72,14 @@ export class JobProfitabilityRefreshBridge {
     }
 
     if (event.eventType === 'job.material_used') {
+      return typeof payload.jobId === 'string' ? payload.jobId : null;
+    }
+
+    if (
+      event.eventType === 'job.material_line_recorded' ||
+      event.eventType === 'job.time_captured' ||
+      event.eventType === 'job.direct_cost_captured'
+    ) {
       return typeof payload.jobId === 'string' ? payload.jobId : null;
     }
 

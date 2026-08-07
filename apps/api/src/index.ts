@@ -61,6 +61,8 @@ import { JobCostingService } from './services/job-costing.service.js';
 import { JobProfitabilityService } from './services/job-profitability.service.js';
 import { JobCostControlService } from './services/job-cost-control.service.js';
 import { JobLinkageControlService } from './services/job-linkage-control.service.js';
+import { JobCostCaptureService } from './services/job-cost-capture.service.js';
+import { createJobCostCaptureRouter } from './routes/job-cost-capture.js';
 import { JobProfitabilityRefreshBridge } from './services/job-profitability-refresh.bridge.js';
 import { createJobCostControlRouter } from './routes/job-cost-control.js';
 import { createJobLinkageControlRouter } from './routes/job-linkage-control.js';
@@ -896,6 +898,11 @@ const jobCostingService = new JobCostingService(db);
 const jobProfitabilityService = new JobProfitabilityService(db);
 const jobCostControlService = new JobCostControlService(db, jobProfitabilityService);
 const jobLinkageControlService = new JobLinkageControlService(
+  db,
+  jobProfitabilityService,
+  jobCostControlService,
+);
+const jobCostCaptureService = new JobCostCaptureService(
   db,
   jobProfitabilityService,
   jobCostControlService,
@@ -1912,7 +1919,6 @@ app.use(
   '/api/v1/finance',
   createJobCostControlRouter({
     jobCostControlService,
-    teamService,
     jwtSecret: env.JWT_SECRET,
     authService,
   }),
@@ -1921,7 +1927,14 @@ app.use(
   '/api/v1/finance',
   createJobLinkageControlRouter({
     jobLinkageControlService,
-    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/finance',
+  createJobCostCaptureRouter({
+    jobCostCaptureService,
     jwtSecret: env.JWT_SECRET,
     authService,
   }),
@@ -2377,6 +2390,7 @@ app.use(
     technicianWorkflowService,
     mobileWorkforceService,
     jobExecutionService,
+    jobCostCaptureService,
     recommendationsService,
     teamService,
     portalAuthService,

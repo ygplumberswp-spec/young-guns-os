@@ -13,6 +13,7 @@ import type { PortalAuthService } from '../services/portal-auth.service.js';
 import type { RecommendationsService } from '../services/recommendations.service.js';
 import type { TeamService } from '../services/team.service.js';
 import type { TechnicianWorkflowService } from '../services/technician-workflow.service.js';
+import type { JobCostCaptureService } from '../services/job-cost-capture.service.js';
 import { JobExecutionError } from '../services/job-execution.service.js';
 
 /**
@@ -63,6 +64,7 @@ function buildApp(services: {
       technicianWorkflowService: {} as TechnicianWorkflowService,
       mobileWorkforceService: services.mobileWorkforceService as MobileWorkforceService,
       jobExecutionService: services.jobExecutionService as JobExecutionService,
+      jobCostCaptureService: {} as JobCostCaptureService,
       recommendationsService: {} as RecommendationsService,
       teamService,
       portalAuthService: {} as PortalAuthService,

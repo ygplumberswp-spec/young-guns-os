@@ -3,11 +3,13 @@ import { describe, it } from 'node:test';
 import { JPE_CALCULATION_VERSION } from './job-profitability.js';
 import {
   buildJobFinancialFingerprintFromSources,
-  computeJobFinancialSourceFingerprint,
-  computeJobFinancialSourceFingerprintFromSources,
   JPE_FINANCIAL_FINGERPRINT_VERSION,
   type BuildFingerprintFromProfitabilitySourcesInput,
 } from './job-financial-fingerprint.js';
+import {
+  computeJobFinancialSourceFingerprint,
+  computeJobFinancialSourceFingerprintFromSources,
+} from './job-financial-fingerprint-hash.js';
 import { isFinancialReviewStale } from './job-cost-control.js';
 
 function baseSources(
@@ -270,5 +272,13 @@ describe('JPE-002A job financial fingerprint', () => {
     assert.doesNotMatch(json, /createdAt/);
     assert.doesNotMatch(json, /updatedAt/);
     assert.ok(canonical.jobId === 'job-a');
+  });
+
+  it('13 legacy JPE-002A canonical fixture matches pre-split SHA-256 fingerprint', () => {
+    const fingerprint = computeJobFinancialSourceFingerprintFromSources(baseSources());
+    assert.equal(
+      fingerprint,
+      '1844815e3de4dd436b773419231de1ac8464f9d09850a320d49b68bd9459b981',
+    );
   });
 });

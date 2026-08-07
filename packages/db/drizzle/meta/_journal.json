@@ -1268,6 +1268,20 @@
       "when": 1785869000000,
       "tag": "0185_job_cost_control",
       "breakpoints": true
+    },
+    {
+      "idx": 181,
+      "version": "7",
+      "when": 1785870000000,
+      "tag": "0186_job_financial_linkage",
+      "breakpoints": true
+    },
+    {
+      "idx": 182,
+      "version": "7",
+      "when": 1785871000000,
+      "tag": "0187_job_cost_capture",
+      "breakpoints": true
     }
   ]
 }

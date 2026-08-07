@@ -97,6 +97,7 @@ export const mobileTimeEntries = pgTable('mobile_time_entries', {
   durationMinutes: integer('duration_minutes'),
   notes: text('notes'),
   metadata: jsonb('metadata').$type<Record<string, unknown>>().notNull().default({}),
+  clientActionId: text('client_action_id'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
