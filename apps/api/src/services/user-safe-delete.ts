@@ -41,10 +41,7 @@ const TEAM_LIFECYCLE_AUDIT_ACTIONS = [
   'user_hard_deleted',
 ] as const;
 
-async function countWhere(
-  db: DatabaseClient,
-  query: Promise<{ count: number }[]>,
-): Promise<number> {
+async function countWhere(query: Promise<{ count: number }[]>): Promise<number> {
   const rows = await query;
   return Number(rows[0]?.count ?? 0);
 }
@@ -61,21 +58,18 @@ export async function evaluateUserHardDeleteEligibility(
   const blockers: UserSafeDeleteDependencyCheck[] = [];
 
   const assignedJobs = await countWhere(
-    db,
     db
       .select({ count: sql<number>`count(*)::int` })
       .from(jobs)
       .where(and(eq(jobs.companyId, companyId), eq(jobs.assignedUserId, memberId))),
   );
   const crewJobs = await countWhere(
-    db,
     db
       .select({ count: sql<number>`count(*)::int` })
       .from(jobCrewMembers)
       .where(and(eq(jobCrewMembers.companyId, companyId), eq(jobCrewMembers.userId, memberId))),
   );
   const completedJobs = await countWhere(
-    db,
     db
       .select({ count: sql<number>`count(*)::int` })
       .from(jobCompletionSnapshots)
@@ -87,7 +81,6 @@ export async function evaluateUserHardDeleteEligibility(
       ),
   );
   const workflowEvents = await countWhere(
-    db,
     db
       .select({ count: sql<number>`count(*)::int` })
       .from(jobWorkflowEvents)
@@ -102,7 +95,6 @@ export async function evaluateUserHardDeleteEligibility(
   });
 
   const mobileTime = await countWhere(
-    db,
     db
       .select({ count: sql<number>`count(*)::int` })
       .from(mobileTimeEntries)
@@ -111,7 +103,6 @@ export async function evaluateUserHardDeleteEligibility(
       ),
   );
   const wiTime = await countWhere(
-    db,
     db
       .select({ count: sql<number>`count(*)::int` })
       .from(wiTimesheets)
@@ -124,7 +115,6 @@ export async function evaluateUserHardDeleteEligibility(
   });
 
   const jobDocs = await countWhere(
-    db,
     db
       .select({ count: sql<number>`count(*)::int` })
       .from(mobileJobDocumentation)
@@ -136,7 +126,6 @@ export async function evaluateUserHardDeleteEligibility(
       ),
   );
   const inventoryUsage = await countWhere(
-    db,
     db
       .select({ count: sql<number>`count(*)::int` })
       .from(mobileJobInventoryUsage)
@@ -148,7 +137,6 @@ export async function evaluateUserHardDeleteEligibility(
       ),
   );
   const materialLines = await countWhere(
-    db,
     db
       .select({ count: sql<number>`count(*)::int` })
       .from(jobMaterialLines)
@@ -163,7 +151,6 @@ export async function evaluateUserHardDeleteEligibility(
       ),
   );
   const variations = await countWhere(
-    db,
     db
       .select({ count: sql<number>`count(*)::int` })
       .from(jobVariations)
@@ -184,14 +171,12 @@ export async function evaluateUserHardDeleteEligibility(
   });
 
   const docs = await countWhere(
-    db,
     db
       .select({ count: sql<number>`count(*)::int` })
       .from(documents)
       .where(and(eq(documents.companyId, companyId), eq(documents.uploadedByUserId, memberId))),
   );
   const packs = await countWhere(
-    db,
     db
       .select({ count: sql<number>`count(*)::int` })
       .from(jobDocumentPacks)
@@ -207,7 +192,6 @@ export async function evaluateUserHardDeleteEligibility(
       ),
   );
   const completion = await countWhere(
-    db,
     db
       .select({ count: sql<number>`count(*)::int` })
       .from(completionReports)
@@ -225,7 +209,6 @@ export async function evaluateUserHardDeleteEligibility(
   });
 
   const comms = await countWhere(
-    db,
     db
       .select({ count: sql<number>`count(*)::int` })
       .from(communications)
@@ -238,14 +221,12 @@ export async function evaluateUserHardDeleteEligibility(
   });
 
   const paymentRows = await countWhere(
-    db,
     db
       .select({ count: sql<number>`count(*)::int` })
       .from(payments)
       .where(and(eq(payments.companyId, companyId), eq(payments.recordedByUserId, memberId))),
   );
   const quoteRows = await countWhere(
-    db,
     db
       .select({ count: sql<number>`count(*)::int` })
       .from(quotes)
@@ -263,7 +244,6 @@ export async function evaluateUserHardDeleteEligibility(
   });
 
   const xeroApprovals = await countWhere(
-    db,
     db
       .select({ count: sql<number>`count(*)::int` })
       .from(xeroWriteApprovals)
@@ -281,7 +261,6 @@ export async function evaluateUserHardDeleteEligibility(
   });
 
   const auditRows = await countWhere(
-    db,
     db
       .select({ count: sql<number>`count(*)::int` })
       .from(securityAuditLogs)
@@ -294,7 +273,6 @@ export async function evaluateUserHardDeleteEligibility(
       ),
   );
   const scheduleOverrides = await countWhere(
-    db,
     db
       .select({ count: sql<number>`count(*)::int` })
       .from(schedulingOverrideAudits)
@@ -312,21 +290,18 @@ export async function evaluateUserHardDeleteEligibility(
   });
 
   const skills = await countWhere(
-    db,
     db
       .select({ count: sql<number>`count(*)::int` })
       .from(employeeSkills)
       .where(and(eq(employeeSkills.companyId, companyId), eq(employeeSkills.userId, memberId))),
   );
   const certs = await countWhere(
-    db,
     db
       .select({ count: sql<number>`count(*)::int` })
       .from(certifications)
       .where(and(eq(certifications.companyId, companyId), eq(certifications.userId, memberId))),
   );
   const training = await countWhere(
-    db,
     db
       .select({ count: sql<number>`count(*)::int` })
       .from(trainingRecords)
