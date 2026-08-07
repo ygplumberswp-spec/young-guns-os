@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { validateEvidenceUploadMagicBytes } from '@titan/shared';
 
 const PHOTO_MIME = new Set(['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'image/heic']);
 const DOCUMENT_MIME = new Set([
@@ -9,6 +10,13 @@ const DOCUMENT_MIME = new Set([
   'image/svg+xml',
 ]);
 const SIGNATURE_MIME = new Set(['image/png', 'image/svg+xml', 'image/jpeg']);
+const MAGIC_CHECKED_MIME = new Set([
+  'image/png',
+  'image/jpeg',
+  'image/webp',
+  'image/heic',
+  'application/pdf',
+]);
 
 const MAX_PHOTO_BYTES = 8 * 1024 * 1024;
 const MAX_DOCUMENT_BYTES = 10 * 1024 * 1024;
@@ -107,6 +115,14 @@ export class JobEvidenceStorageService {
       mimeType: input.mimeType,
       sizeBytes: input.buffer.byteLength,
     });
+
+    const mime = input.mimeType.toLowerCase();
+    if (MAGIC_CHECKED_MIME.has(mime) && !validateEvidenceUploadMagicBytes(mime, input.buffer)) {
+      throw new JobEvidenceStorageError(
+        'INVALID_FILE_CONTENTS',
+        'File contents do not match the declared type',
+      );
+    }
 
     const fileId = randomUUID();
     const dir = join(this.storageRoot, input.companyId, input.jobId);

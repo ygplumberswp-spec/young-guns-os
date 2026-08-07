@@ -121,6 +121,21 @@ const submitDocumentationSchema = z.object({
   metadata: z.record(z.unknown()).optional(),
   evidencePhase: evidencePhaseSchema.optional(),
 });
+const attachmentCategorySchema = z.enum([
+  'before_photo',
+  'after_photo',
+  'during_photo',
+  'other_job_evidence',
+  'job_card',
+  'supplier_slip',
+  'receipt',
+  'coc',
+  'inspection_report',
+  'service_report',
+  'customer_paperwork',
+  'supplier_document',
+  'other_attachment',
+]);
 const uploadJobEvidenceSchema = z.object({
   documentationType: documentationTypeSchema,
   title: z.string().trim().min(1),
@@ -128,6 +143,9 @@ const uploadJobEvidenceSchema = z.object({
   dataBase64: z.string().min(1),
   fileName: z.string().optional(),
   evidencePhase: evidencePhaseSchema.optional(),
+  attachmentCategory: attachmentCategorySchema.optional().nullable(),
+  // Accepted for forward-compat but ignored — server always forces false.
+  clientVisible: z.boolean().optional(),
   metadata: z.record(z.unknown()).optional(),
   clientActionId: z.string().optional(),
   signerName: z.string().optional(),

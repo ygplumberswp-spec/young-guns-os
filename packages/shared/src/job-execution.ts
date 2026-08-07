@@ -318,9 +318,13 @@ export type JobEvidenceOfficeSummary = {
   documentationType: string;
   title: string;
   evidencePhase: string | null;
+  attachmentCategory: string | null;
+  /** Always false unless explicitly shared — internal slips/receipts never auto-expose. */
+  clientVisible: boolean;
   hasBinary: boolean;
   mimeType: string | null;
   sizeBytes: number | null;
+  uploadedByUserId: string | null;
   createdAt: string;
   downloadPath: string | null;
 };

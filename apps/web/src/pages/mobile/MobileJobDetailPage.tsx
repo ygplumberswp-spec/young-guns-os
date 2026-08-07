@@ -1,4 +1,4 @@
-import { FormEvent, useCallback, useEffect, useRef, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'wouter';
 import { Button, EmptyState, Input, PageHeader, Panel } from '@titan/ui';
 import type {
@@ -50,6 +50,7 @@ import {
   uploadMobileJobEvidence,
 } from '../../lib/mobile-api-client';
 import { PaperlessCompletionSequence } from '../../features/jobs/PaperlessCompletionSequence';
+import { EvidenceAttachmentUploader } from '../../features/evidence/EvidenceAttachmentUploader';
 import {
   cacheMobileWorkspaceSnapshot,
   enqueueOfflineAction,
@@ -65,7 +66,6 @@ import { SignaturePad } from '../../features/jobs/SignaturePad';
 import { GoogleMapView } from '../../features/maps/GoogleMapView';
 import { useAuth } from '../../lib/auth-context';
 import { ReportExportActions } from '../../features/reports/ReportExportActions';
-import { Link } from 'wouter';
 
 async function fileToBase64(file: File): Promise<string> {
   const buffer = await file.arrayBuffer();
@@ -173,8 +173,6 @@ export function MobileJobDetailPage() {
   const [returnQtyByLine, setReturnQtyByLine] = useState<Record<string, string>>({});
   const [returnReasonByLine, setReturnReasonByLine] = useState<Record<string, string>>({});
   const [offlineActions, setOfflineActions] = useState<OfflineQueuedAction[]>([]);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const pendingPhaseRef = useRef<'before' | 'during' | 'after' | 'document'>('before');
 
   const refreshOffline = useCallback(async () => {
     if (!jobId) return;
@@ -539,87 +537,6 @@ export function MobileJobDetailPage() {
     }
   }
 
-  function pickEvidence(phase: 'before' | 'during' | 'after' | 'document') {
-    pendingPhaseRef.current = phase;
-    fileInputRef.current?.click();
-  }
-
-  async function handleEvidenceSelected(file: File | null) {
-    if (!accessToken || !jobId || !file || busy) return;
-    const phase = pendingPhaseRef.current;
-    const isDocument = phase === 'document';
-    setBusy(true);
-    setError(null);
-    setUploadProgress(`Reading ${file.name}…`);
-    try {
-      const dataBase64 = await fileToBase64(file);
-      const clientActionId = newClientActionId(`evidence-${phase}`);
-      const payload = {
-        documentationType: isDocument ? ('document' as const) : ('photo' as const),
-        title: isDocument ? file.name : `${phase} photo`,
-        mimeType: file.type || (isDocument ? 'application/pdf' : 'image/jpeg'),
-        dataBase64,
-        fileName: file.name,
-        evidencePhase: isDocument ? ('document' as const) : phase,
-        metadata: {
-          phase,
-          capturedAt: new Date().toISOString(),
-          originalName: file.name,
-          sizeBytes: file.size,
-        },
-        clientActionId,
-      };
-
-      if (!navigator.onLine) {
-        await enqueueOfflineAction({
-          clientActionId,
-          actionType: 'evidence_upload',
-          jobId,
-          payload,
-        });
-        await refreshOffline();
-        setUploadProgress(null);
-        setMessage(`${phase} evidence queued offline — will sync when online`);
-        return;
-      }
-
-      setUploadProgress(`Uploading ${file.name}…`);
-      await uploadMobileJobEvidence(accessToken, jobId, payload);
-      await reload();
-      setUploadProgress(null);
-      setMessage(`${phase} evidence uploaded`);
-    } catch (err) {
-      setUploadProgress(null);
-      setError(err instanceof MobileApiClientError ? err.message : 'Upload failed — evidence retained for retry');
-      // Keep failure visible; enqueue for retry so evidence is never silently discarded.
-      try {
-        const dataBase64 = await fileToBase64(file);
-        const clientActionId = newClientActionId(`evidence-retry-${phase}`);
-        await enqueueOfflineAction({
-          clientActionId,
-          actionType: 'evidence_upload',
-          jobId,
-          payload: {
-            documentationType: phase === 'document' ? 'document' : 'photo',
-            title: phase === 'document' ? file.name : `${phase} photo`,
-            mimeType: file.type || 'image/jpeg',
-            dataBase64,
-            fileName: file.name,
-            evidencePhase: phase === 'document' ? 'document' : phase,
-            metadata: { phase, capturedAt: new Date().toISOString(), failedUpload: true },
-            clientActionId,
-          },
-        });
-        await refreshOffline();
-      } catch {
-        // already surfaced primary error
-      }
-    } finally {
-      setBusy(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    }
-  }
-
   async function handleSaveSignature() {
     if (!accessToken || !jobId || busy) return;
     if (!signatureDataUrl) {
@@ -791,8 +708,12 @@ export function MobileJobDetailPage() {
         dataBase64,
         fileName: file.name,
         evidencePhase: 'document',
+        attachmentCategory: 'receipt',
+        clientVisible: false,
         metadata: {
           kind: 'expense_receipt',
+          attachmentCategory: 'receipt',
+          clientVisible: false,
           capturedAt: new Date().toISOString(),
           originalName: file.name,
           sizeBytes: file.size,
@@ -1416,8 +1337,8 @@ export function MobileJobDetailPage() {
         title="Evidence"
         description={
           isOnline
-            ? 'Camera, gallery or files — binary upload with progress and retry'
-            : 'Offline: evidence is queued locally until sync succeeds'
+            ? 'Take photo, gallery multi-select, or upload files — progress and safe retry'
+            : 'Offline: evidence is queued as PENDING SYNC until upload succeeds'
         }
       >
         <p className="page-muted" style={{ marginBottom: '0.5rem' }}>
@@ -1426,27 +1347,22 @@ export function MobileJobDetailPage() {
             ? ` · ${offlineActions.filter((a) => a.status !== 'synced').length} pending/failed`
             : ''}
         </p>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*,application/pdf"
-          capture="environment"
-          style={{ display: 'none' }}
-          onChange={(e) => void handleEvidenceSelected(e.target.files?.[0] ?? null)}
-        />
-        <div className="mobile-action-grid">
-          <button type="button" className="mobile-action-btn" disabled={busy} onClick={() => pickEvidence('before')}>
-            Before photo
-          </button>
-          <button type="button" className="mobile-action-btn" disabled={busy} onClick={() => pickEvidence('during')}>
-            During photo
-          </button>
-          <button type="button" className="mobile-action-btn" disabled={busy} onClick={() => pickEvidence('after')}>
-            After photo
-          </button>
-          <button type="button" className="mobile-action-btn" disabled={busy} onClick={() => pickEvidence('document')}>
-            Document
-          </button>
+        {accessToken && jobId ? (
+          <EvidenceAttachmentUploader
+            accessToken={accessToken}
+            jobId={jobId}
+            mode="technician"
+            disabled={busy}
+            defaultCategory="before_photo"
+            enableDragDrop={false}
+            enableOfflineQueue
+            onUploaded={() => void reload()}
+            onOfflineQueued={() => void refreshOffline()}
+            onMessage={setMessage}
+            onError={setError}
+          />
+        ) : null}
+        <div className="mobile-action-grid" style={{ marginTop: '0.75rem' }}>
           <button
             type="button"
             className="mobile-action-btn"
@@ -1463,9 +1379,11 @@ export function MobileJobDetailPage() {
               <strong>{doc.title}</strong>
               <span>
                 {doc.documentationType}
+                {doc.attachmentCategory ? ` · ${doc.attachmentCategory}` : ''}
                 {doc.evidencePhase ? ` · ${doc.evidencePhase}` : ''}
                 {doc.hasBinary ? ' · stored' : ' · metadata only'}
                 {doc.sizeBytes != null ? ` · ${Math.round(doc.sizeBytes / 1024)} KB` : ''}
+                {' · internal'}
               </span>
             </li>
           ))}
@@ -1476,7 +1394,9 @@ export function MobileJobDetailPage() {
               .filter((a) => a.status !== 'synced')
               .map((action) => (
                 <li key={action.id}>
-                  <strong>{action.actionType}</strong>
+                  <strong>
+                    {action.actionType === 'evidence_upload' ? 'PENDING SYNC' : action.actionType}
+                  </strong>
                   <span>
                     {action.status}
                     {action.errorMessage ? ` · ${action.errorMessage}` : ''}
