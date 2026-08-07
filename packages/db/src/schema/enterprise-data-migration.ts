@@ -34,12 +34,21 @@ export const dmEntityTypeEnum = pgEnum('dm_entity_type', [
   'invoice',
   'payment',
   'inventory',
+  'price_book',
   'purchase_order',
   'document',
   'knowledge_article',
   'user',
   'role',
   'settings',
+]);
+
+export const dmHistoricalDocMatchActionEnum = pgEnum('dm_historical_doc_match_action', [
+  'pending',
+  'link',
+  'choose_different',
+  'create_historical_record',
+  'skip',
 ]);
 export const dmWizardStepEnum = pgEnum('dm_wizard_step', [
   'select_source',
@@ -348,5 +357,29 @@ export const dmAuditLogs = pgTable('dm_audit_logs', {
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
+/** Historical document upload match proposals — never auto-link on low confidence. */
+export const dmHistoricalDocumentMatches = pgTable('dm_historical_document_matches', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  companyId: uuid('company_id')
+    .notNull()
+    .references(() => companies.id, { onDelete: 'cascade' }),
+  importJobId: uuid('import_job_id').references(() => dmImportJobs.id, { onDelete: 'set null' }),
+  fileName: text('file_name').notNull(),
+  detectedNumber: text('detected_number'),
+  detectedEntityHint: text('detected_entity_hint'),
+  candidates: jsonb('candidates').$type<Record<string, unknown>[]>().notNull().default([]),
+  recommendedAction: text('recommended_action').notNull().default('CREATE_HISTORICAL_RECORD'),
+  recommendedCandidateId: uuid('recommended_candidate_id'),
+  allowSilentLink: boolean('allow_silent_link').notNull().default(false),
+  resolvedAction: dmHistoricalDocMatchActionEnum('resolved_action').notNull().default('pending'),
+  resolvedEntityType: text('resolved_entity_type'),
+  resolvedEntityId: uuid('resolved_entity_id'),
+  resolvedByUserId: uuid('resolved_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  resolvedAt: timestamp('resolved_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
 export type DmPlatformConfig = typeof dmPlatformConfig.$inferSelect;
 export type DmImportJob = typeof dmImportJobs.$inferSelect;
+export type DmHistoricalDocumentMatch = typeof dmHistoricalDocumentMatches.$inferSelect;

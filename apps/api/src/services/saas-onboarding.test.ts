@@ -130,10 +130,14 @@ describe('Department 21 SaaS plug-and-play onboarding wizard', () => {
     assert.match(tips, /will not claim items are in stock without quantity/i);
   });
 
-  it('12. Price Book import does not overwrite silently (unsupported until safe)', () => {
+  it('12. Price Book import is catalogue-only and does not overwrite silently', () => {
     const entity = SAAS_ONBOARDING_IMPORT_ENTITIES.find((e) => e.entityType === 'price_book');
-    assert.equal(entity?.supported, false);
-    assert.match(entity?.note ?? '', /separate from physical inventory/i);
+    assert.equal(entity?.supported, true);
+    assert.match(entity?.note ?? '', /never creates stock/i);
+    assert.match(entity?.note ?? '', /does not overwrite current pricing/i);
+    const importer = readApi('./enterprise-data-migration-import.service.ts');
+    assert.match(importer, /Do not silently overwrite current pricing/);
+    assert.match(importer, /HISTORICAL_PRICE_BOOK/);
   });
 
   it('13–15. Integration skip + truthful status + OAuth cancel safety', () => {

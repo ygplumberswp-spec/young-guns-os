@@ -14,12 +14,33 @@ export type DmEntityType =
   | 'invoice'
   | 'payment'
   | 'inventory'
+  | 'price_book'
   | 'purchase_order'
   | 'document'
   | 'knowledge_article'
   | 'user'
   | 'role'
   | 'settings';
+
+/** Entity types with a safe canonical commit path in Enterprise Data Migration. */
+export const DM_EXECUTABLE_ENTITY_TYPES: readonly DmEntityType[] = [
+  'customer',
+  'lead',
+  'supplier',
+  'contact',
+  'property',
+  'job',
+  'quote',
+  'invoice',
+  'payment',
+  'inventory',
+  'price_book',
+  'document',
+] as const;
+
+export function isDmEntityExecutable(entityType: DmEntityType): boolean {
+  return (DM_EXECUTABLE_ENTITY_TYPES as readonly string[]).includes(entityType);
+}
 
 export type DmWizardStep =
   | 'select_source'
@@ -296,25 +317,124 @@ export type DmImportJobDetailSummary = DmImportJobSummary & {
 };
 
 export const DM_ENTITY_FIELD_TARGETS: Record<DmEntityType, string[]> = {
-  customer: ['name', 'email', 'phone', 'status', 'notes'],
+  customer: ['name', 'email', 'phone', 'status', 'notes', 'sourceExternalId'],
   lead: ['title', 'contactName', 'contactEmail', 'contactPhone', 'status', 'notes'],
   supplier: ['name', 'email', 'phone', 'status', 'notes'],
-  contact: ['name', 'email', 'phone', 'role'],
-  property: ['name', 'address', 'city', 'postcode'],
+  contact: ['name', 'email', 'phone', 'role', 'customerName', 'customerEmail'],
+  property: [
+    'name',
+    'propertyName',
+    'customerName',
+    'customerEmail',
+    'address',
+    'street',
+    'city',
+    'suburb',
+    'postcode',
+    'postalCode',
+    'sourceExternalId',
+  ],
   asset: ['name', 'serialNumber', 'status', 'location'],
   vehicle: ['name', 'licensePlate', 'make', 'model', 'status'],
   technician: ['name', 'email', 'phone', 'skillLevel'],
-  job: ['title', 'customerName', 'status', 'description', 'scheduledAt'],
-  quote: ['quoteNumber', 'title', 'customerName', 'amountCents', 'status'],
-  invoice: ['invoiceNumber', 'title', 'customerName', 'amountCents', 'status'],
-  payment: ['invoiceNumber', 'customerName', 'amountCents', 'method'],
-  inventory: ['sku', 'name', 'quantity', 'status'],
+  job: [
+    'title',
+    'jobNumber',
+    'customerName',
+    'customerEmail',
+    'propertyName',
+    'status',
+    'description',
+    'scheduledAt',
+    'siteContactName',
+    'siteContactMobile',
+    'sourceExternalId',
+  ],
+  quote: [
+    'quoteNumber',
+    'title',
+    'customerName',
+    'customerEmail',
+    'jobNumber',
+    'propertyName',
+    'amountCents',
+    'vatCents',
+    'status',
+    'issuedAt',
+    'validUntil',
+    'sourceExternalId',
+    'sourceProvider',
+  ],
+  invoice: [
+    'invoiceNumber',
+    'title',
+    'customerName',
+    'customerEmail',
+    'jobNumber',
+    'quoteNumber',
+    'propertyName',
+    'amountCents',
+    'vatCents',
+    'status',
+    'issuedAt',
+    'dueDate',
+    'sourceExternalId',
+    'sourceProvider',
+  ],
+  payment: [
+    'invoiceNumber',
+    'customerName',
+    'amountCents',
+    'method',
+    'reference',
+    'paidAt',
+    'kind',
+    'sourceExternalId',
+    'sourceProvider',
+  ],
+  inventory: ['sku', 'name', 'quantity', 'status', 'sellPriceCents', 'unit'],
+  price_book: [
+    'code',
+    'sku',
+    'name',
+    'description',
+    'category',
+    'sellPriceCents',
+    'unit',
+    'taxTreatment',
+    'sourceExternalId',
+  ],
   purchase_order: ['orderNumber', 'supplierName', 'status', 'amountCents'],
-  document: ['title', 'fileName', 'categoryName'],
+  document: [
+    'title',
+    'fileName',
+    'categoryName',
+    'jobNumber',
+    'customerName',
+    'quoteNumber',
+    'invoiceNumber',
+    'photoPhase',
+    'sourceExternalId',
+  ],
   knowledge_article: ['title', 'summary', 'content'],
   user: ['email', 'firstName', 'lastName', 'roleName'],
   role: ['name', 'permissions'],
   settings: ['key', 'value'],
+};
+
+export type ProposeHistoricalDocumentMatchRequest = {
+  fileName: string;
+  /** Optional hints from the uploader — never auto-committed. */
+  customerName?: string | null;
+  amountCents?: number | null;
+  issuedAt?: string | null;
+};
+
+export type ResolveHistoricalDocumentMatchRequest = {
+  matchId: string;
+  action: 'LINK' | 'CHOOSE_DIFFERENT' | 'CREATE_HISTORICAL_RECORD' | 'SKIP';
+  targetEntityType?: string | null;
+  targetEntityId?: string | null;
 };
 
 export const DM_SOURCE_FORMAT_LABELS: Record<DmSourceFormat, string> = {

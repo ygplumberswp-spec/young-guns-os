@@ -94,6 +94,11 @@ export const jobs = pgTable('jobs', {
   intakeStatus: jobIntakeStatusEnum('intake_status'),
   createdByUserId: uuid('created_by_user_id').references(() => users.id, { onDelete: 'set null' }),
   intakeMetadata: jsonb('intake_metadata').$type<Record<string, unknown>>().notNull().default({}),
+  /** Historical import provenance — never invents field evidence. */
+  sourceProvider: text('source_provider'),
+  sourceExternalId: text('source_external_id'),
+  sourceImportJobId: uuid('source_import_job_id'),
+  historicalFlags: jsonb('historical_flags').$type<string[]>().notNull().default([]),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
