@@ -176,7 +176,7 @@ export function extractDocumentNumberHint(fileName: string): {
       detectedEntityHint: 'job',
     };
   }
-  const pop = /\b(POP|PROOF|PAYMENT[_\s-]?PROOF|RECEIPT)\b/i.test(base);
+  const pop = /(^|[_\s-])(POP|PROOF|PAYMENT[_?\s-]?PROOF|RECEIPT)([_\s-]|$)/i.test(base);
   if (pop) {
     return { detectedNumber: null, detectedEntityHint: 'payment_proof' };
   }
@@ -213,7 +213,7 @@ export function scoreHistoricalRecordMatch(input: {
   if (input.signals.externalIdMatch) confidence = 'deterministic';
   else if (score >= 90) confidence = 'high';
   else if (score >= 55) confidence = 'medium';
-  else if (score >= 25) confidence = 'low';
+  else if (score >= 15) confidence = 'low';
 
   const requiresHumanReview = confidence === 'medium' || confidence === 'low' || confidence === 'none';
   return { confidence, score, requiresHumanReview };
@@ -226,7 +226,8 @@ export function decideHistoricalMatchAction(
   if (!hasCandidate) return 'CREATE_NEW';
   if (confidence === 'deterministic' || confidence === 'high') return 'MATCHED';
   if (confidence === 'medium' || confidence === 'low') return 'REVIEW';
-  return 'POSSIBLE_MATCH';
+  // Candidate exists but signals are too weak for any confidence band.
+  return 'REVIEW';
 }
 
 export function buildHistoricalDocumentMatchProposal(input: {
