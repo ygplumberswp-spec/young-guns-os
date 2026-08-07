@@ -24,7 +24,8 @@ export type BankTransactionReceiptStatus =
   | 'receipt_not_required'
   | 'receipt_missing'
   | 'receipt_attached'
-  | 'receipt_verified';
+  | 'receipt_verified'
+  | 'receipt_needs_review';
 
 export type BankTransactionAllocationType =
   | 'direct_job_cost'
@@ -332,6 +333,7 @@ export type BankTransactionSummary = {
   unallocatedAmountCents: number;
   merchantName: string | null;
   suggestedSupplierName: string | null;
+  confirmedSupplierName: string | null;
   receiptDocumentId: string | null;
   provider: string;
   importBatchId: string | null;

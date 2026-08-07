@@ -274,6 +274,7 @@ export class BankTransactionControlService {
     row: typeof bankTransactions.$inferSelect,
     accountName: string,
     supplierName?: string | null,
+    confirmedSupplierName?: string | null,
   ): BankTransactionSummary {
     const unallocatedAmountCents = Math.max(0, row.amountCents - row.allocatedAmountCents);
     return {
@@ -294,6 +295,7 @@ export class BankTransactionControlService {
       unallocatedAmountCents,
       merchantName: row.merchantName,
       suggestedSupplierName: supplierName ?? null,
+      confirmedSupplierName: confirmedSupplierName ?? null,
       receiptDocumentId: row.receiptDocumentId,
       provider: row.provider,
       importBatchId: row.importBatchId,

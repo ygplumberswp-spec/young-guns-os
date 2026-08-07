@@ -43,6 +43,7 @@ export const bankTransactionReceiptStatusEnum = pgEnum('bank_transaction_receipt
   'receipt_missing',
   'receipt_attached',
   'receipt_verified',
+  'receipt_needs_review',
 ]);
 
 export const bankTransactionAllocationTypeEnum = pgEnum('bank_transaction_allocation_type', [
@@ -103,6 +104,9 @@ export const bankTransactions = pgTable(
     runningBalanceCents: integer('running_balance_cents'),
     merchantName: text('merchant_name'),
     suggestedSupplierId: uuid('suggested_supplier_id').references(() => suppliers.id, {
+      onDelete: 'set null',
+    }),
+    confirmedSupplierId: uuid('confirmed_supplier_id').references(() => suppliers.id, {
       onDelete: 'set null',
     }),
     allocationStatus: bankTransactionAllocationStatusEnum('allocation_status')
