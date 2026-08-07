@@ -49,6 +49,25 @@ type XeroFinanceStatusSource = {
   getSyncStatus(companyId: string): Promise<XeroSyncStatusResponse>;
 };
 
+type JobVisitsAttentionSource = {
+  buildAttentionExtras(companyId: string): Promise<
+    Array<{
+      id: string;
+      priority: 'attention' | 'critical';
+      category: string;
+      title: string;
+      customerName: string | null;
+      amountCents?: number | null;
+      currency?: string;
+      ageLabel?: string | null;
+      reason: string;
+      recommendedAction: string;
+      href: string;
+      draftActionAvailable?: boolean;
+    }>
+  >;
+};
+
 type DashboardExecutiveDeps = {
   db: DatabaseClient;
   jobsService: JobsService;
@@ -253,7 +272,13 @@ type CompletedJobRow = {
 type OutstandingSnapshot = ExecutiveOutstandingInvoices;
 
 export class DashboardExecutiveService {
+  private jobVisitsService: JobVisitsAttentionSource | null = null;
+
   constructor(private readonly deps: DashboardExecutiveDeps) {}
+
+  setJobVisitsService(service: JobVisitsAttentionSource) {
+    this.jobVisitsService = service;
+  }
 
   async getExecutiveSummary(companyId: string): Promise<ExecutiveDashboardSummary> {
     return cachedTenantRead(
@@ -634,6 +659,37 @@ export class DashboardExecutiveService {
       quotesFollowUp: quotesCounts?.followUp ?? 0,
       now,
     });
+
+    if (this.jobVisitsService) {
+      try {
+        const visitAttention = await this.jobVisitsService.buildAttentionExtras(companyId);
+        const existingIds = new Set(dash001.attentionRequired.items.map((item) => item.id));
+        for (const item of visitAttention) {
+          if (existingIds.has(item.id)) continue;
+          dash001.attentionRequired.items.push({
+            id: item.id,
+            priority: item.priority,
+            category: item.category,
+            title: item.title,
+            customerName: item.customerName,
+            amountCents: item.amountCents ?? null,
+            currency: item.currency ?? DEFAULT_CURRENCY,
+            ageLabel: item.ageLabel ?? null,
+            reason: item.reason,
+            recommendedAction: item.recommendedAction,
+            href: item.href,
+            draftActionAvailable: item.draftActionAvailable ?? false,
+          });
+          if (item.priority === 'critical') dash001.attentionRequired.criticalCount += 1;
+          else dash001.attentionRequired.attentionCount += 1;
+        }
+      } catch (error) {
+        this.deps.logger?.error(
+          { err: error, companyId },
+          'Failed to load visit/reschedule attention extras',
+        );
+      }
+    }
 
     return {
       ...baseSummary,

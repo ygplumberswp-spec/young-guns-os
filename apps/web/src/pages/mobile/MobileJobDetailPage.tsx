@@ -4,6 +4,8 @@ import { Button, EmptyState, Input, PageHeader, Panel } from '@titan/ui';
 import type {
   CartrackArrivalPrompt,
   JobMaterialSource,
+  JobRescheduleReason,
+  JobVisitRollup,
   JobWorkflowAction,
   MobileJobExecutionWorkspace,
   MobileTimeEntrySummary,
@@ -11,7 +13,11 @@ import type {
   TechnicianCompletionChecklist,
   TechnicianInvoicePaymentStrip,
 } from '@titan/shared';
-import { evaluatePaperlessCompletionSequence, requiredChecklistForJobType } from '@titan/shared';
+import {
+  evaluatePaperlessCompletionSequence,
+  JOB_RESCHEDULE_REASON_LABELS,
+  requiredChecklistForJobType,
+} from '@titan/shared';
 import {
   MobileApiClientError,
   completeMobileJobGated,
@@ -20,11 +26,14 @@ import {
   fetchActiveMobileTimeEntries,
   fetchMobileArrivalPrompt,
   fetchMobileCaptureChecklist,
+  fetchMobileJobVisits,
   fetchMobilePaymentStrip,
   pauseMobileTimeEntry,
   recordMobileOnSitePayment,
+  requestMobileJobReschedule,
   resumeMobileTimeEntry,
   startMobileTimedEntry,
+  stillBusyMobileJob,
   stopMobileTimeEntry,
   fetchMobileInventory,
   fetchMobileJobWorkspace,
@@ -76,10 +85,13 @@ const ACTION_LABELS: Record<JobWorkflowAction, string> = {
   await_customer: 'Awaiting customer',
   await_parts: 'Awaiting parts',
   await_approval: 'Awaiting approval',
+  still_busy: 'Still busy — continue later',
   ready_to_complete: 'Ready to complete',
   complete: 'Complete',
   reopen: 'Reopen',
 };
+
+const RESCHEDULE_REASONS = Object.keys(JOB_RESCHEDULE_REASON_LABELS) as JobRescheduleReason[];
 
 export function MobileJobDetailPage() {
   const { accessToken } = useAuth();
@@ -92,7 +104,18 @@ export function MobileJobDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [pauseReason, setPauseReason] = useState('');
-  const [note, setNote] = useState('');
+  const [stillBusyNotes, setStillBusyNotes] = useState('');
+  const [stillBusyCompleted, setStillBusyCompleted] = useState('');
+  const [stillBusyRemaining, setStillBusyRemaining] = useState('');
+  const [stillBusyNextAt, setStillBusyNextAt] = useState('');
+  const [showStillBusy, setShowStillBusy] = useState(false);
+  const [showReschedule, setShowReschedule] = useState(false);
+  const [rescheduleReason, setRescheduleReason] =
+    useState<JobRescheduleReason>('customer_unavailable');
+  const [rescheduleNotes, setRescheduleNotes] = useState('');
+  const [rescheduleProposedAt, setRescheduleProposedAt] = useState('');
+  const [visitRollup, setVisitRollup] = useState<JobVisitRollup | null>(null);
+  const [note] = useState('');
   const [materialDesc, setMaterialDesc] = useState('');
   const [materialQty, setMaterialQty] = useState('1');
   const [materialItemId, setMaterialItemId] = useState('');
@@ -186,6 +209,8 @@ export function MobileJobDetailPage() {
         jobNumber: data.jobNumber,
       }).catch(() => null);
       setArrivalPrompt(prompt);
+      const visitsPayload = await fetchMobileJobVisits(accessToken, jobId).catch(() => null);
+      setVisitRollup(visitsPayload?.rollup ?? null);
       setCompleteForm((prev) =>
         prev.workRequested === '' && data.workInstructions
           ? { ...prev, workRequested: data.workInstructions ?? '' }
@@ -258,6 +283,11 @@ export function MobileJobDetailPage() {
 
   async function runAction(action: JobWorkflowAction) {
     if (!accessToken || !jobId || busy) return;
+    if (action === 'still_busy') {
+      setShowStillBusy(true);
+      setShowReschedule(false);
+      return;
+    }
     if (action === 'pause' && !pauseReason.trim()) {
       setError('Pause requires a reason');
       return;
@@ -292,6 +322,77 @@ export function MobileJobDetailPage() {
       setPauseReason('');
     } catch (err) {
       setError(err instanceof MobileApiClientError ? err.message : 'Action failed');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function toIsoOrNull(localValue: string): string | null {
+    if (!localValue.trim()) return null;
+    const parsed = new Date(localValue);
+    return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
+  }
+
+  async function submitStillBusy() {
+    if (!accessToken || !jobId || busy) return;
+    if (!stillBusyRemaining.trim()) {
+      setError('Describe remaining work before marking Still Busy');
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    setMessage(null);
+    try {
+      if (!navigator.onLine) {
+        setError('Still Busy requires a connection so the visit closes cleanly on the server');
+        return;
+      }
+      await stillBusyMobileJob(accessToken, jobId, {
+        notes: stillBusyNotes.trim() || null,
+        workCompletedSummary: stillBusyCompleted.trim() || null,
+        remainingWorkSummary: stillBusyRemaining.trim(),
+        proposedNextVisitAt: toIsoOrNull(stillBusyNextAt),
+      });
+      setShowStillBusy(false);
+      setStillBusyNotes('');
+      setStillBusyCompleted('');
+      setStillBusyRemaining('');
+      setStillBusyNextAt('');
+      await reload();
+      setMessage('Visit closed — job remains OPEN (not ready for invoicing)');
+    } catch (err) {
+      setError(err instanceof MobileApiClientError ? err.message : 'Still Busy failed');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function submitRescheduleRequest() {
+    if (!accessToken || !jobId || busy) return;
+    if (!rescheduleNotes.trim()) {
+      setError('Reschedule notes are required');
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    setMessage(null);
+    try {
+      if (!navigator.onLine) {
+        setError('Reschedule requests require a connection (schedule is never moved silently)');
+        return;
+      }
+      await requestMobileJobReschedule(accessToken, jobId, {
+        reason: rescheduleReason,
+        notes: rescheduleNotes.trim(),
+        proposedScheduledAt: toIsoOrNull(rescheduleProposedAt),
+      });
+      setShowReschedule(false);
+      setRescheduleNotes('');
+      setRescheduleProposedAt('');
+      await reload();
+      setMessage('Reschedule requested — office must confirm the new booking');
+    } catch (err) {
+      setError(err instanceof MobileApiClientError ? err.message : 'Reschedule request failed');
     } finally {
       setBusy(false);
     }
@@ -814,8 +915,9 @@ export function MobileJobDetailPage() {
     ['accept', 'en_route', 'arrive', 'start_work', 'resume', 'ready_to_complete'].includes(a),
   );
   const waitActions = workspace.availableActions.filter((a) =>
-    ['pause', 'await_customer', 'await_parts', 'await_approval'].includes(a),
+    ['pause', 'await_customer', 'await_parts', 'await_approval', 'still_busy'].includes(a),
   );
+  const canRequestReschedule = !['completed'].includes(workspace.executionPhase);
   const labourTotal = workspace.laborTimeEntries.reduce(
     (sum, entry) => sum + (entry.durationMinutes ?? 0),
     0,
@@ -912,7 +1014,147 @@ export function MobileJobDetailPage() {
             />
           </label>
         ) : null}
+        {canRequestReschedule ? (
+          <div style={{ marginTop: '0.75rem' }}>
+            <button
+              type="button"
+              className="mobile-action-btn"
+              disabled={busy}
+              onClick={() => {
+                setShowReschedule((v) => !v);
+                setShowStillBusy(false);
+              }}
+            >
+              Request reschedule
+            </button>
+          </div>
+        ) : null}
       </Panel>
+
+      {showStillBusy ? (
+        <Panel
+          title="Still busy — continue later"
+          description="Ends this visit timer. Job stays OPEN. Does not invoice or complete."
+        >
+          <label className="titan-input-group">
+            <span className="titan-input-label">Work completed so far</span>
+            <textarea
+              className="titan-input"
+              rows={2}
+              value={stillBusyCompleted}
+              onChange={(e) => setStillBusyCompleted(e.target.value)}
+            />
+          </label>
+          <label className="titan-input-group">
+            <span className="titan-input-label">Remaining work *</span>
+            <textarea
+              className="titan-input"
+              rows={2}
+              value={stillBusyRemaining}
+              onChange={(e) => setStillBusyRemaining(e.target.value)}
+            />
+          </label>
+          <label className="titan-input-group">
+            <span className="titan-input-label">Notes</span>
+            <textarea
+              className="titan-input"
+              rows={2}
+              value={stillBusyNotes}
+              onChange={(e) => setStillBusyNotes(e.target.value)}
+            />
+          </label>
+          <label className="titan-input-group">
+            <span className="titan-input-label">Proposed next visit (optional)</span>
+            <input
+              className="titan-input"
+              type="datetime-local"
+              value={stillBusyNextAt}
+              onChange={(e) => setStillBusyNextAt(e.target.value)}
+            />
+          </label>
+          <div className="mobile-action-grid" style={{ marginTop: '0.75rem' }}>
+            <Button type="button" disabled={busy} onClick={() => void submitStillBusy()}>
+              Confirm still busy
+            </Button>
+            <button type="button" className="mobile-action-btn" disabled={busy} onClick={() => setShowStillBusy(false)}>
+              Cancel
+            </button>
+          </div>
+        </Panel>
+      ) : null}
+
+      {showReschedule ? (
+        <Panel
+          title="Request reschedule"
+          description="Office / Manager confirms the new booking. Schedule is not moved silently."
+        >
+          <label className="titan-input-group">
+            <span className="titan-input-label">Reason</span>
+            <select
+              className="titan-input"
+              value={rescheduleReason}
+              onChange={(e) => setRescheduleReason(e.target.value as JobRescheduleReason)}
+            >
+              {RESCHEDULE_REASONS.map((code) => (
+                <option key={code} value={code}>
+                  {JOB_RESCHEDULE_REASON_LABELS[code]}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="titan-input-group">
+            <span className="titan-input-label">Notes *</span>
+            <textarea
+              className="titan-input"
+              rows={3}
+              value={rescheduleNotes}
+              onChange={(e) => setRescheduleNotes(e.target.value)}
+              placeholder="Customer unavailable / parts / access…"
+            />
+          </label>
+          <label className="titan-input-group">
+            <span className="titan-input-label">Proposed date/time (optional)</span>
+            <input
+              className="titan-input"
+              type="datetime-local"
+              value={rescheduleProposedAt}
+              onChange={(e) => setRescheduleProposedAt(e.target.value)}
+            />
+          </label>
+          <div className="mobile-action-grid" style={{ marginTop: '0.75rem' }}>
+            <Button type="button" disabled={busy} onClick={() => void submitRescheduleRequest()}>
+              Submit request
+            </Button>
+            <button
+              type="button"
+              className="mobile-action-btn"
+              disabled={busy}
+              onClick={() => setShowReschedule(false)}
+            >
+              Cancel
+            </button>
+          </div>
+        </Panel>
+      ) : null}
+
+      {visitRollup && visitRollup.visitCount > 0 ? (
+        <Panel title="Visits" description="Same job — multi-day work sessions (not duplicate jobs)">
+          <p className="page-muted">
+            {visitRollup.visitCount} visit(s) · labour {visitRollup.totalLabourMinutes} min · travel{' '}
+            {visitRollup.totalTravelMinutes} min
+            {visitRollup.invoiceBlocked ? ' · invoicing blocked until final complete' : ''}
+          </p>
+          <ul className="mobile-visit-list">
+            {visitRollup.visits.map((visit) => (
+              <li key={visit.id}>
+                Visit {visit.visitNumber} — {visit.status}
+                {visit.closeReason ? ` (${visit.closeReason.replace(/_/g, ' ')})` : ''}
+                {visit.labourMinutes ? ` · ${visit.labourMinutes} min labour` : ''}
+              </li>
+            ))}
+          </ul>
+        </Panel>
+      ) : null}
 
       <Panel title="Assignment">
         <dl className="jobs-meta-list">

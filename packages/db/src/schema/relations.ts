@@ -33,7 +33,7 @@ import { inventoryItems } from './inventory-items';
 import { inventoryLocations } from './inventory-locations';
 import { inventoryStockLevels } from './inventory-stock-levels';
 import { inventoryStockMovements } from './inventory-stock-movements';
-import { jobMaterialLines } from './job-execution';
+import { jobMaterialLines, jobVisits } from './job-execution';
 import { integrationConnections } from './integration-connections';
 import { integrationVehicleMappings } from './integration-vehicle-mappings';
 import { gpsPositions } from './gps-positions';
@@ -552,6 +552,22 @@ export const jobsRelations = relations(jobs, ({ one, many }) => ({
   quotes: many(quotes),
   invoices: many(invoices),
   documents: many(documents),
+  visits: many(jobVisits),
+}));
+
+export const jobVisitsRelations = relations(jobVisits, ({ one }) => ({
+  company: one(companies, {
+    fields: [jobVisits.companyId],
+    references: [companies.id],
+  }),
+  job: one(jobs, {
+    fields: [jobVisits.jobId],
+    references: [jobs.id],
+  }),
+  technician: one(users, {
+    fields: [jobVisits.technicianUserId],
+    references: [users.id],
+  }),
 }));
 
 export const quotesRelations = relations(quotes, ({ one, many }) => ({

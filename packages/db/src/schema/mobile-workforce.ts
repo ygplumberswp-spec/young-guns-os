@@ -21,6 +21,7 @@ export const mobileWorkforceRequestTypeEnum = pgEnum('mobile_workforce_request_t
   'inventory_shortage',
   'overtime_request',
   'schedule_change',
+  'job_reschedule',
   'general_request',
 ]);
 

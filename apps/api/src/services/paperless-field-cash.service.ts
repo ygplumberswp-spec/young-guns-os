@@ -11,6 +11,7 @@ import type {
 import {
   assertNoClientFinancialLeak,
   buildCartrackArrivalPrompt,
+  isInvoiceBlockedByVisitState,
   toClientSafeCompletionPack,
   toTechnicianInvoicePaymentStrip,
   validateAuraFinanceCompletionPack,
@@ -22,6 +23,7 @@ import {
   jobs,
   jobMaterialLines,
   jobVariations,
+  jobVisits,
   mobileJobDocumentation,
   mobileJobInventoryUsage,
   mobileTimeEntries,
@@ -175,6 +177,35 @@ export class PaperlessFieldCashService {
           totalCents: existingInvoice.totalCents,
           status: existingInvoice.status,
         },
+        ownerNotifyMessage: null,
+      };
+    }
+
+    const openVisit = await this.db.query.jobVisits.findFirst({
+      where: and(
+        eq(jobVisits.companyId, input.companyId),
+        eq(jobVisits.jobId, input.jobId),
+        eq(jobVisits.status, 'open'),
+      ),
+      columns: { id: true },
+    });
+    const visitGate = isInvoiceBlockedByVisitState({
+      executionPhase: job.executionPhase,
+      hasOpenVisit: Boolean(openVisit),
+      jobCompleted: job.status === 'completed' || job.executionPhase === 'completed',
+    });
+    if (visitGate.blocked) {
+      return {
+        issues: [
+          ...validation.issues,
+          {
+            code: 'work_continues',
+            severity: 'blocker',
+            message: visitGate.reason ?? 'Still Busy blocks Ready for Invoicing',
+          },
+        ],
+        readyForDraftInvoice: false,
+        draftInvoice: null,
         ownerNotifyMessage: null,
       };
     }

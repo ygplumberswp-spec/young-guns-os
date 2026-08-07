@@ -152,6 +152,7 @@ const createWorkforceRequestSchema = z.object({
     'inventory_shortage',
     'overtime_request',
     'schedule_change',
+    'job_reschedule',
     'general_request',
   ]),
   subject: z.string().trim().min(1),
@@ -159,6 +160,33 @@ const createWorkforceRequestSchema = z.object({
   entityType: z.string().optional(),
   entityId: z.string().uuid().optional(),
   payload: z.record(z.unknown()).optional(),
+});
+const stillBusySchema = z.object({
+  notes: z.string().trim().optional().nullable(),
+  workCompletedSummary: z.string().trim().optional().nullable(),
+  remainingWorkSummary: z.string().trim().optional().nullable(),
+  proposedNextVisitAt: z.string().trim().min(1).optional().nullable(),
+  clientActionId: z.string().optional().nullable(),
+});
+const requestRescheduleSchema = z.object({
+  reason: z.enum([
+    'customer_unavailable',
+    'parts_required',
+    'access_problem',
+    'additional_work_required',
+    'site_not_ready',
+    'weather',
+    'other',
+  ]),
+  notes: z.string().trim().min(1),
+  proposedScheduledAt: z.string().trim().min(1).optional().nullable(),
+  clientActionId: z.string().optional().nullable(),
+});
+const approveRescheduleSchema = z.object({
+  scheduledAt: z.string().trim().min(1),
+  scheduledEndAt: z.string().trim().min(1).optional().nullable(),
+  notes: z.string().trim().optional().nullable(),
+  clientActionId: z.string().optional().nullable(),
 });
 const reportConflictSchema = z.object({
   queueItemId: z.string().uuid().optional(),
@@ -239,6 +267,7 @@ type MobileRouterDeps = {
   jobExecutionService: JobExecutionService;
   jobCostCaptureService: import('../services/job-cost-capture.service.js').JobCostCaptureService;
   paperlessFieldCashService: import('../services/paperless-field-cash.service.js').PaperlessFieldCashService;
+  jobVisitsService: import('../services/job-visits.service.js').JobVisitsService;
   recommendationsService: RecommendationsService;
   teamService: TeamService;
   portalAuthService: PortalAuthService;
@@ -268,6 +297,7 @@ export function createMobileRouter({
   jobExecutionService,
   jobCostCaptureService,
   paperlessFieldCashService,
+  jobVisitsService,
   recommendationsService,
   teamService,
   portalAuthService,
@@ -418,6 +448,31 @@ export function createMobileRouter({
     const context = await mobileService.buildOwnerAuraContext(auth);
     res.json({ data: { context } });
   });
+
+  ownerRouter.post(
+    '/workforce/requests/:requestId/approve-reschedule',
+    requireOwnerAccess,
+    async (req, res) => {
+      const parsed = approveRescheduleSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({
+          error: { code: 'VALIDATION_ERROR', message: 'Invalid approve-reschedule payload' },
+        });
+        return;
+      }
+      try {
+        const auth = getAuth(req);
+        const result = await jobVisitsService.approveReschedule(
+          auth,
+          getRouteParam(req.params.requestId),
+          parsed.data,
+        );
+        res.json({ data: result });
+      } catch (error) {
+        handleJobExecutionError(res, error);
+      }
+    },
+  );
 
   const technicianRouter = Router();
   technicianRouter.use(requireStaffAuth);
@@ -987,12 +1042,71 @@ export function createMobileRouter({
     }
     try {
       const auth = getAuth(req);
-      const job = await jobExecutionService.transition(auth, getRouteParam(req.params.id), parsed.data);
+      const jobId = getRouteParam(req.params.id);
+      const job = await jobExecutionService.transition(auth, jobId, parsed.data);
+      if (parsed.data.action === 'arrive') {
+        await jobVisitsService.ensureOpenVisit(auth, jobId, 'arrive');
+      } else if (parsed.data.action === 'start_work') {
+        await jobVisitsService.ensureOpenVisit(auth, jobId, 'start');
+      }
       res.json({ data: { job } });
     } catch (error) {
       handleJobExecutionError(res, error);
     }
   });
+
+  technicianRouter.post('/jobs/:id/still-busy', requireMobileWrite, async (req, res) => {
+    const parsed = stillBusySchema.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid Still Busy payload' } });
+      return;
+    }
+    try {
+      const auth = getAuth(req);
+      const result = await jobVisitsService.stillBusy(auth, getRouteParam(req.params.id), parsed.data);
+      res.json({ data: result });
+    } catch (error) {
+      handleJobExecutionError(res, error);
+    }
+  });
+
+  technicianRouter.post('/jobs/:id/reschedule-request', requireMobileWrite, async (req, res) => {
+    const parsed = requestRescheduleSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid reschedule request payload' } });
+      return;
+    }
+    try {
+      const auth = getAuth(req);
+      const result = await jobVisitsService.requestReschedule(
+        auth,
+        getRouteParam(req.params.id),
+        parsed.data,
+      );
+      res.status(201).json({ data: result });
+    } catch (error) {
+      handleJobExecutionError(res, error);
+    }
+  });
+
+  technicianRouter.get('/jobs/:id/visits', requireTechnicianAccess, async (req, res) => {
+    try {
+      const auth = getAuth(req);
+      const jobId = getRouteParam(req.params.id);
+      const [visits, rollup] = await Promise.all([
+        jobVisitsService.listVisits(auth.companyId, jobId),
+        jobVisitsService.getRollup(auth.companyId, jobId),
+      ]);
+      res.json({ data: { visits, rollup } });
+    } catch (error) {
+      handleJobExecutionError(res, error);
+    }
+  });
+
 
   technicianRouter.get('/jobs/:id/completion-gate', requireTechnicianAccess, async (req, res) => {
     try {
@@ -1016,6 +1130,7 @@ export function createMobileRouter({
       const auth = getAuth(req);
       const jobId = getRouteParam(req.params.id);
       const job = await jobExecutionService.completeGated(auth, jobId, parsed.data);
+      await jobVisitsService.closeOpenVisitOnCompletion(auth, jobId);
       // YG-CUTOVER-001F — AURA Finance pack validation + DRAFT invoice for owner approval
       const paperless = await paperlessFieldCashService.afterSignedCompletion({
         companyId: auth.companyId,

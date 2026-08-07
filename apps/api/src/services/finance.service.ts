@@ -58,6 +58,7 @@ import {
   invoices,
   inventoryItems,
   jobs,
+  jobVisits,
   paymentReceipts,
   payments,
   quoteLineItems,
@@ -577,6 +578,44 @@ export class FinanceService {
       where: and(eq(jobs.id, jobId), eq(jobs.companyId, actor.companyId)),
     });
     if (!job) throw new FinanceError('JOB_NOT_FOUND', 'Job not found');
+
+    // Still Busy / multi-day: block final/standard invoicing until COMPLETE JOB.
+    // Authorised deposit/progress stage billing may still proceed.
+    const stage = input.stage ?? 'standard';
+    const isProgressBilling = stage === 'deposit' || stage === 'progress';
+    if (!isProgressBilling) {
+      if (job.executionPhase === 'work_continues') {
+        throw new FinanceError(
+          'VALIDATION_ERROR',
+          'Job is Still Busy / work continues — final COMPLETE JOB required before invoicing',
+        );
+      }
+      const openVisit = await this.db.query.jobVisits.findFirst({
+        where: and(
+          eq(jobVisits.companyId, actor.companyId),
+          eq(jobVisits.jobId, jobId),
+          eq(jobVisits.status, 'open'),
+        ),
+        columns: { id: true },
+      });
+      if (openVisit) {
+        throw new FinanceError(
+          'VALIDATION_ERROR',
+          'An open work visit is in progress — close the visit or complete the job before invoicing',
+        );
+      }
+      if (
+        stage === 'final' &&
+        job.status !== 'completed' &&
+        job.executionPhase !== 'completed'
+      ) {
+        throw new FinanceError(
+          'VALIDATION_ERROR',
+          'Final invoice requires COMPLETE JOB — Still Busy does not open Ready for Invoicing',
+        );
+      }
+    }
+
     const acceptedQuote = await this.db.query.quotes.findFirst({
       where: and(
         eq(quotes.companyId, actor.companyId),

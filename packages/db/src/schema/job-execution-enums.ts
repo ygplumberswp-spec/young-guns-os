@@ -10,6 +10,7 @@ export const jobExecutionPhaseEnum = pgEnum('job_execution_phase', [
   'awaiting_customer',
   'awaiting_parts',
   'awaiting_approval',
+  'work_continues',
   'ready_to_complete',
   'completed',
 ]);

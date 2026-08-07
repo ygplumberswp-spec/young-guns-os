@@ -190,6 +190,13 @@ function canViewJobProfit(auth: { permissions: string[]; roleName?: string | nul
   return ['Company Owner', 'Accountant', 'Manager'].includes(auth.roleName ?? '');
 }
 
+const approveRescheduleSchema = z.object({
+  scheduledAt: z.string().trim().min(1),
+  scheduledEndAt: z.string().trim().min(1).optional().nullable(),
+  notes: z.string().trim().optional().nullable(),
+  clientActionId: z.string().optional().nullable(),
+});
+
 type JobsRouterDeps = {
   jobsService: JobsService;
   jobExecutionService: JobExecutionService;
@@ -197,6 +204,7 @@ type JobsRouterDeps = {
   jobProfitabilityService: JobProfitabilityService;
   jobCostControlService: JobCostControlService;
   mobileWorkforceService: MobileWorkforceService;
+  jobVisitsService: import('../services/job-visits.service.js').JobVisitsService;
   teamService: TeamService;
   db: DatabaseClient;
   jwtSecret: string;
@@ -218,6 +226,7 @@ export function createJobsRouter({
   jobProfitabilityService,
   jobCostControlService,
   mobileWorkforceService,
+  jobVisitsService,
   teamService,
   db,
   jwtSecret,
@@ -393,6 +402,50 @@ export function createJobsRouter({
           getRouteParam(req.params.jobId),
         );
         res.json({ data: { events } });
+      } catch (error) {
+        handleJobExecutionError(res, error);
+      }
+    },
+  );
+
+  router.get(
+    '/:jobId/visits',
+    requireAnyPermission('jobs:read', 'jobs:write'),
+    requireAssignedJob,
+    async (req, res) => {
+      try {
+        const auth = getAuth(req);
+        const jobId = getRouteParam(req.params.jobId);
+        const [visits, rollup] = await Promise.all([
+          jobVisitsService.listVisits(auth.companyId, jobId),
+          jobVisitsService.getRollup(auth.companyId, jobId),
+        ]);
+        res.json({ data: { visits, rollup } });
+      } catch (error) {
+        handleJobExecutionError(res, error);
+      }
+    },
+  );
+
+  router.post(
+    '/reschedule-requests/:requestId/approve',
+    requireAnyPermission('jobs:write', 'scheduling:write'),
+    async (req, res) => {
+      const parsed = approveRescheduleSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({
+          error: { code: 'VALIDATION_ERROR', message: 'Invalid approve-reschedule payload' },
+        });
+        return;
+      }
+      try {
+        const auth = getAuth(req);
+        const result = await jobVisitsService.approveReschedule(
+          auth,
+          getRouteParam(req.params.requestId),
+          parsed.data,
+        );
+        res.json({ data: result });
       } catch (error) {
         handleJobExecutionError(res, error);
       }

@@ -35,8 +35,25 @@ describe('availableActionsForPhase', () => {
     const actions = availableActionsForPhase('in_progress');
     assert.deepEqual(
       actions.sort(),
-      ['pause', 'await_customer', 'await_parts', 'await_approval', 'ready_to_complete', 'complete'].sort(),
+      [
+        'pause',
+        'await_customer',
+        'await_parts',
+        'await_approval',
+        'still_busy',
+        'ready_to_complete',
+        'complete',
+      ].sort(),
     );
+  });
+
+  it('allows restarting work from work_continues without complete', () => {
+    const actions = availableActionsForPhase('work_continues');
+    assert.ok(actions.includes('start_work'));
+    assert.ok(actions.includes('en_route'));
+    assert.ok(actions.includes('ready_to_complete'));
+    assert.equal(actions.includes('complete'), false);
+    assert.equal(actions.includes('still_busy'), false);
   });
 });
 
@@ -45,6 +62,10 @@ describe('ACTION_TARGET_PHASE', () => {
     for (const [action, phase] of Object.entries(ACTION_TARGET_PHASE)) {
       assert.equal(typeof phase, 'string', `${action} should map to a phase`);
     }
+  });
+
+  it('maps still_busy to work_continues', () => {
+    assert.equal(ACTION_TARGET_PHASE.still_busy, 'work_continues');
   });
 });
 
