@@ -7,6 +7,7 @@ import {
   isReceiptRequiredForDirectCost,
   mapProfitabilityConfidenceToCompleteness,
 } from './job-cost-control.js';
+import { computeJobFinancialSourceFingerprintFromSources } from './job-financial-fingerprint.js';
 import { computeJobProfitability } from './job-profitability.js';
 import { buildLabourRateLockMetadata } from './job-profitability-source-integrity.js';
 
@@ -359,6 +360,117 @@ describe('JPE-002 job cost control', () => {
       },
     });
     assert.ok(result.flags.some((f) => f.type === 'FINANCIAL_REVIEW_STALE'));
+  });
+
+  it('18 deleting older direct cost invalidates reviewed fingerprint', () => {
+    const jobId = 'job-del-proof';
+    const withOlderCost = {
+      jobId,
+      invoices: [
+        {
+          id: 'inv',
+          status: 'sent',
+          totalCents: 20_000,
+          subtotalCents: 17_391,
+          vatCents: 2609,
+          amountPaidCents: 20_000,
+        },
+      ],
+      quotes: [],
+      adjustments: [],
+      materialLines: [],
+      purchaseOrders: [],
+      labourEntries: [],
+      directCosts: [
+        {
+          id: 'dc-old',
+          category: 'misc',
+          amountCents: 1500,
+          sourceType: 'manual',
+          sourceId: 'old',
+          isPaid: true,
+          receiptDocumentId: null,
+        },
+        {
+          id: 'dc-new',
+          category: 'fuel',
+          amountCents: 3000,
+          sourceType: 'manual',
+          sourceId: 'new',
+          isPaid: true,
+          receiptDocumentId: 'doc-1',
+        },
+      ],
+      payments: [{ id: 'pay-1', amountCents: 20_000, xeroPaymentStatus: 'AUTHORISED' }],
+    };
+    const withoutOlderCost = {
+      ...withOlderCost,
+      directCosts: [withOlderCost.directCosts[1]!],
+    };
+
+    const fingerprintA = computeJobFinancialSourceFingerprintFromSources(withOlderCost);
+    const fingerprintB = computeJobFinancialSourceFingerprintFromSources(withoutOlderCost);
+    assert.notEqual(fingerprintA, fingerprintB);
+    assert.equal(isFinancialReviewStale(fingerprintA, fingerprintB, 'financially_complete'), true);
+
+    const stale = assess({
+      financialReview: {
+        status: 'financially_complete',
+        reviewFingerprint: fingerprintA,
+        isStale: true,
+      },
+    });
+    assert.ok(stale.flags.some((f) => f.type === 'FINANCIAL_REVIEW_STALE'));
+  });
+
+  it('20 reallocating labour entry away invalidates reviewed fingerprint', () => {
+    const jobId = 'job-realloc-proof';
+    const withLabour = {
+      jobId,
+      invoices: [
+        {
+          id: 'inv',
+          status: 'sent',
+          totalCents: 15_000,
+          subtotalCents: 13_043,
+          vatCents: 1957,
+          amountPaidCents: 15_000,
+        },
+      ],
+      quotes: [],
+      adjustments: [],
+      materialLines: [],
+      purchaseOrders: [],
+      labourEntries: [
+        {
+          id: 'lab-old',
+          entryType: 'job_time',
+          durationMinutes: 60,
+          hourlyCostCents: 8000,
+          overtimeMultiplier: 1,
+          metadata: { hourlyCostLockedAt: '2026-01-01T08:00:00.000Z' },
+        },
+        {
+          id: 'lab-new',
+          entryType: 'job_time',
+          durationMinutes: 120,
+          hourlyCostCents: 8000,
+          overtimeMultiplier: 1,
+          metadata: { hourlyCostLockedAt: '2026-01-02T08:00:00.000Z' },
+        },
+      ],
+      directCosts: [],
+      payments: [{ id: 'pay-1', amountCents: 15_000, xeroPaymentStatus: 'AUTHORISED' }],
+    };
+    const labourReallocated = {
+      ...withLabour,
+      labourEntries: [withLabour.labourEntries[1]!],
+    };
+
+    const fingerprintA = computeJobFinancialSourceFingerprintFromSources(withLabour);
+    const fingerprintB = computeJobFinancialSourceFingerprintFromSources(labourReallocated);
+    assert.notEqual(fingerprintA, fingerprintB);
+    assert.equal(isFinancialReviewStale(fingerprintA, fingerprintB, 'financially_complete'), true);
   });
 
   it('17 technician cannot access finance queue', () => {

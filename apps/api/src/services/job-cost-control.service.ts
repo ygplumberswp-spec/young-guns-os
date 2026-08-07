@@ -59,12 +59,14 @@ export type JobCostControlFilters = {
 export type JobFinancialReviewSummary = {
   jobId: string;
   status: JobFinancialReviewStatus;
-  reviewFingerprint: string | null;
+  /** Fingerprint stored at last financial sign-off. */
+  reviewedSourceFingerprint: string | null;
   reviewedAt: string | null;
   reviewedByUserId: string | null;
   reviewNotes: string | null;
   isStale: boolean;
-  currentFingerprint: string | null;
+  /** Current deterministic hash of profitability-driving source state. */
+  currentSourceFingerprint: string | null;
   completeness: JobFinancialCompleteness;
 };
 
@@ -87,7 +89,7 @@ export class JobCostControlService {
     return {
       jobId,
       status: review.status as JobFinancialReviewStatus,
-      reviewFingerprint: review.reviewFingerprint,
+      reviewedSourceFingerprint: review.reviewFingerprint,
       reviewedAt: review.reviewedAt?.toISOString() ?? null,
       reviewedByUserId: review.reviewedByUserId,
       reviewNotes: review.reviewNotes,
@@ -96,7 +98,7 @@ export class JobCostControlService {
         profitability.snapshot.sourceFingerprint,
         review.status as JobFinancialReviewStatus,
       ),
-      currentFingerprint: profitability.snapshot.sourceFingerprint,
+      currentSourceFingerprint: profitability.snapshot.sourceFingerprint,
       completeness,
     };
   }

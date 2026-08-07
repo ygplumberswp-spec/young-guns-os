@@ -27,6 +27,7 @@ import {
   type SourceProvenanceSummary,
   type TaxBasis,
 } from './job-profitability-source-integrity.js';
+import { JPE_FINANCIAL_FINGERPRINT_VERSION } from './job-financial-fingerprint.js';
 
 export const JPE_CALCULATION_VERSION = 4;
 
@@ -153,9 +154,11 @@ export type JobProfitabilityCashExplainability = {
 export type JobProfitabilitySnapshotMeta = {
   calculatedAt: string;
   calculationVersion: number;
+  /** Deterministic SHA-256 of canonical profitability source state (JPE-002A). */
+  sourceFingerprint: string | null;
+  sourceFingerprintVersion: number | null;
   /** GET /profitability always recomputes from sources — snapshot is write-through cache. */
   isLiveCalculation: true;
-  sourceFingerprint: string | null;
 };
 
 export type JobProfitabilityExpectedActual = {
@@ -1109,6 +1112,8 @@ export function computeJobProfitability(input: ComputeJobProfitabilityInput): Jo
     calculationVersion: JPE_CALCULATION_VERSION,
     isLiveCalculation: true,
     sourceFingerprint: input.sourceFingerprint ?? null,
+    sourceFingerprintVersion:
+      input.sourceFingerprint != null ? JPE_FINANCIAL_FINGERPRINT_VERSION : null,
   };
 
   const { completeness, warnings } = assessProfitabilityCompleteness({

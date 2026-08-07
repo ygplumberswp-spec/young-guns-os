@@ -7,6 +7,7 @@ import type {
 import {
   applyAuditedLabourRateCorrection,
   assessLabourRateConfidence,
+  computeJobFinancialSourceFingerprintFromSources,
   computeJobProfitability,
   isFinanciallyAuthoritativeTimeEntry,
   JPE_CALCULATION_VERSION,
@@ -214,21 +215,153 @@ export class JobProfitabilityService {
     const currency = settingsRow?.currency ?? quoteRows[0]?.currency ?? 'ZAR';
     const labourRateCentsPerHour = settingsRow?.defaultInternalLabourRateCentsPerHour ?? 8000;
 
-    const sourceTimestamps = [
-      job.updatedAt,
-      ...quoteRows.map((row) => row.updatedAt),
-      ...materialRows.map((row) => row.updatedAt),
-      ...poRows.map((row) => row.updatedAt),
-      ...invoiceRows.map((row) => row.updatedAt),
-      ...paymentRows.map((row) => row.createdAt),
-      ...labourRows.map((row) => row.createdAt),
-      ...directCostRows.map((row) => row.updatedAt),
-      ...adjustmentRows.map((row) => row.updatedAt),
-    ].map((value) => value.getTime());
-    const sourceFingerprint =
-      sourceTimestamps.length > 0
-        ? String(Math.max(...sourceTimestamps))
-        : null;
+    const materialLines = materialRows.map((row) => ({
+      id: row.id,
+      status: row.status ?? 'used',
+      quantity: String(row.quantity),
+      fulfilledQuantity: row.fulfilledQuantity ? String(row.fulfilledQuantity) : null,
+      unitCostCents: row.unitCostCents ?? 0,
+      materialSource: row.materialSource,
+      description: row.description,
+      recordedByUserId: row.recordedByUserId,
+      createdAt: row.createdAt.toISOString(),
+      supplierReference: row.supplierReference,
+    }));
+
+    const purchaseOrderPayload = poRows.map((row) => ({
+      id: row.id,
+      referenceNumber: row.referenceNumber,
+      status: row.status,
+      totalCostCents: row.totalCostCents,
+      items: row.items.map((item) => ({
+        id: item.id,
+        lineTotalCents: item.lineTotalCents,
+        description: item.description,
+      })),
+    }));
+
+    const invoicePayload = invoiceRows.map((row) => ({
+      id: row.id,
+      status: row.status,
+      totalCents: row.totalCents,
+      subtotalCents: row.subtotalCents,
+      vatCents: row.vatCents,
+      amountPaidCents: row.amountPaidCents,
+    }));
+
+    const paymentPayload = paymentRows.map((row) => ({
+      id: row.id,
+      amountCents: row.amountCents,
+      paidAt: row.paidAt.toISOString(),
+      reference: row.reference,
+      xeroPaymentStatus: row.xeroPaymentStatus,
+    }));
+
+    const quotePayload = quoteRows.map((row) => ({
+      id: row.id,
+      status: row.status,
+      totalCents: row.totalCents,
+      subtotalCents: row.subtotalCents,
+      lineItems: row.lineItems.map((line) => ({
+        id: line.id,
+        category: line.category,
+        lineCostCents: line.lineCostCents,
+        lineSubtotalCents: line.lineSubtotalCents,
+        isOptional: line.isOptional,
+      })),
+    }));
+
+    const labourEntries = labourRows.map((row) => {
+      const metadata = (row.metadata ?? {}) as Record<string, unknown>;
+      return {
+        id: row.id,
+        userId: row.userId,
+        entryType: row.entryType,
+        durationMinutes: row.durationMinutes ?? 0,
+        startedAt: row.startedAt.toISOString(),
+        endedAt: row.endedAt?.toISOString() ?? null,
+        approved: isFinanciallyAuthoritativeTimeEntry(
+          row.entryType,
+          row.endedAt,
+          row.durationMinutes,
+        ),
+        metadata,
+        labourRateConfidence: assessLabourRateConfidence(
+          metadata,
+          row.entryType,
+          row.durationMinutes ?? 0,
+          row.endedAt?.toISOString() ?? null,
+        ),
+        hourlyCostCents: resolveProvisionalLabourHourlyCostCents(metadata, labourRateCentsPerHour),
+        overtimeMultiplier:
+          typeof row.metadata?.overtimeMultiplier === 'number'
+            ? row.metadata.overtimeMultiplier
+            : 1,
+      };
+    });
+
+    const directCosts = directCostRows.map((row) => ({
+      id: row.id,
+      category: row.category,
+      description: row.description,
+      amountCents: row.amountCents,
+      sourceType: row.sourceType,
+      sourceId: row.sourceId,
+      costDate: row.costDate?.toISOString() ?? null,
+      enteredByUserId: row.enteredByUserId,
+      isPaid: row.isPaid,
+      notes: row.notes,
+      receiptDocumentId: row.receiptDocumentId,
+    }));
+
+    const adjustments = adjustmentRows.map((row) => ({
+      id: row.id,
+      kind: row.kind,
+      amountCents: row.amountCents,
+      reason: row.reason,
+      createdAt: row.createdAt.toISOString(),
+      createdByUserId: row.createdByUserId,
+    }));
+
+    const sourceFingerprint = computeJobFinancialSourceFingerprintFromSources({
+      jobId,
+      invoices: invoicePayload,
+      quotes: quotePayload,
+      adjustments: adjustments.map((row) => ({
+        id: row.id,
+        kind: row.kind,
+        amountCents: row.amountCents,
+      })),
+      materialLines: materialLines.map((row) => ({
+        id: row.id,
+        status: row.status,
+        quantity: row.quantity,
+        fulfilledQuantity: row.fulfilledQuantity,
+        unitCostCents: row.unitCostCents,
+        materialSource: row.materialSource,
+      })),
+      purchaseOrders: purchaseOrderPayload.map((row) => ({
+        id: row.id,
+        status: row.status,
+        totalCostCents: row.totalCostCents,
+        items: row.items.map((item) => ({ id: item.id, lineTotalCents: item.lineTotalCents })),
+      })),
+      labourEntries,
+      directCosts: directCosts.map((row) => ({
+        id: row.id,
+        category: row.category,
+        amountCents: row.amountCents,
+        sourceType: row.sourceType,
+        sourceId: row.sourceId,
+        isPaid: row.isPaid,
+        receiptDocumentId: row.receiptDocumentId,
+      })),
+      payments: paymentPayload.map((row) => ({
+        id: row.id,
+        amountCents: row.amountCents,
+        xeroPaymentStatus: row.xeroPaymentStatus,
+      })),
+    });
 
     return computeJobProfitability({
       jobId,
@@ -240,45 +373,11 @@ export class JobProfitabilityService {
         healthyMarginBps: settingsRow?.profitabilityHealthyMarginBps ?? 2500,
         warningMarginBps: settingsRow?.profitabilityWarningMarginBps ?? 1500,
       },
-      materialLines: materialRows.map((row) => ({
-        id: row.id,
-        status: row.status ?? 'used',
-        quantity: String(row.quantity),
-        fulfilledQuantity: row.fulfilledQuantity ? String(row.fulfilledQuantity) : null,
-        unitCostCents: row.unitCostCents ?? 0,
-        materialSource: row.materialSource,
-        description: row.description,
-        recordedByUserId: row.recordedByUserId,
-        createdAt: row.createdAt.toISOString(),
-        supplierReference: row.supplierReference,
-      })),
-      purchaseOrders: poRows.map((row) => ({
-        id: row.id,
-        referenceNumber: row.referenceNumber,
-        status: row.status,
-        totalCostCents: row.totalCostCents,
-        items: row.items.map((item) => ({
-          id: item.id,
-          lineTotalCents: item.lineTotalCents,
-          description: item.description,
-        })),
-      })),
-      invoices: invoiceRows.map((row) => ({
-        id: row.id,
-        status: row.status,
-        totalCents: row.totalCents,
-        subtotalCents: row.subtotalCents,
-        vatCents: row.vatCents,
-        amountPaidCents: row.amountPaidCents,
-      })),
-      payments: paymentRows.map((row) => ({
-        id: row.id,
-        amountCents: row.amountCents,
-        paidAt: row.paidAt.toISOString(),
-        reference: row.reference,
-        xeroPaymentStatus: row.xeroPaymentStatus,
-      })),
-      quotes: quoteRows.map((row) => ({
+      materialLines,
+      purchaseOrders: purchaseOrderPayload,
+      invoices: invoicePayload,
+      payments: paymentPayload,
+      quotes: quotePayload.map((row) => ({
         id: row.id,
         status: row.status,
         totalCents: row.totalCents,
@@ -290,54 +389,9 @@ export class JobProfitabilityService {
           isOptional: line.isOptional,
         })),
       })),
-      labourEntries: labourRows.map((row) => {
-        const metadata = (row.metadata ?? {}) as Record<string, unknown>;
-        return {
-          id: row.id,
-          userId: row.userId,
-          entryType: row.entryType,
-          durationMinutes: row.durationMinutes ?? 0,
-          startedAt: row.startedAt.toISOString(),
-          endedAt: row.endedAt?.toISOString() ?? null,
-          approved: isFinanciallyAuthoritativeTimeEntry(
-            row.entryType,
-            row.endedAt,
-            row.durationMinutes,
-          ),
-          metadata,
-          labourRateConfidence: assessLabourRateConfidence(
-            metadata,
-            row.entryType,
-            row.durationMinutes ?? 0,
-            row.endedAt?.toISOString() ?? null,
-          ),
-          hourlyCostCents: resolveProvisionalLabourHourlyCostCents(metadata, labourRateCentsPerHour),
-          overtimeMultiplier:
-            typeof row.metadata?.overtimeMultiplier === 'number'
-              ? row.metadata.overtimeMultiplier
-              : 1,
-        };
-      }),
-      directCosts: directCostRows.map((row) => ({
-        id: row.id,
-        category: row.category,
-        description: row.description,
-        amountCents: row.amountCents,
-        sourceType: row.sourceType,
-        sourceId: row.sourceId,
-        costDate: row.costDate?.toISOString() ?? null,
-        enteredByUserId: row.enteredByUserId,
-        isPaid: row.isPaid,
-        notes: row.notes,
-      })),
-      adjustments: adjustmentRows.map((row) => ({
-        id: row.id,
-        kind: row.kind,
-        amountCents: row.amountCents,
-        reason: row.reason,
-        createdAt: row.createdAt.toISOString(),
-        createdByUserId: row.createdByUserId,
-      })),
+      labourEntries,
+      directCosts,
+      adjustments,
       includeSensitiveCosts: options.includeSensitiveCosts ?? false,
       sourceFingerprint,
     });

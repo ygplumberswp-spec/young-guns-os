@@ -55,6 +55,7 @@ export * from './inventory.js';
 export * from './job-costing.js';
 export * from './job-profitability.js';
 export * from './job-profitability-source-integrity.js';
+export * from './job-financial-fingerprint.js';
 export * from './job-cost-control.js';
 export * from './job-document-pack.js';
 export * from './completion-report.js';
