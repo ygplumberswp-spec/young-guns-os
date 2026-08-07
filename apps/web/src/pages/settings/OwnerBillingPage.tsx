@@ -2,13 +2,14 @@ import { PageHeader } from '../../components/ux';
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'wouter';
 import { Button, EmptyState, Panel, StatCard } from '@titan/ui';
-import type { SmOwnerBillingSummary } from '@titan/shared';
+import type { SaasTenantSubscriptionView, SmOwnerBillingSummary } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import {
   cancelSubscription,
   fetchOwnerBilling,
   upgradeSubscription,
 } from '../../lib/enterprise-saas-management-api-client';
+import { fetchTenantSubscriptionView } from '../../lib/platform-api-client';
 import { useAuth } from '../../lib/auth-context';
 import {
   canAccessSaasManagement,
@@ -20,6 +21,7 @@ import {
 export function OwnerBillingPage() {
   const { accessToken, user } = useAuth();
   const [billing, setBilling] = useState<SmOwnerBillingSummary | null>(null);
+  const [subscriptionView, setSubscriptionView] = useState<SaasTenantSubscriptionView | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isWorking, setIsWorking] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,8 +35,12 @@ export function OwnerBillingPage() {
 
   async function load() {
     if (!accessToken) return;
-    const data = await fetchOwnerBilling(accessToken);
-    setBilling(data);
+    const [billingData, viewData] = await Promise.all([
+      fetchOwnerBilling(accessToken),
+      fetchTenantSubscriptionView(accessToken).catch(() => null),
+    ]);
+    setBilling(billingData);
+    setSubscriptionView(viewData);
   }
 
   useEffect(() => {
@@ -86,11 +92,14 @@ export function OwnerBillingPage() {
     );
   }
 
+  const seats = subscriptionView?.seats;
+  const fairUse = subscriptionView?.fairUse;
+
   return (
     <div className="automation-page">
       <PageHeader
         title="Subscription & Billing"
-        description="View your subscription, usage, invoices, and add-ons. Built on the existing SaaS platform — no fake billing data."
+        description="Your TITAN plan, included team seats, usage status, and renewal information. Internal provider costs and margins are not shown."
         actions={
           <Link href="/saas-management">
             <Button variant="secondary">SaaS Management</Button>
@@ -107,64 +116,164 @@ export function OwnerBillingPage() {
         <EmptyState title="No Billing Data" description="Billing information is unavailable." />
       ) : (
         <>
+          {subscriptionView?.billingAttention ? (
+            <Panel title="Payment / entitlement attention">
+              <p>
+                Your subscription needs attention. Operational access follows paid-through
+                entitlement rules — your data remains safely stored.
+              </p>
+              {subscriptionView.paidThroughAt ? (
+                <p>
+                  Paid through:{' '}
+                  {new Date(subscriptionView.paidThroughAt).toLocaleDateString()}
+                </p>
+              ) : null}
+            </Panel>
+          ) : null}
+
           <div className="stat-grid">
             <StatCard
-              label="Subscription"
-              value={billing.subscription ? formatStatus(billing.subscription.status) : 'None'}
+              label="Current plan"
+              value={subscriptionView?.plan?.name ?? billing.subscription?.plan?.name ?? '—'}
             />
-            <StatCard label="Plan" value={billing.subscription?.plan?.name ?? '—'} />
-            <StatCard label="Users" value={String(billing.usage.userCount)} />
-            <StatCard label="API Calls" value={String(billing.usage.apiRequestCount)} />
+            <StatCard
+              label="Subscription"
+              value={
+                subscriptionView?.subscription
+                  ? formatStatus(subscriptionView.subscription.status)
+                  : billing.subscription
+                    ? formatStatus(billing.subscription.status)
+                    : 'None'
+              }
+            />
+            <StatCard
+              label="Seats used"
+              value={
+                seats
+                  ? `${seats.usage.totalUsed}${seats.totalIncluded != null ? ` / ${seats.totalIncluded}` : ''}`
+                  : String(billing.usage.userCount)
+              }
+            />
+            <StatCard
+              label="Usage status"
+              value={fairUse ? formatStatus(fairUse.overall) : '—'}
+            />
           </div>
 
-          <Panel title="Subscription">
-            {billing.subscription ? (
-              <>
-                <p>Status: {formatStatus(billing.subscription.status)}</p>
-                {billing.subscription.trialEndsAt ? (
-                  <p>
-                    Trial ends: {new Date(billing.subscription.trialEndsAt).toLocaleDateString()}
-                  </p>
-                ) : null}
-                {canWrite && billing.subscription.plan ? (
-                  <div className="page-header-actions">
-                    {billing.plans
-                      .filter((p) => p.id !== billing.subscription?.plan?.id)
-                      .map((plan) => (
-                        <Button
-                          key={plan.id}
-                          variant="secondary"
-                          disabled={isWorking}
-                          onClick={() =>
-                            void runAction(
-                              () => upgradeSubscription(accessToken!, plan.id),
-                              `Plan change to ${plan.name} requested.`,
-                            )
-                          }
-                        >
-                          Switch to {plan.name}
-                        </Button>
-                      ))}
+          <Panel title="Included team">
+            {seats ? (
+              <div className="stat-grid">
+                <StatCard
+                  label="Admin / Office"
+                  value={`${seats.usage.adminOfficeUsed}${seats.adminOfficeIncluded != null ? ` / ${seats.adminOfficeIncluded}` : ''}`}
+                />
+                <StatCard
+                  label="Technicians"
+                  value={`${seats.usage.technicianUsed}${seats.technicianIncluded != null ? ` / ${seats.technicianIncluded}` : ''}`}
+                />
+                <StatCard
+                  label="Over-limit"
+                  value={seats.overLimitState === 'action_required' ? 'Action required' : 'None'}
+                />
+              </div>
+            ) : (
+              <p>Seat details unavailable for this tenant.</p>
+            )}
+            {seats?.overLimitState === 'action_required' ? (
+              <p className="muted-text">
+                Existing users and history are preserved. Additional seats cannot be created until
+                access is adjusted or the plan is upgraded.
+              </p>
+            ) : null}
+          </Panel>
+
+          <Panel title="Renewal information">
+            <p>
+              Paid through:{' '}
+              {subscriptionView?.paidThroughAt
+                ? new Date(subscriptionView.paidThroughAt).toLocaleDateString()
+                : '—'}
+            </p>
+            <p>
+              Next renewal:{' '}
+              {subscriptionView?.nextRenewalAt
+                ? new Date(subscriptionView.nextRenewalAt).toLocaleDateString()
+                : '—'}
+            </p>
+            {billing.subscription?.trialEndsAt ? (
+              <p>
+                Trial ends: {new Date(billing.subscription.trialEndsAt).toLocaleDateString()}
+              </p>
+            ) : null}
+          </Panel>
+
+          <Panel title="Upgrade options">
+            {subscriptionView?.upgradePlans?.length || billing.plans.length ? (
+              <div className="page-header-actions">
+                {(subscriptionView?.upgradePlans ?? billing.plans)
+                  .filter((plan) => plan.id !== (subscriptionView?.plan?.id ?? billing.subscription?.plan?.id))
+                  .map((plan) => (
                     <Button
+                      key={plan.id}
                       variant="secondary"
-                      disabled={isWorking}
+                      disabled={isWorking || !canWrite}
                       onClick={() =>
                         void runAction(
-                          () => cancelSubscription(accessToken!),
-                          'Cancellation requested.',
+                          () => upgradeSubscription(accessToken!, plan.id),
+                          `Plan change to ${plan.name} requested. Existing data preserved.`,
                         )
                       }
                     >
-                      Cancel Subscription
+                      Upgrade to {plan.name}
                     </Button>
-                  </div>
+                  ))}
+                {canWrite && billing.subscription ? (
+                  <Button
+                    variant="secondary"
+                    disabled={isWorking}
+                    onClick={() =>
+                      void runAction(
+                        () => cancelSubscription(accessToken!),
+                        'Cancellation requested.',
+                      )
+                    }
+                  >
+                    Cancel Subscription
+                  </Button>
                 ) : null}
-              </>
+              </div>
             ) : (
               <EmptyState
-                title="No Subscription"
-                description="Contact your platform administrator to activate a subscription."
+                title="No upgrade options"
+                description="Contact your platform administrator if you need a different package."
               />
+            )}
+          </Panel>
+
+          <Panel title="Fair-use / usage">
+            {fairUse && fairUse.metrics.length > 0 ? (
+              <div className="data-list">
+                {fairUse.metrics.map((metric) => (
+                  <div key={metric.metric} className="data-list-item">
+                    <strong>{metric.metric.replace(/_/g, ' ')}</strong>
+                    <span className="status-pill">{formatStatus(metric.state)}</span>
+                    <span>
+                      {metric.used}
+                      {metric.allowance != null ? ` / ${metric.allowance}` : ''}
+                    </span>
+                    <p className="muted-text">{metric.message}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="stat-grid">
+                <StatCard
+                  label="Storage"
+                  value={`${Math.round(billing.usage.storageBytes / 1024 / 1024)} MB`}
+                />
+                <StatCard label="AI Usage" value={String(billing.usage.aiUsageCount)} />
+                <StatCard label="Integrations" value={String(billing.usage.integrationCount)} />
+              </div>
             )}
           </Panel>
 
@@ -182,40 +291,6 @@ export function OwnerBillingPage() {
                     <span className="status-pill">{formatStatus(record.status)}</span>
                     <span>{formatCurrency(record.amountCents, record.currency)}</span>
                     <span>{new Date(record.issuedAt).toLocaleDateString()}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Panel>
-
-          <Panel title="Usage">
-            <div className="stat-grid">
-              <StatCard
-                label="Storage"
-                value={`${Math.round(billing.usage.storageBytes / 1024 / 1024)} MB`}
-              />
-              <StatCard label="AI Usage" value={String(billing.usage.aiUsageCount)} />
-              <StatCard label="Integrations" value={String(billing.usage.integrationCount)} />
-            </div>
-          </Panel>
-
-          <Panel title="Add-Ons">
-            {billing.addOns.length === 0 ? (
-              <EmptyState
-                title="No Add-Ons"
-                description="Purchase add-ons from SaaS Management."
-                action={
-                  <Link href="/saas-management">
-                    <Button variant="secondary">View Add-Ons</Button>
-                  </Link>
-                }
-              />
-            ) : (
-              <div className="data-list">
-                {billing.addOns.map((addOn) => (
-                  <div key={addOn.id} className="data-list-item">
-                    <strong>{addOn.addOnName}</strong>
-                    <span className="status-pill">{formatStatus(addOn.status)}</span>
                   </div>
                 ))}
               </div>

@@ -8,6 +8,7 @@ import {
   withUniqueSuffix,
 } from '@titan/auth';
 import type {
+  AssignSaasPlanRequest,
   ChangeSaasSubscriptionPlanRequest,
   CreateSaasFeatureFlagRequest,
   CreateSaasPlatformActionRequest,
@@ -18,22 +19,35 @@ import type {
   ProvisionSaasTenantRequest,
   SaasBillingRecordSummary,
   SaasBrandingProfileSummary,
+  SaasFairUseStatusSummary,
   SaasFeatureEntitlementSummary,
   SaasFeatureFlagSummary,
   SaasPlatformActionSummary,
   SaasPlatformAnalyticsSummary,
   SaasPlatformAuditSummary,
+  SaasPlanLimits,
+  SaasSeatStatusSummary,
   SaasSubscriptionPlanSummary,
   SaasSubscriptionSummary,
   SaasTenantAccessDecision,
   SaasTenantBranchSummary,
+  SaasTenantSubscriptionView,
   SaasTenantSummary,
   SaasUsageSummary,
+  ScheduleSaasPlanChangeRequest,
   UpdateSaasBrandingRequest,
+  UpdateSaasSubscriptionPlanRequest,
 } from '@titan/shared';
 import {
+  assertNoUnlimitedHighCost,
+  buildMarginSnapshot,
+  evaluateDowngradeSeatImpact,
+  evaluateFairUse,
   evaluateSaasTenantAccess,
+  evaluateSeatAvailability,
+  resolveSeatAllowance,
   saasAccessStatusChip,
+  TITAN_CANONICAL_PLANS,
 } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
 import {
@@ -143,6 +157,10 @@ export class EnterpriseSaasPlatformService {
     const isPlatformOwner = await this.isPlatformOwnerTenant(companyId);
     const subscriptionEnforced = !isPlatformOwner;
 
+    if (isPlatformOwner) {
+      await this.ensureCanonicalPlans(companyId);
+    }
+
     const [
       tenantProfile,
       subscription,
@@ -157,6 +175,8 @@ export class EnterpriseSaasPlatformService {
       platformAnalytics,
       recentAudits,
       pendingActions,
+      seatStatus,
+      fairUseStatus,
     ] = await Promise.all([
       this.getTenantProfileRow(companyId),
       this.getSubscriptionSummary(companyId),
@@ -171,6 +191,8 @@ export class EnterpriseSaasPlatformService {
       isPlatformOwner ? this.getPlatformAnalytics() : Promise.resolve(null),
       isPlatformOwner ? this.listRecentAudits(companyId) : Promise.resolve([]),
       this.listPlatformActions(companyId, 'pending_approval'),
+      this.getSeatStatus(companyId),
+      this.getFairUseStatus(companyId),
     ]);
 
     const summary = isPlatformOwner
@@ -202,6 +224,8 @@ export class EnterpriseSaasPlatformService {
       platformAnalytics,
       recentAudits,
       pendingActionCount: pendingActions.length,
+      seatStatus,
+      fairUseStatus,
     };
   }
 
@@ -683,6 +707,14 @@ export class EnterpriseSaasPlatformService {
     input: CreateSaasSubscriptionPlanRequest,
   ): Promise<SaasSubscriptionPlanSummary> {
     await this.requirePlatformOwner(scope.companyId);
+    const limits = (input.limits ?? {}) as SaasPlanLimits;
+    const unlimitedCheck = assertNoUnlimitedHighCost(limits);
+    if (!unlimitedCheck.ok) {
+      throw new EnterpriseSaasPlatformError(
+        'VALIDATION_ERROR',
+        `Invalid high-cost entitlement: ${unlimitedCheck.issues.join(', ')}`,
+      );
+    }
     const [row] = await this.deps.db
       .insert(saasSubscriptionPlans)
       .values({
@@ -694,15 +726,144 @@ export class EnterpriseSaasPlatformService {
         priceCents: input.priceCents ?? 0,
         billingInterval: input.billingInterval ?? 'monthly',
         features: input.features ?? [],
-        limits: input.limits ?? {},
+        limits,
+        currency: input.currency ?? 'ZAR',
+        pricingConfigurable: input.pricingConfigurable ?? true,
+        commercialConfig: input.commercialConfig ?? {
+          pricingConfigurable: true,
+          pricingLocked: false,
+          notes: 'Configurable staging plan — not a final launch price commitment.',
+        },
       })
       .returning();
+    await this.recordAudit(scope, {
+      actionType: 'plan_created',
+      subject: input.planKey,
+      details: JSON.stringify({ before: null, after: { planKey: input.planKey, tier: input.tier } }),
+    });
     const plans = await this.listPlans(scope.companyId);
     const plan = plans.find((entry) => entry.id === row!.id);
     if (!plan) {
       throw new EnterpriseSaasPlatformError('NOT_FOUND', 'Plan not found after creation');
     }
     return plan;
+  }
+
+  async updatePlan(
+    scope: StaffScope,
+    planId: string,
+    input: UpdateSaasSubscriptionPlanRequest,
+  ): Promise<SaasSubscriptionPlanSummary> {
+    await this.requirePlatformOwner(scope.companyId);
+    const existing = await this.deps.db.query.saasSubscriptionPlans.findFirst({
+      where: and(
+        eq(saasSubscriptionPlans.id, planId),
+        eq(saasSubscriptionPlans.ownerCompanyId, scope.companyId),
+      ),
+    });
+    if (!existing) {
+      throw new EnterpriseSaasPlatformError('NOT_FOUND', 'Plan not found');
+    }
+    if (input.limits) {
+      const unlimitedCheck = assertNoUnlimitedHighCost(input.limits);
+      if (!unlimitedCheck.ok) {
+        throw new EnterpriseSaasPlatformError(
+          'VALIDATION_ERROR',
+          `Invalid high-cost entitlement: ${unlimitedCheck.issues.join(', ')}`,
+        );
+      }
+    }
+    await this.deps.db
+      .update(saasSubscriptionPlans)
+      .set({
+        name: input.name ?? existing.name,
+        description: input.description ?? existing.description,
+        priceCents: input.priceCents ?? existing.priceCents,
+        billingInterval: input.billingInterval ?? existing.billingInterval,
+        features: input.features ?? existing.features,
+        limits: input.limits ?? existing.limits,
+        isActive: input.isActive ?? existing.isActive,
+        currency: input.currency ?? existing.currency,
+        pricingConfigurable: input.pricingConfigurable ?? existing.pricingConfigurable,
+        commercialConfig: input.commercialConfig ?? existing.commercialConfig,
+        updatedAt: new Date(),
+      })
+      .where(eq(saasSubscriptionPlans.id, planId));
+    await this.recordAudit(scope, {
+      actionType: 'plan_changed',
+      subject: existing.planKey,
+      details: JSON.stringify({
+        before: { priceCents: existing.priceCents, isActive: existing.isActive, limits: existing.limits },
+        after: {
+          priceCents: input.priceCents ?? existing.priceCents,
+          isActive: input.isActive ?? existing.isActive,
+          limits: input.limits ?? existing.limits,
+        },
+      }),
+    });
+    const plans = await this.listPlans(scope.companyId);
+    const plan = plans.find((entry) => entry.id === planId);
+    if (!plan) {
+      throw new EnterpriseSaasPlatformError('NOT_FOUND', 'Plan not found after update');
+    }
+    return plan;
+  }
+
+  /** Seed / upsert TITAN Starter·Business·Pro·Enterprise catalog (configurable staging defaults). */
+  async ensureCanonicalPlans(ownerCompanyId: string): Promise<SaasSubscriptionPlanSummary[]> {
+    if (!(await this.isPlatformOwnerTenant(ownerCompanyId))) {
+      return this.listPlans(ownerCompanyId);
+    }
+    for (const def of TITAN_CANONICAL_PLANS) {
+      const existing = await this.deps.db.query.saasSubscriptionPlans.findFirst({
+        where: and(
+          eq(saasSubscriptionPlans.ownerCompanyId, ownerCompanyId),
+          eq(saasSubscriptionPlans.planKey, def.planKey),
+        ),
+      });
+      if (existing) {
+        // Keep Platform Owner edits — only backfill missing commercial metadata.
+        if (!existing.commercialConfig || Object.keys(existing.commercialConfig).length === 0) {
+          await this.deps.db
+            .update(saasSubscriptionPlans)
+            .set({
+              commercialConfig: def.commercial,
+              currency: def.currency,
+              pricingConfigurable: true,
+              updatedAt: new Date(),
+            })
+            .where(eq(saasSubscriptionPlans.id, existing.id));
+        }
+        continue;
+      }
+      await this.deps.db.insert(saasSubscriptionPlans).values({
+        ownerCompanyId,
+        planKey: def.planKey,
+        name: def.name,
+        description: def.description,
+        tier: def.tier,
+        priceCents: def.priceCents,
+        billingInterval: def.billingInterval,
+        features: def.features,
+        limits: def.limits,
+        currency: def.currency,
+        pricingConfigurable: true,
+        commercialConfig: def.commercial,
+        isActive: true,
+      });
+    }
+    return this.listPlans(ownerCompanyId);
+  }
+
+  async seedCanonicalPlans(scope: StaffScope): Promise<SaasSubscriptionPlanSummary[]> {
+    await this.requirePlatformOwner(scope.companyId);
+    const plans = await this.ensureCanonicalPlans(scope.companyId);
+    await this.recordAudit(scope, {
+      actionType: 'plans_seeded',
+      subject: 'canonical_titan_packages',
+      details: JSON.stringify({ planKeys: TITAN_CANONICAL_PLANS.map((plan) => plan.planKey) }),
+    });
+    return plans;
   }
 
   async upgradePlan(
@@ -723,6 +884,377 @@ export class EnterpriseSaasPlatformService {
       await this.assertSubscriptionActive(scope.companyId);
     }
     return this.changePlan(scope, input.planId, 'plan_downgrade');
+  }
+
+  async assignPlanToTenant(
+    scope: StaffScope,
+    targetCompanyId: string,
+    input: AssignSaasPlanRequest,
+  ): Promise<SaasTenantSummary> {
+    await this.requirePlatformOwner(scope.companyId);
+    await this.assertNotPlatformOwnerTarget(targetCompanyId);
+    const before = await this.getSubscriptionSummary(targetCompanyId);
+    await this.changePlan(
+      { companyId: targetCompanyId, userId: scope.userId },
+      input.planId,
+      'plan_upgrade',
+      {
+        actorScope: scope,
+        reason: input.reason ?? 'Assigned by Platform Owner',
+        extraSeatEntitlements: input.extraSeatEntitlements ?? undefined,
+        preservePaidThrough: true,
+      },
+    );
+    await this.recordAudit(scope, {
+      actionType: 'tenant_plan_assigned',
+      subject: targetCompanyId,
+      details: JSON.stringify({
+        beforePlanId: before?.plan?.id ?? null,
+        afterPlanId: input.planId,
+        reason: input.reason ?? null,
+      }),
+      targetCompanyId,
+    });
+    return this.getTenantSummary(targetCompanyId);
+  }
+
+  async schedulePlanChange(
+    scope: StaffScope,
+    input: ScheduleSaasPlanChangeRequest,
+  ): Promise<SaasSubscriptionSummary> {
+    if (await this.shouldEnforceSubscription(scope.companyId)) {
+      await this.assertSubscriptionActive(scope.companyId);
+    }
+    const plan = await this.deps.db.query.saasSubscriptionPlans.findFirst({
+      where: eq(saasSubscriptionPlans.id, input.planId),
+    });
+    if (!plan || !plan.isActive) {
+      throw new EnterpriseSaasPlatformError('NOT_FOUND', 'Subscription plan not found');
+    }
+    const effectiveAt = input.effectiveAt ? new Date(input.effectiveAt) : null;
+    await this.deps.db
+      .update(saasSubscriptions)
+      .set({
+        scheduledPlanId: input.planId,
+        scheduledChangeType: input.changeType,
+        scheduledChangeAt: effectiveAt,
+        updatedAt: new Date(),
+      })
+      .where(eq(saasSubscriptions.companyId, scope.companyId));
+    await this.recordAudit(scope, {
+      actionType: `plan_${input.changeType}_scheduled`,
+      subject: plan.planKey,
+      details: JSON.stringify({
+        planId: input.planId,
+        effectiveAt: effectiveAt?.toISOString() ?? null,
+        reason: input.reason ?? null,
+      }),
+    });
+    return (await this.getSubscriptionSummary(scope.companyId))!;
+  }
+
+  async setExtraSeatEntitlements(
+    scope: StaffScope,
+    targetCompanyId: string,
+    extra: { adminOffice?: number; technician?: number; total?: number },
+  ): Promise<SaasTenantSummary> {
+    await this.requirePlatformOwner(scope.companyId);
+    await this.assertNotPlatformOwnerTarget(targetCompanyId);
+    const before = await this.deps.db.query.saasSubscriptions.findFirst({
+      where: eq(saasSubscriptions.companyId, targetCompanyId),
+    });
+    if (!before) {
+      throw new EnterpriseSaasPlatformError('NOT_FOUND', 'Subscription not found');
+    }
+    await this.deps.db
+      .update(saasSubscriptions)
+      .set({
+        extraSeatEntitlements: {
+          adminOffice: Math.max(0, extra.adminOffice ?? 0),
+          technician: Math.max(0, extra.technician ?? 0),
+          total: Math.max(0, extra.total ?? 0),
+        },
+        updatedAt: new Date(),
+      })
+      .where(eq(saasSubscriptions.companyId, targetCompanyId));
+    await this.recordAudit(scope, {
+      actionType: 'seat_change',
+      subject: targetCompanyId,
+      details: JSON.stringify({
+        before: before.extraSeatEntitlements ?? {},
+        after: extra,
+      }),
+      targetCompanyId,
+    });
+    // Re-evaluate over-limit after seat entitlement change.
+    const usage = await this.getSeatUsage(targetCompanyId);
+    const plan = before.planId
+      ? await this.deps.db.query.saasSubscriptionPlans.findFirst({
+          where: eq(saasSubscriptionPlans.id, before.planId),
+        })
+      : null;
+    const impact = evaluateDowngradeSeatImpact({
+      usage,
+      targetLimits: (plan?.limits ?? null) as SaasPlanLimits | null,
+      extra: {
+        adminOffice: Math.max(0, extra.adminOffice ?? 0),
+        technician: Math.max(0, extra.technician ?? 0),
+        total: Math.max(0, extra.total ?? 0),
+      },
+    });
+    await this.deps.db
+      .update(saasSubscriptions)
+      .set({
+        overLimitState: impact.overLimitState,
+        overLimitDetails: impact.details,
+        updatedAt: new Date(),
+      })
+      .where(eq(saasSubscriptions.companyId, targetCompanyId));
+    return this.getTenantSummary(targetCompanyId);
+  }
+
+  async getTenantSubscriptionView(companyId: string): Promise<SaasTenantSubscriptionView> {
+    const company = await this.deps.db.query.companies.findFirst({
+      where: eq(companies.id, companyId),
+    });
+    const subscription = await this.getSubscriptionSummary(companyId);
+    const seats = await this.getSeatStatus(companyId);
+    const fairUse = await this.getFairUseStatus(companyId);
+    const entitlements = await this.listFeatureEntitlements(companyId);
+    const access = await this.evaluateTenantAccess(companyId);
+    const allPlans = await this.listPlans(companyId);
+    const currentPrice = subscription?.plan?.priceCents ?? 0;
+    const upgradePlans = allPlans.filter(
+      (plan) => plan.isActive && plan.priceCents >= currentPrice && plan.id !== subscription?.plan?.id,
+    );
+
+    return {
+      companyName: company?.name ?? 'Your company',
+      plan: subscription?.plan ?? null,
+      subscription,
+      seats,
+      fairUse,
+      paidThroughAt: access.paidThroughAt,
+      nextRenewalAt: subscription?.currentPeriodEnd ?? null,
+      billingAttention: !access.allowed || access.paymentFailed || seats.overLimitState === 'action_required',
+      upgradePlans,
+      entitlements,
+    };
+  }
+
+  async getSeatUsage(companyId: string): Promise<{
+    adminOfficeUsed: number;
+    technicianUsed: number;
+    totalUsed: number;
+  }> {
+    const members = await this.deps.db
+      .select({ roleName: roles.name })
+      .from(users)
+      .innerJoin(roles, eq(roles.id, users.roleId))
+      .where(and(eq(users.companyId, companyId), eq(users.isActive, true)));
+
+    let adminOfficeUsed = 0;
+    let technicianUsed = 0;
+    for (const member of members) {
+      if (member.roleName === 'Technician') technicianUsed += 1;
+      else if (
+        member.roleName === 'Manager' ||
+        member.roleName === 'Dispatcher' ||
+        member.roleName === 'Accountant' ||
+        member.roleName === 'Admin' ||
+        member.roleName === 'Office'
+      ) {
+        adminOfficeUsed += 1;
+      }
+    }
+    return {
+      adminOfficeUsed,
+      technicianUsed,
+      totalUsed: members.length,
+    };
+  }
+
+  async getSeatStatus(companyId: string): Promise<SaasSeatStatusSummary> {
+    const usage = await this.getSeatUsage(companyId);
+    const subscription = await this.deps.db.query.saasSubscriptions.findFirst({
+      where: eq(saasSubscriptions.companyId, companyId),
+    });
+    const plan = subscription?.planId
+      ? await this.deps.db.query.saasSubscriptionPlans.findFirst({
+          where: eq(saasSubscriptionPlans.id, subscription.planId),
+        })
+      : null;
+    const allowance = resolveSeatAllowance(
+      (plan?.limits ?? null) as SaasPlanLimits | null,
+      subscription?.extraSeatEntitlements ?? {},
+    );
+    return {
+      usage,
+      adminOfficeIncluded: allowance.adminOfficeIncluded,
+      technicianIncluded: allowance.technicianIncluded,
+      totalIncluded: allowance.totalIncluded,
+      adminOfficePermitted: allowance.adminOfficePermitted,
+      technicianPermitted: allowance.technicianPermitted,
+      totalPermitted: allowance.totalPermitted,
+      overLimitState:
+        subscription?.overLimitState === 'action_required' ? 'action_required' : 'none',
+    };
+  }
+
+  async getFairUseStatus(companyId: string): Promise<SaasFairUseStatusSummary> {
+    if (await this.isPlatformOwnerTenant(companyId)) {
+      return { overall: 'normal', metrics: [] };
+    }
+    const subscription = await this.getSubscriptionSummary(companyId);
+    const limits = (subscription?.plan?.limits ?? {}) as SaasPlanLimits;
+    const fair = limits.fairUse ?? {};
+    const aiAllowance = await this.getAiAllowanceSnapshot(companyId);
+    const usage = await this.getUsageSummary(companyId);
+
+    const metrics = [
+      evaluateFairUse({
+        metric: 'ai_tokens',
+        used: 0, // filled below from snapshot path — AI service owns precise token totals
+        allowance: fair.aiTokensMonthly ?? limits.aiTokens ?? null,
+        approachingPercent: fair.approachingPercent,
+        warningPercent: fair.warningPercent,
+        restrictWhenOver: true,
+      }),
+      evaluateFairUse({
+        metric: 'storage_mb',
+        used: Math.round(usage.storageBytes / (1024 * 1024)),
+        allowance: fair.storageMb ?? limits.storageMb ?? null,
+        approachingPercent: fair.approachingPercent,
+        warningPercent: fair.warningPercent,
+      }),
+      evaluateFairUse({
+        metric: 'integrations',
+        used: usage.integrationCount,
+        allowance: fair.highVolumeIntegrations ?? limits.integrations ?? null,
+        approachingPercent: fair.approachingPercent,
+        warningPercent: fair.warningPercent,
+      }),
+    ].map((decision) => ({
+      metric: decision.metric,
+      state: decision.state,
+      used: decision.used,
+      allowance: decision.allowance,
+      percentUsed: decision.percentUsed,
+      message: decision.message,
+    }));
+
+    // Prefer real AI usage count from monthly snapshot as a usage proxy when token totals unavailable.
+    const aiMetric = metrics.find((metric) => metric.metric === 'ai_tokens');
+    if (aiMetric) {
+      aiMetric.used = usage.aiUsageCount;
+      if (aiMetric.allowance != null && aiMetric.allowance > 0) {
+        // Re-evaluate with usage count proxy (requests) when token ledger not exposed here.
+        const refreshed = evaluateFairUse({
+          metric: 'ai_tokens',
+          used: usage.aiUsageCount,
+          allowance: aiMetric.allowance,
+          approachingPercent: fair.approachingPercent,
+          warningPercent: fair.warningPercent,
+          restrictWhenOver: Boolean(aiAllowance.monthlyTokenLimit != null),
+        });
+        aiMetric.state = refreshed.state;
+        aiMetric.percentUsed = refreshed.percentUsed;
+        aiMetric.message = refreshed.message;
+      }
+    }
+
+    const rank: Record<string, number> = {
+      normal: 0,
+      approaching: 1,
+      warning: 2,
+      overage_upgrade_required: 3,
+      restricted: 4,
+    };
+    let overall: SaasFairUseStatusSummary['overall'] = 'normal';
+    for (const metric of metrics) {
+      if (rank[metric.state] > rank[overall]) overall = metric.state;
+    }
+    return { overall, metrics };
+  }
+
+  /**
+   * Server seat gate for invites / seat activation.
+   * Platform-owner tenants bypass. Over-limit tenants cannot add seats.
+   */
+  async assertSeatAvailable(
+    companyId: string,
+    roleName: string,
+  ): Promise<{ allowed: boolean; code: string; message: string; used: number; included: number | null; permitted: number | null }> {
+    if (await this.isPlatformOwnerTenant(companyId)) {
+      return {
+        allowed: true,
+        code: 'OK',
+        message: 'Platform owner tenant — seat enforcement bypassed.',
+        used: 0,
+        included: null,
+        permitted: null,
+      };
+    }
+    // Companies without SaaS enrollment are not seat-gated (Young Guns safety).
+    const profile = await this.getTenantProfileRow(companyId);
+    if (!profile || profile.tenantKind !== 'customer') {
+      return {
+        allowed: true,
+        code: 'OK',
+        message: 'No SaaS customer enrollment — seats not gated.',
+        used: 0,
+        included: null,
+        permitted: null,
+      };
+    }
+
+    const usage = await this.getSeatUsage(companyId);
+    const subscription = await this.deps.db.query.saasSubscriptions.findFirst({
+      where: eq(saasSubscriptions.companyId, companyId),
+    });
+    const plan = subscription?.planId
+      ? await this.deps.db.query.saasSubscriptionPlans.findFirst({
+          where: eq(saasSubscriptionPlans.id, subscription.planId),
+        })
+      : null;
+
+    const decision = evaluateSeatAvailability({
+      roleName,
+      usage,
+      limits: (plan?.limits ?? null) as SaasPlanLimits | null,
+      extra: subscription?.extraSeatEntitlements ?? {},
+    });
+
+    if (subscription?.overLimitState === 'action_required' && decision.category) {
+      return {
+        allowed: false,
+        code: 'SEAT_LIMIT_REACHED',
+        message: 'Seat limit reached',
+        used: decision.used,
+        included: decision.included,
+        permitted: decision.permitted,
+      };
+    }
+
+    return {
+      allowed: decision.allowed,
+      code: decision.code,
+      message: decision.message,
+      used: decision.used,
+      included: decision.included,
+      permitted: decision.permitted,
+    };
+  }
+
+  /** Platform Owner margin hook — never fabricates provider costs. */
+  async getTenantMarginHook(scope: StaffScope, targetCompanyId: string) {
+    await this.requirePlatformOwner(scope.companyId);
+    const subscription = await this.getSubscriptionSummary(targetCompanyId);
+    return buildMarginSnapshot({
+      revenueCents: subscription?.plan?.priceCents ?? null,
+      currency: subscription?.plan?.currency ?? subscription?.currency ?? 'ZAR',
+      costLines: [],
+    });
   }
 
   async cancelSubscription(scope: StaffScope): Promise<SaasSubscriptionSummary> {
@@ -901,51 +1433,203 @@ export class EnterpriseSaasPlatformService {
     scope: StaffScope,
     planId: string,
     actionType: 'plan_upgrade' | 'plan_downgrade',
+    options: {
+      actorScope?: StaffScope;
+      reason?: string;
+      extraSeatEntitlements?: { adminOffice?: number; technician?: number; total?: number };
+      preservePaidThrough?: boolean;
+    } = {},
   ) {
     const plan = await this.deps.db.query.saasSubscriptionPlans.findFirst({
       where: eq(saasSubscriptionPlans.id, planId),
     });
-    if (!plan) {
+    if (!plan || !plan.isActive) {
       throw new EnterpriseSaasPlatformError('NOT_FOUND', 'Subscription plan not found');
     }
 
-    const periodEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    const unlimitedCheck = assertNoUnlimitedHighCost(plan.limits as SaasPlanLimits);
+    if (!unlimitedCheck.ok) {
+      throw new EnterpriseSaasPlatformError(
+        'VALIDATION_ERROR',
+        `Plan grants invalid unlimited high-cost entitlement: ${unlimitedCheck.issues.join(', ')}`,
+      );
+    }
+
+    const existing = await this.deps.db.query.saasSubscriptions.findFirst({
+      where: eq(saasSubscriptions.companyId, scope.companyId),
+    });
+    const beforePlanId = existing?.planId ?? null;
+
+    // CRITICAL (PR #60): do not invent paid-through dates on plan changes.
+    // Preserve existing currentPeriodEnd / entitlement truth.
+    const preservePaidThrough = options.preservePaidThrough !== false;
+    const currentPeriodEnd =
+      preservePaidThrough && existing?.currentPeriodEnd
+        ? existing.currentPeriodEnd
+        : existing?.currentPeriodEnd ?? null;
+
+    const usage = await this.getSeatUsage(scope.companyId);
+    const extra = options.extraSeatEntitlements ?? existing?.extraSeatEntitlements ?? {};
+    const impact = evaluateDowngradeSeatImpact({
+      usage,
+      targetLimits: plan.limits as SaasPlanLimits,
+      extra,
+    });
+
+    // Downgrade must never delete users/data — mark action_required when over limit.
+    const overLimitState =
+      actionType === 'plan_downgrade' && impact.overLimit ? 'action_required' : 'none';
+
     await this.deps.db
       .insert(saasSubscriptions)
       .values({
         companyId: scope.companyId,
         planId,
-        status: 'active',
-        currentPeriodStart: new Date(),
-        currentPeriodEnd: periodEnd,
+        status: existing?.status === 'cancelled' ? 'active' : (existing?.status ?? 'active'),
+        currentPeriodStart: existing?.currentPeriodStart ?? new Date(),
+        currentPeriodEnd,
+        overLimitState,
+        overLimitDetails: impact.details,
+        extraSeatEntitlements: {
+          adminOffice: Math.max(0, extra.adminOffice ?? 0),
+          technician: Math.max(0, extra.technician ?? 0),
+          total: Math.max(0, extra.total ?? 0),
+        },
+        scheduledPlanId: null,
+        scheduledChangeType: null,
+        scheduledChangeAt: null,
       })
       .onConflictDoUpdate({
         target: saasSubscriptions.companyId,
         set: {
           planId,
-          status: 'active',
-          currentPeriodStart: new Date(),
-          currentPeriodEnd: periodEnd,
+          // Do not invent period end; keep paid-through truth.
+          currentPeriodEnd,
+          overLimitState,
+          overLimitDetails: impact.details,
+          extraSeatEntitlements: {
+            adminOffice: Math.max(0, extra.adminOffice ?? 0),
+            technician: Math.max(0, extra.technician ?? 0),
+            total: Math.max(0, extra.total ?? 0),
+          },
+          scheduledPlanId: null,
+          scheduledChangeType: null,
+          scheduledChangeAt: null,
           updatedAt: new Date(),
         },
       });
+
+    await this.syncEntitlementsFromPlan(scope.companyId, plan);
 
     await this.deps.db.insert(saasBillingRecords).values({
       companyId: scope.companyId,
       recordType: 'renewal',
       status: 'pending',
       amountCents: plan.priceCents,
+      currency: plan.currency ?? 'ZAR',
       description: `${actionType === 'plan_upgrade' ? 'Upgrade' : 'Downgrade'} to ${plan.name}`,
-      metadata: { planId, actionType },
+      metadata: {
+        planId,
+        actionType,
+        beforePlanId,
+        overLimitState,
+        preservesExistingUsers: true,
+        paidThroughPreserved: currentPeriodEnd?.toISOString() ?? null,
+        reason: options.reason ?? null,
+      },
     });
 
-    await this.recordAudit(scope, {
+    const auditScope = options.actorScope ?? scope;
+    await this.recordAudit(auditScope, {
       actionType,
       subject: plan.name,
-      details: `Changed to plan ${plan.planKey}`,
+      details: JSON.stringify({
+        beforePlanId,
+        afterPlanId: planId,
+        overLimitState,
+        preservesExistingUsers: true,
+        reason: options.reason ?? null,
+      }),
+      targetCompanyId: scope.companyId !== auditScope.companyId ? scope.companyId : undefined,
     });
 
     return (await this.getSubscriptionSummary(scope.companyId))!;
+  }
+
+  private async syncEntitlementsFromPlan(
+    companyId: string,
+    plan: typeof saasSubscriptionPlans.$inferSelect,
+  ) {
+    const featureKeys = plan.features ?? [];
+    for (const featureKey of featureKeys) {
+      const existing = await this.deps.db.query.saasFeatureEntitlements.findFirst({
+        where: and(
+          eq(saasFeatureEntitlements.companyId, companyId),
+          eq(saasFeatureEntitlements.featureKey, featureKey),
+        ),
+      });
+      if (existing) {
+        await this.deps.db
+          .update(saasFeatureEntitlements)
+          .set({ enabled: true, updatedAt: new Date() })
+          .where(eq(saasFeatureEntitlements.id, existing.id));
+      } else {
+        await this.deps.db.insert(saasFeatureEntitlements).values({
+          companyId,
+          featureKey,
+          enabled: true,
+          limitValue: null,
+        });
+      }
+    }
+
+    // Disable features not on the new plan — access control only; never deletes historical data.
+    const allEntitlements = await this.deps.db.query.saasFeatureEntitlements.findMany({
+      where: eq(saasFeatureEntitlements.companyId, companyId),
+    });
+    const enabledSet = new Set(featureKeys);
+    for (const entitlement of allEntitlements) {
+      if (!enabledSet.has(entitlement.featureKey) && entitlement.enabled) {
+        await this.deps.db
+          .update(saasFeatureEntitlements)
+          .set({ enabled: false, updatedAt: new Date() })
+          .where(eq(saasFeatureEntitlements.id, entitlement.id));
+      }
+    }
+
+    // Sync numeric limit entitlements from plan limits (AI tokens / storage).
+    const limits = plan.limits as SaasPlanLimits;
+    if (limits.aiTokens != null) {
+      await this.upsertLimitEntitlement(companyId, 'ai_tokens', limits.aiTokens);
+    }
+    if (limits.storageMb != null) {
+      await this.upsertLimitEntitlement(companyId, 'storage_mb', limits.storageMb);
+    }
+    if (limits.users != null) {
+      await this.upsertLimitEntitlement(companyId, 'max_users', limits.users);
+    }
+  }
+
+  private async upsertLimitEntitlement(companyId: string, featureKey: string, limitValue: number) {
+    const existing = await this.deps.db.query.saasFeatureEntitlements.findFirst({
+      where: and(
+        eq(saasFeatureEntitlements.companyId, companyId),
+        eq(saasFeatureEntitlements.featureKey, featureKey),
+      ),
+    });
+    if (existing) {
+      await this.deps.db
+        .update(saasFeatureEntitlements)
+        .set({ enabled: true, limitValue, updatedAt: new Date() })
+        .where(eq(saasFeatureEntitlements.id, existing.id));
+    } else {
+      await this.deps.db.insert(saasFeatureEntitlements).values({
+        companyId,
+        featureKey,
+        enabled: true,
+        limitValue,
+      });
+    }
   }
 
   private async ensureTenantProfile(companyId: string) {
@@ -1038,6 +1722,19 @@ export class EnterpriseSaasPlatformService {
       gracePeriodEndsAt: row.gracePeriodEndsAt?.toISOString() ?? null,
       cancelledAt: row.cancelledAt?.toISOString() ?? null,
       subscriptionEnforced: await this.shouldEnforceSubscription(companyId),
+      paidThroughAt: row.currentPeriodEnd?.toISOString() ?? null,
+      lastSuccessfulPaymentAt: row.lastSuccessfulPaymentAt?.toISOString() ?? null,
+      lastPaymentFailedAt: row.lastPaymentFailedAt?.toISOString() ?? null,
+      scheduledPlanId: row.scheduledPlanId ?? null,
+      scheduledChangeType:
+        row.scheduledChangeType === 'upgrade' || row.scheduledChangeType === 'downgrade'
+          ? row.scheduledChangeType
+          : null,
+      scheduledChangeAt: row.scheduledChangeAt?.toISOString() ?? null,
+      overLimitState: row.overLimitState === 'action_required' ? 'action_required' : 'none',
+      overLimitDetails: row.overLimitDetails ?? null,
+      extraSeatEntitlements: row.extraSeatEntitlements ?? {},
+      currency: plan?.currency ?? 'ZAR',
     };
   }
 
@@ -1159,13 +1856,40 @@ export class EnterpriseSaasPlatformService {
     }
 
     const rows = await this.deps.db.query.saasSubscriptionPlans.findMany({
-      where: and(
-        eq(saasSubscriptionPlans.ownerCompanyId, ownerCompanyId),
-        eq(saasSubscriptionPlans.isActive, true),
-      ),
+      where: isOwner
+        ? eq(saasSubscriptionPlans.ownerCompanyId, ownerCompanyId)
+        : and(
+            eq(saasSubscriptionPlans.ownerCompanyId, ownerCompanyId),
+            eq(saasSubscriptionPlans.isActive, true),
+          ),
       orderBy: [desc(saasSubscriptionPlans.createdAt)],
     });
-    return rows.map((row) => this.toPlanSummary(row));
+
+    let activeCountByPlan = new Map<string, number>();
+    if (isOwner && rows.length > 0) {
+      const planIds = rows.map((row) => row.id);
+      const counts = await this.deps.db
+        .select({ planId: saasSubscriptions.planId, value: count() })
+        .from(saasSubscriptions)
+        .innerJoin(
+          saasTenantProfiles,
+          eq(saasTenantProfiles.companyId, saasSubscriptions.companyId),
+        )
+        .where(
+          and(
+            inArray(saasSubscriptions.planId, planIds),
+            eq(saasTenantProfiles.tenantKind, 'customer'),
+          ),
+        )
+        .groupBy(saasSubscriptions.planId);
+      activeCountByPlan = new Map(
+        counts
+          .filter((row) => row.planId != null)
+          .map((row) => [row.planId as string, Number(row.value)]),
+      );
+    }
+
+    return rows.map((row) => this.toPlanSummary(row, activeCountByPlan.get(row.id) ?? 0));
   }
 
   private async listBillingRecords(companyId: string): Promise<SaasBillingRecordSummary[]> {
@@ -1556,6 +2280,7 @@ export class EnterpriseSaasPlatformService {
 
   private toPlanSummary(
     row: typeof saasSubscriptionPlans.$inferSelect,
+    activeTenantCount?: number,
   ): SaasSubscriptionPlanSummary {
     return {
       id: row.id,
@@ -1566,8 +2291,12 @@ export class EnterpriseSaasPlatformService {
       priceCents: row.priceCents,
       billingInterval: row.billingInterval,
       features: row.features,
-      limits: row.limits,
+      limits: row.limits as SaasPlanLimits,
       isActive: row.isActive,
+      currency: row.currency ?? 'ZAR',
+      pricingConfigurable: row.pricingConfigurable ?? true,
+      commercialConfig: (row.commercialConfig as SaasSubscriptionPlanSummary['commercialConfig']) ?? null,
+      activeTenantCount,
     };
   }
 

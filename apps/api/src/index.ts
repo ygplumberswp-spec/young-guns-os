@@ -576,6 +576,9 @@ const enterpriseSaasPlatformService = new EnterpriseSaasPlatformService({
   teamService,
 });
 configureSaasTenantAccessGate(enterpriseSaasPlatformService);
+teamService.setSeatGuard((companyId, roleName) =>
+  enterpriseSaasPlatformService.assertSeatAvailable(companyId, roleName),
+);
 const crmService = new CrmService(db);
 const customerDuplicateMergeService = new CustomerDuplicateMergeService(db);
 const customerValueClassificationService = new CustomerValueClassificationService(db);

@@ -10,8 +10,51 @@ import type { TeamService } from '../services/team.service.js';
 import { createAuthMiddleware, type AuthenticatedRequest } from '../middleware/auth.js';
 import { requireAnyPermission } from '../middleware/rbac.js';
 
-const planTierSchema = z.enum(['free_trial', 'starter', 'professional', 'enterprise']);
+const planTierSchema = z.enum([
+  'free_trial',
+  'starter',
+  'business',
+  'pro',
+  'professional',
+  'enterprise',
+]);
 const billingIntervalSchema = z.enum(['monthly', 'annual']);
+
+const seatLimitsSchema = z.object({
+  adminOffice: z.number().int().min(0).nullable(),
+  technician: z.number().int().min(0).nullable(),
+  total: z.number().int().min(0).nullable().optional(),
+});
+
+const planLimitsSchema = z
+  .object({
+    users: z.number().int().optional(),
+    storageMb: z.number().int().optional(),
+    apiRequests: z.number().int().optional(),
+    aiTokens: z.number().int().optional(),
+    integrations: z.number().int().optional(),
+    seats: seatLimitsSchema.optional(),
+    fairUse: z
+      .object({
+        aiTokensMonthly: z.number().int().nullable().optional(),
+        storageMb: z.number().int().nullable().optional(),
+        communicationsMonthly: z.number().int().nullable().optional(),
+        photosMonthly: z.number().int().nullable().optional(),
+        highVolumeIntegrations: z.number().int().nullable().optional(),
+        approachingPercent: z.number().min(0).max(100).optional(),
+        warningPercent: z.number().min(0).max(100).optional(),
+      })
+      .optional(),
+    extraSeatPricing: z
+      .object({
+        technicianCents: z.number().int().nullable().optional(),
+        adminOfficeCents: z.number().int().nullable().optional(),
+        currency: z.string().trim().min(3).max(3).optional(),
+        pricingConfigurable: z.boolean().optional(),
+      })
+      .optional(),
+  })
+  .optional();
 
 const planSchema = z.object({
   planKey: z.string().trim().min(1).max(100),
@@ -21,15 +64,69 @@ const planSchema = z.object({
   priceCents: z.number().int().min(0).optional(),
   billingInterval: billingIntervalSchema.optional(),
   features: z.array(z.string()).optional(),
-  limits: z
+  limits: planLimitsSchema,
+  currency: z.string().trim().min(3).max(3).optional(),
+  pricingConfigurable: z.boolean().optional(),
+  commercialConfig: z
     .object({
-      users: z.number().int().optional(),
-      storageMb: z.number().int().optional(),
-      apiRequests: z.number().int().optional(),
-      aiTokens: z.number().int().optional(),
-      integrations: z.number().int().optional(),
+      indicativeBandMinCents: z.number().int().nullable().optional(),
+      indicativeBandMaxCents: z.number().int().nullable().optional(),
+      pricingConfigurable: z.boolean(),
+      pricingLocked: z.boolean(),
+      notes: z.string().optional(),
+      costInclusions: z.record(z.string()).optional(),
     })
+    .nullable()
     .optional(),
+});
+
+const updatePlanSchema = z.object({
+  name: z.string().trim().min(1).max(200).optional(),
+  description: z.string().trim().min(1).max(2000).optional(),
+  priceCents: z.number().int().min(0).optional(),
+  billingInterval: billingIntervalSchema.optional(),
+  features: z.array(z.string()).optional(),
+  limits: planLimitsSchema,
+  isActive: z.boolean().optional(),
+  currency: z.string().trim().min(3).max(3).optional(),
+  pricingConfigurable: z.boolean().optional(),
+  commercialConfig: z
+    .object({
+      indicativeBandMinCents: z.number().int().nullable().optional(),
+      indicativeBandMaxCents: z.number().int().nullable().optional(),
+      pricingConfigurable: z.boolean(),
+      pricingLocked: z.boolean(),
+      notes: z.string().optional(),
+      costInclusions: z.record(z.string()).optional(),
+    })
+    .nullable()
+    .optional(),
+});
+
+const assignPlanSchema = z.object({
+  planId: z.string().uuid(),
+  reason: z.string().trim().max(2000).optional().nullable(),
+  extraSeatEntitlements: z
+    .object({
+      adminOffice: z.number().int().min(0).optional(),
+      technician: z.number().int().min(0).optional(),
+      total: z.number().int().min(0).optional(),
+    })
+    .nullable()
+    .optional(),
+});
+
+const schedulePlanChangeSchema = z.object({
+  planId: z.string().uuid(),
+  changeType: z.enum(['upgrade', 'downgrade']),
+  effectiveAt: z.string().trim().optional().nullable(),
+  reason: z.string().trim().max(2000).optional().nullable(),
+});
+
+const extraSeatsSchema = z.object({
+  adminOffice: z.number().int().min(0).optional(),
+  technician: z.number().int().min(0).optional(),
+  total: z.number().int().min(0).optional(),
 });
 
 const brandingSchema = z.object({
@@ -368,6 +465,108 @@ export function createEnterpriseSaasPlatformRouter({
         body,
       );
       res.status(201).json({ data: { plan } });
+    } catch (error) {
+      handleError(error, res);
+    }
+  });
+
+  router.post('/plans/seed-canonical', requirePlatformManage, async (req, res) => {
+    try {
+      const auth = getAuth(req);
+      const plans = await enterpriseSaasPlatformService.seedCanonicalPlans({
+        companyId: auth.companyId,
+        userId: auth.userId,
+      });
+      res.json({ data: { plans } });
+    } catch (error) {
+      handleError(error, res);
+    }
+  });
+
+  router.patch('/plans/:planId', requirePlatformManage, async (req, res) => {
+    try {
+      const auth = getAuth(req);
+      const body = updatePlanSchema.parse(req.body ?? {});
+      const plan = await enterpriseSaasPlatformService.updatePlan(
+        { companyId: auth.companyId, userId: auth.userId },
+        getRouteParam(req.params.planId),
+        body,
+      );
+      res.json({ data: { plan } });
+    } catch (error) {
+      handleError(error, res);
+    }
+  });
+
+  router.get('/subscription/view', requireRead, async (req, res) => {
+    try {
+      const view = await enterpriseSaasPlatformService.getTenantSubscriptionView(
+        getAuth(req).companyId,
+      );
+      res.json({ data: { view } });
+    } catch (error) {
+      handleError(error, res);
+    }
+  });
+
+  router.post('/subscription/schedule-change', requireWrite, async (req, res) => {
+    try {
+      const auth = getAuth(req);
+      const body = schedulePlanChangeSchema.parse(req.body);
+      const subscription = await enterpriseSaasPlatformService.schedulePlanChange(
+        { companyId: auth.companyId, userId: auth.userId },
+        body,
+      );
+      res.json({ data: { subscription } });
+    } catch (error) {
+      handleError(error, res);
+    }
+  });
+
+  router.post('/tenants/:companyId/assign-plan', requirePlatformManage, async (req, res) => {
+    try {
+      const auth = getAuth(req);
+      const body = assignPlanSchema.parse(req.body);
+      const tenant = await enterpriseSaasPlatformService.assignPlanToTenant(
+        { companyId: auth.companyId, userId: auth.userId },
+        getRouteParam(req.params.companyId),
+        body,
+      );
+      res.json({ data: { tenant } });
+    } catch (error) {
+      handleError(error, res);
+    }
+  });
+
+  router.post('/tenants/:companyId/extra-seats', requirePlatformManage, async (req, res) => {
+    try {
+      const auth = getAuth(req);
+      const body = extraSeatsSchema.parse(req.body ?? {});
+      const tenant = await enterpriseSaasPlatformService.setExtraSeatEntitlements(
+        { companyId: auth.companyId, userId: auth.userId },
+        getRouteParam(req.params.companyId),
+        body,
+      );
+      res.json({ data: { tenant } });
+    } catch (error) {
+      handleError(error, res);
+    }
+  });
+
+  router.get('/tenants/:companyId/margin-hook', requirePlatformManage, async (req, res) => {
+    try {
+      const auth = getAuth(req);
+      if (!(await enterpriseSaasPlatformService.isPlatformOwnerTenant(auth.companyId))) {
+        res.status(403).json({
+          error: { code: 'FORBIDDEN', message: 'Platform owner access required' },
+        });
+        return;
+      }
+      const margin = await enterpriseSaasPlatformService.getTenantMarginHook(
+        { companyId: auth.companyId, userId: auth.userId },
+        getRouteParam(req.params.companyId),
+      );
+      res.json({ data: { margin } });
     } catch (error) {
       handleError(error, res);
     }

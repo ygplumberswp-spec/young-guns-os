@@ -77,8 +77,20 @@ type TenantScope = {
 
 type ActorScope = TenantScope & StaffIdentity;
 
+type SeatGuardResult = {
+  allowed: boolean;
+  code: string;
+  message: string;
+  used: number;
+  included: number | null;
+  permitted: number | null;
+};
+
 export class TeamService {
   private payrollService: TechnicianPayrollService | null = null;
+  private seatGuard:
+    | ((companyId: string, roleName: string) => Promise<SeatGuardResult>)
+    | null = null;
 
   constructor(
     private readonly db: DatabaseClient,
@@ -87,6 +99,11 @@ export class TeamService {
 
   setPayrollService(payrollService: TechnicianPayrollService) {
     this.payrollService = payrollService;
+  }
+
+  /** Optional SaaS seat entitlement gate (Department 21). */
+  setSeatGuard(guard: (companyId: string, roleName: string) => Promise<SeatGuardResult>) {
+    this.seatGuard = guard;
   }
 
   async listMembers(companyId: string, actor?: ActorScope): Promise<TeamMember[]> {
@@ -220,6 +237,16 @@ export class TeamService {
         'ROLE_NOT_ASSIGNABLE',
         `The ${role.name} role cannot be assigned via invite`,
       );
+    }
+
+    if (this.seatGuard) {
+      const seat = await this.seatGuard(scope.companyId, role.name);
+      if (!seat.allowed) {
+        throw new TeamError(
+          'SEAT_LIMIT_REACHED',
+          `${seat.message}. Used ${seat.used}${seat.included != null ? ` of ${seat.included} included` : ''}${seat.permitted != null ? ` (${seat.permitted} permitted)` : ''}. Upgrade or add seats.`,
+        );
+      }
     }
 
     let payrollDraft: Record<string, unknown> | null = null;

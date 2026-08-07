@@ -31,6 +31,8 @@ export const saasSubscriptionStatusEnum = pgEnum('saas_subscription_status', [
 export const saasPlanTierEnum = pgEnum('saas_plan_tier', [
   'free_trial',
   'starter',
+  'business',
+  'pro',
   'professional',
   'enterprise',
 ]);
@@ -131,7 +133,20 @@ export const saasSubscriptionPlans = pgTable('saas_subscription_plans', {
       apiRequests?: number;
       aiTokens?: number;
       integrations?: number;
+      seats?: {
+        adminOffice: number | null;
+        technician: number | null;
+        total?: number | null;
+      };
+      fairUse?: Record<string, number | null | undefined>;
+      extraSeatPricing?: Record<string, unknown>;
     }>()
+    .notNull()
+    .default({}),
+  currency: text('currency').notNull().default('ZAR'),
+  pricingConfigurable: boolean('pricing_configurable').notNull().default(true),
+  commercialConfig: jsonb('commercial_config')
+    .$type<Record<string, unknown>>()
     .notNull()
     .default({}),
   isActive: boolean('is_active').notNull().default(true),
@@ -158,6 +173,17 @@ export const saasSubscriptions = pgTable('saas_subscriptions', {
   lastSuccessfulPaymentAt: timestamp('last_successful_payment_at', { withTimezone: true }),
   /** Provider reference for idempotent payment/renewal events. */
   paymentProviderRef: text('payment_provider_ref'),
+  scheduledPlanId: uuid('scheduled_plan_id').references(() => saasSubscriptionPlans.id, {
+    onDelete: 'set null',
+  }),
+  scheduledChangeType: text('scheduled_change_type'),
+  scheduledChangeAt: timestamp('scheduled_change_at', { withTimezone: true }),
+  overLimitState: text('over_limit_state').notNull().default('none'),
+  overLimitDetails: jsonb('over_limit_details').$type<Record<string, unknown>>().notNull().default({}),
+  extraSeatEntitlements: jsonb('extra_seat_entitlements')
+    .$type<{ adminOffice?: number; technician?: number; total?: number }>()
+    .notNull()
+    .default({}),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });

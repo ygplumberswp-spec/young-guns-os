@@ -1,4 +1,5 @@
 import type {
+  AssignSaasPlanRequest,
   CreateSaasFeatureFlagRequest,
   CreateSaasSubscriptionPlanRequest,
   CreateSaasTenantBranchRequest,
@@ -8,9 +9,11 @@ import type {
   SaasBrandingProfileSummary,
   SaasSubscriptionPlanSummary,
   SaasSubscriptionSummary,
+  SaasTenantSubscriptionView,
   SaasTenantSummary,
   UpdateAiProviderResilienceConfigRequest,
   UpdateSaasBrandingRequest,
+  UpdateSaasSubscriptionPlanRequest,
 } from '@titan/shared';
 import { request, ApiClientError } from './api-client';
 
@@ -107,6 +110,46 @@ export async function createSubscriptionPlan(
     body,
   });
   return data.plan;
+}
+
+export async function seedCanonicalPlans(accessToken: string) {
+  const data = await request<{ plans: SaasSubscriptionPlanSummary[] }>(
+    '/platform/plans/seed-canonical',
+    { accessToken, method: 'POST' },
+  );
+  return data.plans;
+}
+
+export async function updateSubscriptionPlan(
+  accessToken: string,
+  planId: string,
+  body: UpdateSaasSubscriptionPlanRequest,
+) {
+  const data = await request<{ plan: SaasSubscriptionPlanSummary }>(`/platform/plans/${planId}`, {
+    accessToken,
+    method: 'PATCH',
+    body,
+  });
+  return data.plan;
+}
+
+export async function assignPlanToTenant(
+  accessToken: string,
+  companyId: string,
+  body: AssignSaasPlanRequest,
+) {
+  const data = await request<{ tenant: SaasTenantSummary }>(
+    `/platform/tenants/${companyId}/assign-plan`,
+    { accessToken, method: 'POST', body },
+  );
+  return data.tenant;
+}
+
+export async function fetchTenantSubscriptionView(accessToken: string) {
+  const data = await request<{ view: SaasTenantSubscriptionView }>('/platform/subscription/view', {
+    accessToken,
+  });
+  return data.view;
 }
 
 export async function upgradeSubscription(accessToken: string, planId: string) {

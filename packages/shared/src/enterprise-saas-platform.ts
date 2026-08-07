@@ -5,7 +5,13 @@ export type SaasTenantLifecycle = 'provisioning' | 'active' | 'suspended' | 'can
 export type SaasSubscriptionStatus =
   'trial' | 'active' | 'grace_period' | 'suspended' | 'cancelled';
 
-export type SaasPlanTier = 'free_trial' | 'starter' | 'professional' | 'enterprise';
+export type SaasPlanTier =
+  | 'free_trial'
+  | 'starter'
+  | 'business'
+  | 'pro'
+  | 'professional' // legacy alias of pro
+  | 'enterprise';
 
 export type SaasBillingInterval = 'monthly' | 'annual';
 
@@ -26,12 +32,66 @@ export type SaasPlatformActionType =
 export type SaasPlatformActionStatus =
   'pending_approval' | 'approved' | 'rejected' | 'executed' | 'cancelled';
 
+/**
+ * Plan limits JSONB — extended for seats/fair-use without a parallel billing system.
+ * Prefer building catalogs via saas-packages.ts TITAN_CANONICAL_PLANS.
+ */
 export type SaasPlanLimits = {
   users?: number;
   storageMb?: number;
   apiRequests?: number;
   aiTokens?: number;
   integrations?: number;
+  seats?: {
+    adminOffice: number | null;
+    technician: number | null;
+    total?: number | null;
+  };
+  fairUse?: {
+    aiTokensMonthly?: number | null;
+    storageMb?: number | null;
+    communicationsMonthly?: number | null;
+    photosMonthly?: number | null;
+    highVolumeIntegrations?: number | null;
+    approachingPercent?: number;
+    warningPercent?: number;
+  };
+  extraSeatPricing?: {
+    technicianCents?: number | null;
+    adminOfficeCents?: number | null;
+    currency?: string;
+    pricingConfigurable?: boolean;
+  };
+};
+
+export type SaasCommercialConfig = {
+  indicativeBandMinCents?: number | null;
+  indicativeBandMaxCents?: number | null;
+  pricingConfigurable: boolean;
+  pricingLocked: boolean;
+  notes?: string;
+  costInclusions?: Record<string, string>;
+};
+
+export type SaasExtraSeatEntitlements = {
+  adminOffice?: number;
+  technician?: number;
+  total?: number;
+};
+
+export type SaasOverLimitState = 'none' | 'action_required';
+
+export type SaasFairUseState =
+  | 'normal'
+  | 'approaching'
+  | 'warning'
+  | 'overage_upgrade_required'
+  | 'restricted';
+
+export type SaasSeatUsage = {
+  adminOfficeUsed: number;
+  technicianUsed: number;
+  totalUsed: number;
 };
 
 export type SaasTenantSummary = {
@@ -82,6 +142,10 @@ export type SaasSubscriptionPlanSummary = {
   features: string[];
   limits: SaasPlanLimits;
   isActive: boolean;
+  currency?: string;
+  pricingConfigurable?: boolean;
+  commercialConfig?: SaasCommercialConfig | null;
+  activeTenantCount?: number;
 };
 
 export type SaasSubscriptionSummary = {
@@ -94,6 +158,16 @@ export type SaasSubscriptionSummary = {
   gracePeriodEndsAt: string | null;
   cancelledAt: string | null;
   subscriptionEnforced: boolean;
+  paidThroughAt?: string | null;
+  lastSuccessfulPaymentAt?: string | null;
+  lastPaymentFailedAt?: string | null;
+  scheduledPlanId?: string | null;
+  scheduledChangeType?: 'upgrade' | 'downgrade' | null;
+  scheduledChangeAt?: string | null;
+  overLimitState?: SaasOverLimitState;
+  overLimitDetails?: Record<string, unknown> | null;
+  extraSeatEntitlements?: SaasExtraSeatEntitlements;
+  currency?: string;
 };
 
 export type SaasBillingRecordSummary = {
@@ -173,6 +247,43 @@ export type SaasPlatformActionSummary = {
   createdAt: string;
 };
 
+export type SaasSeatStatusSummary = {
+  usage: SaasSeatUsage;
+  adminOfficeIncluded: number | null;
+  technicianIncluded: number | null;
+  totalIncluded: number | null;
+  adminOfficePermitted: number | null;
+  technicianPermitted: number | null;
+  totalPermitted: number | null;
+  overLimitState: SaasOverLimitState;
+};
+
+export type SaasFairUseStatusSummary = {
+  overall: SaasFairUseState;
+  metrics: Array<{
+    metric: string;
+    state: SaasFairUseState;
+    used: number;
+    allowance: number | null;
+    percentUsed: number | null;
+    message: string;
+  }>;
+};
+
+/** Tenant Owner–safe subscription view (no internal margin/provider secrets). */
+export type SaasTenantSubscriptionView = {
+  companyName: string;
+  plan: SaasSubscriptionPlanSummary | null;
+  subscription: SaasSubscriptionSummary | null;
+  seats: SaasSeatStatusSummary;
+  fairUse: SaasFairUseStatusSummary;
+  paidThroughAt: string | null;
+  nextRenewalAt: string | null;
+  billingAttention: boolean;
+  upgradePlans: SaasSubscriptionPlanSummary[];
+  entitlements: SaasFeatureEntitlementSummary[];
+};
+
 export type EnterpriseSaasPlatformDashboard = {
   summary: string;
   isPlatformOwner: boolean;
@@ -196,6 +307,8 @@ export type EnterpriseSaasPlatformDashboard = {
   platformAnalytics: SaasPlatformAnalyticsSummary | null;
   recentAudits: SaasPlatformAuditSummary[];
   pendingActionCount: number;
+  seatStatus?: SaasSeatStatusSummary | null;
+  fairUseStatus?: SaasFairUseStatusSummary | null;
 };
 
 export type EnterpriseSaasPlatformAuraContext = {
@@ -216,6 +329,36 @@ export type CreateSaasSubscriptionPlanRequest = {
   billingInterval?: SaasBillingInterval;
   features?: string[];
   limits?: SaasPlanLimits;
+  currency?: string;
+  pricingConfigurable?: boolean;
+  commercialConfig?: SaasCommercialConfig | null;
+};
+
+export type UpdateSaasSubscriptionPlanRequest = {
+  name?: string;
+  description?: string;
+  priceCents?: number;
+  billingInterval?: SaasBillingInterval;
+  features?: string[];
+  limits?: SaasPlanLimits;
+  isActive?: boolean;
+  currency?: string;
+  pricingConfigurable?: boolean;
+  commercialConfig?: SaasCommercialConfig | null;
+};
+
+export type AssignSaasPlanRequest = {
+  planId: string;
+  reason?: string | null;
+  /** Extra seats beyond plan included (configurable; pricing not locked). */
+  extraSeatEntitlements?: SaasExtraSeatEntitlements | null;
+};
+
+export type ScheduleSaasPlanChangeRequest = {
+  planId: string;
+  changeType: 'upgrade' | 'downgrade';
+  effectiveAt?: string | null;
+  reason?: string | null;
 };
 
 export type UpdateSaasBrandingRequest = {
