@@ -1,0 +1,123 @@
+{
+  "phase": "YG-CUTOVER-001",
+  "title": "Owner Cutover Approval & Final Pre-Production Readiness",
+  "branch": "cursor/yg-cutover-001-readiness-663e",
+  "baseBranch": "cursor/yg-live-001-implementation-663e",
+  "generatedAt": "2026-08-07T16:25:00.000Z",
+  "verdict": "BLOCKED — required Owner/user information unavailable",
+  "verdictReason": "P0 requires individual Admin/Office and Technician accounts. This agent has no staging DATABASE_URL and no Owner-supplied real-person roster. People were not invented. Production was not touched. Cutover packs, acceptance checklists, migration/rollback plans, and GO/NO-GO card are ready for Owner to unblock.",
+  "decisionCard": {
+    "p0Closed": "NO",
+    "productionReady": "NO",
+    "explicitOwnerApprovalRequired": "YES",
+    "thisPromptIsNotApproval": true
+  },
+  "realUserProvisioning": {
+    "liveAuditStatus": "blocked_no_credentials",
+    "staleEvidence": {
+      "source": "diagnostic-output/180-staging-data-cleanup-audit.json",
+      "asOf": "2026-08-01",
+      "usersTotal": 1,
+      "note": "Preserve company Young Guns Plumbing — users:1; roles beyond Owner not evidenced"
+    },
+    "requiredSlots": [
+      { "slotId": "owner", "minCount": 1, "status": "assumed_present_from_stale_evidence" },
+      { "slotId": "admin-office", "minCount": 1, "status": "missing" },
+      { "slotId": "technician", "minCount": 1, "status": "missing" },
+      { "slotId": "client", "minCount": 0, "status": "optional_until_portal_needed" }
+    ],
+    "existingRealUsers": [],
+    "missingRequiredUsers": ["admin-office", "technician"],
+    "inventedPeople": 0,
+    "invitePath": "Team → Invite → Manager/Dispatcher/Technician (Owner not inviteable via team invite; Client via portal invite)",
+    "auditScript": "packages/db/scripts/yg-cutover-001-user-audit.mjs"
+  },
+  "hardRoleVerification": {
+    "contracts": "packages/shared/src/yg-cutover-001.ts + existing RBAC/AURA technician denial",
+    "technicianMustNot": [
+      "finance",
+      "profit",
+      "bank",
+      "payroll",
+      "owner_dashboard",
+      "crm_list",
+      "sales",
+      "integrations",
+      "settings",
+      "reports",
+      "unrelated_jobs"
+    ],
+    "liveAccountAcceptance": "blocked_until_real_technician_account_provisioned"
+  },
+  "acceptanceArtifacts": {
+    "ownerClickPath": "diagnostic-output/yg-cutover-001-owner-clickpath.json",
+    "ownerGoNoGo": "diagnostic-output/yg-cutover-001-owner-go-nogo.json",
+    "admin": "YG_CUTOVER_ADMIN_ACCEPTANCE",
+    "technician": "YG_CUTOVER_TECHNICIAN_ACCEPTANCE",
+    "client": "YG_CUTOVER_CLIENT_ACCEPTANCE"
+  },
+  "companyConfig": {
+    "vatNumber": { "blocksCutover": false, "status": "owner_config_required" },
+    "operatingHours": { "blocksCutover": false, "status": "owner_config_required" },
+    "logo": { "blocksCutover": false, "status": "owner_config_required" },
+    "currencyTimezoneLocale": { "blocksCutover": false, "status": "verified_in_code" }
+  },
+  "providerReadiness": {
+    "xero": "PASS (LIVE-001)",
+    "gmail": "PASS (LIVE-001; auto-sync P2)",
+    "cartrack": "PASS (LIVE-001)",
+    "whatsappStagingTestNumber": "PASS (LIVE-001)",
+    "yocoTestMode": "PASS (LIVE-001)",
+    "realWhatsAppNumber": "P1",
+    "whatsappCoexistence": "P2 / Meta eligibility",
+    "whatsappHistoryImport": "P2",
+    "yocoLivePayments": "explicit Owner GO only"
+  },
+  "productionPrecheck": "YG_CUTOVER_PRODUCTION_PRECHECK (read-only; secrets not printed)",
+  "migrationPlan": {
+    "executeInThisPhase": false,
+    "phases": [
+      "PRECHECK",
+      "PROTECTED_BACKUP",
+      "MIGRATION",
+      "VERIFICATION",
+      "CONFIG",
+      "USERS",
+      "PROVIDERS",
+      "SMOKE",
+      "OWNER_ACCEPTANCE",
+      "GO_OR_ROLLBACK"
+    ]
+  },
+  "rollbackTriggers": [
+    "authentication failure",
+    "tenant/RBAC leak",
+    "finance mismatch",
+    "migration integrity failure",
+    "wrong Xero organisation",
+    "document failure",
+    "critical job workflow failure",
+    "provider credential exposure",
+    "significant data loss"
+  ],
+  "testsBuild": {
+    "shared": { "tests": 1455, "pass": 1455, "fail": 0 },
+    "auth": { "tests": 24, "pass": 24, "fail": 0 },
+    "api": { "tests": 1461, "pass": 1461, "fail": 0 },
+    "apiRbacCutoverSubset": { "tests": 194, "pass": 194, "fail": 0 },
+    "web": { "tests": 458, "pass": 458, "fail": 0 },
+    "typecheck": "pass",
+    "productionBuild": "pass"
+  },
+  "safety": {
+    "productionTouched": 0,
+    "productionMigration": 0,
+    "productionDeploy": 0,
+    "realWhatsAppMigration": 0,
+    "customerMessages": 0,
+    "cardCharges": 0,
+    "bankWrites": 0,
+    "creativeStudio": 0,
+    "unrelatedWork": 0
+  }
+}
