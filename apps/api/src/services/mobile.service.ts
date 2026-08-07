@@ -1,4 +1,5 @@
 import { and, desc, eq, inArray, ne } from 'drizzle-orm';
+import { resolveCustomerVisibleJobEtaAt } from '../lib/customer-visible-job-eta.js';
 import type {
   MobileAlertSummary,
   MobileApprovalSummary,
@@ -18,6 +19,7 @@ import type {
   MobileTechnicianFleetInfo,
   MobileTechnicianSchedule,
 } from '@titan/shared';
+import { displayOfficialInvoiceNumber } from '@titan/shared';
 import type { PortalAccessPermission } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
 import {
@@ -372,20 +374,22 @@ export class MobileService {
       invoices: rows.map((row) => {
         const totalCents = row.totalCents ?? row.amountCents;
         const internalNumber = row.internalNumber ?? row.invoiceNumber;
-        const displayInvoiceNumber = row.xeroInvoiceNumber?.trim()
-          ? row.xeroInvoiceNumber.trim()
-          : `Pending Xero sync (${internalNumber})`;
+        const displayInvoiceNumber = displayOfficialInvoiceNumber({
+          xeroInvoiceNumber: row.xeroInvoiceNumber,
+        });
         return {
           id: row.id,
           invoiceNumber: row.invoiceNumber,
           internalNumber,
           displayInvoiceNumber,
+          displayOfficialInvoiceNumber: displayOfficialInvoiceNumber({
+            xeroInvoiceNumber: row.xeroInvoiceNumber,
+          }),
           xeroInvoiceNumber: row.xeroInvoiceNumber ?? null,
           xeroReference: row.xeroReference ?? null,
           numberAuthority: (row.numberAuthority ?? 'internal_pending_xero') as
             | 'internal_pending_xero'
             | 'xero',
-          title: row.title,
           status: row.status,
           stage: row.stage ?? 'standard',
           customerId: row.customerId,
@@ -407,6 +411,8 @@ export class MobileService {
           ),
           currency: row.currency,
           dueDate: row.dueDate?.toISOString() ?? null,
+          issuedAt: row.issuedAt?.toISOString() ?? null,
+          customerReference: row.xeroReference ?? null,
           createdAt: row.createdAt.toISOString(),
           updatedAt: row.updatedAt.toISOString(),
         };
@@ -598,7 +604,11 @@ function toMobileJobSummary(
     jobType: row.jobType ?? null,
     priority: row.priority ?? 'normal',
     status: row.status,
+    executionPhase: row.executionPhase ?? null,
     addressDisplay,
+    latitude: row.snapshotLatitude ?? null,
+    longitude: row.snapshotLongitude ?? null,
+    placeId: row.snapshotPlaceId ?? null,
     siteContactMobile: row.snapshotSiteContactMobile ?? null,
     scheduledAt: row.scheduledAt?.toISOString() ?? null,
     scheduledEndAt: row.scheduledEndAt?.toISOString() ?? null,
@@ -608,5 +618,11 @@ function toMobileJobSummary(
       : null,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
+    etaAt: resolveCustomerVisibleJobEtaAt({
+      assignedUserId: row.assignedUserId,
+      status: row.status,
+      scheduledAt: row.scheduledAt,
+      scheduledEndAt: row.scheduledEndAt,
+    }),
   };
 }

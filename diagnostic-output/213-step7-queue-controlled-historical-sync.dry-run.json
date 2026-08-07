@@ -1,0 +1,23 @@
+{
+  "label": "213-step7-queue-controlled-historical-sync",
+  "mode": "dry-run",
+  "blocked": "a Xero import job is already open (18671270-6a93-42a1-ba06-aa165f4a46f9:running)",
+  "connection": {
+    "companyId": "095aef76-fef5-4139-af37-a42f2d7e2faf",
+    "connectionId": "3ea82e78-372c-421b-8dd6-e7039e663e4a",
+    "organisationName": "Young Guns Plumbing",
+    "tenantId": "20176b90-a093-4da1-a04e-8ae616f89fef"
+  },
+  "scheduleEnabled": false,
+  "plannedSummary": {
+    "currentStage": "accounts",
+    "modifiedSince": null,
+    "trigger": "manual"
+  },
+  "openJobsAfter": [
+    {
+      "id": "18671270-6a93-42a1-ba06-aa165f4a46f9",
+      "status": "running"
+    }
+  ]
+}

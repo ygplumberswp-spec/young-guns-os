@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { useMemo } from 'react';
 import { Link } from 'wouter';
-import { EmptyState, PageHeader, Panel } from '@titan/ui';
+import { EmptyState, Panel } from '@titan/ui';
 import { ENTERPRISE_MODULE_LINKS } from '@titan/shared';
 import { useAuth } from '../../lib/auth-context';
 import { filterOwnerStaffNav } from '../../lib/role-experience';
@@ -20,7 +21,7 @@ export function EnterpriseModulesPage() {
     return (
       <div className="automation-page">
         <PageHeader
-          title="Enterprise modules"
+          title="Enterprise Modules"
           description="You do not have permission to browse enterprise modules."
         />
       </div>
@@ -30,17 +31,17 @@ export function EnterpriseModulesPage() {
   return (
     <div className="automation-page">
       <PageHeader
-        title="Enterprise modules"
+        title="Enterprise Modules"
         description="These Owner modules are reachable in TITAN. They are listed here deliberately so they are not hidden orphans from primary navigation."
       />
 
       {ENTERPRISE_MODULE_LINKS.length === 0 ? (
         <EmptyState
-          title="No enterprise modules listed"
+          title="No Enterprise Modules Listed"
           description="Enterprise module index is empty."
         />
       ) : (
-        <Panel title="Available modules">
+        <Panel title="Available Modules">
           <ul className="enterprise-modules-list">
             {ENTERPRISE_MODULE_LINKS.map((module) => (
               <li key={module.href} className="enterprise-modules-list__item">

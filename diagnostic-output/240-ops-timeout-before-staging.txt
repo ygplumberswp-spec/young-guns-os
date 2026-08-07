@@ -1,0 +1,11 @@
+signup 201 in 3147 ms
+health/ready 200 in 485 ms
+ops-intelligence/snapshot run 1: 200 in 7356 ms
+ops-intelligence/snapshot run 2: 200 in 6655 ms
+ops-intelligence/snapshot run 3: 200 in 6531 ms
+ops-intelligence/snapshot run 4: 200 in 6441 ms
+ops-intelligence/live-strip: 200 in 4641 ms
+ops-intelligence/morning-brief: 200 in 3009 ms
+dashboard/executive-summary: 200 in 6265 ms
+
+snapshot median 6655 ms · runs 7356, 6655, 6531, 6441

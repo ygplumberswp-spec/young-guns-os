@@ -1,0 +1,64 @@
+{
+  "label": "182-customer-value-classification-staging-probe",
+  "generatedAt": "2026-08-01T17:39:56.447Z",
+  "stagingRef": "cpkuwtaipjxeipvbssvn",
+  "forbiddenProductionRef": "rshuiaghmtrvvilhqpwm",
+  "verdict": "PASS",
+  "xeroImportInProgress": false,
+  "youngGunsCompanyId": "095aef76-fef5-4139-af37-a42f2d7e2faf",
+  "metrics": {
+    "currency": "ZAR",
+    "dataCompleteness": "complete",
+    "buckets": [
+      {
+        "classification": "verified_invoiced_customer",
+        "count": 0,
+        "valueCents": 0
+      },
+      {
+        "classification": "paying_customer",
+        "count": 0,
+        "valueCents": 0
+      },
+      {
+        "classification": "fully_paid_customer",
+        "count": 0,
+        "valueCents": 0
+      },
+      {
+        "classification": "partially_paid_customer",
+        "count": 0,
+        "valueCents": 0
+      },
+      {
+        "classification": "unpaid_debtor",
+        "count": 0,
+        "valueCents": 0
+      },
+      {
+        "classification": "overdue_debtor",
+        "count": 0,
+        "valueCents": 0
+      },
+      {
+        "classification": "prospect_contact",
+        "count": 678,
+        "valueCents": 0
+      },
+      {
+        "classification": "supplier_only_contact",
+        "count": 0,
+        "valueCents": 0
+      }
+    ],
+    "totals": {
+      "customerRecords": 678,
+      "qualifyingCustomers": 0,
+      "totalInvoicedCents": 0,
+      "cashReceivedCents": 0,
+      "outstandingCents": 0,
+      "overdueOutstandingCents": 0
+    }
+  },
+  "notes": []
+}

@@ -1,4 +1,13 @@
-import { boolean, integer, pgEnum, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import {
+  boolean,
+  doublePrecision,
+  integer,
+  pgEnum,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+} from 'drizzle-orm/pg-core';
 import { companies } from './companies';
 import { customers } from './customers';
 import { users } from './users';
@@ -52,6 +61,10 @@ export const jobs = pgTable('jobs', {
   snapshotProvince: text('snapshot_province'),
   snapshotPostalCode: text('snapshot_postal_code'),
   snapshotUnit: text('snapshot_unit'),
+  snapshotLatitude: doublePrecision('snapshot_latitude'),
+  snapshotLongitude: doublePrecision('snapshot_longitude'),
+  snapshotPlaceId: text('snapshot_place_id'),
+  snapshotFormattedAddress: text('snapshot_formatted_address'),
   snapshotSiteContactName: text('snapshot_site_contact_name'),
   snapshotSiteContactMobile: text('snapshot_site_contact_mobile'),
   snapshotSiteContactEmail: text('snapshot_site_contact_email'),

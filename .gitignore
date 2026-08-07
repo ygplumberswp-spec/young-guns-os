@@ -48,3 +48,10 @@ apps/api/storage/job-evidence/*
 audit-output/
 migration-full.txt
 **/_journal.backup.json
+
+# Staging DB dumps (tenant data — never commit)
+diagnostic-output/*.dump
+diagnostic-output/staging-pg-dump-*.dump
+
+test-results/
+diagnostic-output/qa0-audit-sandbox-manifest.json

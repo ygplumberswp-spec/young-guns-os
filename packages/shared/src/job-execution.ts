@@ -222,6 +222,8 @@ export type AuthorizeJobMaterialLineRequest = {
   fulfilledQuantity?: number;
   reason?: string | null;
   clientActionId: string;
+  /** Office may attach stock identity when the tech request omitted it. */
+  inventoryItemId?: string | null;
   locationId?: string | null;
 };
 
@@ -276,7 +278,28 @@ export type JobExecutionSummary = {
   vehicle: JobVehicleAssignmentSummary | null;
   pendingVariations: JobVariationSummary[];
   completionGate: JobCompletionGateResult;
+  /** Immutable completion snapshot when the job was completed via gated complete. */
+  completionSnapshot: JobCompletionSnapshotSummary | null;
+  labour: {
+    entryCount: number;
+    totalMinutes: number;
+  };
   evidence: JobEvidenceOfficeSummary[];
+};
+
+/** Operational timeline event for Job 360 Activity tab. */
+export type JobTimelineEventSummary = {
+  id: string;
+  action: string;
+  fromPhase: JobExecutionPhase | null;
+  toPhase: JobExecutionPhase | null;
+  fromStatus: string | null;
+  toStatus: string | null;
+  reason: string | null;
+  userId: string;
+  userName: string | null;
+  metadata: Record<string, unknown>;
+  createdAt: string;
 };
 
 /** Default checklist keys by broad job-type family. */

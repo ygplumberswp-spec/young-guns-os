@@ -1,0 +1,46 @@
+{
+  "label": "xero-invoice-financial-backfill",
+  "generatedAt": "2026-08-01T16:15:00.403Z",
+  "apply": true,
+  "candidates": [
+    {
+      "id": "360931e8-ac3a-40f7-bcd8-81bcc43cd585",
+      "invoice_number": "INV-0424",
+      "amount_cents": 226639,
+      "total_cents": 0,
+      "sync_status": "synced"
+    },
+    {
+      "id": "1aaaa421-b74a-4cf3-9685-c2f60b1e007e",
+      "invoice_number": "INV-0423",
+      "amount_cents": 247250,
+      "total_cents": 0,
+      "sync_status": "synced"
+    },
+    {
+      "id": "7c726b98-325b-4601-8b4a-9647c9f50540",
+      "invoice_number": "INV-0241",
+      "amount_cents": 5487605,
+      "total_cents": 0,
+      "sync_status": "synced"
+    },
+    {
+      "id": "3138e9af-46b9-4c69-ae26-55aec9fb26d9",
+      "invoice_number": "INV-0267",
+      "amount_cents": 517500,
+      "total_cents": 0,
+      "sync_status": "synced"
+    },
+    {
+      "id": "c93e4674-a123-4f81-817b-c67a31cfcfb8",
+      "invoice_number": "INV-0289",
+      "amount_cents": 1318475,
+      "total_cents": 0,
+      "sync_status": "synced"
+    }
+  ],
+  "updated": {
+    "invoices": 5,
+    "mappings": 5
+  }
+}
