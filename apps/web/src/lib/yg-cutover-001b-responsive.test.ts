@@ -56,6 +56,18 @@ describe('YG-CUTOVER-001B responsive clipping fix', () => {
     assert.match(css, /@media \(max-width: 640px\)[\s\S]*\.app-header__menu-label[\s\S]*display:\s*none/);
   });
 
+  it('keeps TITAN wordmark readable and Powered by AURA secondary on phone', () => {
+    const css = read('index.css');
+    const layout = read('layouts/AppLayout.tsx');
+    assert.match(layout, /app-header__brand-meta/);
+    assert.match(layout, /TitanWordmark variant="compact"/);
+    assert.match(css, /@media \(max-width: 640px\)[\s\S]*\.app-header__wordmark[\s\S]*width:\s*6\.75rem/);
+    assert.match(
+      css,
+      /@media \(max-width: 640px\)[\s\S]*\.owner-shell \.app-header__brand \.brand-sub[\s\S]*display:\s*block/,
+    );
+  });
+
   it('forces wrap + min-width 0 on attention/invoice content at phone widths', () => {
     const css = read('index.css');
     assert.match(css, /@media \(max-width: 760px\)[\s\S]*overflow-wrap:\s*anywhere/);

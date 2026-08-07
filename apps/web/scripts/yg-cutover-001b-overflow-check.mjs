@@ -19,6 +19,13 @@ const indexCss = readFileSync(join(webRoot, 'src/index.css'), 'utf8');
 const layoutCss = readFileSync(join(webRoot, 'src/styles/layout-grid.css'), 'utf8');
 const uxCss = readFileSync(join(webRoot, 'src/components/ux/ux.css'), 'utf8');
 const uiCss = readFileSync(join(webRoot, '../..', 'packages/ui/src/styles.css'), 'utf8');
+const wordmarkSvg = readFileSync(join(webRoot, 'public/brand/titan-wordmark.svg'), 'utf8');
+const wordmarkInline = wordmarkSvg
+  .replace(/<\?xml[^>]*>/, '')
+  .replace(
+    '<svg',
+    '<svg class="titan-wordmark titan-wordmark--compact app-header__wordmark"',
+  );
 
 const html = `<!doctype html>
 <html lang="en">
@@ -76,10 +83,19 @@ ${uxCss}
           <span class="app-header__menu-glyph">☰</span>
           <span class="app-header__menu-label">Menu</span>
         </button>
-        <div class="app-header__brand"><strong>TITAN</strong><span class="brand-sub">Powered by AURA</span></div>
+        <div class="app-header__brand">
+          ${wordmarkInline}
+          <div class="app-header__brand-meta">
+            <span class="staging-badge" role="status">STAGING</span>
+            <span class="brand-sub">Powered by <span class="brand-sub__accent">AURA</span></span>
+          </div>
+        </div>
       </div>
       <div class="app-header__user">
-        <a class="app-header__identity" href="#"><span class="app-header__identity-mark">YG</span><span>Manager Smoke</span></a>
+        <a class="app-header__identity" href="#">
+          <span class="app-header__identity-mark">YG</span>
+          <span class="app-header__meta"><span class="app-header__name">Manager Smoke</span></span>
+        </a>
         <button type="button" class="titan-btn">Sign out</button>
       </div>
     </div>

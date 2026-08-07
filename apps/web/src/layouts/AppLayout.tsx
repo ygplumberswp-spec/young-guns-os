@@ -133,10 +133,12 @@ export function AppLayout({ children }: AppLayoutProps) {
             </button>
             <div className="app-header__brand">
               <TitanWordmark variant="compact" className="app-header__wordmark" />
-              <StagingBadge />
-              <span className="brand-sub">
-                Powered by <span className="brand-sub__accent">{AI_NAME}</span>
-              </span>
+              <div className="app-header__brand-meta">
+                <StagingBadge />
+                <span className="brand-sub">
+                  Powered by <span className="brand-sub__accent">{AI_NAME}</span>
+                </span>
+              </div>
               <span className="brand-credit">
                 <span className="brand-credit__by">Built by</span>{' '}
                 <span className="brand-credit__org">Young Guns Plumbing</span>
@@ -182,8 +184,16 @@ export function AppLayout({ children }: AppLayoutProps) {
                     Field Mobile
                   </Link>
                 ) : null}
-                <Button variant="ghost" size="sm" onClick={() => void logout()}>
-                  Sign Out
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="app-header__signout"
+                  onClick={() => void logout()}
+                >
+                  <span className="app-header__signout-full">Sign Out</span>
+                  <span className="app-header__signout-short" aria-hidden="true">
+                    Out
+                  </span>
                 </Button>
               </>
             ) : null}
@@ -203,6 +213,30 @@ export function AppLayout({ children }: AppLayoutProps) {
               <span aria-hidden="true">{sidebarCollapsed ? '›' : '‹'}</span>
             </button>
           </div>
+          {user ? (
+            <div className="app-sidebar__profile" aria-label="Signed-in profile">
+              <span className="app-sidebar__profile-mark" aria-hidden="true">
+                {accessToken && logoFileId ? (
+                  <CompanyMediaImage
+                    accessToken={accessToken}
+                    fileId={logoFileId}
+                    alt=""
+                    className="app-header__identity-image"
+                    fallback={companyInitials(displayCompanyName)}
+                  />
+                ) : (
+                  companyInitials(displayCompanyName)
+                )}
+              </span>
+              <span className="app-sidebar__profile-meta">
+                <span className="app-sidebar__profile-name">
+                  {user.firstName} {user.lastName}
+                </span>
+                <span className="app-sidebar__profile-tenant">{displayCompanyName}</span>
+                <span className="app-sidebar__profile-role">{user.roleName}</span>
+              </span>
+            </div>
+          ) : null}
           <nav className="app-nav" aria-label="Main Navigation">
             {groupedNavItems.map(({ group, items }) => {
               const groupHasActive = items.some(

@@ -408,11 +408,23 @@ a:focus-visible {
   min-width: 0;
 }
 
+.app-header__brand-meta {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.app-header__signout-short {
+  display: none;
+}
+
 .staging-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  margin-left: 0.35rem;
+  margin-left: 0;
   padding: 0.15rem 0.45rem;
   border: 1px solid rgba(212, 160, 23, 0.55);
   border-radius: 0.25rem;
@@ -424,6 +436,13 @@ a:focus-visible {
   line-height: 1.2;
   text-transform: uppercase;
   vertical-align: middle;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* Mobile drawer: secondary tenant/role when header is compacted */
+.app-sidebar__profile {
+  display: none;
 }
 
 .auth-stage__brand .staging-badge {
@@ -969,16 +988,76 @@ a:focus-visible {
     padding-bottom: calc(var(--titan-page-pad-y, 1.5rem) + env(safe-area-inset-bottom, 0px));
   }
 
+  /* Drawer carries tenant/role when the header is compacted */
+  .app-sidebar__profile {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    margin: 0 0 0.75rem;
+    padding: 0.625rem 0.5rem;
+    border: 1px solid var(--titan-border-subtle);
+    border-radius: var(--titan-radius-md);
+    background: var(--titan-surface);
+    min-width: 0;
+  }
+
+  .app-sidebar__profile-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.375rem;
+    background: var(--titan-surface-muted);
+    border: 1px solid var(--titan-border);
+    color: var(--titan-text-secondary);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    flex-shrink: 0;
+    overflow: hidden;
+  }
+
+  .app-sidebar__profile-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    min-width: 0;
+  }
+
+  .app-sidebar__profile-name {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--titan-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .app-sidebar__profile-tenant,
+  .app-sidebar__profile-role {
+    font-size: 0.6875rem;
+    color: var(--titan-text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
   .dashboard-stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 640px) {
-  /* Keep header compact — hide secondary brand lines that previously stacked past 3.5rem */
-  .owner-shell .app-header__brand .brand-sub,
+  /*
+   * Mobile header polish — premium compact TITAN chrome.
+   * Keep Powered by AURA secondary; drop Built-by credit from the header.
+   */
   .owner-shell .app-header__brand .brand-credit {
     display: none;
+  }
+
+  .owner-shell .app-header__brand .brand-sub {
+    display: block;
   }
 
   /* YG-CUTOVER-001B: icon-only menu control — frees narrow iPhone header width */
@@ -993,36 +1072,100 @@ a:focus-visible {
 
   .app-header__start {
     gap: 0.4rem;
+    flex: 1 1 auto;
+    min-width: 0;
   }
 
-  .app-header__brand {
-    flex-direction: row;
+  .app-header {
+    gap: 0.4rem;
     align-items: center;
-    gap: 0.35rem;
+  }
+
+  /*
+   * Brand stack (no wrap chaos):
+   * TITAN
+   * STAGING · Powered by AURA
+   */
+  .app-header__brand {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    flex-wrap: nowrap;
+    gap: 0.15rem;
+    min-width: 0;
+    max-width: min(100%, 9.5rem);
+  }
+
+  .app-header__brand-meta {
+    gap: 0.3rem;
+    max-width: 100%;
+  }
+
+  .app-header__wordmark {
+    width: 6.75rem;
+    height: auto;
+    flex-shrink: 0;
+  }
+
+  .staging-badge {
+    padding: 0.1rem 0.3rem;
+    font-size: 0.5rem;
+    letter-spacing: 0.06em;
   }
 
   .brand-sub {
     margin-left: 0;
+    font-size: 0.5rem;
+    letter-spacing: 0.06em;
+    line-height: 1;
+    white-space: nowrap;
+    color: var(--titan-text-muted);
+  }
+
+  /* Hide role/company first; keep user name where practical */
+  .app-header__tenant,
+  .app-header__role {
+    display: none;
   }
 
   .app-header__meta {
     display: flex;
-    max-width: 6.5rem;
+    max-width: 4.75rem;
+  }
+
+  .app-header__name {
+    font-size: 0.75rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .app-header__identity {
-    max-width: 7.5rem;
-    padding-inline: 0.25rem;
+    max-width: 5.5rem;
+    padding-inline: 0.15rem;
+    gap: 0.3rem;
   }
 
   .app-header__identity-mark {
-    width: 1.875rem;
-    height: 1.875rem;
+    width: 1.75rem;
+    height: 1.75rem;
   }
 
-  .app-header__user .titan-btn {
-    padding-inline: 0.5rem;
+  .app-header__user {
+    gap: 0.25rem;
+    flex-shrink: 0;
+  }
+
+  .app-header__user .titan-btn,
+  .app-header__signout {
+    padding-inline: 0.4rem;
     font-size: 0.75rem;
+    white-space: nowrap;
+  }
+
+  .app-header__search {
+    flex: 0 0 auto;
   }
 
   .dashboard-stats {
@@ -4425,14 +4568,86 @@ a:focus-visible {
     text-align: left;
   }
 
-  /* Keep header reachable: mark + sign-out only on the narrowest phones */
-  .app-header__identity > span:not(.app-header__identity-mark) {
+  /*
+   * Narrow header: keep name visible; tenant/role already hidden ≤640.
+   * Do not collapse identity to mark-only (that hid the user name).
+   */
+  .app-header__identity {
+    max-width: 5.25rem;
+    padding-inline: 0.15rem;
+  }
+
+  .app-header__meta {
+    max-width: 4.75rem;
+  }
+}
+
+/* 360–430 phone header: readable TITAN mark, clean STAGING, no wrap chaos */
+@media (max-width: 430px) {
+  .owner-shell .titan-shell__header {
+    padding-left: max(0.75rem, env(safe-area-inset-left, 0px));
+    padding-right: max(0.75rem, env(safe-area-inset-right, 0px));
+  }
+
+  .app-header {
+    gap: 0.3rem;
+  }
+
+  .app-header__wordmark {
+    width: 6.5rem;
+  }
+
+  .app-header__brand {
+    max-width: min(100%, 8.75rem);
+  }
+
+  /* YG tenant mark crowds the chrome — secondary identity lives in the drawer */
+  .app-header__identity-mark {
     display: none;
   }
 
   .app-header__identity {
-    max-width: 2.5rem;
+    max-width: 4.75rem;
     padding-inline: 0;
+  }
+
+  .app-header__meta {
+    max-width: 4.75rem;
+  }
+
+  .app-header__signout-full {
+    display: none;
+  }
+
+  .app-header__signout-short {
+    display: inline;
+  }
+}
+
+@media (max-width: 360px) {
+  .app-header__wordmark {
+    width: 6.25rem;
+  }
+
+  .app-header__brand {
+    max-width: min(100%, 8.25rem);
+  }
+
+  .staging-badge {
+    padding: 0.08rem 0.28rem;
+    font-size: 0.5rem;
+  }
+
+  .app-header__meta {
+    max-width: 3.75rem;
+  }
+
+  .app-header__identity {
+    max-width: 3.75rem;
+  }
+
+  .app-header__start {
+    gap: 0.3rem;
   }
 }
 
@@ -10866,9 +11081,7 @@ input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='
     max-width: 100%;
   }
 
-  .app-header__wordmark {
-    width: 5.5rem;
-  }
+  /* Header wordmark sizing owned by 640/430/360 polish — do not shrink unreadably here */
 
   .leads-toolbar {
     flex-direction: column;
