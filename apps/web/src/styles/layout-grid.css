@@ -75,6 +75,26 @@
   --titan-page-pad-y: clamp(0.5rem, 1vw, 0.875rem);
 }
 
+/*
+ * YG-CUTOVER-001B — phone/tablet gutters for the command-centre canvas.
+ * Desktop OWNER-001 dense clamp above stays unchanged (≥761px).
+ * On narrow viewports, 1vw collapses toward ~4px and the 0.5rem floor is too tight
+ * once safe-area / overflow clipping is considered — restore readable pad-x.
+ */
+@media (max-width: 760px) {
+  .titan-shell__main:has(.exec-dashboard-page--owner001) {
+    --titan-page-pad-x: 1rem;
+    --titan-page-pad-y: 0.75rem;
+  }
+}
+
+@media (max-width: 430px) {
+  .titan-shell__main:has(.exec-dashboard-page--owner001) {
+    --titan-page-pad-x: 1rem;
+    --titan-page-pad-y: 0.625rem;
+  }
+}
+
 .page-shell,
 .automation-page,
 .finance-page,

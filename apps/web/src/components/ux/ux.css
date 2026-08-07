@@ -481,10 +481,20 @@
   .module-toolbar {
     flex-wrap: nowrap;
     margin-bottom: 0.75rem;
+    /* YG-CUTOVER-001B: keep first tab fully visible; scroll for the rest */
+    margin-inline: 0;
+    padding-inline: 0;
+    max-width: 100%;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
   }
 
   .module-toolbar__link {
     padding: 0.3125rem 0.625rem;
     font-size: 0.75rem;
+  }
+
+  .module-toolbar__link:first-child {
+    margin-left: 0;
   }
 }

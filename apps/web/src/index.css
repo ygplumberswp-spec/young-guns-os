@@ -934,14 +934,19 @@ a:focus-visible {
     bottom: 0;
     width: min(15rem, 86vw);
     transform: translateX(-100%);
-    transition: transform 0.2s ease;
+    transition: transform 0.2s ease, visibility 0.2s ease;
     z-index: 40;
     overflow-y: auto;
     padding-bottom: env(safe-area-inset-bottom, 0px);
+    /* YG-CUTOVER-001B: keep off-canvas drawer inert so it cannot contribute to left clipping */
+    visibility: hidden;
+    pointer-events: none;
   }
 
   .owner-shell--mobile-nav-open .titan-shell__sidebar {
     transform: translateX(0);
+    visibility: visible;
+    pointer-events: auto;
   }
 
   .owner-shell__backdrop {
@@ -954,7 +959,13 @@ a:focus-visible {
     cursor: pointer;
   }
 
+  /*
+   * YG-CUTOVER-001B: main must honour horizontal safe-area (header already does).
+   * Prevents left-edge clipping of dashboard headings/cards on notched iPhones.
+   */
   .owner-shell .titan-shell__main {
+    padding-left: max(var(--titan-page-pad-x, 1rem), env(safe-area-inset-left, 0px));
+    padding-right: max(var(--titan-page-pad-x, 1rem), env(safe-area-inset-right, 0px));
     padding-bottom: calc(var(--titan-page-pad-y, 1.5rem) + env(safe-area-inset-bottom, 0px));
   }
 
@@ -968,6 +979,20 @@ a:focus-visible {
   .owner-shell .app-header__brand .brand-sub,
   .owner-shell .app-header__brand .brand-credit {
     display: none;
+  }
+
+  /* YG-CUTOVER-001B: icon-only menu control — frees narrow iPhone header width */
+  .app-header__menu-label {
+    display: none;
+  }
+
+  .app-header__menu-toggle {
+    padding-inline: 0.5rem;
+    gap: 0;
+  }
+
+  .app-header__start {
+    gap: 0.4rem;
   }
 
   .app-header__brand {
@@ -986,13 +1011,18 @@ a:focus-visible {
   }
 
   .app-header__identity {
-    max-width: 9rem;
+    max-width: 7.5rem;
     padding-inline: 0.25rem;
   }
 
   .app-header__identity-mark {
     width: 1.875rem;
     height: 1.875rem;
+  }
+
+  .app-header__user .titan-btn {
+    padding-inline: 0.5rem;
+    font-size: 0.75rem;
   }
 
   .dashboard-stats {
@@ -4304,6 +4334,44 @@ a:focus-visible {
   .exec-glance-grid {
     gap: 0.75rem;
   }
+
+  /*
+   * YG-CUTOVER-001B — keep command-centre children inside the viewport.
+   * No desktop negative margins; enforce wrap + min-width:0 on phone.
+   */
+  .exec-dashboard-page--owner001,
+  .exec-dashboard--owner001,
+  .exec-dashboard-region,
+  .exec-dashboard-row,
+  .exec-dashboard-row > * {
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .exec-dashboard-page--owner001 .titan-panel__header {
+    gap: 0.5rem;
+    padding: 0.875rem 1rem;
+  }
+
+  .exec-dashboard-page--owner001 .titan-panel__body {
+    padding: 1rem;
+  }
+
+  .exec-dashboard-page--owner001 .titan-panel__title,
+  .exec-dashboard-page--owner001 .titan-panel__description,
+  .exec-attention__main strong,
+  .exec-attention__reason,
+  .exec-outstanding__customer,
+  .exec-outstanding__col--number {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .exec-dashboard-page--owner001 .titan-panel__action {
+    max-width: 40%;
+    white-space: normal;
+    text-align: right;
+  }
 }
 
 @media (max-width: 640px) {
@@ -4323,6 +4391,26 @@ a:focus-visible {
   .exec-heartbeat__primary-grid,
   .exec-heartbeat__secondary-grid {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+
+/* YG-CUTOVER-001B — iPhone SE / compact widths: single-column metric bands */
+@media (max-width: 390px) {
+  .exec-heartbeat__primary-grid,
+  .exec-heartbeat__secondary-grid,
+  .owner-finance-pulse__grid,
+  .owner-finance-pulse__growth-metrics,
+  .exec-financial-truth__summary-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .exec-dashboard-page--owner001 .titan-panel__header {
+    flex-wrap: wrap;
+  }
+
+  .exec-dashboard-page--owner001 .titan-panel__action {
+    max-width: 100%;
+    text-align: left;
   }
 }
 

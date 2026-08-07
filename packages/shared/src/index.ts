@@ -33,6 +33,7 @@ export * from './company.js';
 export * from './young-guns-ops.js';
 export * from './yg-live-001.js';
 export * from './yg-cutover-001.js';
+export * from './yg-cutover-001b.js';
 export * from './localisation.js';
 export * from './team.js';
 export * from './team-user-lifecycle.js';
