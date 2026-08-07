@@ -150,6 +150,10 @@ export function App() {
                         <Route path="/leads" component={OwnerPages.LeadListPage} />
                         <Route path="/marketing" component={OwnerPages.MarketingIntelligencePage} />
                         <Route path="/platform" component={OwnerPages.PlatformPage} />
+                        <Route
+                          path="/onboarding"
+                          component={OwnerPages.SaasOnboardingWizardPage}
+                        />
                         <Route path="/operations" component={OwnerPages.OperationsPage} />
                         <Route
                           path="/mobile-platform/dispatcher"

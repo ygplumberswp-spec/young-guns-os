@@ -52,6 +52,8 @@ type AuthRouterDeps = {
   isProduction: boolean;
   logger?: Logger;
   enterpriseSecurityService?: EnterpriseSecurityService;
+  /** Optional — enrolls new companies into SaaS onboarding after signup (no demo data). */
+  saasOnboardingService?: import('../services/saas-onboarding.service.js').SaasOnboardingService;
 };
 
 export function createAuthRouter({
@@ -60,6 +62,7 @@ export function createAuthRouter({
   isProduction,
   logger,
   enterpriseSecurityService,
+  saasOnboardingService,
 }: AuthRouterDeps): Router {
   const router = Router();
   const requireAuth = createAuthMiddleware({ jwtSecret, authService });
@@ -112,6 +115,20 @@ export function createAuthRouter({
         },
         'Signup succeeded — session created',
       );
+
+      if (saasOnboardingService) {
+        try {
+          await saasOnboardingService.ensureCustomerEnrollment({
+            companyId: result.user.companyId,
+            userId: result.user.id,
+          });
+        } catch (enrollErr) {
+          authLog?.warn(
+            { err: enrollErr, companyId: result.user.companyId },
+            'SaaS onboarding enrollment failed after signup',
+          );
+        }
+      }
 
       setRefreshCookie(res, result.refreshToken, isProduction);
       authLog?.debug({ userId: result.user.id }, 'Refresh cookie set');

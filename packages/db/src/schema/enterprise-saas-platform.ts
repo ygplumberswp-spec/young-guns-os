@@ -98,6 +98,20 @@ export const saasTenantProfiles = pgTable('saas_tenant_profiles', {
   suspensionReason: text('suspension_reason'),
   lastAccessAction: text('last_access_action'),
   lastAccessActionAt: timestamp('last_access_action_at', { withTimezone: true }),
+  /** Plug-and-play onboarding wizard state (customer tenants). */
+  onboardingStatus: text('onboarding_status').notNull().default('not_started'),
+  onboardingCurrentStep: text('onboarding_current_step').notNull().default('company'),
+  onboardingChecklist: jsonb('onboarding_checklist')
+    .$type<Record<string, string>>()
+    .notNull()
+    .default({}),
+  onboardingTradeType: text('onboarding_trade_type'),
+  onboardingSkippedIntegrations: jsonb('onboarding_skipped_integrations')
+    .$type<string[]>()
+    .notNull()
+    .default([]),
+  onboardingCompletedAt: timestamp('onboarding_completed_at', { withTimezone: true }),
+  lastOnboardingActivityAt: timestamp('last_onboarding_activity_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });

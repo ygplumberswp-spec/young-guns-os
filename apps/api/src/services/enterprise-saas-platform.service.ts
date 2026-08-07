@@ -41,11 +41,14 @@ import type {
 import {
   assertNoUnlimitedHighCost,
   buildMarginSnapshot,
+  computeOnboardingCompletionPercent,
+  defaultOnboardingChecklist,
   evaluateDowngradeSeatImpact,
   evaluateFairUse,
   evaluateSaasTenantAccess,
   evaluateSeatAvailability,
   resolveSeatAllowance,
+  type SaasOnboardingChecklist,
   saasAccessStatusChip,
   TITAN_CANONICAL_PLANS,
 } from '@titan/shared';
@@ -1934,6 +1937,10 @@ export class EnterpriseSaasPlatformService {
         suspensionReason: saasTenantProfiles.suspensionReason,
         lastAccessAction: saasTenantProfiles.lastAccessAction,
         lastAccessActionAt: saasTenantProfiles.lastAccessActionAt,
+        onboardingStatus: saasTenantProfiles.onboardingStatus,
+        onboardingCurrentStep: saasTenantProfiles.onboardingCurrentStep,
+        onboardingChecklist: saasTenantProfiles.onboardingChecklist,
+        lastOnboardingActivityAt: saasTenantProfiles.lastOnboardingActivityAt,
         companyName: companies.name,
         companySlug: companies.slug,
       })
@@ -1948,7 +1955,8 @@ export class EnterpriseSaasPlatformService {
 
     const companyIds = rows.map((row) => row.companyId);
 
-    const [userCounts, branchCounts, subscriptions, primaryContacts] = await Promise.all([
+    const [userCounts, branchCounts, subscriptions, primaryContacts, integrationCounts] =
+      await Promise.all([
       this.deps.db
         .select({ companyId: users.companyId, value: count() })
         .from(users)
@@ -1979,6 +1987,16 @@ export class EnterpriseSaasPlatformService {
           ),
         )
         .orderBy(asc(users.createdAt)),
+      this.deps.db
+        .select({ companyId: integrationConnections.companyId, value: count() })
+        .from(integrationConnections)
+        .where(
+          and(
+            inArray(integrationConnections.companyId, companyIds),
+            eq(integrationConnections.status, 'connected'),
+          ),
+        )
+        .groupBy(integrationConnections.companyId),
     ]);
 
     const planIds = [
@@ -2007,6 +2025,9 @@ export class EnterpriseSaasPlatformService {
         });
       }
     }
+    const integrationCountByCompany = new Map(
+      integrationCounts.map((row) => [row.companyId, Number(row.value)]),
+    );
 
     return rows.map((row) => {
       const subscription = subscriptionByCompany.get(row.companyId);
@@ -2021,6 +2042,8 @@ export class EnterpriseSaasPlatformService {
         lastPaymentFailedAt: subscription?.lastPaymentFailedAt ?? null,
       });
       const contact = contactByCompany.get(row.companyId);
+      const checklist = normalizeOnboardingChecklist(row.onboardingChecklist);
+      const onboardingStatus = row.onboardingStatus ?? 'not_started';
 
       return {
         companyId: row.companyId,
@@ -2048,6 +2071,13 @@ export class EnterpriseSaasPlatformService {
         lastAccessAction: row.lastAccessAction ?? null,
         lastAccessActionAt: row.lastAccessActionAt?.toISOString() ?? null,
         statusChip: saasAccessStatusChip(decision),
+        // Onboarding metadata only — never includes tenant business content.
+        onboardingStatus,
+        onboardingCurrentStep: row.onboardingCurrentStep ?? null,
+        onboardingCompletionPercent: computeOnboardingCompletionPercent(checklist),
+        lastOnboardingActivityAt: row.lastOnboardingActivityAt?.toISOString() ?? null,
+        integrationsConnectedCount: integrationCountByCompany.get(row.companyId) ?? 0,
+        importAttentionCount: checklist.import === 'attention' ? 1 : 0,
       };
     });
   }
@@ -2127,7 +2157,29 @@ export class EnterpriseSaasPlatformService {
       lastAccessAction: profile?.lastAccessAction ?? null,
       lastAccessActionAt: profile?.lastAccessActionAt?.toISOString() ?? null,
       statusChip: saasAccessStatusChip(decision),
+      onboardingStatus: profile?.onboardingStatus ?? 'not_started',
+      onboardingCurrentStep: profile?.onboardingCurrentStep ?? null,
+      onboardingCompletionPercent: computeOnboardingCompletionPercent(
+        normalizeOnboardingChecklist(profile?.onboardingChecklist),
+      ),
+      lastOnboardingActivityAt: profile?.lastOnboardingActivityAt?.toISOString() ?? null,
+      integrationsConnectedCount: await this.countConnectedIntegrations(companyId),
+      importAttentionCount:
+        normalizeOnboardingChecklist(profile?.onboardingChecklist).import === 'attention' ? 1 : 0,
     };
+  }
+
+  private async countConnectedIntegrations(companyId: string): Promise<number> {
+    const [row] = await this.deps.db
+      .select({ value: count() })
+      .from(integrationConnections)
+      .where(
+        and(
+          eq(integrationConnections.companyId, companyId),
+          eq(integrationConnections.status, 'connected'),
+        ),
+      );
+    return Number(row?.value ?? 0);
   }
 
   private async getPlatformAnalytics(): Promise<SaasPlatformAnalyticsSummary> {
@@ -2311,4 +2363,21 @@ export class EnterpriseSaasPlatformService {
       createdAt: row.createdAt.toISOString(),
     };
   }
+}
+
+function normalizeOnboardingChecklist(
+  raw: Record<string, string> | null | undefined,
+): SaasOnboardingChecklist {
+  const defaults = defaultOnboardingChecklist();
+  if (!raw) return defaults;
+  return {
+    company: (raw.company as SaasOnboardingChecklist['company']) || defaults.company,
+    plan: (raw.plan as SaasOnboardingChecklist['plan']) || defaults.plan,
+    team: (raw.team as SaasOnboardingChecklist['team']) || defaults.team,
+    import: (raw.import as SaasOnboardingChecklist['import']) || defaults.import,
+    integrations:
+      (raw.integrations as SaasOnboardingChecklist['integrations']) || defaults.integrations,
+    operations: (raw.operations as SaasOnboardingChecklist['operations']) || defaults.operations,
+    review: (raw.review as SaasOnboardingChecklist['review']) || defaults.review,
+  };
 }

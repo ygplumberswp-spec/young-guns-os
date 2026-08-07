@@ -414,6 +414,10 @@ export const OwnerBillingPage = lazyNamed(
   () => import('../pages/settings/OwnerBillingPage'),
   'OwnerBillingPage',
 );
+export const SaasOnboardingWizardPage = lazyNamed(
+  () => import('../pages/onboarding/SaasOnboardingWizardPage'),
+  'SaasOnboardingWizardPage',
+);
 export const PlatformPage = lazyNamed(
   () => import('../pages/platform/PlatformPage'),
   'PlatformPage',

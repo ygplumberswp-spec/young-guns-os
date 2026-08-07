@@ -34,6 +34,10 @@ export function isSaasAccessAllowlistedPath(path: string): boolean {
   ) {
     return true;
   }
+  // Onboarding must remain reachable to resume setup / billing attention without data loss UX.
+  if (normalized.startsWith('/api/v1/onboarding')) {
+    return true;
+  }
   return false;
 }
 
