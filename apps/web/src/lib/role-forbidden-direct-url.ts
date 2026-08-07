@@ -46,7 +46,16 @@ export function evaluateOwnerStaffDirectUrl(
 ): ForbiddenDirectUrlDecision {
   const experience = resolveStaffExperience(identity);
 
-  if (experience === 'technician' && (isOwnerOnlyPath(pathname) || pathname === '/')) {
+  /**
+   * YG-CUTOVER-001E — Technicians never use the staff AppLayout nest.
+   * Deny-by-default (including /communications-hub and other modules missing
+   * from OWNER_ONLY_ROUTE_PREFIXES). /mobile* may pass through for nested
+   * routing edge cases; TechnicianRoute owns field mobile.
+   */
+  if (experience === 'technician') {
+    if (isTechnicianAllowedPath(pathname)) {
+      return { allowed: true };
+    }
     return { allowed: false, redirectPath: getStaffHomePath(identity) };
   }
 
@@ -71,6 +80,11 @@ export function evaluateTechnicianDirectUrl(
 ): ForbiddenDirectUrlDecision {
   if (!canAccessTechnicianMobile(identity)) {
     return { allowed: false, redirectPath: '/' };
+  }
+
+  // Owners may open field mobile for support; technicians stay on /mobile* only.
+  if (isTechnicianRole(identity) && !isTechnicianAllowedPath(pathname)) {
+    return { allowed: false, redirectPath: '/mobile' };
   }
 
   if (!isTechnicianRole(identity) && !isTechnicianAllowedPath(pathname)) {

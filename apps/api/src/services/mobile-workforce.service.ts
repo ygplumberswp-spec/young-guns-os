@@ -8,7 +8,6 @@ import type {
   JobExecutionPhase,
   JobWorkflowAction,
   MobileCompanyAnnouncementSummary,
-  MobileInventoryAlert,
   MobileJobDocumentationSummary,
   MobileJobExecutionWorkspace,
   MobileJobInventoryUsageSummary,
@@ -107,7 +106,8 @@ export class MobileWorkforceService {
     private readonly mobileService: MobileService,
     private readonly mobileSyncService: MobileSyncService,
     private readonly jobsService: JobsService,
-    private readonly inventoryService: InventoryService,
+    /** @deprecated DI slot — company inventory alerts are not exposed (YG-CUTOVER-001E). */
+    _inventoryService: InventoryService,
     private readonly integrationsService: IntegrationsService,
     private readonly notificationService: NotificationService,
     private readonly jobExecutionService: JobExecutionService,
@@ -116,29 +116,21 @@ export class MobileWorkforceService {
   ) {}
 
   async getWorkforceDashboard(scope: TechnicianScope): Promise<MobileWorkforceDashboard> {
-    const [
-      baseDashboard,
-      route,
-      inventoryAlerts,
-      announcements,
-      pendingRequests,
-      pendingActions,
-      todaySchedule,
-    ] = await Promise.all([
-      this.mobileService.getTechnicianDashboard(scope),
-      this.getRouteSummary(scope),
-      this.getInventoryAlerts(scope.companyId),
-      this.listActiveAnnouncements(scope.companyId),
-      this.listRequests(scope),
-      this.db.query.mobilePendingActions.findMany({
-        where: and(
-          eq(mobilePendingActions.companyId, scope.companyId),
-          eq(mobilePendingActions.userId, scope.userId),
-          eq(mobilePendingActions.status, 'pending'),
-        ),
-      }),
-      this.mobileService.getTechnicianSchedule(scope),
-    ]);
+    const [baseDashboard, route, announcements, pendingRequests, pendingActions, todaySchedule] =
+      await Promise.all([
+        this.mobileService.getTechnicianDashboard(scope),
+        this.getRouteSummary(scope),
+        this.listActiveAnnouncements(scope.companyId),
+        this.listRequests(scope),
+        this.db.query.mobilePendingActions.findMany({
+          where: and(
+            eq(mobilePendingActions.companyId, scope.companyId),
+            eq(mobilePendingActions.userId, scope.userId),
+            eq(mobilePendingActions.status, 'pending'),
+          ),
+        }),
+        this.mobileService.getTechnicianSchedule(scope),
+      ]);
 
     const safetyNotices = announcements.filter((item) => item.announcementType === 'safety');
     const companyAnnouncements = announcements.filter((item) => item.announcementType !== 'safety');
@@ -155,7 +147,8 @@ export class MobileWorkforceService {
       outstandingTaskCount: pendingActions.length,
       pendingRequestCount: pendingRequests.filter((item) => item.status === 'pending_approval')
         .length,
-      inventoryAlerts,
+      // YG-CUTOVER-001E — never expose company low-stock / warehouse alerts to technicians
+      inventoryAlerts: [],
       safetyNotices,
       companyAnnouncements,
       recommendations: baseDashboard.recommendations,
@@ -167,9 +160,9 @@ export class MobileWorkforceService {
   async listWorkforceJobs(scope: TechnicianScope): Promise<MobileWorkforceJobList> {
     const jobsList = await this.mobileService.listAssignedJobs(scope);
     const activeCount = jobsList.filter(
-      (job) => !['completed', 'cancelled'].includes(job.status),
+      (job) => !['completed', 'cancelled', 'canceled'].includes(job.status.toLowerCase()),
     ).length;
-    const completedCount = jobsList.filter((job) => job.status === 'completed').length;
+    const completedCount = jobsList.filter((job) => job.status.toLowerCase() === 'completed').length;
 
     return { jobs: jobsList, activeCount, completedCount };
   }
@@ -407,8 +400,8 @@ export class MobileWorkforceService {
   }
 
   async getInventoryCentre(scope: TechnicianScope): Promise<MobileWorkforceInventoryCentre> {
-    const [alerts, recentUsage, catalogItems, locations] = await Promise.all([
-      this.getInventoryAlerts(scope.companyId),
+    // YG-CUTOVER-001E — Parts Used / returns only. No company low-stock alerts.
+    const [recentUsage, catalogItems, locations] = await Promise.all([
       this.db.query.mobileJobInventoryUsage.findMany({
         where: and(
           eq(mobileJobInventoryUsage.companyId, scope.companyId),
@@ -431,7 +424,7 @@ export class MobileWorkforceService {
     ]);
 
     return {
-      alerts,
+      alerts: [],
       recentUsage: recentUsage.map(toInventoryUsageSummary),
       pendingUsageCount: recentUsage.filter((item) => item.status === 'pending_approval').length,
       catalogItems: catalogItems.map((item) => ({
@@ -1409,8 +1402,9 @@ export class MobileWorkforceService {
       this.mobileService.getTechnicianFleetInfo(scope),
     ]);
 
+    // Same active-assigned universe as greeting + Assigned Jobs panel (YG-CUTOVER-001E).
     const activeJobs = assignedJobs
-      .filter((job) => !['completed', 'cancelled'].includes(job.status))
+      .filter((job) => !['completed', 'cancelled', 'canceled'].includes(job.status.toLowerCase()))
       .sort((a, b) => {
         const aTime = a.scheduledAt ? new Date(a.scheduledAt).getTime() : Number.MAX_SAFE_INTEGER;
         const bTime = b.scheduledAt ? new Date(b.scheduledAt).getTime() : Number.MAX_SAFE_INTEGER;
@@ -1486,20 +1480,6 @@ export class MobileWorkforceService {
     return history
       .sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime())
       .slice(0, 30);
-  }
-
-  private async getInventoryAlerts(companyId: string): Promise<MobileInventoryAlert[]> {
-    const context = await this.inventoryService.buildAuraContext(companyId);
-    return context.items
-      .filter((item) => item.isLowStock)
-      .slice(0, 10)
-      .map((item) => ({
-        itemId: item.id,
-        sku: item.sku,
-        name: item.name,
-        totalQuantityOnHand: item.totalQuantityOnHand,
-        reorderLevel: item.reorderLevel,
-      }));
   }
 
   private async listActiveAnnouncements(

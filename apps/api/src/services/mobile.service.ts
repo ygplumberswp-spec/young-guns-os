@@ -19,7 +19,11 @@ import type {
   MobileTechnicianFleetInfo,
   MobileTechnicianSchedule,
 } from '@titan/shared';
-import { displayOfficialInvoiceNumber } from '@titan/shared';
+import {
+  buildTechnicianFieldGreeting,
+  countTechnicianActiveAssignedJobs,
+  displayOfficialInvoiceNumber,
+} from '@titan/shared';
 import type { PortalAccessPermission } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
 import {
@@ -202,23 +206,39 @@ export class MobileService {
   }
 
   async getTechnicianDashboard(scope: StaffScope): Promise<MobileTechnicianDashboard> {
-    const [dashboard, recommendations, assignedJobs, notifications] = await Promise.all([
-      this.intelligenceService.getDashboard(scope.companyId),
-      this.recommendationsService.getRecommendations(scope.companyId),
+    /**
+     * YG-CUTOVER-001E — never reuse Owner Intelligence greeting/dashboard.
+     * Canonical truth: assigned/crew jobs only (listAssignedJobs).
+     */
+    const [assignedJobs, schedule, notifications] = await Promise.all([
       this.listAssignedJobs(scope),
+      this.getTechnicianSchedule(scope),
       this.notificationService.listForStaff(scope),
     ]);
 
-    const technicianRecommendations = recommendations.recommendations.filter((item) =>
-      ['scheduling', 'fleet', 'general'].includes(item.category),
+    const activeAssigned = assignedJobs.filter((job) =>
+      !['completed', 'cancelled', 'canceled'].includes(job.status.toLowerCase()),
     );
+    const activeCount = countTechnicianActiveAssignedJobs(assignedJobs);
 
     return {
-      greeting: dashboard.greeting,
-      todaysJobs: dashboard.todaysJobs,
-      upcomingSchedule: dashboard.upcomingSchedule,
-      fleetIssues: dashboard.fleetIssues,
-      recommendations: technicianRecommendations,
+      greeting: buildTechnicianFieldGreeting({ activeAssignedJobCount: activeCount }),
+      todaysJobs: {
+        count: activeCount,
+        items: activeAssigned.slice(0, 20).map((job) => ({
+          id: job.id,
+          title: job.title,
+          status: job.status,
+          customerName: job.customerName,
+          scheduledAt: job.scheduledAt,
+        })),
+      },
+      upcomingSchedule: {
+        count: schedule.events.length,
+        items: schedule.events,
+      },
+      fleetIssues: { count: 0, items: [] },
+      recommendations: [],
       assignedJobs,
       notifications,
     };

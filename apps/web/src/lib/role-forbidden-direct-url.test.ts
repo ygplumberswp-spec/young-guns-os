@@ -67,9 +67,18 @@ describe('role-forbidden direct URL path prefixes', () => {
 
 describe('evaluateOwnerStaffDirectUrl (forbidden direct URL browser contract)', () => {
   it('redirects technician away from owner dashboard and guessed owner modules', () => {
-    for (const path of ['/', '/finance/invoices', '/crm/customers', '/scheduling']) {
+    for (const path of [
+      '/',
+      '/finance/invoices',
+      '/crm/customers',
+      '/scheduling',
+      '/communications-hub',
+      '/workforce-intelligence',
+      '/analytics',
+      '/integrations',
+    ]) {
       const decision = evaluateOwnerStaffDirectUrl(technician, path);
-      assert.equal(decision.allowed, false);
+      assert.equal(decision.allowed, false, path);
       if (!decision.allowed) {
         assert.equal(decision.redirectPath, '/mobile');
       }

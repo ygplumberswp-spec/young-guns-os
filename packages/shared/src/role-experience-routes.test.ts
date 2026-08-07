@@ -21,10 +21,13 @@ describe('technician route protection', () => {
     for (const prefix of [
       '/jobs',
       '/communications',
+      '/communications-hub',
       '/documents',
       '/dispatch',
       '/technician-intelligence',
       '/workflow-automation',
+      '/workforce-intelligence',
+      '/analytics',
     ]) {
       assert.equal(isBlocked(OWNER_ONLY_ROUTE_PREFIXES, prefix), true, `expected ${prefix}`);
     }
