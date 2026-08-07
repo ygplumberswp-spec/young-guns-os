@@ -1,13 +1,6 @@
+import { PageHeader } from '../../components/ux';
 import { useEffect, useMemo, useState } from 'react';
-import {
-  Button,
-  EmptyState,
-  GroupedTabNav,
-  LoadingState,
-  PageHeader,
-  Panel,
-  StatCard,
-} from '@titan/ui';
+import { Button, EmptyState, GroupedTabNav, LoadingState, Panel, StatCard } from '@titan/ui';
 import type { EnterprisePlatformHealthDashboard } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import {
@@ -195,7 +188,7 @@ export function PlatformHealthPage() {
     return (
       <div className="p-6">
         <EmptyState
-          title="Access denied"
+          title="Access Denied"
           description="You do not have permission to view platform health."
         />
       </div>
@@ -265,7 +258,7 @@ export function PlatformHealthPage() {
         ariaLabel="Platform health sections"
       />
 
-      {isLoading ? <LoadingState label="Loading platform health" /> : null}
+      {isLoading ? <LoadingState label="Loading Platform Health" /> : null}
 
       {!isLoading && activeTab === 'overview' ? (
         <div className="space-y-4">
@@ -293,7 +286,7 @@ export function PlatformHealthPage() {
         <Panel title="Service Health">
           {dashboard.serviceHealth.length === 0 ? (
             <EmptyState
-              title="No service metrics"
+              title="No Service Metrics"
               description="Capture a health snapshot to record service metrics from production readiness monitoring."
             />
           ) : (
@@ -328,7 +321,7 @@ export function PlatformHealthPage() {
           <Panel title="Diagnostic Runs">
             {dashboard.diagnosticRuns.length === 0 ? (
               <EmptyState
-                title="No diagnostic runs"
+                title="No Diagnostic Runs"
                 description="Run read-only diagnostic tests for database, API, auth, providers, and scheduler health."
               />
             ) : (
@@ -380,7 +373,7 @@ export function PlatformHealthPage() {
           <Panel title="Performance Insights">
             {dashboard.performanceInsights.length === 0 ? (
               <EmptyState
-                title="No performance insights"
+                title="No Performance Insights"
                 description="Generate insights from real API latency, queue depth, and provider metrics."
               />
             ) : (
@@ -450,7 +443,7 @@ export function PlatformHealthPage() {
               </dl>
             ) : (
               <EmptyState
-                title="No capacity data"
+                title="No Capacity Data"
                 description="Capture capacity metrics from real usage records and queue load."
               />
             )}
@@ -468,7 +461,7 @@ export function PlatformHealthPage() {
                 void runAction(
                   () =>
                     createPlatformHealthIncident(accessToken!, {
-                      title: 'Platform health incident',
+                      title: 'Platform Health Incident',
                       severity: 'medium',
                       description: 'Investigation required',
                     }),
@@ -482,7 +475,7 @@ export function PlatformHealthPage() {
           <Panel title="Incidents">
             {dashboard.incidents.length === 0 ? (
               <EmptyState
-                title="No open incidents"
+                title="No Open Incidents"
                 description="Incidents are tracked via IT Operations — never auto-closed."
               />
             ) : (
@@ -522,7 +515,7 @@ export function PlatformHealthPage() {
         <Panel title="Integration Health">
           {dashboard.integrations.length === 0 ? (
             <EmptyState
-              title="No integrations"
+              title="No Integrations"
               description="Connector health from Universal Connector Platform."
             />
           ) : (
@@ -559,7 +552,7 @@ export function PlatformHealthPage() {
             </pre>
           ) : (
             <EmptyState
-              title="No analytics captured"
+              title="No Analytics Captured"
               description="Capture analytics to track platform health trends."
             />
           )}
@@ -587,7 +580,7 @@ export function PlatformHealthPage() {
             <p className="text-sm text-slate-500">Loading audit logs...</p>
           ) : auditLogs.length === 0 ? (
             <EmptyState
-              title="No audit entries"
+              title="No Audit Entries"
               description="All platform health actions are logged for auditability."
             />
           ) : (

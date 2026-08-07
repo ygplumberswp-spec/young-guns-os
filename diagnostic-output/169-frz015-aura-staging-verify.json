@@ -1,0 +1,132 @@
+{
+  "schemaVersion": "frz015-staging-verify-v1",
+  "timestampUtc": "2026-08-01T09:20:00.000Z",
+  "commit": "8c9a03d",
+  "branch": "cursor/titan-frozen-scope-completion",
+  "stagingApiBase": "https://young-guns-os-staging.up.railway.app/api/v1",
+  "productionRefBlocked": "rshuiaghmtrvvilhqpwm",
+  "verdict": "BLOCKED",
+  "frz015": {
+    "status": "BLOCKED",
+    "reason": "Staging AURA provider credential absent locally; Railway runtime gate PROVIDERS_ENABLED=false; no authenticated staging test credentials available",
+    "ownerAction": "Railway → titan-staging-api → Variables: set staging-only AURA_OPENAI_API_KEY, set PROVIDERS_ENABLED=true, redeploy API"
+  },
+  "credentialDiscovery": {
+    "appsApiEnvStagingLocal": {
+      "filePresent": true,
+      "fileSizeBytes": 157,
+      "keysPresent": ["APP_ENV", "TITAN_ENV", "DATABASE_URL"],
+      "AURA_OPENAI_API_KEY": { "present": false, "length": 0 },
+      "OPENAI_API_KEY": { "present": false, "length": 0 },
+      "GEMINI_API_KEY": { "present": false, "length": 0 },
+      "GOOGLE_AI_API_KEY": { "present": false, "length": 0 },
+      "GOOGLE_GENERATIVE_AI_API_KEY": { "present": false, "length": 0 },
+      "ANTHROPIC_API_KEY": { "present": false, "length": 0 },
+      "INTEGRATIONS_ENCRYPTION_KEY": { "present": false, "length": 0 },
+      "PROVIDERS_ENABLED": { "present": false, "length": 0 },
+      "AURA_DEFAULT_PROVIDER": { "present": false, "length": 0 },
+      "AURA_OPENAI_MODEL": { "present": false, "length": 0 },
+      "XERO_CLIENT_ID": { "present": false, "length": 0 },
+      "XERO_CLIENT_SECRET": { "present": false, "length": 0 },
+      "XERO_REDIRECT_URI": { "present": false, "length": 0 }
+    },
+    "appsApiEnvDev": {
+      "note": "Dev-only file — not used for staging verification",
+      "AURA_OPENAI_API_KEY": { "present": true, "length": 164, "prefixRedacted": "sk-p***" },
+      "AURA_DEFAULT_PROVIDER": { "present": true, "length": 6, "prefixRedacted": "open***" },
+      "INTEGRATIONS_ENCRYPTION_KEY": { "present": true, "length": 64, "prefixRedacted": "ab66***" },
+      "XERO_CLIENT_ID": { "present": true, "length": 32, "prefixRedacted": "5E6F***" },
+      "XERO_CLIENT_SECRET": { "present": true, "length": 48, "prefixRedacted": "SYJn***" }
+    },
+    "macOsKeychain": {
+      "aura": "not_found",
+      "openai": "not_found",
+      "titan": "not_found",
+      "gemini": "not_found"
+    },
+    "railwayCli": {
+      "RAILWAY_TOKEN": { "present": false, "length": 0 },
+      "variablesListExitCode": 1,
+      "variablesListMessage": "Unauthorized. Please login with railway login"
+    },
+    "stagingTestAuth": {
+      "AURA_STAGE2_EMAIL": { "present": false },
+      "AURA_STAGE2_PASSWORD": { "present": false },
+      "AURA_STAGE2_API_BASE": { "present": false }
+    }
+  },
+  "configWithoutSecrets": {
+    "auraProvider": "openai",
+    "auraModelDefault": "gpt-4o-mini",
+    "auraBaseUrlDefault": "https://api.openai.com/v1",
+    "auraRequestTimeoutMsDefault": 60000,
+    "loadAuraConfigFromEnvStagingLocal": {
+      "configured": false,
+      "apiKeyPresent": false,
+      "apiKeyLength": 0
+    },
+    "encryptedSecretPath": {
+      "INTEGRATIONS_ENCRYPTION_KEY_stagingLocal": "absent",
+      "encryptUsedBy": ["ai-orchestration.service.ts", "integrations.service.ts", "xero-oauth.service.ts"],
+      "note": "Required when NODE_ENV=production; Railway staging must have key even if providers gated off"
+    },
+    "runtimeGates": {
+      "stagingPublicReady": {
+        "httpStatus": 200,
+        "providersEnabled": false,
+        "workersEnabled": false,
+        "webhooksEnabled": false,
+        "database": "connected",
+        "redis": "not_configured"
+      },
+      "expectedStagingGatesPerEnvExample": {
+        "PROVIDERS_ENABLED": false,
+        "XERO_SYNC_ENABLED": false,
+        "WEBHOOKS_ENABLED": false
+      },
+      "auraProviderInstantiationRule": "createAuraProvider only when PROVIDERS_ENABLED=true AND isAuraProviderConfigured(auraConfig)"
+    }
+  },
+  "liveTests": {
+    "executed": false,
+    "reason": "Credential/gate block — no synthetic AURA message test performed",
+    "stagingHealthLive": {
+      "path": "/api/v1/health/live",
+      "httpStatus": 200,
+      "status": "live"
+    },
+    "stagingHealthReady": {
+      "path": "/api/v1/health/ready",
+      "httpStatus": 200,
+      "status": "ready",
+      "providersEnabled": false
+    },
+    "stagingXeroUnauthenticatedProbe": {
+      "path": "/api/v1/integrations/xero",
+      "httpStatus": 401,
+      "errorCode": "UNAUTHORIZED"
+    }
+  },
+  "unitTests": {
+    "command": "pnpm --filter @titan/api test",
+    "xeroOAuthAndAuraContextIncluded": true,
+    "pass": 301,
+    "fail": 0,
+    "exitCode": 0
+  },
+  "frz018XeroReadiness": {
+    "status": "PARTIAL — code ready, staging OAuth blocked",
+    "oauthRoutesPresent": [
+      "GET /api/v1/integrations/xero/oauth/callback",
+      "POST /api/v1/integrations/xero/oauth/start",
+      "POST /api/v1/integrations/xero/test"
+    ],
+    "oauthRequires": "PROVIDERS_ENABLED=true AND XERO_SYNC_ENABLED=true AND XERO_CLIENT_ID/SECRET",
+    "stagingLocalXeroEnv": "absent",
+    "stagingRuntimeXeroSyncEnabled": false,
+    "honestBlocking": true,
+    "ownerOAuthLoginPerformed": false,
+    "liveFinancialWritesPerformed": false,
+    "pauseGate": "Owner OAuth connect on staging after Xero app credentials + gate enable — not attempted this run"
+  }
+}

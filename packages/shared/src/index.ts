@@ -22,6 +22,7 @@ export function isApiError(response: ApiResponse<unknown>): response is ApiError
   return 'error' in response;
 }
 
+export * from './audit-sandbox.js';
 export * from './auth.js';
 export * from './cache-keys.js';
 export * from './aura.js';
@@ -31,20 +32,81 @@ export * from './young-guns-ops.js';
 export * from './localisation.js';
 export * from './team.js';
 export * from './crm.js';
+export * from './crm-list-ui.js';
+export * from './customer-duplicate-merge.js';
 export * from './contact-validation.js';
 export * from './job-contract.js';
 export * from './job-execution.js';
 export * from './jobs.js';
+export * from './job-completion-guards.js';
 export * from './scheduling.js';
 export * from './finance.js';
+export * from './finance-catalogue.js';
+export * from './finance-document-roundtrip.js';
+export * from './finance-document-preview.js';
+export * from './finance-document-preview-html.js';
+export * from './finance-document-content.js';
+export * from './finance-document-preview-sections.js';
+export * from './finance-tenant-pricebook.js';
+export * from './finance-document-photo-utils.js';
+export * from './finance-document-evidence.js';
+export * from './job-payment-ledger.js';
 export * from './inventory.js';
+export * from './job-costing.js';
+export * from './job-profitability.js';
+export * from './job-profitability-source-integrity.js';
+export * from './job-financial-fingerprint.js';
+export * from './job-financial-linkage.js';
+export * from './job-cost-capture.js';
+export * from './job-cost-control.js';
+export * from './job-document-pack.js';
+export * from './completion-report.js';
+export * from './operational-report.js';
+export * from './operational-report-html.js';
+export * from './workforce-report.js';
+export * from './workforce-report-period.js';
+export * from './workforce-report-access.js';
+export * from './workforce-report-html.js';
+export * from './workforce-report-timesheet.js';
+export * from './finance-report.js';
+export * from './finance-report-period.js';
+export * from './finance-report-source-policy.js';
+export * from './finance-report-access.js';
+export * from './finance-report-html.js';
+export * from './extended-report.js';
+export * from './extended-report-period.js';
+export * from './extended-report-source-policy.js';
+export * from './extended-report-access.js';
+export * from './extended-report-html.js';
+export * from './report-audience.js';
+export * from './job-finance-workflow.js';
 export * from './fleet.js';
+export * from './fleet-tracking.js';
 export * from './integrations.js';
+export * from './google-calendar.js';
+export * from './google-maps.js';
+export * from './vehicle-position-address.js';
+export * from './cartrack-telemetry.js';
+export * from './fleet-follow-mode.js';
+export * from './fleet-vehicle-card.js';
+export * from './supplier-maps-intelligence.js';
+export * from './integration-auto-sync.js';
+export * from './background-work.js';
 export * from './integration-capability.js';
 export * from './marketing-eligibility.js';
+export * from './customer-value-classification.js';
+export * from './dashboard-executive.js';
+export * from './dashboard-business-heartbeat.js';
+export * from './dashboard-quote-metrics.js';
+export * from './supplier-price-intelligence.js';
 export * from './communications.js';
 export * from './documents.js';
+export * from './drafts.js';
 export * from './automation.js';
+export * from './workflow-automation.js';
+export * from './recurring-maintenance.js';
+export * from './homeshield-experience.js';
+export * from './customer-engagement-intelligence.js';
 export * from './n8n-orchestration.js';
 export * from './enterprise-modules.js';
 export * from './agents.js';
@@ -52,11 +114,76 @@ export * from './tenant-capabilities.js';
 export * from './tenant-capability-routing.js';
 export * from './portal.js';
 export * from './role-experience.js';
+export * from './nav-labels.js';
 export * from './xero-sync.js';
+export * from './xero-finance-pipeline.js';
+export * from './xero-two-way-sync.js';
+export * from './xero-connection-health.js';
+export * from './xero-customer-mapping.js';
+export * from './xero-financial-truth-matrix.js';
+export * from './xero-reconciliation.js';
+export * from './xero-realtime-intersync.js';
+export * from './bank-statement-import.js';
+export * from './bank-transaction-control.js';
+export * from './finance-receipt-reconciliation.js';
+export {
+  canViewCashControl,
+  canAccessCashControl,
+  cashControlTodayDate,
+  cashControlMonthStartDate,
+  isDateInInclusiveRange,
+  deriveEveryRandControlState,
+  classifyBankMoneyForPeriod,
+  sumCustomerCashCollectedCents,
+  resolveCustomerCashCollectedWithoutDoubleCount,
+  buildPeriodMetrics,
+  resolveEconomicCostWithoutDoubleCount,
+  resolveDirectCostSettlementView,
+  isOutstandingCustomerInvoice,
+  deriveCashTruthCompleteness,
+  buildLedgerRowFromBankTransaction,
+  paginateCashControlLedger,
+  mapJpeToCashControlJobView,
+  overheadExcludedFromJobGrossProfit,
+  allocationTypeAffectsJobCash,
+  emptyIssueTotals,
+  type EveryRandControlState,
+  type CashTruthCompleteness,
+  type CashControlSourceKind,
+  type CashControlIssueKind,
+  type CashControlPeriodKey,
+  type CashControlMoneyInBreakdown,
+  type CashControlMoneyOutBreakdown,
+  type CashControlPeriodMetrics,
+  type CashControlCompletenessReason,
+  type CashControlSummary,
+  type CashControlLedgerRow,
+  type CashControlLedgerPage,
+  type CashControlIssue,
+  type CashControlIssuesResult,
+  type CashControlDirectCostSettlement,
+  type CashControlJobView,
+  type CashControlOutstandingInvoice,
+  type CashControlPaymentInput,
+  type CashControlBankAllocationInput,
+  type CashControlBankTransactionInput,
+} from './cash-control.js';
+export * from './owner-financial-command.js';
+export * from './profit-analytics.js';
+export * from './operating-profit.js';
+export * from './budget-control.js';
+export * from './growth-planner.js';
+
+export * from './xero-source-of-truth.js';
+export * from './vehicle-registration.js';
 export * from './whatsapp.js';
+export * from './whatsapp-contact-enrichment.js';
 export * from './agent-runtime.js';
 export * from './recruiting.js';
 export * from './intelligence.js';
+export * from './aura-memory-utils.js';
+export * from './day-planning.js';
+export * from './business-rules.js';
 export * from './mobile.js';
 export * from './analytics.js';
 export * from './agent-orchestration.js';
@@ -73,16 +200,66 @@ export * from './knowledge.js';
 export * from './business-intelligence.js';
 export * from './integration-api-management.js';
 export * from './portal-experience.js';
+export * from './portal-expansion.js';
 export * from './mobile-workforce.js';
+export * from './business-day-timeline.js';
+export * from './boq.js';
 export * from './job-evidence.js';
 export * from './quality-assurance.js';
 export * from './communications-intelligence.js';
 export * from './asset-equipment.js';
 export * from './ai-orchestration.js';
 export * from './dispatch-intelligence.js';
+export * from './dispatch-ops.js';
+export * from './ops-intelligence.js';
 export * from './fleet-intelligence.js';
+export * from './vehicle-intelligence.js';
+export * from './fleet-ai-recommendations.js';
+export * from './driver-intelligence.js';
 export * from './personal-communications-intelligence.js';
+export * from './personal-whatsapp-intelligence.js';
+export * from './personal-whatsapp-connection.js';
+export * from './communication-aura-intelligence.js';
+export * from './aura-command-centre.js';
+export * from './aura-agent-network.js';
+export * from './aura-evolution.js';
+export * from './marketing-agent.js';
+export * from './social-media-integrations.js';
+export * from './social-connection.js';
+export * from './facebook-business.js';
+export * from './facebook-page-discovery.js';
+export * from './facebook-direct-page-lookup.js';
+export * from './facebook-connection-health.js';
+export * from './facebook-page-identity.js';
+export * from './facebook-page-token-identity.js';
+export * from './facebook-page-discovery-session.js';
+export * from './facebook-connection-actions.js';
+export * from './facebook-business-portfolio-discovery.js';
+export * from './content-reputation-intelligence.js';
+export * from './finance-aura-agent.js';
+export * from './sales-intelligence-agent.js';
+export * from './sales-followup-intelligence.js';
+export * from './sales-analytics-intelligence.js';
+export * from './customer-360-intelligence.js';
+export * from './property-intelligence.js';
+export * from './document-intelligence.js';
+export * from './compliance-intelligence.js';
+export * from './executive-command-centre.js';
+export * from './smart-notification-intelligence.js';
+export * from './market-intelligence.js';
+export * from './security-monitoring.js';
+export * from './industry-templates.js';
+export * from './finance-cashflow-profit.js';
+export * from './finance-reporting-forecast.js';
+export * from './inventory-intelligence.js';
+export * from './procurement-intelligence.js';
+export * from './stock-forecasting.js';
+export * from './payroll-timesheet-intelligence.js';
+export * from './technician-intelligence.js';
+export * from './hr-employee-intelligence.js';
+export * from './recruitment-performance-intelligence.js';
 export * from './enterprise-security.js';
+export * from './secure-session.js';
 export * from './integration-platform.js';
 export * from './enterprise-analytics.js';
 export * from './enterprise-automation-studio.js';
@@ -97,6 +274,8 @@ export * from './unified-ai-orchestration.js';
 export * from './enterprise-production-readiness.js';
 export * from './enterprise-mobile-platform.js';
 export * from './enterprise-unified-communications.js';
+export * from './communications-platform.js';
+export * from './email-centre.js';
 export * from './enterprise-customer-experience.js';
 export * from './enterprise-asset-lifecycle.js';
 export * from './enterprise-workforce-intelligence.js';
@@ -112,6 +291,8 @@ export * from './enterprise-industry-packs.js';
 export * from './enterprise-public-developer-platform.js';
 export * from './enterprise-saas-management.js';
 export * from './enterprise-voice-reception.js';
+export * from './voice-ai-receptionist.js';
+export * from './call-intelligence.js';
 export * from './enterprise-document-ai.js';
 export * from './enterprise-business-continuity.js';
 export * from './enterprise-global-search.js';
@@ -122,3 +303,9 @@ export * from './enterprise-launch-center.js';
 export * from './enterprise-release-center.js';
 export * from './enterprise-production-launch.js';
 export * from './enterprise-release-management.js';
+export * from './document-engine.js';
+export * from './finance-staging-retention.js';
+export * from './young-guns-theme.js';
+export * from './young-guns-report-shell.js';
+export * from './yoco-payment-links.js';
+export * from './qr-code.js';

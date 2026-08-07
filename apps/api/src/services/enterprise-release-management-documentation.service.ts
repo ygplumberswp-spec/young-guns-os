@@ -18,7 +18,7 @@ const DOC_TEMPLATES: Array<{
   {
     docKey: 'system_overview',
     docCategory: 'system_overview',
-    title: 'TITAN Business OS — System Overview',
+    title: 'TITAN — System Overview',
     sections: [
       'Platform architecture',
       'Core modules and capabilities',

@@ -52,6 +52,24 @@ export const companyFinanceSettings = pgTable('company_finance_settings', {
   profitFloorMarginBps: integer('profit_floor_margin_bps').notNull().default(2000),
   allowBelowFloorWithOverride: boolean('allow_below_floor_with_override').notNull().default(true),
   currency: text('currency').notNull().default('ZAR'),
+  /** Internal labour cost rate for job profitability (cents per hour). */
+  defaultInternalLabourRateCentsPerHour: integer('default_internal_labour_rate_cents_per_hour')
+    .notNull()
+    .default(8000),
+  /** Configurable margin thresholds (basis points) for profitability status. */
+  profitabilityExcellentMarginBps: integer('profitability_excellent_margin_bps')
+    .notNull()
+    .default(3500),
+  profitabilityHealthyMarginBps: integer('profitability_healthy_margin_bps')
+    .notNull()
+    .default(2500),
+  profitabilityWarningMarginBps: integer('profitability_warning_margin_bps')
+    .notNull()
+    .default(1500),
+  /** Expected vs actual margin variance threshold for cost control alerts (basis points). */
+  costControlMarginVarianceBps: integer('cost_control_margin_variance_bps')
+    .notNull()
+    .default(1000),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
@@ -69,13 +87,15 @@ export const quotes = pgTable('quotes', {
     onDelete: 'set null',
   }),
   leadId: uuid('lead_id').references(() => leads.id, { onDelete: 'set null' }),
+  boqDocumentId: uuid('boq_document_id'),
   estimatorUserId: uuid('estimator_user_id').references(() => users.id, { onDelete: 'set null' }),
   rootQuoteId: uuid('root_quote_id'),
   supersedesQuoteId: uuid('supersedes_quote_id'),
   versionNumber: integer('version_number').notNull().default(1),
   isImmutable: boolean('is_immutable').notNull().default(false),
   quoteNumber: text('quote_number').notNull(),
-  title: text('title').notNull(),
+  /** Legacy DB column — not user-facing (Phase J-6). Application always sets customer name or ''. */
+  title: text('title').notNull().default(''),
   status: quoteStatusEnum('status').notNull().default('draft'),
   amountCents: integer('amount_cents').notNull(),
   subtotalCents: integer('subtotal_cents').notNull().default(0),
@@ -104,13 +124,22 @@ export const quotes = pgTable('quotes', {
   depositPercent: integer('deposit_percent'),
   optionTier: text('option_tier'),
   notes: text('notes'),
+  billingAddress: text('billing_address'),
+  siteAddress: text('site_address'),
+  postalAddress: text('postal_address'),
   issuedAt: timestamp('issued_at', { withTimezone: true }),
   acceptedAt: timestamp('accepted_at', { withTimezone: true }),
   declinedAt: timestamp('declined_at', { withTimezone: true }),
   cancelledAt: timestamp('cancelled_at', { withTimezone: true }),
   cancelReason: text('cancel_reason'),
   xeroQuoteId: text('xero_quote_id'),
+  xeroQuoteNumber: text('xero_quote_number'),
   clientActionId: text('client_action_id'),
+  /** Import provenance — set on Xero pull; never invents financial values. */
+  sourceProvider: text('source_provider'),
+  sourceExternalId: text('source_external_id'),
+  sourceSyncedAt: timestamp('source_synced_at', { withTimezone: true }),
+  sourceImportJobId: uuid('source_import_job_id'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
@@ -136,6 +165,8 @@ export const quoteLineItems = pgTable('quote_line_items', {
   lineCostCents: integer('line_cost_cents').notNull().default(0),
   isOptional: boolean('is_optional').notNull().default(false),
   optionTier: text('option_tier'),
+  accountCode: text('account_code'),
+  sourceExternalId: text('source_external_id'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });

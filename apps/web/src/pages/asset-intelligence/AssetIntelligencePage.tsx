@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'wouter';
-import { Button, EmptyState, PageHeader, Panel, StatCard } from '@titan/ui';
+import { Button, EmptyState, Panel, StatCard } from '@titan/ui';
 import type { EnterpriseAssetLifecycleDashboard } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import {
@@ -124,7 +125,7 @@ export function AssetIntelligencePage() {
   const tabs: Array<{ id: AssetIntelligenceTab; label: string }> = [
     { id: 'overview', label: 'Overview' },
     { id: 'registry', label: 'Asset Registry' },
-    { id: 'iot', label: 'IoT Monitoring' },
+    { id: 'iot', label: 'Iot Monitoring' },
     { id: 'alerts', label: 'Alerts' },
     { id: 'maintenance', label: 'Maintenance' },
     { id: 'predictive', label: 'Predictive' },
@@ -179,33 +180,33 @@ export function AssetIntelligencePage() {
       {isLoading ? (
         <Panel title="Loading">Loading asset intelligence dashboard…</Panel>
       ) : !dashboard ? (
-        <EmptyState title="No data" description="Asset intelligence dashboard is unavailable." />
+        <EmptyState title="No Data" description="Asset intelligence dashboard is unavailable." />
       ) : (
         <>
           {activeTab === 'overview' ? (
             <div className="stat-grid">
               <StatCard label="Assets" value={String(dashboard.assetCount)} />
-              <StatCard label="Registry profiles" value={String(dashboard.registryProfileCount)} />
-              <StatCard label="IoT devices" value={String(dashboard.iotDeviceCount)} />
-              <StatCard label="Active providers" value={String(dashboard.activeProviderCount)} />
-              <StatCard label="Open alerts" value={String(dashboard.openAlertCount)} />
-              <StatCard label="Maintenance due" value={String(dashboard.maintenanceDueCount)} />
+              <StatCard label="Registry Profiles" value={String(dashboard.registryProfileCount)} />
+              <StatCard label="Iot Devices" value={String(dashboard.iotDeviceCount)} />
+              <StatCard label="Active Providers" value={String(dashboard.activeProviderCount)} />
+              <StatCard label="Open Alerts" value={String(dashboard.openAlertCount)} />
+              <StatCard label="Maintenance Due" value={String(dashboard.maintenanceDueCount)} />
               <StatCard
-                label="Predictive assessments"
+                label="Predictive Assessments"
                 value={String(dashboard.predictiveAssessmentCount)}
               />
               <StatCard
-                label="Digital twin"
+                label="Digital Twin"
                 value={dashboard.digitalTwinConnected ? 'Connected' : 'Available'}
               />
             </div>
           ) : null}
 
           {activeTab === 'registry' ? (
-            <Panel title="Asset registry" description="Custom categories and lifecycle profiles">
+            <Panel title="Asset Registry" description="Custom categories and lifecycle profiles">
               {dashboard.recentAssets.length === 0 ? (
                 <EmptyState
-                  title="No assets"
+                  title="No Assets"
                   description="Assets appear when registered through asset equipment."
                 />
               ) : (
@@ -227,12 +228,12 @@ export function AssetIntelligencePage() {
 
           {activeTab === 'iot' ? (
             <Panel
-              title="IoT providers & telemetry"
+              title="Iot Providers & Telemetry"
               description="Vendor-agnostic provider adapters"
             >
               {dashboard.iotProviders.length === 0 ? (
                 <EmptyState
-                  title="No IoT providers"
+                  title="No Iot Providers"
                   description="Configure IoT provider adapters to ingest telemetry."
                 />
               ) : (
@@ -248,7 +249,7 @@ export function AssetIntelligencePage() {
                 </div>
               )}
               {dashboard.recentTelemetry.length > 0 ? (
-                <Panel title="Recent telemetry">
+                <Panel title="Recent Telemetry">
                   <ul className="portal-list">
                     {dashboard.recentTelemetry.slice(0, 10).map((reading) => (
                       <li key={reading.id}>
@@ -265,12 +266,12 @@ export function AssetIntelligencePage() {
 
           {activeTab === 'alerts' ? (
             <Panel
-              title="Asset alerts"
+              title="Asset Alerts"
               description="Threshold breaches and equipment alerts from real data"
             >
               {dashboard.recentAlerts.length === 0 ? (
                 <EmptyState
-                  title="No alerts"
+                  title="No Alerts"
                   description="Alerts appear when thresholds are breached or devices report faults."
                 />
               ) : (
@@ -321,7 +322,7 @@ export function AssetIntelligencePage() {
           ) : null}
 
           {activeTab === 'maintenance' ? (
-            <Panel title="Preventive maintenance" description="Due records from real schedules">
+            <Panel title="Preventive Maintenance" description="Due records from real schedules">
               {canWrite ? (
                 <Button
                   variant="secondary"
@@ -338,7 +339,7 @@ export function AssetIntelligencePage() {
               ) : null}
               {dashboard.maintenanceDue.length === 0 ? (
                 <EmptyState
-                  title="No maintenance due"
+                  title="No Maintenance Due"
                   description="Due records appear when schedules become due."
                 />
               ) : (
@@ -355,12 +356,12 @@ export function AssetIntelligencePage() {
 
           {activeTab === 'predictive' ? (
             <Panel
-              title="Predictive maintenance"
+              title="Predictive Maintenance"
               description="AURA recommendations from real maintenance and telemetry data"
             >
               {dashboard.predictiveAssessments.length === 0 ? (
                 <EmptyState
-                  title="No assessments"
+                  title="No Assessments"
                   description="Generate predictive assessments from asset equipment with maintenance history."
                 />
               ) : (
@@ -382,14 +383,14 @@ export function AssetIntelligencePage() {
           ) : null}
 
           {activeTab === 'analytics' ? (
-            <Panel title="Asset analytics" description="Metrics from real operational data">
+            <Panel title="Asset Analytics" description="Metrics from real operational data">
               <div className="stat-grid">
                 <StatCard
-                  label="Maintenance cost"
+                  label="Maintenance Cost"
                   value={`${(dashboard.analytics.maintenanceCostCents / 100).toFixed(2)}`}
                 />
                 <StatCard
-                  label="Device connectivity"
+                  label="Device Connectivity"
                   value={
                     dashboard.analytics.deviceConnectivityPercent != null
                       ? `${dashboard.analytics.deviceConnectivityPercent.toFixed(1)}%`
@@ -397,7 +398,7 @@ export function AssetIntelligencePage() {
                   }
                 />
                 <StatCard
-                  label="Predictive risk avg"
+                  label="Predictive Risk Avg"
                   value={
                     dashboard.analytics.predictiveRiskAvg != null
                       ? dashboard.analytics.predictiveRiskAvg.toFixed(1)
@@ -405,7 +406,7 @@ export function AssetIntelligencePage() {
                   }
                 />
                 <StatCard
-                  label="Alert response"
+                  label="Alert Response"
                   value={
                     dashboard.analytics.alertResponseTimeHours != null
                       ? `${dashboard.analytics.alertResponseTimeHours.toFixed(1)}h`

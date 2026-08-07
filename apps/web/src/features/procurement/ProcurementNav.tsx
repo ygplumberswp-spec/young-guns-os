@@ -1,16 +1,16 @@
 import { Link, useLocation } from 'wouter';
 
 const tabs = [
-  { href: '/procurement', label: 'Purchase orders' },
+  { href: '/procurement', label: 'Purchase Orders' },
   { href: '/procurement/suppliers', label: 'Suppliers' },
-  { href: '/procurement/parts-requests', label: 'Parts requests' },
+  { href: '/procurement/parts-requests', label: 'Parts Requests' },
 ];
 
 export function ProcurementNav() {
   const [location] = useLocation();
 
   return (
-    <nav className="inventory-nav" aria-label="Procurement sections">
+    <nav className="inventory-nav" aria-label="Procurement Sections">
       {tabs.map((tab) => {
         const isActive =
           tab.href === '/procurement'

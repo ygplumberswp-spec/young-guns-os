@@ -40,6 +40,8 @@ import type { KnowledgeService } from './knowledge.service.js';
 import type { LeadsService } from './leads.service.js';
 import type { MarketingService } from './marketing.service.js';
 import type { MemoryService } from './memory.service.js';
+import type { CompanyDayPlanService } from './company-day-plan.service.js';
+import type { CompanyBusinessRulesService } from './company-business-rules.service.js';
 import type { MobileService } from './mobile.service.js';
 import type { MobileWorkforceService } from './mobile-workforce.service.js';
 import type { PersonalCommunicationsIntelligenceService } from './personal-communications-intelligence.service.js';
@@ -51,6 +53,7 @@ import type { RecruitingService } from './recruiting.service.js';
 import type { RecommendationsService } from './recommendations.service.js';
 import type { SalesService } from './sales.service.js';
 import type { SchedulingService } from './scheduling.service.js';
+import type { GoogleCalendarService } from './google-calendar.service.js';
 import type { TeamService } from './team.service.js';
 import type { VoiceService } from './voice.service.js';
 import type { WhatsappService } from './whatsapp.service.js';
@@ -62,6 +65,7 @@ export type AuraContextBuildDeps = {
   crmService: CrmService;
   jobsService: JobsService;
   schedulingService: SchedulingService;
+  googleCalendarService: GoogleCalendarService;
   financeService: FinanceService;
   inventoryService: InventoryService;
   fleetService: FleetService;
@@ -80,6 +84,8 @@ export type AuraContextBuildDeps = {
   intelligenceService: IntelligenceService;
   recommendationsService: RecommendationsService;
   memoryService: MemoryService;
+  businessRulesService: CompanyBusinessRulesService;
+  dayPlanService: CompanyDayPlanService;
   analyticsService: AnalyticsService;
   orchestrationService: AgentOrchestrationService;
   salesService: SalesService;
@@ -151,9 +157,13 @@ export async function buildSelectedAuraContext(
     {
       domain: 'scheduling',
       enabled: hasAnyPermission(permissions, ['dispatch:read', 'dispatch:write']),
-      load: async () => ({
-        scheduling: await deps.schedulingService.buildAuraContext(companyId),
-      }),
+      load: async () => {
+        const [scheduling, googleCalendar] = await Promise.all([
+          deps.schedulingService.buildAuraContext(companyId),
+          deps.googleCalendarService.buildAuraContext(companyId, permissions),
+        ]);
+        return { scheduling: { ...scheduling, googleCalendar } };
+      },
     },
     {
       domain: 'finance',
@@ -689,6 +699,29 @@ export async function buildSelectedAuraContext(
     (accumulator, partial) => ({ ...accumulator, ...partial }),
     baseContext,
   );
+
+  if (
+    hasAnyPermission(permissions, [
+      'intelligence:read',
+      'executive:read',
+      'executive:write',
+      'agents:read',
+    ])
+  ) {
+    const auraDayPlan = await deps.dayPlanService.buildAuraContext(companyId);
+    context.dayPlanning = {
+      planDate: auraDayPlan.planDate,
+      planCount: auraDayPlan.priorityCount,
+      plans: auraDayPlan.priorities.map((entry) => ({
+        content: entry.priorityText,
+        category: entry.department,
+        status: entry.status,
+        planDate: entry.planDate,
+      })),
+    };
+    context.businessRules = await deps.businessRulesService.buildAuraContext(companyId);
+    loadedDomains.push('dayPlanning', 'businessRules');
+  }
 
   return { context, agentsMinimal };
 }

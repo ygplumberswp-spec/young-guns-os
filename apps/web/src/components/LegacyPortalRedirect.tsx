@@ -18,7 +18,7 @@ export function LegacyPortalRedirect() {
 
   return (
     <div className="auth-stage">
-      <LoadingState label="Opening your account…" />
+      <LoadingState label="Opening Your Account…" />
     </div>
   );
 }

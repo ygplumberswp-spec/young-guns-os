@@ -97,6 +97,13 @@ export async function updateLead(
   return data.lead;
 }
 
+export async function deleteLead(accessToken: string, leadId: string): Promise<void> {
+  await request<Record<string, never>>(`/leads/${leadId}`, {
+    accessToken,
+    method: 'DELETE',
+  });
+}
+
 export async function convertLead(
   accessToken: string,
   leadId: string,

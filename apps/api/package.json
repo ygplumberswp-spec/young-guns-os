@@ -9,8 +9,11 @@
     "start": "node --import tsx src/index.ts",
     "start:worker": "node --import tsx src/bin/worker.ts",
     "start:scheduler": "node --import tsx src/bin/scheduler.ts",
+    "pdf-renderer-diagnostic": "node --import tsx src/bin/pdf-renderer-diagnostic.ts",
+    "storage-diagnostic": "node --import tsx src/bin/storage-diagnostic.ts",
+    "finance-staging-cleanup": "node --import tsx src/bin/finance-staging-cleanup.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "tsx --test src/lib/tenant-scope.test.ts src/lib/n8n-signing.test.ts src/lib/env-flags.test.ts src/lib/storage-paths.test.ts src/lib/auth-cookies.test.ts src/lib/public-url.test.ts src/middleware/security-headers.test.ts src/services/*.test.ts src/services/jobs-contract.test.ts"
+    "test": "tsx --test src/lib/tenant-scope.test.ts src/lib/cross-tenant-denial-matrix.test.ts src/lib/sec-001-security-matrix.test.ts src/lib/sys-001-system-integrity.test.ts src/lib/live-001-integrations-safety.test.ts src/lib/role-forbidden-api-action.test.ts src/lib/live-updates-tenant.test.ts src/lib/n8n-signing.test.ts src/lib/whatsapp-signing.test.ts src/lib/whatsapp.client.test.ts src/lib/whatsapp-connection-schema.test.ts src/lib/resend-signing.test.ts src/lib/xero-webhook-signing.test.ts src/lib/xero-webhook-payload.test.ts src/lib/whatsapp-business-chats.test.ts src/lib/env-flags.test.ts src/lib/storage-paths.test.ts src/lib/auth-cookies.test.ts src/lib/public-url.test.ts src/lib/google-maps.client.test.ts src/lib/resend.client.test.ts src/lib/crypto-resend.test.ts src/lib/yoco-payment-links.test.ts src/lib/facebook-graph.client.test.ts src/lib/facebook-graph.client.page-discovery.test.ts src/lib/facebook-graph.client.direct-page-lookup.test.ts src/middleware/security-headers.test.ts src/routes/*.test.ts src/services/*.test.ts src/services/jobs-contract.test.ts"
   },
   "dependencies": {
     "@titan/aura": "workspace:*",
@@ -23,6 +26,7 @@
     "express": "catalog:",
     "pino": "catalog:",
     "pino-http": "^10.4.0",
+    "puppeteer": "^25.5.0",
     "tsx": "catalog:",
     "zod": "catalog:"
   },

@@ -5,6 +5,7 @@ import type {
   SendWhatsappTestMessageRequest,
   UpdateWhatsappTemplateRequest,
   WhatsappConnectionSummary,
+  WhatsappConnectionTestResult,
   WhatsappMessageSummary,
   WhatsappStats,
   WhatsappTemplateSummary,
@@ -41,6 +42,21 @@ export async function disconnectWhatsapp(accessToken: string): Promise<WhatsappC
     accessToken,
   });
   return data.connection;
+}
+
+/** Read-only Meta GET — does not send a WhatsApp message. */
+export async function testWhatsappConnection(accessToken: string): Promise<{
+  result: WhatsappConnectionTestResult;
+  connection: WhatsappConnectionSummary;
+}> {
+  return request<{ result: WhatsappConnectionTestResult; connection: WhatsappConnectionSummary }>(
+    '/integrations/whatsapp/test-connection',
+    {
+      method: 'POST',
+      accessToken,
+      body: {},
+    },
+  );
 }
 
 export async function sendWhatsappTestMessage(
