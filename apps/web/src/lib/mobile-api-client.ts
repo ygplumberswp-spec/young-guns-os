@@ -128,6 +128,73 @@ export async function stopMobileTimeEntry(
   return data.entry;
 }
 
+export async function pauseMobileTimeEntry(accessToken: string, timeEntryId: string) {
+  const data = await request<{ entry: MobileTimeEntrySummary }>(
+    `/mobile/technician/workforce/time/${timeEntryId}/pause`,
+    { accessToken, method: 'POST', body: {} },
+  );
+  return data.entry;
+}
+
+export async function resumeMobileTimeEntry(accessToken: string, timeEntryId: string) {
+  const data = await request<{ entry: MobileTimeEntrySummary }>(
+    `/mobile/technician/workforce/time/${timeEntryId}/resume`,
+    { accessToken, method: 'POST', body: {} },
+  );
+  return data.entry;
+}
+
+export async function fetchMobilePaymentStrip(accessToken: string, jobId: string) {
+  const data = await request<{ strip: import('@titan/shared').TechnicianInvoicePaymentStrip | null }>(
+    `/mobile/technician/jobs/${jobId}/payment-strip`,
+    { accessToken },
+  );
+  return data.strip;
+}
+
+export async function recordMobileOnSitePayment(
+  accessToken: string,
+  jobId: string,
+  body: {
+    invoiceId: string;
+    customerId: string;
+    amountCents: number;
+    method: 'card_terminal' | 'payment_link_qr' | 'other_authorised';
+    providerTerminal?: string | null;
+    paymentReference: string;
+    paidAt?: string;
+  },
+) {
+  const data = await request<{ payment: unknown }>(
+    `/mobile/technician/jobs/${jobId}/on-site-payment`,
+    { accessToken, method: 'POST', body },
+  );
+  return data.payment;
+}
+
+export async function fetchMobileArrivalPrompt(
+  accessToken: string,
+  jobId: string,
+  query: {
+    cartrackAvailable?: boolean;
+    proximityMatch?: boolean;
+    ignitionOff?: boolean;
+    jobNumber?: string | null;
+  } = {},
+) {
+  const params = new URLSearchParams();
+  if (query.cartrackAvailable) params.set('cartrackAvailable', 'true');
+  if (query.proximityMatch) params.set('proximityMatch', 'true');
+  if (query.ignitionOff) params.set('ignitionOff', 'true');
+  if (query.jobNumber) params.set('jobNumber', query.jobNumber);
+  const qs = params.toString();
+  const data = await request<{ prompt: import('@titan/shared').CartrackArrivalPrompt }>(
+    `/mobile/technician/jobs/${jobId}/arrival-prompt${qs ? `?${qs}` : ''}`,
+    { accessToken },
+  );
+  return data.prompt;
+}
+
 export async function fetchActiveMobileTimeEntries(accessToken: string) {
   const data = await request<{ entries: MobileTimeEntrySummary[] }>(
     '/mobile/technician/workforce/time/active',
@@ -231,17 +298,28 @@ export async function completeMobileJobGated(
   body: Omit<SubmitGatedJobCompletionRequest, 'clientActionId'>,
   options?: { clientActionId?: string },
 ) {
-  const data = await request<{ job: JobDetail; snapshotId: string }>(
-    `/mobile/technician/jobs/${jobId}/complete-gated`,
-    {
-      accessToken,
-      method: 'POST',
-      body: {
-        ...body,
-        clientActionId: options?.clientActionId ?? newClientActionId('complete'),
-      },
+  const data = await request<{
+    job: JobDetail;
+    snapshotId?: string;
+    paperless?: {
+      issues: Array<{ code: string; severity: string; message: string }>;
+      readyForDraftInvoice: boolean;
+      draftInvoice: {
+        id: string;
+        invoiceNumber: string | null;
+        totalCents: number;
+        status: string;
+      } | null;
+      ownerNotifyMessage: string | null;
+    };
+  }>(`/mobile/technician/jobs/${jobId}/complete-gated`, {
+    accessToken,
+    method: 'POST',
+    body: {
+      ...body,
+      clientActionId: options?.clientActionId ?? newClientActionId('complete'),
     },
-  );
+  });
   return data;
 }
 

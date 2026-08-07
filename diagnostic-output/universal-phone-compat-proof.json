@@ -1,0 +1,810 @@
+{
+  "label": "UNIVERSAL-PHONE-COMPATIBILITY",
+  "capturedAt": "2026-08-07T17:51:44.556Z",
+  "browsers": {
+    "androidChrome": {
+      "result": "PASS",
+      "method": "Chromium headless viewport matrix (Blink) matching Android Chrome widths"
+    },
+    "iphoneSafari": {
+      "result": "PASS_CSS_READY",
+      "method": "Same logical widths + WebKit-oriented standards CSS (100dvh, env(safe-area-inset-*), viewport-fit=cover, interactive-widget=resizes-content). Live iOS Safari not available in this environment."
+    }
+  },
+  "viewportMeta": {
+    "viewportFitCover": true,
+    "interactiveWidget": true
+  },
+  "testedWidthsPortrait": [
+    320,
+    360,
+    375,
+    390,
+    412,
+    414,
+    430,
+    768,
+    1024
+  ],
+  "testedLandscape": [
+    {
+      "width": 667,
+      "height": 375,
+      "label": "landscape-375"
+    },
+    {
+      "width": 844,
+      "height": 390,
+      "label": "landscape-390"
+    },
+    {
+      "width": 926,
+      "height": 430,
+      "label": "landscape-430"
+    }
+  ],
+  "shells": [
+    "owner-shell",
+    "portal-shell"
+  ],
+  "results": [
+    {
+      "orientation": "portrait",
+      "width": 320,
+      "height": 844,
+      "shell": "owner-shell",
+      "checks": {
+        "noOverflow": true,
+        "headerVisible": true,
+        "menuReachable": true,
+        "actionReachable": true,
+        "inputUsable": true,
+        "noLongClip": true,
+        "readableLogo": true
+      },
+      "metrics": {
+        "shell": "owner-shell",
+        "scrollWidth": 320,
+        "clientWidth": 320,
+        "overflow": false,
+        "headerVisible": true,
+        "mainVisible": true,
+        "menuReachable": true,
+        "actionReachable": true,
+        "inputUsable": true,
+        "wordmarkWidth": 92,
+        "longTextClipped": false,
+        "safeAreaTop": "0px"
+      },
+      "screenshot": "/workspace/diagnostic-output/screenshots/universal-phone-owner-shell-320.png",
+      "pass": true
+    },
+    {
+      "orientation": "portrait",
+      "width": 320,
+      "height": 844,
+      "shell": "portal-shell",
+      "checks": {
+        "noOverflow": true,
+        "headerVisible": true,
+        "menuReachable": true,
+        "actionReachable": true,
+        "inputUsable": true,
+        "noLongClip": true,
+        "readableLogo": true
+      },
+      "metrics": {
+        "shell": "portal-shell",
+        "scrollWidth": 320,
+        "clientWidth": 320,
+        "overflow": false,
+        "headerVisible": true,
+        "mainVisible": true,
+        "menuReachable": true,
+        "actionReachable": true,
+        "inputUsable": true,
+        "wordmarkWidth": 88,
+        "longTextClipped": false,
+        "safeAreaTop": "0px"
+      },
+      "screenshot": "/workspace/diagnostic-output/screenshots/universal-phone-portal-shell-320.png",
+      "pass": true
+    },
+    {
+      "orientation": "portrait",
+      "width": 360,
+      "height": 844,
+      "shell": "owner-shell",
+      "checks": {
+        "noOverflow": true,
+        "headerVisible": true,
+        "menuReachable": true,
+        "actionReachable": true,
+        "inputUsable": true,
+        "noLongClip": true,
+        "readableLogo": true
+      },
+      "metrics": {
+        "shell": "owner-shell",
+        "scrollWidth": 360,
+        "clientWidth": 360,
+        "overflow": false,
+        "headerVisible": true,
+        "mainVisible": true,
+        "menuReachable": true,
+        "actionReachable": true,
+        "inputUsable": true,
+        "wordmarkWidth": 100,
+        "longTextClipped": false,
+        "safeAreaTop": "0px"
+      },
+      "screenshot": "/workspace/diagnostic-output/screenshots/universal-phone-owner-shell-360.png",
+      "pass": true
+    },
+    {
+      "orientation": "portrait",
+      "width": 360,
+      "height": 844,
+      "shell": "portal-shell",
+      "checks": {
+        "noOverflow": true,
+        "headerVisible": true,
+        "menuReachable": true,
+        "actionReachable": true,
+        "inputUsable": true,
+        "noLongClip": true,
+        "readableLogo": true
+      },
+      "metrics": {
+        "shell": "portal-shell",
+        "scrollWidth": 360,
+        "clientWidth": 360,
+        "overflow": false,
+        "headerVisible": true,
+        "mainVisible": true,
+        "menuReachable": true,
+        "actionReachable": true,
+        "inputUsable": true,
+        "wordmarkWidth": 88,
+        "longTextClipped": false,
+        "safeAreaTop": "0px"
+      },
+      "screenshot": "/workspace/diagnostic-output/screenshots/universal-phone-portal-shell-360.png",
+      "pass": true
+    },
+    {
+      "orientation": "portrait",
+      "width": 375,
+      "height": 844,
+      "shell": "owner-shell",
+      "checks": {
+        "noOverflow": true,
+        "headerVisible": true,
+        "menuReachable": true,
+        "actionReachable": true,
+        "inputUsable": true,
+        "noLongClip": true,
+        "readableLogo": true
+      },
+      "metrics": {
+        "shell": "owner-shell",
+        "scrollWidth": 375,
+        "clientWidth": 375,
+        "overflow": false,
+        "headerVisible": true,
+        "mainVisible": true,
+        "menuReachable": true,
+        "actionReachable": true,
+        "inputUsable": true,
+        "wordmarkWidth": 104,
+        "longTextClipped": false,
+        "safeAreaTop": "0px"
+      },
+      "screenshot": "/workspace/diagnostic-output/screenshots/universal-phone-owner-shell-375.png",
+      "pass": true
+    },
+    {
+      "orientation": "portrait",
+      "width": 375,
+      "height": 844,
+      "shell": "portal-shell",
+      "checks": {
+        "noOverflow": true,
+        "headerVisible": true,
+        "menuReachable": true,
+        "actionReachable": true,
+        "inputUsable": true,
+        "noLongClip": true,
+        "readableLogo": true
+      },
+      "metrics": {
+        "shell": "portal-shell",
+        "scrollWidth": 375,
+        "clientWidth": 375,
+        "overflow": false,
+        "headerVisible": true,
+        "mainVisible": true,
+        "menuReachable": true,
+        "actionReachable": true,
+        "inputUsable": true,
+        "wordmarkWidth": 92,
+        "longTextClipped": false,
+        "safeAreaTop": "0px"
+      },
+      "screenshot": "/workspace/diagnostic-output/screenshots/universal-phone-portal-shell-375.png",
+      "pass": true
+    },
+    {
+      "orientation": "portrait",
+      "width": 390,
+      "height": 844,
+      "shell": "owner-shell",
+      "checks": {
+        "noOverflow": true,
+        "headerVisible": true,
+        "menuReachable": true,
+        "actionReachable": true,
+        "inputUsable": true,
+        "noLongClip": true,
+        "readableLogo": true
+      },
+      "metrics": {
+        "shell": "owner-shell",
+        "scrollWidth": 390,
+        "clientWidth": 390,
+        "overflow": false,
+        "headerVisible": true,
+        "mainVisible": true,
+        "menuReachable": true,
+        "actionReachable": true,
+        "inputUsable": true,
+        "wordmarkWidth": 104,
+        "longTextClipped": false,
+        "safeAreaTop": "0px"
+      },
+      "screenshot": "/workspace/diagnostic-output/screenshots/universal-phone-owner-shell-390.png",
+      "pass": true
+    },
+    {
+      "orientation": "portrait",
+      "width": 390,
+      "height": 844,
+      "shell": "portal-shell",
+      "checks": {
+        "noOverflow": true,
+        "headerVisible": true,
+        "menuReachable": true,
+        "actionReachable": true,
+        "inputUsable": true,
+        "noLongClip": true,
+        "readableLogo": true
+      },
+      "metrics": {
+        "shell": "portal-shell",
+        "scrollWidth": 390,
+        "clientWidth": 390,
+        "overflow": false,
+        "headerVisible": true,
+        "mainVisible": true,
+        "menuReachable": true,
+        "actionReachable": true,
+        "inputUsable": true,
+        "wordmarkWidth": 92,
+        "longTextClipped": false,
+        "safeAreaTop": "0px"
+      },
+      "screenshot": "/workspace/diagnostic-output/screenshots/universal-phone-portal-shell-390.png",
+      "pass": true
+    },
+    {
+      "orientation": "portrait",
+      "width": 412,
+      "height": 844,
+      "shell": "owner-shell",
+      "checks": {
+        "noOverflow": true,
+        "headerVisible": true,
+        "menuReachable": true,
+        "actionReachable": true,
+        "inputUsable": true,
+        "noLongClip": true,
+        "readableLogo": true
+      },
+      "metrics": {
+        "shell": "owner-shell",
+        "scrollWidth": 412,
+        "clientWidth": 412,
+        "overflow": false,
+        "headerVisible": true,
+        "mainVisible": true,
+        "menuReachable": true,
+        "actionReachable": true,
+        "inputUsable": true,
+        "wordmarkWidth": 104,
+        "longTextClipped": false,
+        "safeAreaTop": "0px"
+      },
+      "screenshot": "/workspace/diagnostic-output/screenshots/universal-phone-owner-shell-412.png",
+      "pass": true
+    },
+    {
+      "orientation": "portrait",
+      "width": 412,
+      "height": 844,
+      "shell": "portal-shell",
+      "checks": {
+        "noOverflow": true,
+        "headerVisible": true,
+        "menuReachable": true,
+        "actionReachable": true,
+        "inputUsable": true,
+        "noLongClip": true,
+        "readableLogo": true
+      },
+      "metrics": {
+        "shell": "portal-shell",
+        "scrollWidth": 412,
+        "clientWidth": 412,
+        "overflow": false,
+        "headerVisible": true,
+        "mainVisible": true,
+        "menuReachable": true,
+        "actionReachable": true,
+        "inputUsable": true,
+        "wordmarkWidth": 92,
+        "longTextClipped": false,
+        "safeAreaTop": "0px"
+      },
+      "screenshot": "/workspace/diagnostic-output/screenshots/universal-phone-portal-shell-412.png",
+      "pass": true
+    },
+    {
+      "orientation": "portrait",
+      "width": 414,
+      "height": 844,
+      "shell": "owner-shell",
+      "checks": {
+        "noOverflow": true,
+        "headerVisible": true,
+        "menuReachable": true,
+        "actionReachable": true,
+        "inputUsable": true,
+        "noLongClip": true,
+        "readableLogo": true
+      },
+      "metrics": {
+        "shell": "owner-shell",
+        "scrollWidth": 414,
+        "clientWidth": 414,
+        "overflow": false,
+        "headerVisible": true,
+        "mainVisible": true,
+        "menuReachable": true,
+        "actionReachable": true,
+        "inputUsable": true,
+        "wordmarkWidth": 104,
+        "longTextClipped": false,
+        "safeAreaTop": "0px"
+      },
+      "screenshot": "/workspace/diagnostic-output/screenshots/universal-phone-owner-shell-414.png",
+      "pass": true
+    },
+    {
+      "orientation": "portrait",
+      "width": 414,
+      "height": 844,
+      "shell": "portal-shell",
+      "checks": {
+        "noOverflow": true,
+        "headerVisible": true,
+        "menuReachable": true,
+        "actionReachable": true,
+        "inputUsable": true,
+        "noLongClip": true,
+        "readableLogo": true
+      },
+      "metrics": {
+        "shell": "portal-shell",
+        "scrollWidth": 414,
+        "clientWidth": 414,
+        "overflow": false,
+        "headerVisible": true,
+        "mainVisible": true,
+        "menuReachable": true,
+        "actionReachable": true,
+        "inputUsable": true,
+        "wordmarkWidth": 92,
+        "longTextClipped": false,
+        "safeAreaTop": "0px"
+      },
+      "screenshot": "/workspace/diagnostic-output/screenshots/universal-phone-portal-shell-414.png",
+      "pass": true
+    },
+    {
+      "orientation": "portrait",
+      "width": 430,
+      "height": 844,
+      "shell": "owner-shell",
+      "checks": {
+        "noOverflow": true,
+        "headerVisible": true,
+        "menuReachable": true,
+        "actionReachable": true,
+        "inputUsable": true,
+        "noLongClip": true,
+        "readableLogo": true
+      },
+      "metrics": {
+        "shell": "owner-shell",
+        "scrollWidth": 430,
+        "clientWidth": 430,
+        "overflow": false,
+        "headerVisible": true,
+        "mainVisible": true,
+        "menuReachable": true,
+        "actionReachable": true,
+        "inputUsable": true,
+        "wordmarkWidth": 104,
+        "longTextClipped": false,
+        "safeAreaTop": "0px"
+      },
+      "screenshot": "/workspace/diagnostic-output/screenshots/universal-phone-owner-shell-430.png",
+      "pass": true
+    },
+    {
+      "orientation": "portrait",
+      "width": 430,
+      "height": 844,
+      "shell": "portal-shell",
+      "checks": {
+        "noOverflow": true,
+        "headerVisible": true,
+        "menuReachable": true,
+        "actionReachable": true,
+        "inputUsable": true,
+        "noLongClip": true,
+        "readableLogo": true
+      },
+      "metrics": {
+        "shell": "portal-shell",
+        "scrollWidth": 430,
+        "clientWidth": 430,
+        "overflow": false,
+        "headerVisible": true,
+        "mainVisible": true,
+        "menuReachable": true,
+        "actionReachable": true,
+        "inputUsable": true,
+        "wordmarkWidth": 92,
+        "longTextClipped": false,
+        "safeAreaTop": "0px"
+      },
+      "screenshot": "/workspace/diagnostic-output/screenshots/universal-phone-portal-shell-430.png",
+      "pass": true
+    },
+    {
+      "orientation": "portrait",
+      "width": 768,
+      "height": 900,
+      "shell": "owner-shell",
+      "checks": {
+        "noOverflow": true,
+        "headerVisible": true,
+        "menuReachable": true,
+        "actionReachable": true,
+        "inputUsable": true,
+        "noLongClip": true,
+        "readableLogo": true
+      },
+      "metrics": {
+        "shell": "owner-shell",
+        "scrollWidth": 768,
+        "clientWidth": 768,
+        "overflow": false,
+        "headerVisible": true,
+        "mainVisible": true,
+        "menuReachable": true,
+        "actionReachable": true,
+        "inputUsable": true,
+        "wordmarkWidth": 108,
+        "longTextClipped": false,
+        "safeAreaTop": "0px"
+      },
+      "screenshot": "/workspace/diagnostic-output/screenshots/universal-phone-owner-shell-768.png",
+      "pass": true
+    },
+    {
+      "orientation": "portrait",
+      "width": 768,
+      "height": 900,
+      "shell": "portal-shell",
+      "checks": {
+        "noOverflow": true,
+        "headerVisible": true,
+        "menuReachable": true,
+        "actionReachable": true,
+        "inputUsable": true,
+        "noLongClip": true,
+        "readableLogo": true
+      },
+      "metrics": {
+        "shell": "portal-shell",
+        "scrollWidth": 768,
+        "clientWidth": 768,
+        "overflow": false,
+        "headerVisible": true,
+        "mainVisible": true,
+        "menuReachable": true,
+        "actionReachable": true,
+        "inputUsable": true,
+        "wordmarkWidth": 96,
+        "longTextClipped": false,
+        "safeAreaTop": "0px"
+      },
+      "screenshot": "/workspace/diagnostic-output/screenshots/universal-phone-portal-shell-768.png",
+      "pass": true
+    },
+    {
+      "orientation": "portrait",
+      "width": 1024,
+      "height": 900,
+      "shell": "owner-shell",
+      "checks": {
+        "noOverflow": true,
+        "headerVisible": true,
+        "menuReachable": true,
+        "actionReachable": true,
+        "inputUsable": true,
+        "noLongClip": true,
+        "readableLogo": true
+      },
+      "metrics": {
+        "shell": "owner-shell",
+        "scrollWidth": 1024,
+        "clientWidth": 1024,
+        "overflow": false,
+        "headerVisible": true,
+        "mainVisible": true,
+        "menuReachable": true,
+        "actionReachable": true,
+        "inputUsable": true,
+        "wordmarkWidth": 108,
+        "longTextClipped": false,
+        "safeAreaTop": "0px"
+      },
+      "screenshot": "/workspace/diagnostic-output/screenshots/universal-phone-owner-shell-1024.png",
+      "pass": true
+    },
+    {
+      "orientation": "portrait",
+      "width": 1024,
+      "height": 900,
+      "shell": "portal-shell",
+      "checks": {
+        "noOverflow": true,
+        "headerVisible": true,
+        "menuReachable": true,
+        "actionReachable": true,
+        "inputUsable": true,
+        "noLongClip": true,
+        "readableLogo": true
+      },
+      "metrics": {
+        "shell": "portal-shell",
+        "scrollWidth": 1024,
+        "clientWidth": 1024,
+        "overflow": false,
+        "headerVisible": true,
+        "mainVisible": true,
+        "menuReachable": true,
+        "actionReachable": true,
+        "inputUsable": true,
+        "wordmarkWidth": 96,
+        "longTextClipped": false,
+        "safeAreaTop": "0px"
+      },
+      "screenshot": "/workspace/diagnostic-output/screenshots/universal-phone-portal-shell-1024.png",
+      "pass": true
+    },
+    {
+      "orientation": "landscape",
+      "width": 667,
+      "height": 375,
+      "label": "landscape-375",
+      "shell": "owner-shell",
+      "checks": {
+        "noOverflow": true,
+        "headerVisible": true,
+        "menuReachable": true,
+        "actionReachable": true,
+        "inputUsable": true,
+        "noLongClip": true,
+        "readableLogo": true
+      },
+      "metrics": {
+        "shell": "owner-shell",
+        "scrollWidth": 667,
+        "clientWidth": 667,
+        "overflow": false,
+        "headerVisible": true,
+        "mainVisible": true,
+        "menuReachable": true,
+        "actionReachable": true,
+        "inputUsable": true,
+        "wordmarkWidth": 107.28125,
+        "longTextClipped": false,
+        "safeAreaTop": "0px"
+      },
+      "screenshot": "/workspace/diagnostic-output/screenshots/universal-phone-owner-shell-landscape-375.png",
+      "pass": true
+    },
+    {
+      "orientation": "landscape",
+      "width": 667,
+      "height": 375,
+      "label": "landscape-375",
+      "shell": "portal-shell",
+      "checks": {
+        "noOverflow": true,
+        "headerVisible": true,
+        "menuReachable": true,
+        "actionReachable": true,
+        "inputUsable": true,
+        "noLongClip": true,
+        "readableLogo": true
+      },
+      "metrics": {
+        "shell": "portal-shell",
+        "scrollWidth": 667,
+        "clientWidth": 667,
+        "overflow": false,
+        "headerVisible": true,
+        "mainVisible": true,
+        "menuReachable": true,
+        "actionReachable": true,
+        "inputUsable": true,
+        "wordmarkWidth": 96,
+        "longTextClipped": false,
+        "safeAreaTop": "0px"
+      },
+      "screenshot": "/workspace/diagnostic-output/screenshots/universal-phone-portal-shell-landscape-375.png",
+      "pass": true
+    },
+    {
+      "orientation": "landscape",
+      "width": 844,
+      "height": 390,
+      "label": "landscape-390",
+      "shell": "owner-shell",
+      "checks": {
+        "noOverflow": true,
+        "headerVisible": true,
+        "menuReachable": true,
+        "actionReachable": true,
+        "inputUsable": true,
+        "noLongClip": true,
+        "readableLogo": true
+      },
+      "metrics": {
+        "shell": "owner-shell",
+        "scrollWidth": 844,
+        "clientWidth": 844,
+        "overflow": false,
+        "headerVisible": true,
+        "mainVisible": true,
+        "menuReachable": true,
+        "actionReachable": true,
+        "inputUsable": true,
+        "wordmarkWidth": 108,
+        "longTextClipped": false,
+        "safeAreaTop": "0px"
+      },
+      "screenshot": "/workspace/diagnostic-output/screenshots/universal-phone-owner-shell-landscape-390.png",
+      "pass": true
+    },
+    {
+      "orientation": "landscape",
+      "width": 844,
+      "height": 390,
+      "label": "landscape-390",
+      "shell": "portal-shell",
+      "checks": {
+        "noOverflow": true,
+        "headerVisible": true,
+        "menuReachable": true,
+        "actionReachable": true,
+        "inputUsable": true,
+        "noLongClip": true,
+        "readableLogo": true
+      },
+      "metrics": {
+        "shell": "portal-shell",
+        "scrollWidth": 844,
+        "clientWidth": 844,
+        "overflow": false,
+        "headerVisible": true,
+        "mainVisible": true,
+        "menuReachable": true,
+        "actionReachable": true,
+        "inputUsable": true,
+        "wordmarkWidth": 96,
+        "longTextClipped": false,
+        "safeAreaTop": "0px"
+      },
+      "screenshot": "/workspace/diagnostic-output/screenshots/universal-phone-portal-shell-landscape-390.png",
+      "pass": true
+    },
+    {
+      "orientation": "landscape",
+      "width": 926,
+      "height": 430,
+      "label": "landscape-430",
+      "shell": "owner-shell",
+      "checks": {
+        "noOverflow": true,
+        "headerVisible": true,
+        "menuReachable": true,
+        "actionReachable": true,
+        "inputUsable": true,
+        "noLongClip": true,
+        "readableLogo": true
+      },
+      "metrics": {
+        "shell": "owner-shell",
+        "scrollWidth": 926,
+        "clientWidth": 926,
+        "overflow": false,
+        "headerVisible": true,
+        "mainVisible": true,
+        "menuReachable": true,
+        "actionReachable": true,
+        "inputUsable": true,
+        "wordmarkWidth": 108,
+        "longTextClipped": false,
+        "safeAreaTop": "0px"
+      },
+      "screenshot": "/workspace/diagnostic-output/screenshots/universal-phone-owner-shell-landscape-430.png",
+      "pass": true
+    },
+    {
+      "orientation": "landscape",
+      "width": 926,
+      "height": 430,
+      "label": "landscape-430",
+      "shell": "portal-shell",
+      "checks": {
+        "noOverflow": true,
+        "headerVisible": true,
+        "menuReachable": true,
+        "actionReachable": true,
+        "inputUsable": true,
+        "noLongClip": true,
+        "readableLogo": true
+      },
+      "metrics": {
+        "shell": "portal-shell",
+        "scrollWidth": 926,
+        "clientWidth": 926,
+        "overflow": false,
+        "headerVisible": true,
+        "mainVisible": true,
+        "menuReachable": true,
+        "actionReachable": true,
+        "inputUsable": true,
+        "wordmarkWidth": 96,
+        "longTextClipped": false,
+        "safeAreaTop": "0px"
+      },
+      "screenshot": "/workspace/diagnostic-output/screenshots/universal-phone-portal-shell-landscape-430.png",
+      "pass": true
+    }
+  ],
+  "pass": true,
+  "unsupportedObsolete": [
+    "Internet Explorer / pre-Chromium Edge",
+    "Legacy WebViews without CSS env() / dvh"
+  ],
+  "desktopRegression": "OWNER-001 dense pad ≥761 and desktop map clamp unchanged by phone-only media queries",
+  "rbacNote": "No viewport JS capability gates — role permissions unchanged by screen size",
+  "productionTouched": 0
+}

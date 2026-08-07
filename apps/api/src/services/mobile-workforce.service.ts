@@ -33,15 +33,19 @@ import type {
   UploadJobEvidenceRequest,
 } from '@titan/shared';
 import {
+  applyLabourTimerPause,
+  applyLabourTimerResume,
   buildGoogleMapsNavigateUrl,
   buildLabourRateLockMetadata,
   computeDurationMinutes,
+  computeWorkingDurationMinutes,
   detectActiveTimeConflict,
   formatMapsEtaCapabilityLabel,
   isFinanciallyAuthoritativeTimeEntry,
   unresolvedVehicleAddress,
   validateFinancePhotoFile,
   validateFinancePhotoMagicBytes,
+  type LabourTimerPauseSegment,
 } from '@titan/shared';
 import { emitBusinessEvent } from '../lib/automation-events.js';
 import { classifyOfflineFlushByExistingLog } from './job-execution-completion-idempotency.js';
@@ -632,14 +636,33 @@ export class MobileWorkforceService {
     }
 
     const endedAt = input.endedAt ? new Date(input.endedAt) : new Date();
-    const durationMinutes = computeDurationMinutes(entry.startedAt, endedAt);
+    const existingMetadata = (entry.metadata ?? {}) as Record<string, unknown>;
+    const paperless = existingMetadata.paperlessTimer as
+      | { pauses?: LabourTimerPauseSegment[]; status?: string }
+      | undefined;
+    const pauses = paperless?.pauses ?? [];
+    // If stopped while paused, close the open pause segment at stop time.
+    const normalizedPauses = pauses.map((pause) =>
+      pause.resumedAt == null ? { ...pause, resumedAt: endedAt.toISOString() } : pause,
+    );
+    const durationMinutes =
+      normalizedPauses.length > 0
+        ? computeWorkingDurationMinutes({
+            startedAt: entry.startedAt.toISOString(),
+            endedAt: endedAt.toISOString(),
+            pauses: normalizedPauses,
+          })
+        : computeDurationMinutes(entry.startedAt, endedAt);
 
     const settings = await this.db.query.companyFinanceSettings.findFirst({
       where: eq(companyFinanceSettings.companyId, scope.companyId),
       columns: { defaultInternalLabourRateCentsPerHour: true },
     });
     const metadata = buildLabourRateLockMetadata({
-      existingMetadata: (entry.metadata ?? {}) as Record<string, unknown>,
+      existingMetadata: {
+        ...existingMetadata,
+        paperlessTimer: { pauses: normalizedPauses, status: 'stopped' },
+      },
       companyDefaultRateCentsPerHour: settings?.defaultInternalLabourRateCentsPerHour ?? 8000,
       lockedAt: endedAt.toISOString(),
     });
@@ -672,6 +695,69 @@ export class MobileWorkforceService {
 
     const row = await this.db.query.mobileTimeEntries.findFirst({
       where: eq(mobileTimeEntries.id, updated!.id),
+      with: { job: true, user: true },
+    });
+    return toTimeEntrySummary(row!);
+  }
+
+  /** YG-CUTOVER-001F — pause open labour without ending the authoritative entry. */
+  async pauseTimedEntry(
+    scope: TechnicianScope,
+    timeEntryId: string,
+  ): Promise<MobileTimeEntrySummary> {
+    const entry = await this.db.query.mobileTimeEntries.findFirst({
+      where: and(
+        eq(mobileTimeEntries.companyId, scope.companyId),
+        eq(mobileTimeEntries.id, timeEntryId),
+        eq(mobileTimeEntries.userId, scope.userId),
+      ),
+    });
+    if (!entry) throw new MobileWorkforceError('NOT_FOUND', 'Time entry not found');
+    if (entry.endedAt) throw new MobileWorkforceError('VALIDATION_ERROR', 'Time entry already stopped');
+
+    const metadata = applyLabourTimerPause(
+      (entry.metadata ?? {}) as Record<string, unknown>,
+      new Date().toISOString(),
+    );
+    await this.db
+      .update(mobileTimeEntries)
+      .set({ metadata })
+      .where(eq(mobileTimeEntries.id, entry.id));
+    await this.logAction(scope, 'pause_time_entry', 'time_entry', entry.id, { jobId: entry.jobId });
+
+    const row = await this.db.query.mobileTimeEntries.findFirst({
+      where: eq(mobileTimeEntries.id, entry.id),
+      with: { job: true, user: true },
+    });
+    return toTimeEntrySummary(row!);
+  }
+
+  async resumeTimedEntry(
+    scope: TechnicianScope,
+    timeEntryId: string,
+  ): Promise<MobileTimeEntrySummary> {
+    const entry = await this.db.query.mobileTimeEntries.findFirst({
+      where: and(
+        eq(mobileTimeEntries.companyId, scope.companyId),
+        eq(mobileTimeEntries.id, timeEntryId),
+        eq(mobileTimeEntries.userId, scope.userId),
+      ),
+    });
+    if (!entry) throw new MobileWorkforceError('NOT_FOUND', 'Time entry not found');
+    if (entry.endedAt) throw new MobileWorkforceError('VALIDATION_ERROR', 'Time entry already stopped');
+
+    const metadata = applyLabourTimerResume(
+      (entry.metadata ?? {}) as Record<string, unknown>,
+      new Date().toISOString(),
+    );
+    await this.db
+      .update(mobileTimeEntries)
+      .set({ metadata })
+      .where(eq(mobileTimeEntries.id, entry.id));
+    await this.logAction(scope, 'resume_time_entry', 'time_entry', entry.id, { jobId: entry.jobId });
+
+    const row = await this.db.query.mobileTimeEntries.findFirst({
+      where: eq(mobileTimeEntries.id, entry.id),
       with: { job: true, user: true },
     });
     return toTimeEntrySummary(row!);

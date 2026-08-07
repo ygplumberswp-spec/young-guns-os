@@ -74,6 +74,7 @@ export function JobCompletionFinancePanel({
   const outstandingInvoice = financeSummary?.invoices.find(
     (invoice) => invoice.outstandingCents > 0,
   );
+  const draftReady = financeSummary?.invoices.find((invoice) => invoice.status === 'draft');
 
   const prefill = { jobId, customerId, from: 'job-detail' };
   const chips = financeSummary?.chips ?? [];
@@ -115,6 +116,14 @@ export function JobCompletionFinancePanel({
           </li>
         ))}
       </ol>
+
+      {draftReady ? (
+        <p className="page-success" style={{ marginTop: '0.75rem' }}>
+          YG-CUTOVER-001F — Draft invoice {draftReady.displayInvoiceNumber ?? draftReady.invoiceNumber}{' '}
+          ready for approval (APPROVE &amp; SEND / EDIT / RETURN / REJECT). Owner completion pack:
+          Job + Work + Evidence + Labour + Travel + Materials + Financial status.
+        </p>
+      ) : null}
 
       {execution?.completionSnapshot ? (
         <dl className="finance-detail-list" style={{ marginTop: '0.75rem' }}>

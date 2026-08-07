@@ -2,21 +2,28 @@ import { FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { useParams } from 'wouter';
 import { Button, EmptyState, Input, PageHeader, Panel } from '@titan/ui';
 import type {
+  CartrackArrivalPrompt,
   JobMaterialSource,
   JobWorkflowAction,
   MobileJobExecutionWorkspace,
   MobileTimeEntrySummary,
   MobileWorkforceInventoryCentre,
   TechnicianCompletionChecklist,
+  TechnicianInvoicePaymentStrip,
 } from '@titan/shared';
-import { requiredChecklistForJobType } from '@titan/shared';
+import { evaluatePaperlessCompletionSequence, requiredChecklistForJobType } from '@titan/shared';
 import {
   MobileApiClientError,
   completeMobileJobGated,
   createMobileDirectCost,
   createMobileJobVariation,
   fetchActiveMobileTimeEntries,
+  fetchMobileArrivalPrompt,
   fetchMobileCaptureChecklist,
+  fetchMobilePaymentStrip,
+  pauseMobileTimeEntry,
+  recordMobileOnSitePayment,
+  resumeMobileTimeEntry,
   startMobileTimedEntry,
   stopMobileTimeEntry,
   fetchMobileInventory,
@@ -27,6 +34,7 @@ import {
   transitionMobileJob,
   uploadMobileJobEvidence,
 } from '../../lib/mobile-api-client';
+import { PaperlessCompletionSequence } from '../../features/jobs/PaperlessCompletionSequence';
 import {
   cacheMobileWorkspaceSnapshot,
   enqueueOfflineAction,
@@ -95,7 +103,13 @@ export function MobileJobDetailPage() {
   const [variationCondition, setVariationCondition] = useState('');
   const [variationExplanation, setVariationExplanation] = useState('');
   const [completeForm, setCompleteForm] = useState({
+    workRequested: '',
+    findings: '',
     workPerformedSummary: '',
+    diagnosis: '',
+    recommendation: '',
+    clientFacingNotes: '',
+    internalNotes: '',
     siteCondition: '',
     customerRepName: '',
     signerRole: 'customer_representative',
@@ -104,7 +118,13 @@ export function MobileJobDetailPage() {
     cocRequired: 'not_required' as 'required' | 'not_required' | 'pending_classification',
     technicianDeclaration: false,
     outstandingDefects: '',
+    materialsNotRequired: false,
   });
+  const [labourPaused, setLabourPaused] = useState(false);
+  const [arrivalPrompt, setArrivalPrompt] = useState<CartrackArrivalPrompt | null>(null);
+  const [paymentStrip, setPaymentStrip] = useState<TechnicianInvoicePaymentStrip | null>(null);
+  const [paymentReference, setPaymentReference] = useState('');
+  const [paymentBusy, setPaymentBusy] = useState(false);
   const [checklist, setChecklist] = useState<Record<string, boolean>>({});
   const [signatureDataUrl, setSignatureDataUrl] = useState<string | null>(null);
   const [signatureDocId, setSignatureDocId] = useState<string | null>(null);
@@ -159,6 +179,18 @@ export function MobileJobDetailPage() {
         (d) => d.documentationType === 'customer_signature' && d.hasBinary,
       );
       if (existingSig) setSignatureDocId(existingSig.id);
+      const strip = await fetchMobilePaymentStrip(accessToken, jobId).catch(() => null);
+      setPaymentStrip(strip);
+      // Arrival prompt never auto-starts labour — technician must confirm.
+      const prompt = await fetchMobileArrivalPrompt(accessToken, jobId, {
+        jobNumber: data.jobNumber,
+      }).catch(() => null);
+      setArrivalPrompt(prompt);
+      setCompleteForm((prev) =>
+        prev.workRequested === '' && data.workInstructions
+          ? { ...prev, workRequested: data.workInstructions ?? '' }
+          : prev,
+      );
     } catch (err) {
       if (!navigator.onLine) {
         const cached = await readCachedMobileWorkspace(jobId);
@@ -307,12 +339,71 @@ export function MobileJobDetailPage() {
         clientActionId: newClientActionId('time-stop'),
       });
       setActiveJobTimeId(null);
+      setLabourPaused(false);
       await reload();
       setMessage('Labour timer stopped and locked');
     } catch (err) {
       setError(err instanceof MobileApiClientError ? err.message : 'Unable to stop labour');
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function handlePauseLabour() {
+    if (!accessToken || !activeJobTimeId || busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await pauseMobileTimeEntry(accessToken, activeJobTimeId);
+      setLabourPaused(true);
+      setMessage('Labour timer paused (server-persisted)');
+    } catch (err) {
+      setError(err instanceof MobileApiClientError ? err.message : 'Unable to pause labour');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleResumeLabour() {
+    if (!accessToken || !activeJobTimeId || busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await resumeMobileTimeEntry(accessToken, activeJobTimeId);
+      setLabourPaused(false);
+      setMessage('Labour timer resumed');
+    } catch (err) {
+      setError(err instanceof MobileApiClientError ? err.message : 'Unable to resume labour');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleTakeCardPayment() {
+    if (!accessToken || !jobId || !paymentStrip || !workspace || paymentBusy) return;
+    if (!paymentReference.trim()) {
+      setError('Payment reference required (never enter card PAN/CVV/PIN).');
+      return;
+    }
+    setPaymentBusy(true);
+    setError(null);
+    try {
+      await recordMobileOnSitePayment(accessToken, jobId, {
+        invoiceId: paymentStrip.invoiceId,
+        customerId: workspace.customer.id,
+        amountCents: paymentStrip.amountDueCents,
+        method: 'card_terminal',
+        providerTerminal: 'company_terminal',
+        paymentReference: paymentReference.trim(),
+      });
+      const refreshed = await fetchMobilePaymentStrip(accessToken, jobId);
+      setPaymentStrip(refreshed);
+      setPaymentReference('');
+      setMessage('Card payment evidence recorded — invoice payment status updated');
+    } catch (err) {
+      setError(err instanceof MobileApiClientError ? err.message : 'Unable to record payment');
+    } finally {
+      setPaymentBusy(false);
     }
   }
 
@@ -652,9 +743,15 @@ export function MobileJobDetailPage() {
     setBusy(true);
     setError(null);
     try {
-      await completeMobileJobGated(accessToken, jobId, {
+      const result = await completeMobileJobGated(accessToken, jobId, {
         workPerformedSummary: completeForm.workPerformedSummary.trim(),
-        checklist,
+        checklist: {
+          ...checklist,
+          ...(completeForm.materialsNotRequired ? { materials_not_required: true } : {}),
+        },
+        measurements: completeForm.workRequested.trim() || null,
+        diagnosis: completeForm.findings.trim() || completeForm.diagnosis.trim() || null,
+        recommendation: completeForm.recommendation.trim() || null,
         siteCondition: completeForm.siteCondition.trim(),
         customerRepName: completeForm.customerRepName.trim(),
         signatureDocId: signatureDocId,
@@ -663,10 +760,25 @@ export function MobileJobDetailPage() {
         technicianDeclaration: completeForm.technicianDeclaration,
         outstandingDefects: completeForm.outstandingDefects.trim() || null,
         followUpRequired: Boolean(completeForm.outstandingDefects.trim()),
-        customerVisibleUpdate: note.trim() || null,
+        customerVisibleUpdate:
+          completeForm.clientFacingNotes.trim() || note.trim() || null,
+        safetyNotes: completeForm.internalNotes.trim() || null,
       });
       await reload();
-      setMessage('Job completed with immutable snapshot');
+      const strip = await fetchMobilePaymentStrip(accessToken, jobId).catch(() => null);
+      setPaymentStrip(strip);
+      if (result.paperless?.draftInvoice) {
+        setMessage(
+          result.paperless.ownerNotifyMessage ??
+            'Job completed — draft invoice prepared for owner approval',
+        );
+      } else if (result.paperless?.issues?.length) {
+        setMessage(
+          `Job completed. AURA Finance notes: ${result.paperless.issues.map((i) => i.message).join('; ')}`,
+        );
+      } else {
+        setMessage('Job completed with immutable snapshot');
+      }
     } catch (err) {
       setError(err instanceof MobileApiClientError ? err.message : 'Completion blocked');
     } finally {
@@ -709,6 +821,34 @@ export function MobileJobDetailPage() {
     0,
   );
 
+  const hasBeforePhoto = workspace.documentation.some((d) => d.evidencePhase === 'before');
+  const hasAfterPhoto = workspace.documentation.some((d) => d.evidencePhase === 'after');
+  const hasSlip = workspace.documentation.some(
+    (d) => d.evidencePhase === 'document' || /slip|receipt/i.test(d.title),
+  );
+  const checklistKeys = requiredChecklistForJobType(workspace.jobType);
+  const checklistComplete = checklistKeys.every((key) => Boolean(checklist[key]));
+  const paperless = evaluatePaperlessCompletionSequence({
+    workRequested: completeForm.workRequested || workspace.workInstructions,
+    findings: completeForm.findings || completeForm.diagnosis,
+    workPerformed: completeForm.workPerformedSummary,
+    clientFacingNotes: completeForm.clientFacingNotes,
+    internalNotes: completeForm.internalNotes,
+    outstandingRecommended: completeForm.outstandingDefects,
+    hasMaterialsOrExplicitNone:
+      workspace.materialLines.length > 0 ||
+      workspace.materialsUsed.length > 0 ||
+      completeForm.materialsNotRequired,
+    hasSlipOrExpenseEvidence: hasSlip,
+    hasBeforePhoto,
+    hasAfterPhoto,
+    checklistComplete,
+    hasSignature: Boolean(signatureDocId),
+    signerName: completeForm.customerRepName,
+    labourStopped: !activeJobTimeId,
+    openLabourEntries: activeJobTimeId ? 1 : 0,
+  });
+
   return (
     <div className="portal-page mobile-job-exec">
       <PageHeader
@@ -718,6 +858,23 @@ export function MobileJobDetailPage() {
 
       {error ? <p className="form-error">{error}</p> : null}
       {message ? <p className="page-success">{message}</p> : null}
+
+      <Panel title="Paperless sequence" description="Controlled STEP 1–6 — stop timer before final submit">
+        <PaperlessCompletionSequence
+          currentStep={paperless.currentStep}
+          stepComplete={Object.fromEntries(paperless.steps.map((s) => [s.key, s.complete]))}
+        />
+      </Panel>
+
+      {arrivalPrompt?.shouldPrompt ? (
+        <div className="arrival-prompt">
+          <p>{arrivalPrompt.message}</p>
+          <p className="page-muted">Cartrack never auto-starts labour. Confirm to start your timer.</p>
+          <Button type="button" disabled={busy || Boolean(activeJobTimeId)} onClick={() => void handleStartLabour()}>
+            Start job timer
+          </Button>
+        </div>
+      ) : null}
 
       <Panel title="Workflow">
         <div className="mobile-action-grid">
@@ -926,16 +1083,33 @@ export function MobileJobDetailPage() {
         ) : null}
       </Panel>
 
-      <Panel title="Labour" description={`Crew total ${labourTotal} min`}>
-        {activeJobTimeId ? (
-          <Button type="button" disabled={busy} onClick={() => void handleStopLabour()}>
-            Stop my labour
-          </Button>
-        ) : (
-          <Button type="button" disabled={busy} onClick={() => void handleStartLabour()}>
-            Start my labour
-          </Button>
-        )}
+      <Panel title="Labour" description={`Crew total ${labourTotal} min · START / PAUSE / RESUME / STOP`}>
+        <div className="mobile-action-grid">
+          {!activeJobTimeId ? (
+            <Button type="button" disabled={busy} onClick={() => void handleStartLabour()}>
+              Start
+            </Button>
+          ) : (
+            <>
+              {!labourPaused ? (
+                <Button type="button" disabled={busy} onClick={() => void handlePauseLabour()}>
+                  Pause
+                </Button>
+              ) : (
+                <Button type="button" disabled={busy} onClick={() => void handleResumeLabour()}>
+                  Resume
+                </Button>
+              )}
+              <Button type="button" disabled={busy} onClick={() => void handleStopLabour()}>
+                Stop
+              </Button>
+            </>
+          )}
+        </div>
+        <p className="page-muted" style={{ marginTop: '0.5rem' }}>
+          Timer is server-persisted — refresh / lock will not lose it. Pause time is excluded from
+          authoritative labour minutes.
+        </p>
         <ul className="portal-list" style={{ marginTop: '0.75rem' }}>
           {workspace.laborTimeEntries.map((entry) => (
             <li key={entry.id}>
@@ -1168,9 +1342,14 @@ export function MobileJobDetailPage() {
 
       <Panel title="Completion Gate">
         <p className="page-muted">
-          {workspace.completionGate.canComplete
-            ? 'Evidence looks ready — fill declaration to complete.'
-            : `Still needed: ${workspace.completionGate.missing.join(', ') || 'completion details'}`}
+          {paperless.canSubmit && workspace.completionGate.canComplete
+            ? 'Sequence + evidence ready — submit after Stop.'
+            : `Still needed: ${[
+                ...paperless.steps.flatMap((s) => s.blockers),
+                ...workspace.completionGate.missing,
+              ]
+                .filter((v, i, a) => a.indexOf(v) === i)
+                .join(', ') || 'completion details'}`}
         </p>
         <form className="jobs-form" onSubmit={(e) => void handleComplete(e)}>
           {requiredChecklistForJobType(workspace.jobType).map((key) => (
@@ -1183,6 +1362,38 @@ export function MobileJobDetailPage() {
               <span>{key.replace(/_/g, ' ')}</span>
             </label>
           ))}
+          <label className="mobile-check-row">
+            <input
+              type="checkbox"
+              checked={completeForm.materialsNotRequired}
+              onChange={(e) =>
+                setCompleteForm((prev) => ({ ...prev, materialsNotRequired: e.target.checked }))
+              }
+            />
+            <span>No materials used on this job</span>
+          </label>
+          <label className="titan-input-group">
+            <span className="titan-input-label">Work requested</span>
+            <textarea
+              className="titan-input jobs-textarea"
+              rows={2}
+              value={completeForm.workRequested}
+              onChange={(e) =>
+                setCompleteForm((prev) => ({ ...prev, workRequested: e.target.value }))
+              }
+              required
+            />
+          </label>
+          <label className="titan-input-group">
+            <span className="titan-input-label">Findings</span>
+            <textarea
+              className="titan-input jobs-textarea"
+              rows={2}
+              value={completeForm.findings}
+              onChange={(e) => setCompleteForm((prev) => ({ ...prev, findings: e.target.value }))}
+              required
+            />
+          </label>
           <label className="titan-input-group">
             <span className="titan-input-label">Work performed</span>
             <textarea
@@ -1193,6 +1404,39 @@ export function MobileJobDetailPage() {
                 setCompleteForm((prev) => ({ ...prev, workPerformedSummary: e.target.value }))
               }
               required
+            />
+          </label>
+          <label className="titan-input-group">
+            <span className="titan-input-label">Client-facing notes</span>
+            <textarea
+              className="titan-input jobs-textarea"
+              rows={2}
+              value={completeForm.clientFacingNotes}
+              onChange={(e) =>
+                setCompleteForm((prev) => ({ ...prev, clientFacingNotes: e.target.value }))
+              }
+            />
+          </label>
+          <label className="titan-input-group">
+            <span className="titan-input-label">Internal notes (never shown to client)</span>
+            <textarea
+              className="titan-input jobs-textarea"
+              rows={2}
+              value={completeForm.internalNotes}
+              onChange={(e) =>
+                setCompleteForm((prev) => ({ ...prev, internalNotes: e.target.value }))
+              }
+            />
+          </label>
+          <label className="titan-input-group">
+            <span className="titan-input-label">Outstanding / recommended work</span>
+            <textarea
+              className="titan-input jobs-textarea"
+              rows={2}
+              value={completeForm.outstandingDefects}
+              onChange={(e) =>
+                setCompleteForm((prev) => ({ ...prev, outstandingDefects: e.target.value }))
+              }
             />
           </label>
           <Input
@@ -1270,22 +1514,6 @@ export function MobileJobDetailPage() {
               it does not issue a COC or mark compliance complete.
             </p>
           </label>
-          <Input
-            label="Outstanding Defect / Follow-Up"
-            value={completeForm.outstandingDefects}
-            onChange={(e) =>
-              setCompleteForm((prev) => ({ ...prev, outstandingDefects: e.target.value }))
-            }
-          />
-          <label className="titan-input-group">
-            <span className="titan-input-label">Customer-visible update</span>
-            <textarea
-              className="titan-input jobs-textarea"
-              rows={2}
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-            />
-          </label>
           <label className="mobile-check-row">
             <input
               type="checkbox"
@@ -1299,11 +1527,57 @@ export function MobileJobDetailPage() {
             />
             <span>I declare the work and evidence recorded are accurate</span>
           </label>
-          <button type="submit" className="mobile-action-btn mobile-action-btn--primary" disabled={busy}>
-            Complete job
+          {activeJobTimeId ? (
+            <p className="form-error">Stop the job timer (STEP 6) before final submission.</p>
+          ) : null}
+          <button
+            type="submit"
+            className="mobile-action-btn mobile-action-btn--primary"
+            disabled={busy || Boolean(activeJobTimeId)}
+          >
+            Complete & submit signed job
           </button>
         </form>
       </Panel>
+
+      {paymentStrip ? (
+        <Panel
+          title="JOB COMPLETE — On-site payment"
+          description="Invoice # + amount due only. Never enter card PAN / CVV / PIN."
+        >
+          <p>
+            <strong>Invoice #{paymentStrip.invoiceNumber ?? '—'}</strong>
+          </p>
+          <p>
+            Amount due: R{(paymentStrip.amountDueCents / 100).toFixed(2)} · Status:{' '}
+            {paymentStrip.paymentStatus.replace('_', ' ')}
+          </p>
+          {paymentStrip.paymentStatus !== 'paid' ? (
+            <>
+              <Input
+                label="Payment reference (terminal / provider)"
+                value={paymentReference}
+                onChange={(e) => setPaymentReference(e.target.value)}
+              />
+              <div className="mobile-action-grid">
+                <Button
+                  type="button"
+                  disabled={paymentBusy}
+                  onClick={() => void handleTakeCardPayment()}
+                >
+                  Take card payment
+                </Button>
+              </div>
+              <p className="page-muted">
+                Payment link / QR and other authorised evidence use the same reference capture —
+                full card data is never stored.
+              </p>
+            </>
+          ) : (
+            <p className="page-success">Paid in full.</p>
+          )}
+        </Panel>
+      ) : null}
 
       {workspace.propertyHistory.length > 0 ? (
         <Panel title="Property History">
