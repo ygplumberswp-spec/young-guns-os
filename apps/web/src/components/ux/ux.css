@@ -483,7 +483,7 @@
     margin-bottom: 0.75rem;
     /* YG-CUTOVER-001B: keep first tab fully visible; scroll for the rest */
     margin-inline: 0;
-    padding-inline: 0;
+    padding-inline: 1px;
     max-width: 100%;
     overscroll-behavior-x: contain;
     -webkit-overflow-scrolling: touch;
