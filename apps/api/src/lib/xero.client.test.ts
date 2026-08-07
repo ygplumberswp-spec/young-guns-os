@@ -46,3 +46,11 @@ test('XeroClient fails fast when Retry-After exceeds inline wait budget', () => 
   assert.match(clientSource, /XERO_RATE_LIMIT_RETRY_BUDGET_MS/);
   assert.match(clientSource, /inline wait exceeds/);
 });
+
+test('XeroClient organisation probe uses dedicated once-only HTTP path', () => {
+  assert.match(clientSource, /probeOrganisationOnce/);
+  assert.match(clientSource, /organisationProbeHttpOnce/);
+  assert.match(clientSource, /providerCallCount: 1/);
+  assert.doesNotMatch(clientSource, /async probeOrganisationOnce[\s\S]{0,800}apiRequest\(/);
+  assert.doesNotMatch(clientSource, /organisationProbeHttpOnce[\s\S]{0,800}apiRequestOnce\(/);
+});

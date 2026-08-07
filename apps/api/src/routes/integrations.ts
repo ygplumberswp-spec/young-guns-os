@@ -30,6 +30,8 @@ import { XeroGate2ReadonlyProofError } from '../services/xero-gate2-readonly-pro
 import type { XeroGate5bPaymentObservationService } from '../services/xero-gate5b-payment-observation.service.js';
 import { XeroGate5bPaymentObservationError } from '../services/xero-gate5b-payment-observation.service.js';
 import type { XeroRateBudgetService } from '../services/xero-rate-budget.service.js';
+import type { XeroRateBudgetProviderProbeService } from '../services/xero-rate-budget-provider-probe.service.js';
+import { XeroRateBudgetProviderProbeError } from '../services/xero-rate-budget-provider-probe.service.js';
 import { XeroError } from '../lib/xero.client.js';
 import type { XeroGate3ControlledQuoteService } from '../services/xero-gate3-controlled-quote.service.js';
 import { XeroGate3ControlledQuoteError } from '../services/xero-gate3-controlled-quote.service.js';
@@ -233,6 +235,7 @@ type IntegrationsRouterDeps = {
   xeroGate4ControlledInvoiceService?: XeroGate4ControlledInvoiceService;
   xeroGate5bPaymentObservationService?: XeroGate5bPaymentObservationService;
   xeroRateBudgetService?: XeroRateBudgetService;
+  xeroRateBudgetProviderProbeService?: XeroRateBudgetProviderProbeService;
   teamService: TeamService;
   appUrl: string;
   jwtSecret: string;
@@ -278,6 +281,7 @@ export function createIntegrationsRouter({
   xeroGate4ControlledInvoiceService,
   xeroGate5bPaymentObservationService,
   xeroRateBudgetService,
+  xeroRateBudgetProviderProbeService,
   teamService,
   appUrl,
   jwtSecret,
@@ -744,6 +748,39 @@ export function createIntegrationsRouter({
     });
     const state = await xeroRateBudgetService.getState(companyId);
     res.json({ data: { paused: false, state } });
+  });
+
+  router.post('/xero/rate-budget/provider-probe', requireAnyPermission('integrations:manage'), async (req, res) => {
+    const { companyId } = getAuth(req);
+    if (!xeroRateBudgetProviderProbeService) {
+      res.status(503).json({
+        error: { code: 'NOT_CONFIGURED', message: 'Xero rate budget provider probe is not configured.' },
+      });
+      return;
+    }
+
+    try {
+      const result = await xeroRateBudgetProviderProbeService.probeProvider(companyId);
+      res.json({ data: { result } });
+    } catch (error) {
+      if (error instanceof XeroRateBudgetProviderProbeError) {
+        const status =
+          error.code === 'ORG_MISMATCH'
+            ? 409
+            : error.code === 'BUDGET_EXHAUSTED'
+              ? 503
+              : error.code === 'PROVIDER_AUTH_FAILED'
+                ? 503
+                : error.code === 'PROVIDER_UNAVAILABLE' || error.code === 'PROVIDER_RATE_LIMIT'
+                  ? 503
+                  : error.code === 'PROBE_SAFETY_VIOLATION'
+                    ? 500
+                    : 502;
+        res.status(status).json({ error: { code: error.code, message: error.message } });
+        return;
+      }
+      handleXeroOAuthError(res, error);
+    }
   });
 
   router.post(

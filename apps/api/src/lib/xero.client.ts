@@ -141,6 +141,26 @@ export type XeroListOptions = {
   modifiedSince?: string | null;
 };
 
+/** Captured provider headers from a single no-retry Organisation probe. */
+export type XeroOrganisationProbeHeaders = {
+  minLimitRemaining: number | null;
+  dayLimitRemaining: number | null;
+  appMinLimitRemaining: number | null;
+  rateLimitProblem: string | null;
+  retryAfter: string | null;
+  correlationId: string | null;
+  responseDate: string | null;
+};
+
+/** Result of exactly one GET /Organisation HTTP call — never retries on 429 or 401. */
+export type XeroOrganisationProbeResult = {
+  providerCallCount: 1;
+  httpStatus: number;
+  requestEndpoint: 'GET /Organisation';
+  headers: XeroOrganisationProbeHeaders;
+  organisation: XeroOrganisationRecord | null;
+};
+
 type XeroClientOptions = {
   tenantId: string;
   getAccessToken: () => Promise<string>;
@@ -262,6 +282,73 @@ export class XeroClient {
     }
 
     return organisations[0]!;
+  }
+
+  /**
+   * Controlled rate-budget probe — issues exactly one GET /Organisation request.
+   * Does not use apiRequest (no 429 retry loop) and does not auth-retry on 401.
+   */
+  async probeOrganisationOnce(): Promise<XeroOrganisationProbeResult> {
+    const response = await this.organisationProbeHttpOnce();
+    const headers = parseOrganisationProbeHeaders(response.headers);
+
+    let organisation: XeroOrganisationRecord | null = null;
+    if (response.ok && response.status !== 204) {
+      const payload = await response.json();
+      organisation = extractOrganisations(payload)[0] ?? null;
+    }
+
+    return {
+      providerCallCount: 1,
+      httpStatus: response.status,
+      requestEndpoint: 'GET /Organisation',
+      headers,
+      organisation,
+    };
+  }
+
+  /** Single HTTP round-trip to GET /Organisation — no auth retry, no rate-limit retry. */
+  private async organisationProbeHttpOnce(): Promise<Response> {
+    const accessToken = await this.fetchAccessToken();
+    const url = `${API_BASE_URL}/Organisation`;
+
+    let response: Response;
+
+    try {
+      response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          'xero-tenant-id': this.tenantId,
+        },
+        signal: timeoutSignal(this.requestTimeoutMs),
+      });
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        (error.name === 'TimeoutError' ||
+          error.name === 'AbortError' ||
+          /timed out/i.test(error.message))
+      ) {
+        throw new XeroError(
+          'TIMEOUT',
+          `Xero request timed out after ${this.requestTimeoutMs}ms (GET /Organisation)`,
+        );
+      }
+
+      throw new XeroError(
+        'NETWORK_ERROR',
+        error instanceof Error ? error.message : 'Unable to reach Xero API',
+      );
+    }
+
+    if (this.onResponse) {
+      await this.onResponse(response);
+    }
+
+    return response;
   }
 
   async findContactByEmail(email: string): Promise<XeroContactRecord | null> {
@@ -831,6 +918,25 @@ export class XeroClient {
 
     return response.json();
   }
+}
+
+function parseOrganisationProbeHeaders(headers: Headers): XeroOrganisationProbeHeaders {
+  const readInt = (name: string): number | null => {
+    const raw = headers.get(name);
+    if (!raw) return null;
+    const value = Number.parseInt(raw, 10);
+    return Number.isFinite(value) ? value : null;
+  };
+
+  return {
+    minLimitRemaining: readInt('X-MinLimit-Remaining'),
+    dayLimitRemaining: readInt('X-DayLimit-Remaining'),
+    appMinLimitRemaining: readInt('X-AppMinLimit-Remaining'),
+    rateLimitProblem: headers.get('X-Rate-Limit-Problem'),
+    retryAfter: headers.get('Retry-After'),
+    correlationId: headers.get('Xero-Correlation-Id'),
+    responseDate: headers.get('Date'),
+  };
 }
 
 function extractOrganisations(payload: unknown): XeroOrganisationRecord[] {

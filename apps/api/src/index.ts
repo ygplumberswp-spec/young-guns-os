@@ -93,6 +93,7 @@ import { XeroMappingConflictService } from './services/xero-mapping-conflict.ser
 import { XeroWriteApprovalWorkflowService } from './services/xero-write-approval-workflow.service.js';
 import { XeroTwoWayVerifyService } from './services/xero-two-way-verify.service.js';
 import { XeroRateBudgetService } from './services/xero-rate-budget.service.js';
+import { XeroRateBudgetProviderProbeService } from './services/xero-rate-budget-provider-probe.service.js';
 import { XeroRealtimeIntersyncService } from './services/xero-realtime-intersync.service.js';
 import { XeroGate2ReadonlyProofService } from './services/xero-gate2-readonly-proof.service.js';
 import { XeroGate3ControlledQuoteService } from './services/xero-gate3-controlled-quote.service.js';
@@ -575,6 +576,10 @@ const xeroOAuthService = XeroOAuthService.create({
 });
 const xeroRateBudgetService = XeroRateBudgetService.create(db);
 xeroOAuthService.setRateBudget(xeroRateBudgetService);
+const xeroRateBudgetProviderProbeService = new XeroRateBudgetProviderProbeService(
+  xeroOAuthService,
+  xeroRateBudgetService,
+);
 const xeroGate2ReadonlyProofService = new XeroGate2ReadonlyProofService(db, xeroOAuthService);
 const gmailOAuthConfig = resolveGmailOAuthConfig(env, apiPublicUrl);
 bootLog('gmail oauth resolved', {
@@ -1988,6 +1993,7 @@ app.use(
     xeroGate4ControlledInvoiceService,
     xeroGate5bPaymentObservationService,
     xeroRateBudgetService,
+    xeroRateBudgetProviderProbeService,
     teamService,
     appUrl: env.APP_URL,
     jwtSecret: env.JWT_SECRET,
