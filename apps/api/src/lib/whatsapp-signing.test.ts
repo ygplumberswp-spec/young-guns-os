@@ -15,6 +15,16 @@ describe('whatsapp webhook signature', () => {
     assert.deepEqual(result, { ok: true, mode: 'skipped_no_secret' });
   });
 
+  it('fails closed when app secret is unset and failClosedWithoutSecret is set', () => {
+    const result = verifyWhatsappWebhookSignature({
+      appSecret: null,
+      rawBody: body,
+      signatureHeader: undefined,
+      failClosedWithoutSecret: true,
+    });
+    assert.deepEqual(result, { ok: false, reason: 'missing_secret' });
+  });
+
   it('verifies a valid Meta X-Hub-Signature-256 header', () => {
     const hex = signWhatsappWebhookBody(secret, body);
     const result = verifyWhatsappWebhookSignature({

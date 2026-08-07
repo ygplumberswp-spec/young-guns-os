@@ -54,7 +54,10 @@ test('filterFinanceCatalogueCostFields removes unitCostCents when unauthorized',
 
 test('canViewFinanceProfit authorises owners and blocks technicians', () => {
   assert.equal(canViewFinanceProfit(['finance:read'], 'Company Owner'), true);
-  assert.equal(canViewFinanceProfit(['finance:write'], 'Technician'), true);
+  // SEC-001: mis-elevated finance:write must not grant Technician profit visibility.
+  assert.equal(canViewFinanceProfit(['finance:write'], 'Technician'), false);
+  assert.equal(canViewFinanceProfit(['*'], 'Technician'), false);
+  assert.equal(canViewFinanceProfit(['finance:write'], 'Client'), false);
   assert.equal(canViewFinanceProfit(['finance:read'], 'Technician'), false);
 });
 
