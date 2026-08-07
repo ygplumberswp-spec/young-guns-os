@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { FormEvent, useEffect, useState } from 'react';
-import { Link, useLocation } from 'wouter';
-import { Button, Input, PageHeader } from '@titan/ui';
+import { useLocation } from 'wouter';
+import { Button, Input } from '@titan/ui';
 import { COMMUNICATION_CHANNEL_OPTIONS, type CommunicationChannel } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import { createMessageTemplate } from '../../lib/communications-api';
@@ -49,20 +50,15 @@ export function TemplateCreatePage() {
   return (
     <div className="communications-page">
       <PageHeader
-        title="New template"
+        title="New Template"
         description="Create a reusable message template for customer communications."
-        actions={
-          <Link href="/communications/templates">
-            <Button variant="secondary">Back to templates</Button>
-          </Link>
-        }
       />
       <CommunicationsNav />
       {error ? <p className="form-error">{error}</p> : null}
 
       <form className="communications-form" onSubmit={(event) => void handleSubmit(event)}>
         <Input
-          label="Template name"
+          label="Template Name"
           value={name}
           onChange={(e) => setName(e.target.value)}
           required

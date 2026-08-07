@@ -1,5 +1,6 @@
+import { PageHeader } from '../../components/ux';
 import { Link } from 'wouter';
-import { PageHeader, Panel } from '@titan/ui';
+import { Panel } from '@titan/ui';
 import { formatMoney } from '@titan/shared';
 import { fetchPortalExperienceDashboard } from '../../lib/portal-api-client';
 import { usePortalAuth } from '../../lib/portal-auth-context';
@@ -41,7 +42,7 @@ export function PortalDashboardPage() {
           <>
             <div className="portal-grid">
               <Panel
-                title="Active jobs"
+                title="Active Jobs"
                 description={`${dashboard.activeJobCount} active · ${dashboard.completedJobCount} completed`}
               >
                 <Link href="/jobs">View jobs</Link>
@@ -68,7 +69,7 @@ export function PortalDashboardPage() {
                 <Link href="/notifications">Open notifications</Link>
               </Panel>
               <Panel
-                title="Help & knowledge"
+                title="Help & Knowledge"
                 description="Search customer-visible articles and guides"
               >
                 <Link href="/knowledge">Search knowledge</Link>
@@ -76,7 +77,7 @@ export function PortalDashboardPage() {
             </div>
 
             {dashboard.recentCommunications.length > 0 ? (
-              <Panel title="Recent communications">
+              <Panel title="Recent Communications">
                 <ul className="portal-list">
                   {dashboard.recentCommunications.map((item) => (
                     <li key={item.id}>

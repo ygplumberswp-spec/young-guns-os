@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useMemo, useState } from 'react';
+import { useSearch } from 'wouter';
 import { Button, EmptyState, LoadingState, Panel, StatCard } from '@titan/ui';
 import type {
   BuyerClassificationSummary,
@@ -34,27 +35,31 @@ import {
   upsertConsent,
 } from '../../lib/marketing-eligibility-api-client';
 import { useAuth } from '../../lib/auth-context';
+import { fetchDraft } from '../../lib/drafts-api';
+import { AutosaveIndicator } from '../../components/ux/AutosaveIndicator';
+import { DraftRestoreBanner } from '../../components/ux/DraftRestoreBanner';
+import { useFormDraftShell } from '../../hooks/useFormDraftShell';
 
 const CONTACT_FIELD_OPTIONS: Array<{ value: ContactFieldKey; label: string }> = [
   { value: 'name', label: 'Name' },
-  { value: 'contact_person', label: 'Contact person' },
+  { value: 'contact_person', label: 'Contact Person' },
   { value: 'email', label: 'Email' },
   { value: 'phone', label: 'Phone' },
 ];
 
 const CONSENT_CHANNEL_OPTIONS: Array<{ value: MarketingConsentChannel; label: string }> = [
   { value: 'email', label: 'Email' },
-  { value: 'whatsapp', label: 'WhatsApp' },
+  { value: 'whatsapp', label: 'Business WhatsApp' },
   { value: 'sms', label: 'SMS' },
   { value: 'phone', label: 'Phone' },
 ];
 
 const CONSENT_STATUS_OPTIONS: Array<{ value: MarketingConsentStatus; label: string }> = [
-  { value: 'unknown', label: 'Unknown (not consent)' },
+  { value: 'unknown', label: 'Unknown (Not Consent)' },
   { value: 'granted', label: 'Granted' },
   { value: 'denied', label: 'Denied' },
   { value: 'withdrawn', label: 'Withdrawn' },
-  { value: 'do_not_contact', label: 'Do not contact' },
+  { value: 'do_not_contact', label: 'Do Not Contact' },
 ];
 
 type HumanQualityStandard = {
@@ -66,9 +71,9 @@ type HumanQualityStandard = {
 function isHumanQualityStandard(value: unknown): value is HumanQualityStandard {
   return Boolean(
     value &&
-      typeof value === 'object' &&
-      'requirements' in (value as Record<string, unknown>) &&
-      Array.isArray((value as Record<string, unknown>).requirements),
+    typeof value === 'object' &&
+    'requirements' in (value as Record<string, unknown>) &&
+    Array.isArray((value as Record<string, unknown>).requirements),
   );
 }
 
@@ -82,6 +87,7 @@ function isCompanyOwnerRoleName(roleName: string) {
 
 export function ReactivationEligibilityPanel() {
   const { accessToken, user } = useAuth();
+  const search = useSearch();
   const permissions = user?.permissions ?? [];
   const roleName = user?.roleName ?? '';
 
@@ -141,6 +147,24 @@ export function ReactivationEligibilityPanel() {
 
   const [audienceName, setAudienceName] = useState('');
   const [audienceNotes, setAudienceNotes] = useState('');
+  const [pendingDraft, setPendingDraft] = useState<{
+    id: string;
+    title: string | null;
+    lastEditedAt: string;
+    payload: Record<string, unknown>;
+  } | null>(null);
+  const draftShell = useFormDraftShell({
+    accessToken,
+    userId: user?.id,
+    recordType: 'marketing',
+    enabled: canCreateAudience,
+    getPayload: () => ({
+      audienceName,
+      audienceNotes,
+      draftKind: 'audience_request',
+    }),
+    getMeta: () => ({ title: audienceName.trim() || 'New audience request' }),
+  });
 
   async function loadAll() {
     if (!accessToken) return;
@@ -171,6 +195,42 @@ export function ReactivationEligibilityPanel() {
     void loadAll();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [accessToken]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadDraft() {
+      if (!accessToken) return;
+      const draftId = new URLSearchParams(search).get('draftId');
+      if (!draftId) return;
+      try {
+        const draft = await fetchDraft(accessToken, draftId);
+        if (
+          cancelled ||
+          draft.recordType !== 'marketing' ||
+          draft.payload.draftKind !== 'audience_request'
+        )
+          return;
+        setPendingDraft({
+          id: draft.id,
+          title: draft.title,
+          lastEditedAt: draft.lastEditedAt,
+          payload: draft.payload,
+        });
+      } catch {
+        /* Ignore unavailable drafts. */
+      }
+    }
+    void loadDraft();
+    return () => {
+      cancelled = true;
+    };
+  }, [accessToken, search]);
+
+  function applyDraftPayload(payload: Record<string, unknown>) {
+    if (typeof payload.audienceName === 'string') setAudienceName(payload.audienceName);
+    if (typeof payload.audienceNotes === 'string') setAudienceNotes(payload.audienceNotes);
+    draftShell.touchField();
+  }
 
   async function loadCustomerDetail(customerId: string) {
     if (!accessToken) return;
@@ -283,6 +343,7 @@ export function ReactivationEligibilityPanel() {
       setAudienceRequests((current) => [created, ...current]);
       setAudienceName('');
       setAudienceNotes('');
+      draftShell.markSubmitted();
     }, `Audience request created with ${audienceName.trim()} — delivery state stays "not sent".`);
   }
 
@@ -323,7 +384,7 @@ export function ReactivationEligibilityPanel() {
       {success ? <p className="form-success">{success}</p> : null}
 
       <Panel
-        title="ACCREC Buyer Classification & Reactivation Eligibility"
+        title="Accrec Buyer Classification & Reactivation Eligibility"
         description="Real paid-invoice evidence only — contact existence is never treated as buyer proof (Decision 3 / FIN-006, UX-H)."
       >
         {canRecompute ? (
@@ -342,13 +403,16 @@ export function ReactivationEligibilityPanel() {
         ) : null}
 
         {isLoading ? (
-          <LoadingState label="Loading reactivation eligibility…" />
+          <LoadingState label="Loading Reactivation Eligibility…" />
         ) : (
           <>
             {counts ? (
               <div className="stat-grid">
                 <StatCard label="Eligible" value={String(counts.eligible)} />
-                <StatCard label="Awaiting verification" value={String(counts.awaitingVerification)} />
+                <StatCard
+                  label="Awaiting Verification"
+                  value={String(counts.awaitingVerification)}
+                />
                 <StatCard label="Blocked" value={String(counts.blocked)} />
                 <StatCard label="Excluded" value={String(counts.excluded)} />
               </div>
@@ -356,81 +420,93 @@ export function ReactivationEligibilityPanel() {
 
             {eligibility.length === 0 ? (
               <EmptyState
-                title="No eligibility data yet"
+                title="No Eligibility Data Yet"
                 description="Run classification and eligibility recompute to evaluate customers for reactivation marketing."
               />
             ) : (
               <div className="reactivation-table-wrap">
-              <table className="reactivation-table">
-                <thead>
-                  <tr>
-                    <th>Customer</th>
-                    <th>Classification</th>
-                    <th>Eligibility</th>
-                    <th>Preferred channel</th>
-                    <th>Contact quality</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {eligibility.map((row) => (
-                    <Fragment key={row.id}>
-                      <tr
-                        className={selectedCustomerId === row.customerId ? 'is-selected' : undefined}
-                      >
-                        <td>{row.customerName}</td>
-                        <td>{row.classification ? formatStatusLabel(row.classification) : '—'}</td>
-                        <td>
-                          <span className={`reactivation-status reactivation-status--${row.eligibilityStatus}`}>
-                            {formatStatusLabel(row.eligibilityStatus)}
-                          </span>
-                        </td>
-                        <td>{row.preferredChannel ?? '—'}</td>
-                        <td>
-                          {row.emailVerificationState === 'placeholder' ? (
-                            <span className="form-error">Placeholder email</span>
-                          ) : (
-                            <span className="page-muted">
-                              email: {row.emailVerificationState ?? 'unknown'} · phone:{' '}
-                              {row.phoneVerificationState ?? 'unknown'}
+                <table className="reactivation-table">
+                  <thead>
+                    <tr>
+                      <th>Customer</th>
+                      <th>Classification</th>
+                      <th>Eligibility</th>
+                      <th>Preferred channel</th>
+                      <th>Contact quality</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {eligibility.map((row) => (
+                      <Fragment key={row.id}>
+                        <tr
+                          className={
+                            selectedCustomerId === row.customerId ? 'is-selected' : undefined
+                          }
+                        >
+                          <td>{row.customerName}</td>
+                          <td>
+                            {row.classification ? formatStatusLabel(row.classification) : '—'}
+                          </td>
+                          <td>
+                            <span
+                              className={`reactivation-status reactivation-status--${row.eligibilityStatus}`}
+                            >
+                              {formatStatusLabel(row.eligibilityStatus)}
                             </span>
-                          )}
-                          {row.doNotContact ? <span className="form-error"> · Do not contact</span> : null}
-                        </td>
-                        <td>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() =>
-                              setExpandedCustomerId(
-                                expandedCustomerId === row.customerId ? null : row.customerId,
-                              )
-                            }
-                          >
-                            {expandedCustomerId === row.customerId ? 'Hide reasons' : 'Reasons'}
-                          </Button>
-                          <Button variant="secondary" size="sm" onClick={() => selectCustomer(row.customerId)}>
-                            Manage
-                          </Button>
-                        </td>
-                      </tr>
-                      {expandedCustomerId === row.customerId ? (
-                        <tr>
-                          <td colSpan={6}>
-                            <ul className="simple-list">
-                              {row.reasons.map((reason, index) => (
-                                <li key={`${row.id}-reason-${index}`}>
-                                  <strong>{reason.code}</strong> — {reason.detail}
-                                </li>
-                              ))}
-                            </ul>
+                          </td>
+                          <td>{row.preferredChannel ?? '—'}</td>
+                          <td>
+                            {row.emailVerificationState === 'placeholder' ? (
+                              <span className="form-error">Placeholder email</span>
+                            ) : (
+                              <span className="page-muted">
+                                email: {row.emailVerificationState ?? 'unknown'} · phone:{' '}
+                                {row.phoneVerificationState ?? 'unknown'}
+                              </span>
+                            )}
+                            {row.doNotContact ? (
+                              <span className="form-error"> · Do not contact</span>
+                            ) : null}
+                          </td>
+                          <td>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() =>
+                                setExpandedCustomerId(
+                                  expandedCustomerId === row.customerId ? null : row.customerId,
+                                )
+                              }
+                            >
+                              {expandedCustomerId === row.customerId ? 'Hide reasons' : 'Reasons'}
+                            </Button>
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              onClick={() => selectCustomer(row.customerId)}
+                            >
+                              Manage
+                            </Button>
                           </td>
                         </tr>
-                      ) : null}
-                    </Fragment>
-                  ))}
-                </tbody>
-              </table>
+                        {expandedCustomerId === row.customerId ? (
+                          <tr>
+                            <td colSpan={6}>
+                              <ul className="simple-list">
+                                {row.reasons.map((reason, index) => (
+                                  <li key={`${row.id}-reason-${index}`}>
+                                    <strong>{reason.code}</strong> — {reason.detail}
+                                  </li>
+                                ))}
+                              </ul>
+                            </td>
+                          </tr>
+                        ) : null}
+                      </Fragment>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
           </>
@@ -462,7 +538,9 @@ export function ReactivationEligibilityPanel() {
                 <li key={field.id}>
                   <strong>{field.fieldKey}</strong>: {field.value ?? '—'} ·{' '}
                   <span
-                    className={field.verificationState === 'placeholder' ? 'form-error' : 'page-muted'}
+                    className={
+                      field.verificationState === 'placeholder' ? 'form-error' : 'page-muted'
+                    }
                   >
                     {field.verificationState}
                   </span>
@@ -516,7 +594,10 @@ export function ReactivationEligibilityPanel() {
                   required
                 />
               </label>
-              <Button disabled={isWorking || !contactReason.trim()} onClick={() => void handleCorrectContact()}>
+              <Button
+                disabled={isWorking || !contactReason.trim()}
+                onClick={() => void handleCorrectContact()}
+              >
                 Save correction
               </Button>
             </div>
@@ -532,7 +613,9 @@ export function ReactivationEligibilityPanel() {
               {consents.map((consent) => (
                 <li key={consent.id}>
                   <strong>{consent.channel}</strong>: {formatStatusLabel(consent.status)}
-                  {consent.capturedAt ? ` · captured ${new Date(consent.capturedAt).toLocaleDateString()}` : ''}
+                  {consent.capturedAt
+                    ? ` · captured ${new Date(consent.capturedAt).toLocaleDateString()}`
+                    : ''}
                   {consent.withdrawnAt
                     ? ` · withdrawn ${new Date(consent.withdrawnAt).toLocaleDateString()}`
                     : ''}
@@ -549,7 +632,9 @@ export function ReactivationEligibilityPanel() {
                 <select
                   className="titan-input"
                   value={consentChannel}
-                  onChange={(event) => setConsentChannel(event.target.value as MarketingConsentChannel)}
+                  onChange={(event) =>
+                    setConsentChannel(event.target.value as MarketingConsentChannel)
+                  }
                 >
                   {CONSENT_CHANNEL_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -563,7 +648,9 @@ export function ReactivationEligibilityPanel() {
                 <select
                   className="titan-input"
                   value={consentStatus}
-                  onChange={(event) => setConsentStatus(event.target.value as MarketingConsentStatus)}
+                  onChange={(event) =>
+                    setConsentStatus(event.target.value as MarketingConsentStatus)
+                  }
                 >
                   {CONSENT_STATUS_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -582,7 +669,10 @@ export function ReactivationEligibilityPanel() {
                   required
                 />
               </label>
-              <Button disabled={isWorking || !consentReason.trim()} onClick={() => void handleUpsertConsent()}>
+              <Button
+                disabled={isWorking || !consentReason.trim()}
+                onClick={() => void handleUpsertConsent()}
+              >
                 Save consent
               </Button>
             </div>
@@ -599,8 +689,8 @@ export function ReactivationEligibilityPanel() {
             <ul className="simple-list">
               {syncBackRequests.map((requestItem) => (
                 <li key={requestItem.id}>
-                  {requestItem.requestedFields.join(', ')} — {formatStatusLabel(requestItem.status)} ·
-                  never called Xero
+                  {requestItem.requestedFields.join(', ')} — {formatStatusLabel(requestItem.status)}{' '}
+                  · never called Xero
                 </li>
               ))}
             </ul>
@@ -618,17 +708,35 @@ export function ReactivationEligibilityPanel() {
       ) : null}
 
       <Panel
-        title="Audience requests (never sent)"
+        title="Audience Requests (Never Sent)"
         description='Draft → submit → approve. Delivery state always stays "not sent" in this release — no live provider send exists yet.'
       >
         {canCreateAudience ? (
           <div className="stack-form">
+            <AutosaveIndicator
+              status={draftShell.autosave.status}
+              lastSavedAt={draftShell.autosave.lastSavedAt}
+            />
+            {pendingDraft ? (
+              <DraftRestoreBanner
+                title={pendingDraft.title}
+                lastEditedAt={pendingDraft.lastEditedAt}
+                onRestore={() => {
+                  applyDraftPayload(pendingDraft.payload);
+                  setPendingDraft(null);
+                }}
+                onDismiss={() => setPendingDraft(null)}
+              />
+            ) : null}
             <label className="titan-input-group">
               <span className="titan-input-label">Audience name</span>
               <input
                 className="titan-input"
                 value={audienceName}
-                onChange={(event) => setAudienceName(event.target.value)}
+                onChange={(event) => {
+                  setAudienceName(event.target.value);
+                  draftShell.touchField();
+                }}
                 placeholder="e.g. Inactive paid buyers — email opt-in"
               />
             </label>
@@ -637,7 +745,10 @@ export function ReactivationEligibilityPanel() {
               <input
                 className="titan-input"
                 value={audienceNotes}
-                onChange={(event) => setAudienceNotes(event.target.value)}
+                onChange={(event) => {
+                  setAudienceNotes(event.target.value);
+                  draftShell.touchField();
+                }}
               />
             </label>
             <Button
@@ -651,7 +762,7 @@ export function ReactivationEligibilityPanel() {
 
         {audienceRequests.length === 0 ? (
           <EmptyState
-            title="No audience requests"
+            title="No Audience Requests"
             description="Create a request from currently eligible members to start the approval flow."
           />
         ) : (
@@ -703,7 +814,7 @@ export function ReactivationEligibilityPanel() {
 
       {classifications.length > 0 ? (
         <Panel
-          title="Classification evidence"
+          title="Classification Evidence"
           description="Every classification is backed by real invoice evidence, never contact existence alone."
         >
           <ul className="simple-list">

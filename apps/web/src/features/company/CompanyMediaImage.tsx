@@ -84,7 +84,7 @@ export function CompanyMediaImage({
     return fallback ? <>{fallback}</> : null;
   }
 
-  return <img src={src} alt={alt} className={className} />;
+  return <img src={src} alt={alt} className={className} loading="lazy" decoding="async" />;
 }
 
 export async function fetchCompanyMediaBlob(

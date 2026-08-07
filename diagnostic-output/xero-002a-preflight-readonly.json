@@ -1,0 +1,70 @@
+{
+  "label": "XERO-002A-preflight-readonly",
+  "generatedAt": "2026-08-06T15:55:16.888Z",
+  "preflightAgentRunAt": "2026-08-06T16:00:00.000Z",
+  "note": "Sanitized read-only staging evidence. No tokens, secrets, or attachment file content.",
+  "databaseFingerprint": "9658e88c5789",
+  "stagingApiHealth": { "status": 200, "ready": true, "database": "connected" },
+  "stagingWebHealth": { "status": 200 },
+  "migrationCount": 178,
+  "connection": {
+    "status": "connected",
+    "organisationName": "Young Guns Plumbing",
+    "tenantId": "20176b90-a093-4da1-a04e-8ae616f89fef",
+    "lastSyncAt": "2026-08-06T15:38:47.468Z",
+    "scopeGrantedAt": "2026-08-06T15:15:54.457Z",
+    "grantedScopes": [
+      "accounting.attachments.read",
+      "accounting.banktransactions",
+      "accounting.contacts",
+      "accounting.invoices",
+      "accounting.payments",
+      "accounting.settings",
+      "email",
+      "offline_access",
+      "openid",
+      "profile"
+    ],
+    "requestedScopesMatch": true,
+    "credentialsEncryptedPresent": true
+  },
+  "entityCounts": {
+    "customers": 841,
+    "quotes": 252,
+    "invoices": 587,
+    "payments": 512,
+    "xeroBankTransactions": 3142,
+    "xeroAttachments": 0
+  },
+  "mappingCounts": {
+    "xeroCustomerMappings": 682,
+    "customersWithMapping": 682,
+    "customersWithoutMapping": 159,
+    "xeroQuoteMappings": 252,
+    "xeroInvoiceMappings": 585,
+    "xeroPaymentMappings": 511,
+    "orphanInvoiceMappings": 0
+  },
+  "yocoCounts": {
+    "webhookDeliveries": 0,
+    "paymentsWithYocoId": 0
+  },
+  "webhookCounts": {
+    "xeroWebhookEvents": 0,
+    "xeroTargetedRefreshJobs": 0
+  },
+  "attachmentEvidence": {
+    "lastFailureAt": "2026-08-05T18:20:11.288Z",
+    "lastFailureSample": "Xero rejected attachment access — verify tenant ID and granted scopes",
+    "latestImportJobCompletedAt": "2026-08-06T15:38:47.764Z",
+    "latestImportAttachmentsStage": {
+      "failedCount": 0,
+      "pulledCount": 0,
+      "createdCount": 0
+    },
+    "rootCauseHistorical": "stale_token_missing_scope",
+    "rootCauseCurrent": "scope_granted_import_zero — verify Gate 2 read-only list on invoice with known attachment"
+  },
+  "importJobsRecent": 5,
+  "writeApprovalsPending": 0
+}

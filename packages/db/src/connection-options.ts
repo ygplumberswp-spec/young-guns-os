@@ -54,13 +54,43 @@ export function summarizeDatabaseUrl(connectionString: string): DbEndpointSummar
  * - Public/hosted hosts: require TLS
  * - Supabase pooler (esp. transaction mode :6543): disable prepared statements
  */
+/** Default app pool size for private/direct Postgres. */
+export const DEFAULT_DB_POOL_MAX = 8;
+/**
+ * Supabase session-mode pooler (pooler.supabase.com:5432) typically caps at
+ * pool_size 15. Keep a single process well under that so deploy overlap (old+new)
+ * cannot immediately hit EMAXCONNSESSION.
+ */
+export const SESSION_POOLER_DB_POOL_MAX = 4;
+
+/** Resolve per-process postgres.js max connections without raising server limits. */
+export function resolveDbPoolMax(connectionString: string): number {
+  const raw = process.env.DB_POOL_MAX?.trim();
+  if (raw) {
+    const parsed = Number(raw);
+    if (Number.isFinite(parsed) && parsed >= 1 && parsed <= DEFAULT_DB_POOL_MAX) {
+      return Math.floor(parsed);
+    }
+  }
+
+  const endpoint = summarizeDatabaseUrl(connectionString);
+  // Session mode is :5432 on the pooler host; transaction mode is usually :6543.
+  if (endpoint.isSupabasePooler && endpoint.port === 5432) {
+    return SESSION_POOLER_DB_POOL_MAX;
+  }
+
+  return DEFAULT_DB_POOL_MAX;
+}
+
 export function buildPostgresClientOptions(
   connectionString: string,
 ): postgres.Options<Record<string, never>> {
   const endpoint = summarizeDatabaseUrl(connectionString);
   const options: postgres.Options<Record<string, never>> = {
-    max: 8,
+    // createDb() overrides this via resolveDbPoolMax(); keep a conservative default here.
+    max: resolveDbPoolMax(connectionString),
     idle_timeout: 20,
+    max_lifetime: 60 * 30,
     connect_timeout: 10,
     onnotice: () => {},
   };

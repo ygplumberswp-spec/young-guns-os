@@ -1,0 +1,43 @@
+{
+  "generatedAt": "2026-08-01T11:36:52.293Z",
+  "stagingRef": "cpkuwtaipjxeipvbssvn",
+  "readOnly": true,
+  "productionAccessed": false,
+  "requirements": {
+    "bindingDoc": "TITAN_WHATSAPP_CONTACT_ENRICHMENT.md",
+    "branch": "cursor/titan-frozen-scope-completion",
+    "customerValueClassificationCrossRef": "packages/shared/src/customer-value-classification.ts",
+    "queueBehindXeroImport": true,
+    "neverImportWhatsappAsCustomer": true,
+    "neverSilentXeroWrite": true,
+    "apiRoutes": [
+      "GET /api/v1/whatsapp/enrichment/metrics",
+      "GET /api/v1/whatsapp/enrichment/reviews",
+      "POST /api/v1/whatsapp/enrichment/reviews/:id/approve"
+    ],
+    "migration": "packages/db/drizzle/0107_whatsapp_contact_enrichment.sql",
+    "frz015Rerun": false
+  },
+  "stagingWhatsapp": {
+    "connectionState": {
+      "status": "disconnected",
+      "connected": false,
+      "note": "No whatsapp_connections rows"
+    },
+    "allConnectionsSampled": 0,
+    "whatsappMessageCount": 0
+  },
+  "xeroImport": {
+    "runningOrPendingJobs": 1,
+    "importInProgress": true,
+    "enrichmentShouldQueue": true
+  },
+  "schema": {
+    "migration0107AppliedOnStaging": false,
+    "applyDuringActiveImport": false
+  },
+  "notes": [
+    "Read-only probe — no writes, no FRZ-015 re-run.",
+    "Enrichment migration apply deferred if Xero import active."
+  ]
+}

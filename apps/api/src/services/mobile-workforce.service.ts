@@ -33,11 +33,23 @@ import type {
   SubmitMobileJobDocumentationRequest,
   UploadJobEvidenceRequest,
 } from '@titan/shared';
-import { formatMapsEtaCapabilityLabel } from '@titan/shared';
+import {
+  buildGoogleMapsNavigateUrl,
+  buildLabourRateLockMetadata,
+  formatMapsEtaCapabilityLabel,
+  isFinanciallyAuthoritativeTimeEntry,
+  unresolvedVehicleAddress,
+  validateFinancePhotoFile,
+  validateFinancePhotoMagicBytes,
+} from '@titan/shared';
+import { classifyOfflineFlushByExistingLog } from './job-execution-completion-idempotency.js';
 import type { DatabaseClient } from '@titan/db';
 import {
   customers,
+  companyFinanceSettings,
+  integrationConnections,
   inventoryItems,
+  inventoryLocations,
   jobs,
   mobileActionLogs,
   mobileCompanyAnnouncements,
@@ -301,9 +313,12 @@ export class MobileWorkforceService {
       },
       internalNotes: job.notes,
       customerVisibleNotes: job.customerVisibleNotes,
-      navigationUrl: job.addressDisplay
-        ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.addressDisplay)}`
-        : null,
+      navigationUrl: buildGoogleMapsNavigateUrl({
+        latitude: job.address.latitude,
+        longitude: job.address.longitude,
+        placeId: job.address.placeId,
+        address: job.address.formattedAddress ?? job.address.display ?? job.addressDisplay,
+      }),
       crew,
       vehicle,
       variations: pendingVariations,
@@ -337,10 +352,30 @@ export class MobileWorkforceService {
         : liveTrackingAvailable
           ? (tracking.latestPositions[0] ?? null)
           : null;
+    const isAssignedVehiclePosition = Boolean(
+      latestGps && assignedVehicleId != null && latestGps.vehicleId === assignedVehicleId,
+    );
 
     const hasSchedule = route.stops.some((stop) => Boolean(stop.scheduledAt));
-    const mapsCapabilityState = 'not_implemented' as const;
-    const etaSource = hasSchedule ? ('schedule_only' as const) : ('none' as const);
+    const googleMapsConnected = await this.db.query.integrationConnections
+      .findFirst({
+        where: and(
+          eq(integrationConnections.companyId, scope.companyId),
+          eq(integrationConnections.provider, 'google_maps'),
+          eq(integrationConnections.status, 'connected'),
+        ),
+        columns: { id: true },
+      })
+      .then((row) => Boolean(row))
+      .catch(() => false);
+    const mapsCapabilityState = googleMapsConnected
+      ? ('connected' as const)
+      : ('not_configured' as const);
+    const etaSource = googleMapsConnected
+      ? ('google_maps' as const)
+      : hasSchedule
+        ? ('schedule_only' as const)
+        : ('none' as const);
 
     return {
       route,
@@ -351,6 +386,13 @@ export class MobileWorkforceService {
             longitude: latestGps.longitude,
             recordedAt: latestGps.recordedAt,
             speedKmh: latestGps.speedKmh,
+            ignitionOn: latestGps.ignitionOn,
+            isAssignedVehicle: isAssignedVehiclePosition,
+            licensePlate: isAssignedVehiclePosition ? latestGps.licensePlate : null,
+            // Only the technician's own vehicle gets a readable address here.
+            address: isAssignedVehiclePosition
+              ? latestGps.address
+              : unresolvedVehicleAddress('not_attempted'),
           }
         : null,
       cartrackConnected: tracking.cartrackConnected,
@@ -362,7 +404,7 @@ export class MobileWorkforceService {
   }
 
   async getInventoryCentre(scope: TechnicianScope): Promise<MobileWorkforceInventoryCentre> {
-    const [alerts, recentUsage] = await Promise.all([
+    const [alerts, recentUsage, catalogItems, locations] = await Promise.all([
       this.getInventoryAlerts(scope.companyId),
       this.db.query.mobileJobInventoryUsage.findMany({
         where: and(
@@ -373,12 +415,33 @@ export class MobileWorkforceService {
         orderBy: [desc(mobileJobInventoryUsage.createdAt)],
         limit: 25,
       }),
+      this.db.query.inventoryItems.findMany({
+        where: and(eq(inventoryItems.companyId, scope.companyId), eq(inventoryItems.status, 'active')),
+        orderBy: [desc(inventoryItems.updatedAt)],
+        limit: 200,
+      }),
+      this.db.query.inventoryLocations.findMany({
+        where: eq(inventoryLocations.companyId, scope.companyId),
+        orderBy: [desc(inventoryLocations.updatedAt)],
+        limit: 100,
+      }),
     ]);
 
     return {
       alerts,
       recentUsage: recentUsage.map(toInventoryUsageSummary),
       pendingUsageCount: recentUsage.filter((item) => item.status === 'pending_approval').length,
+      catalogItems: catalogItems.map((item) => ({
+        id: item.id,
+        name: item.name,
+        sku: item.sku ?? null,
+      })),
+      locations: locations.map((location) => ({
+        id: location.id,
+        name: location.name,
+        locationType: location.locationType,
+        vehicleId: location.vehicleId ?? null,
+      })),
     };
   }
 
@@ -418,6 +481,23 @@ export class MobileWorkforceService {
       input.durationMinutes ??
       (endedAt ? Math.max(1, Math.round((endedAt.getTime() - startedAt.getTime()) / 60000)) : null);
 
+    const clientMetadata =
+      input.metadata && typeof input.metadata === 'object' ? { ...input.metadata } : {};
+
+    let metadata: Record<string, unknown> = clientMetadata;
+    if (isFinanciallyAuthoritativeTimeEntry(input.entryType, endedAt, durationMinutes)) {
+      const settings = await this.db.query.companyFinanceSettings.findFirst({
+        where: eq(companyFinanceSettings.companyId, scope.companyId),
+        columns: { defaultInternalLabourRateCentsPerHour: true },
+      });
+      const companyDefaultRate = settings?.defaultInternalLabourRateCentsPerHour ?? 8000;
+      metadata = buildLabourRateLockMetadata({
+        existingMetadata: clientMetadata,
+        companyDefaultRateCentsPerHour: companyDefaultRate,
+        lockedAt: (endedAt ?? new Date()).toISOString(),
+      });
+    }
+
     const [created] = await this.db
       .insert(mobileTimeEntries)
       .values({
@@ -429,6 +509,7 @@ export class MobileWorkforceService {
         endedAt,
         durationMinutes,
         notes: input.notes?.trim() || null,
+        metadata,
       })
       .returning();
 
@@ -679,6 +760,103 @@ export class MobileWorkforceService {
     return toDocumentationSummary(created);
   }
 
+  /** Office/finance upload — tenant-scoped job check only (no technician assignment). */
+  async uploadJobEvidenceForOffice(
+    scope: { companyId: string; userId: string },
+    jobId: string,
+    input: UploadJobEvidenceRequest,
+  ): Promise<MobileJobDocumentationSummary> {
+    const job = await this.jobsService.getJob(scope.companyId, jobId);
+    if (!job) {
+      throw new MobileWorkforceError('NOT_FOUND', 'Job not found');
+    }
+
+    if (input.clientActionId) {
+      const existing = await this.db.query.mobileJobDocumentation.findFirst({
+        where: and(
+          eq(mobileJobDocumentation.companyId, scope.companyId),
+          eq(mobileJobDocumentation.clientActionId, input.clientActionId),
+        ),
+      });
+      if (existing) {
+        return toDocumentationSummary(existing);
+      }
+    }
+
+    const title = input.title.trim();
+    if (!title) {
+      throw new MobileWorkforceError('VALIDATION_ERROR', 'Title is required');
+    }
+    if (!input.dataBase64?.trim()) {
+      throw new MobileWorkforceError('VALIDATION_ERROR', 'File contents are required');
+    }
+    if (!input.mimeType?.trim()) {
+      throw new MobileWorkforceError('VALIDATION_ERROR', 'A MIME type is required');
+    }
+
+    const buffer = decodeBase64Payload(input.dataBase64);
+    const mimeType = input.mimeType.trim();
+    const fileValidation = validateFinancePhotoFile({ mimeType, sizeBytes: buffer.length });
+    if (!fileValidation.ok) {
+      throw new MobileWorkforceError('VALIDATION_ERROR', fileValidation.message);
+    }
+    if (!validateFinancePhotoMagicBytes(mimeType, buffer)) {
+      throw new MobileWorkforceError('VALIDATION_ERROR', 'File contents do not match the declared type');
+    }
+    const kind = documentationTypeToEvidenceKind(input.documentationType);
+
+    let stored: Awaited<ReturnType<JobEvidenceStorageService['store']>>;
+    try {
+      stored = await this.jobEvidenceStorageService.store({
+        companyId: scope.companyId,
+        jobId,
+        kind,
+        mimeType: input.mimeType.trim(),
+        buffer,
+        originalFileName: input.fileName ?? null,
+      });
+    } catch (error) {
+      if (error instanceof JobEvidenceStorageError) {
+        throw new MobileWorkforceError(error.code, error.message);
+      }
+      throw error;
+    }
+
+    const metadata: Record<string, unknown> = { ...(input.metadata ?? {}) };
+
+    const [created] = await this.db
+      .insert(mobileJobDocumentation)
+      .values({
+        companyId: scope.companyId,
+        userId: scope.userId,
+        jobId,
+        documentationType: input.documentationType,
+        title,
+        fileName: input.fileName?.trim() || null,
+        mimeType: stored.mimeType,
+        sizeBytes: stored.sizeBytes,
+        content: null,
+        storageKey: stored.storageKey,
+        checksumSha256: stored.checksumSha256,
+        clientActionId: input.clientActionId ?? null,
+        evidencePhase: input.evidencePhase ?? null,
+        metadata,
+      })
+      .returning();
+
+    if (!created) {
+      throw new MobileWorkforceError('CREATE_FAILED', 'Unable to store evidence');
+    }
+
+    await this.logAction(scope, 'upload_job_evidence_office', 'job', jobId, {
+      documentationId: created.id,
+      documentationType: input.documentationType,
+      sizeBytes: stored.sizeBytes,
+    });
+
+    return toDocumentationSummary(created);
+  }
+
   /** Technician-facing binary retrieval: requires assigned-job access. */
   async getJobEvidenceBinary(
     scope: TechnicianScope,
@@ -758,7 +936,7 @@ export class MobileWorkforceService {
           columns: { id: true },
         });
 
-        if (existing) {
+        if (classifyOfflineFlushByExistingLog(existing) === 'duplicate') {
           results.push({
             clientActionId: action.clientActionId,
             actionType: action.actionType,
@@ -1231,7 +1409,7 @@ function toRequestSummary(
 
 function toTimeEntrySummary(
   row: typeof mobileTimeEntries.$inferSelect & {
-    job?: { title: string } | null;
+    job?: { title: string; jobNumber: string | null } | null;
     user?: { firstName: string; lastName: string } | null;
   },
 ): MobileTimeEntrySummary {
@@ -1239,6 +1417,7 @@ function toTimeEntrySummary(
     id: row.id,
     entryType: row.entryType,
     jobId: row.jobId,
+    jobNumber: row.job?.jobNumber ?? null,
     jobTitle: row.job?.title ?? null,
     userId: row.userId,
     userName: row.user ? `${row.user.firstName} ${row.user.lastName}`.trim() : 'Unknown',

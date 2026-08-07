@@ -5,6 +5,7 @@ import {
   calculateQuoteProfit,
   displayInvoiceNumber,
   formatInternalInvoiceNumber,
+  legacyFinanceDocumentTitle,
 } from '@titan/shared';
 
 test('calculates line VAT and costs in cents', () => {
@@ -19,8 +20,17 @@ test('identifies quote below configured profit floor', () => {
   assert.equal(profit.belowFloor, true);
 });
 
-test('uses internal invoice numbers until Xero assigns one', () => {
+test('uses Xero numbers as official display when present', () => {
   assert.equal(formatInternalInvoiceNumber(42), 'TITAN-INV-000042');
-  assert.equal(displayInvoiceNumber({ invoiceNumber: 'TITAN-INV-000042', internalNumber: 'TITAN-INV-000042' }), 'Pending Xero sync (TITAN-INV-000042)');
+  assert.equal(
+    displayInvoiceNumber({ invoiceNumber: 'TITAN-INV-000042', internalNumber: 'TITAN-INV-000042' }),
+    'Draft — Xero invoice number pending',
+  );
   assert.equal(displayInvoiceNumber({ invoiceNumber: 'TITAN-INV-000042', xeroInvoiceNumber: 'XERO-42' }), 'XERO-42');
+});
+
+test('legacy finance document title falls back to customer name for DB storage only', () => {
+  assert.equal(legacyFinanceDocumentTitle('Young Guns Plumbing'), 'Young Guns Plumbing');
+  assert.equal(legacyFinanceDocumentTitle(''), '');
+  assert.equal(legacyFinanceDocumentTitle(null), '');
 });

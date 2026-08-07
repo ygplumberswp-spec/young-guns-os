@@ -8,43 +8,44 @@ export type NavGroupDefinition = {
 };
 
 export const NAV_GROUP_ORDER: NavGroupDefinition[] = [
-  { id: 'core', label: 'Core' },
+  /** Core group has no section heading — items sit at the top of the sidebar. */
+  { id: 'core', label: '' },
   { id: 'finance', label: 'Finance' },
   { id: 'operations', label: 'Operations' },
-  { id: 'intelligence', label: 'Intelligence' },
-  { id: 'platform', label: 'Platform' },
+  { id: 'intelligence', label: 'Insights' },
+  { id: 'platform', label: 'Setup' },
 ];
 
+/**
+ * Only module landing pages reach the sidebar, so this map covers exactly the
+ * modules in `NAV_MODULE_ORDER`. Supporting pages are grouped by their module
+ * and rendered inside it instead.
+ */
 const HREF_GROUP: Record<string, NavGroupId> = {
   '/': 'core',
+  '/global-search': 'core',
   '/crm': 'core',
   '/leads': 'core',
   '/jobs': 'core',
   '/scheduling': 'core',
+
   '/finance/quotes': 'finance',
   '/finance/invoices': 'finance',
   '/finance/payments': 'finance',
+
   '/inventory/products': 'operations',
-  '/procurement': 'operations',
+  '/procurement/suppliers': 'operations',
   '/fleet': 'operations',
-  '/mobile-platform/dispatcher': 'operations',
-  '/communications/messages': 'operations',
   '/documents': 'operations',
+  '/communications/messages': 'operations',
+  '/settings/team': 'operations',
+  '/marketing': 'operations',
+
   '/analytics': 'intelligence',
-  '/marketing': 'intelligence',
-  '/marketing-intelligence': 'intelligence',
-  '/sales-intelligence': 'intelligence',
-  '/aura/agents': 'intelligence',
-  '/automation': 'intelligence',
-  '/mission-control': 'intelligence',
+  '/aura': 'intelligence',
+
   '/integrations': 'platform',
-  '/security': 'platform',
-  '/enterprise-modules': 'platform',
-  '/platform-health': 'platform',
-  '/release-center': 'platform',
-  '/saas-management': 'platform',
   '/settings/company': 'platform',
-  '/aura': 'platform',
 };
 
 export function groupNavItems(items: NavItemConfig[]): Array<{
