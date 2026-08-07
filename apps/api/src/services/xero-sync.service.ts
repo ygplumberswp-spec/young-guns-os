@@ -74,6 +74,7 @@ import { emitBusinessEvent } from '../lib/automation-events.js';
 import {
   advanceToNextStage,
   XERO_IMPORT_STAGES,
+  buildFullHistoryReportFromImportState,
   buildImportJobProgress,
   buildImportSyncResult,
   clearStaleStageFailuresOnResume,
@@ -81,6 +82,7 @@ import {
   getStageCounts,
   importJobStateToSummary,
   isStageComplete,
+  observeImportStageRecordDates,
   parseImportJobState,
   sumImportFailureCounts,
   XERO_IMPORT_BATCH_BUDGET_MS,
@@ -184,7 +186,8 @@ export function resolveEntityCoverageWrite(input: {
   now: Date;
 }): XeroEntityCoverageWrite {
   const { counts, existing, now, stage } = input;
-  const runImportedCount = counts.createdCount + counts.updatedCount;
+  const runImportedCount =
+    counts.createdCount + counts.updatedCount + (counts.unchangedCount ?? 0);
   // An incremental run only sees what changed since its floor, so its tally is not a measure of
   // what this entity holds. Letting it overwrite the count makes an entity Xero did not touch read
   // as holding nothing — "Xero returned no records, so there is nothing to answer from" over a
@@ -231,8 +234,10 @@ type SyncFromXeroOptions = {
   /** When true, blocks until the queued background job finishes (tests/internal only). */
   waitForCompletion?: boolean;
   /**
-   * Force a complete re-pull with no date floor, ignoring the incremental watermark. Defaults to
-   * true until a full historical import has completed for every entity.
+   * Force a complete re-pull with no date floor, ignoring the incremental watermark.
+   * Young Guns initial migration must use full history (no arbitrary recent-date cutoff).
+   * When omitted, the run still pulls full history until every stage has a trustworthy
+   * full-history claim, then switches to incremental watermarks.
    */
   fullHistory?: boolean;
 };
@@ -458,10 +463,11 @@ export class XeroSyncService {
   /**
    * The date floor for a run, or null for a complete historical pull.
    *
-   * A modified-since floor is only ever applied once every entity has already completed a full
-   * historical import. If any entity is still incomplete, the next run pulls everything again so
-   * the gap is closed rather than skipped — an incremental run must never be the reason history
-   * is missing.
+   * Young Guns full-history policy: a modified-since floor is only ever applied once every
+   * entity has already completed a trustworthy full historical import. If any entity is still
+   * incomplete, the next run pulls everything again with no date floor so the gap is closed
+   * rather than skipped — an incremental run must never be the reason history is missing.
+   * There is no arbitrary recent-date cutoff on the initial migration.
    */
   private async resolveModifiedSinceForRun(
     companyId: string,
@@ -864,6 +870,8 @@ export class XeroSyncService {
     // failed records did not cover them, so it must not refresh it.
     const coveredEverything = success && (state.carriedFailureCount ?? 0) === 0;
     const now = new Date();
+    // Persist the Owner full-history migration report on the job summary before settle.
+    state.fullHistoryReport = buildFullHistoryReportFromImportState(state);
     const result = buildImportSyncResult(
       state,
       syncJobId,
@@ -911,7 +919,7 @@ export class XeroSyncService {
     let budgetExhausted = false;
 
     // Null modifiedSince means a complete historical pull — no date floor is ever applied
-    // implicitly. It is only set for an explicit incremental (gap-closing) run.
+    // implicitly. It is only set for an explicit incremental run after full history is clean.
     const listOptions = { modifiedSince: state.checkpoint.modifiedSince };
 
     try {
@@ -935,6 +943,11 @@ export class XeroSyncService {
         } else if (stage === 'quotes') {
           const batch = await ctx.client.listQuotesPage(state.checkpoint.quotesPage, listOptions);
           lastBatchSize = batch.length;
+          observeImportStageRecordDates(
+            state,
+            'quotes',
+            batch.map((row) => row.issueDate),
+          );
           await this.importQuoteBatch(ctx, batch, state.quotes);
           state.checkpoint.quotesPage += 1;
         } else if (stage === 'invoices') {
@@ -943,11 +956,21 @@ export class XeroSyncService {
             listOptions,
           );
           lastBatchSize = batch.length;
+          observeImportStageRecordDates(
+            state,
+            'invoices',
+            batch.map((row) => row.issueDate),
+          );
           await this.importInvoiceBatch(ctx, batch, state.invoices);
           state.checkpoint.invoicesPage += 1;
         } else if (stage === 'bills') {
           const batch = await ctx.client.listBillsPage(state.checkpoint.billsPage, listOptions);
           lastBatchSize = batch.length;
+          observeImportStageRecordDates(
+            state,
+            'bills',
+            batch.map((row) => row.issueDate),
+          );
           await this.importBillBatch(ctx, batch, state.bills);
           state.checkpoint.billsPage += 1;
         } else if (stage === 'credit_notes') {
@@ -956,6 +979,11 @@ export class XeroSyncService {
             listOptions,
           );
           lastBatchSize = batch.length;
+          observeImportStageRecordDates(
+            state,
+            'credit_notes',
+            batch.map((row) => row.date),
+          );
           await this.importCreditNoteBatch(ctx, batch, state.creditNotes);
           state.checkpoint.creditNotesPage += 1;
         } else if (stage === 'payments') {
@@ -964,6 +992,11 @@ export class XeroSyncService {
             listOptions,
           );
           lastBatchSize = batch.length;
+          observeImportStageRecordDates(
+            state,
+            'payments',
+            batch.map((row) => row.date),
+          );
           await this.importPaymentBatch(ctx, batch, state.payments);
           state.checkpoint.paymentsPage += 1;
         } else if (stage === 'bank_transactions') {
@@ -972,6 +1005,11 @@ export class XeroSyncService {
             listOptions,
           );
           lastBatchSize = batch.length;
+          observeImportStageRecordDates(
+            state,
+            'bank_transactions',
+            batch.map((row) => row.date),
+          );
           await this.importBankTransactionBatch(ctx, batch, state.bankTransactions);
           state.checkpoint.bankTransactionsPage += 1;
         } else {
@@ -4665,8 +4703,12 @@ export class XeroSyncService {
   }
 
   /**
-   * XERO-003 — incremental quote refresh for active finance screens.
+   * XERO-003 — incremental quote refresh for active finance screens only.
    * Uses If-Modified-Since when a watermark exists; capped page budget.
+   *
+   * NOT a Young Guns historical migration path. Full-history quote import must use the
+   * resumable import pipeline (complete pagination, no date floor) via enqueueImportSync /
+   * syncFromXero. This refresh must never be treated as covering historical quote history.
    */
   async refreshQuotesIncrementalFromXero(
     companyId: string,

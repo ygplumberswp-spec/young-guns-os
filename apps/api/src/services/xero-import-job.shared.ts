@@ -1,4 +1,6 @@
 import type {
+  HistoricalMigrationReport,
+  HistoricalRecordDateBounds,
   IntegrationSyncTrigger,
   XeroImportActivity,
   XeroImportCheckpoint,
@@ -72,12 +74,19 @@ export type XeroImportJobState = XeroImportStageCounts & {
   abandoned?: boolean;
   abandonedAt?: string | null;
   abandonReason?: string | null;
+  /** Running oldest/newest source-record dates observed across stages. */
+  recordDateBounds?: HistoricalRecordDateBounds;
+  /** Per-stage source-record date windows for the final migration report. */
+  stageDateBounds?: Partial<Record<XeroImportStage, HistoricalRecordDateBounds>>;
+  /** Final Owner-facing full-history report once the run settles. */
+  fullHistoryReport?: HistoricalMigrationReport | null;
 };
 
 export function emptyImportCounts(): XeroImportEntityCounts {
   return {
     createdCount: 0,
     updatedCount: 0,
+    unchangedCount: 0,
     pulledCount: 0,
     failedCount: 0,
     skippedCount: 0,
@@ -95,6 +104,7 @@ export function summarizeCounts(counts: XeroImportEntityCounts): Record<string, 
   return {
     createdCount: counts.createdCount,
     updatedCount: counts.updatedCount,
+    unchangedCount: counts.unchangedCount ?? 0,
     pulledCount: counts.pulledCount,
     failedCount: counts.failedCount,
     skippedCount: counts.skippedCount,

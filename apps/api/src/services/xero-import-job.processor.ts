@@ -1,4 +1,5 @@
 import type {
+  HistoricalRecordDateBounds,
   IntegrationSyncTrigger,
   XeroImportActivity,
   XeroImportCheckpoint,
@@ -8,7 +9,10 @@ import type {
   XeroImportSyncResult,
 } from '@titan/shared';
 import {
+  buildXeroHistoricalMigrationReport,
   deriveXeroImportJobUiStatus,
+  emptyHistoricalRecordDateBounds,
+  observeHistoricalRecordDate,
   sumXeroImportProcessedCounts,
 } from '@titan/shared';
 import { XERO_PAGE_SIZE } from '../lib/xero.client.js';
@@ -63,7 +67,10 @@ export function createInitialImportJobState(options?: {
   idempotencyKey?: string;
   trigger?: IntegrationSyncTrigger;
   checkpoint?: Partial<XeroImportCheckpoint>;
-  /** Null (default) means a complete historical pull with no date floor. */
+  /**
+   * Null (default) means a complete historical pull with no date floor — required for
+   * Young Guns initial migration. Never default to a recent-date cutoff.
+   */
   modifiedSince?: string | null;
 }): XeroImportJobState {
   return {
@@ -86,6 +93,9 @@ export function createInitialImportJobState(options?: {
     stageErrorCode: null,
     idempotencyKey: options?.idempotencyKey,
     trigger: options?.trigger,
+    recordDateBounds: emptyHistoricalRecordDateBounds(),
+    stageDateBounds: {},
+    fullHistoryReport: null,
   };
 }
 
@@ -118,6 +128,9 @@ export function importJobStateToSummary(state: XeroImportJobState): Record<strin
     abandoned: state.abandoned ?? false,
     abandonedAt: state.abandonedAt ?? null,
     abandonReason: state.abandonReason ?? null,
+    recordDateBounds: state.recordDateBounds ?? emptyHistoricalRecordDateBounds(),
+    stageDateBounds: state.stageDateBounds ?? {},
+    fullHistoryReport: state.fullHistoryReport ?? null,
   };
 }
 
@@ -172,6 +185,12 @@ export function parseImportJobState(
     abandoned: summary?.abandoned === true,
     abandonedAt: typeof summary?.abandonedAt === 'string' ? summary.abandonedAt : null,
     abandonReason: typeof summary?.abandonReason === 'string' ? summary.abandonReason : null,
+    recordDateBounds: parseRecordDateBounds(summary?.recordDateBounds),
+    stageDateBounds: parseStageDateBounds(summary?.stageDateBounds),
+    fullHistoryReport:
+      summary?.fullHistoryReport && typeof summary.fullHistoryReport === 'object'
+        ? (summary.fullHistoryReport as XeroImportJobState['fullHistoryReport'])
+        : null,
   };
 }
 
@@ -231,6 +250,8 @@ export function buildImportSyncResult(
 ): XeroImportSyncResult {
   const totalFailed = sumImportFailureCounts(state);
   const success = state.failedStage == null && totalFailed === 0;
+  const fullHistoryReport =
+    state.fullHistoryReport ?? buildFullHistoryReportFromImportState(state);
 
   return {
     success,
@@ -264,7 +285,54 @@ export function buildImportSyncResult(
     failedStage: state.failedStage,
     completedStages: state.completedStages,
     syncJobId,
+    fullHistoryReport,
   };
+}
+
+/** Owner-facing full-history migration report from resumable import state. */
+export function buildFullHistoryReportFromImportState(state: XeroImportJobState) {
+  const noDateFloorApplied = state.checkpoint.modifiedSince == null;
+  return buildXeroHistoricalMigrationReport({
+    noDateFloorApplied,
+    forceFullHistory: noDateFloorApplied,
+    carriedFailureCount: state.carriedFailureCount ?? 0,
+    stageCounts: XERO_IMPORT_STAGES.map((stage) => {
+      const counts = getStageCounts(state, stage);
+      const bounds = state.stageDateBounds?.[stage] ?? emptyHistoricalRecordDateBounds();
+      return {
+        entityType: stage,
+        createdCount: counts.createdCount,
+        updatedCount: counts.updatedCount,
+        unchangedCount: counts.unchangedCount ?? 0,
+        skippedCount: counts.skippedCount,
+        failedCount: counts.failedCount,
+        pulledCount: counts.pulledCount,
+        oldestRecordDate: bounds.oldestRecordDate,
+        newestRecordDate: bounds.newestRecordDate,
+      };
+    }),
+  });
+}
+
+/**
+ * Observe source-record dates from a Xero page. Dates are provenance of the historical
+ * window actually imported — never a cutoff applied to the request.
+ */
+export function observeImportStageRecordDates(
+  state: XeroImportJobState,
+  stage: XeroImportStage,
+  dates: Array<string | Date | null | undefined>,
+): void {
+  let stageBounds = state.stageDateBounds?.[stage] ?? emptyHistoricalRecordDateBounds();
+  let overall = state.recordDateBounds ?? emptyHistoricalRecordDateBounds();
+
+  for (const value of dates) {
+    stageBounds = observeHistoricalRecordDate(stageBounds, value);
+    overall = observeHistoricalRecordDate(overall, value);
+  }
+
+  state.stageDateBounds = { ...(state.stageDateBounds ?? {}), [stage]: stageBounds };
+  state.recordDateBounds = overall;
 }
 
 /**
@@ -415,8 +483,38 @@ function parseCounts(value: unknown): XeroImportEntityCounts {
   return {
     createdCount: Number(record.createdCount ?? 0),
     updatedCount: Number(record.updatedCount ?? 0),
+    unchangedCount: Number(record.unchangedCount ?? 0),
     pulledCount: Number(record.pulledCount ?? 0),
     failedCount: Number(record.failedCount ?? 0),
     skippedCount: Number(record.skippedCount ?? 0),
   };
+}
+
+function parseRecordDateBounds(value: unknown): HistoricalRecordDateBounds {
+  if (!value || typeof value !== 'object') {
+    return emptyHistoricalRecordDateBounds();
+  }
+  const record = value as Record<string, unknown>;
+  return {
+    oldestRecordDate:
+      typeof record.oldestRecordDate === 'string' ? record.oldestRecordDate : null,
+    newestRecordDate:
+      typeof record.newestRecordDate === 'string' ? record.newestRecordDate : null,
+  };
+}
+
+function parseStageDateBounds(
+  value: unknown,
+): Partial<Record<XeroImportStage, HistoricalRecordDateBounds>> {
+  if (!value || typeof value !== 'object') {
+    return {};
+  }
+  const record = value as Record<string, unknown>;
+  const parsed: Partial<Record<XeroImportStage, HistoricalRecordDateBounds>> = {};
+  for (const stage of XERO_IMPORT_STAGES) {
+    if (record[stage]) {
+      parsed[stage] = parseRecordDateBounds(record[stage]);
+    }
+  }
+  return parsed;
 }

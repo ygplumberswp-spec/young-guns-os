@@ -2,10 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   advanceToNextStage,
+  buildFullHistoryReportFromImportState,
   buildImportSyncResult,
   clearStaleStageFailuresOnResume,
   createInitialImportJobState,
   isStageComplete,
+  observeImportStageRecordDates,
   parseImportJobState,
   sumImportFailureCounts,
   XERO_IMPORT_BATCH_BUDGET_MS,
@@ -21,7 +23,39 @@ test('createInitialImportJobState starts at the first stage with every page at 1
   assert.equal(state.checkpoint.billsPage, 1);
   assert.equal(state.checkpoint.creditNotesPage, 1);
   assert.equal(state.checkpoint.attachmentsOffset, 0);
+  assert.equal(state.checkpoint.modifiedSince, null);
   assert.deepEqual(state.completedStages, []);
+});
+
+test('Young Guns initial import applies no date floor and reports full history', () => {
+  const state = createInitialImportJobState({ modifiedSince: null });
+  state.invoices.createdCount = 4;
+  state.invoices.updatedCount = 1;
+  state.invoices.unchangedCount = 2;
+  state.invoices.pulledCount = 7;
+  state.invoices.skippedCount = 1;
+  state.invoices.failedCount = 0;
+  observeImportStageRecordDates(state, 'invoices', [
+    '2017-04-01',
+    '2026-08-01',
+    null,
+  ]);
+
+  const report = buildFullHistoryReportFromImportState(state);
+  assert.equal(report.syncMode, 'FULL_HISTORY');
+  assert.equal(report.noDateFloorApplied, true);
+  assert.equal(report.arbitraryDateCutoffForbidden, true);
+  assert.equal(report.oldestRecordDateImported, '2017-04-01');
+  assert.equal(report.newestRecordDateImported, '2026-08-01');
+  assert.equal(report.createdCount, 4);
+  assert.equal(report.updatedCount, 1);
+  assert.equal(report.unchangedCount, 2);
+  assert.equal(report.skippedCount, 1);
+  assert.ok(report.providerLimitations.some((item) => item.entityType === 'jobs'));
+
+  const result = buildImportSyncResult(state, 'job-full-history', null);
+  assert.equal(result.fullHistoryReport?.syncMode, 'FULL_HISTORY');
+  assert.equal(result.fullHistoryReport?.totalRecordsDiscovered, 8);
 });
 
 test('isStageComplete detects partial and final contact pages', () => {
