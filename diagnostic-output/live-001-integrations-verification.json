@@ -1,0 +1,59 @@
+{
+  "label": "LIVE-001",
+  "title": "Live Integrations Verification & Activation",
+  "generatedAt": "2026-08-07T14:04:00.000Z",
+  "branch": "cursor/live-001-integrations-663e",
+  "baseBranch": "cursor/sys-001-full-system-testing-663e",
+  "stagingApi": "https://young-guns-os-staging.up.railway.app",
+  "stagingDbRef": "cpkuwtaipjxeipvbssvn",
+  "productionForbiddenRef": "rshuiaghmtrvvilhqpwm",
+  "agentCredentialsPresent": false,
+  "stagingLocalEnvPresent": false,
+  "stagingHealthReady": {
+    "httpStatus": 200,
+    "status": "ready",
+    "database": "connected",
+    "providersEnabled": true,
+    "schedulersEnabled": true,
+    "workersEnabled": false,
+    "webhooksEnabled": true
+  },
+  "confirmedDefectFixed": {
+    "id": "PAYMENT_PROCESSING_ENABLED_unwired",
+    "severity": "yoco",
+    "summary": "PAYMENT_PROCESSING_ENABLED was parsed in config but not enforced on DocumentEngine payment-link create",
+    "fix": "fail-closed DocumentEngineError PAYMENT_PROCESSING_DISABLED before Yoco call; bootstrap wires env.runtime.paymentProcessingEnabled"
+  },
+  "freshLiveProviderCallsThisRun": 0,
+  "verdict": "BLOCKED",
+  "verdictReason": "Required staging provider credentials/access unavailable in this cloud agent for fresh real-provider proofs. Code contracts, staging health, historical staging evidence, and confirmed defect fix completed.",
+  "safety": {
+    "productionTouched": 0,
+    "productionProviderWrites": 0,
+    "bankPaymentsInitiated": 0,
+    "bankTransfersInitiated": 0,
+    "realCustomerWhatsApps": 0,
+    "realCustomerEmails": 0,
+    "unapprovedPublicPosts": 0,
+    "realCardCharges": 0,
+    "creativeStudioWork": 0,
+    "newAiAgents": 0,
+    "bank003Ocr": 0,
+    "newBusinessFeatures": 0,
+    "fakeStagingFinance": 0,
+    "unrelatedWork": 0
+  },
+  "gates": {
+    "sharedTests": { "pass": 1428, "fail": 0 },
+    "authTests": { "pass": 24, "fail": 0 },
+    "apiTests": { "pass": 1414, "fail": 0 },
+    "dbTests": { "pass": 8, "fail": 0 },
+    "webTests": { "pass": 444, "fail": 0 },
+    "secSysLiveWebhookSubset": { "pass": 75, "fail": 0 },
+    "sharedTypecheck": "pass",
+    "apiTypecheck": "pass",
+    "webTypecheck": "pass",
+    "monorepoTypecheck": "pass",
+    "webProductionBuild": "pass"
+  }
+}
