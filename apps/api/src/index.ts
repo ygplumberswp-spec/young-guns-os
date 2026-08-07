@@ -1603,6 +1603,10 @@ const agentRuntimeService = new AgentRuntimeService({
   enterpriseReleaseManagementService,
   aiProviderResilienceService,
   automationService,
+  ownerFinancialCommandService,
+  growthPlannerService,
+  cashControlService,
+  profitAnalyticsService,
 });
 const agentOrchestrationEngineService = new AgentOrchestrationEngineService({
   db,
@@ -1720,6 +1724,8 @@ const auraService = new AuraService({
   businessIntelligenceService,
   aiProviderResilienceService,
   tenantCapabilityBuilderService,
+  ownerFinancialCommandService,
+  growthPlannerService,
 });
 
 const app: Express = express();

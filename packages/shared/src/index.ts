@@ -27,6 +27,8 @@ export * from './auth.js';
 export * from './cache-keys.js';
 export * from './aura.js';
 export * from './aura-routing-diagnostics.js';
+export * from './aura-source-of-truth.js';
+export * from './aura-train-evaluation.js';
 export * from './company.js';
 export * from './young-guns-ops.js';
 export * from './localisation.js';

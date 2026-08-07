@@ -175,8 +175,9 @@ export function AuraPage() {
             <p className="aura-page__eyebrow">{AI_NAME}</p>
             <h1 className="aura-page__title">{NAV_LABELS.auraExecutiveChat}</h1>
             <p className="aura-page__subtitle">
-              Ask about finance, sales, operations, integrations and more — AURA selects the right
-              specialist automatically.
+              Ask about finance, sales, operations, integrations and more — AURA loads authorised
+              TITAN source-of-truth context for your role. Use Direct agent mode to target a
+              specialist explicitly.
               {contextLabel ? ` · ${contextLabel}` : ''}
             </p>
           </div>

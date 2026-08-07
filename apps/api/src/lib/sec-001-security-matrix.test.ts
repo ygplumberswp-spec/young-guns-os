@@ -68,6 +68,10 @@ describe('SEC-001 security matrix', () => {
     );
     const finance = readApi('src/routes/finance.ts');
     assert.ok(finance.includes('denyTechnician'));
+    // AURA-TRAIN-001: Technician finance topics denied server-side in AuraService.
+    const aura = readApi('src/services/aura.service.ts');
+    assert.ok(aura.includes('isTechnicianForbiddenAuraTopic'));
+    assert.ok(aura.includes('technicianDenied'));
   });
 
   it('4 Client internal finance/growth denied', () => {

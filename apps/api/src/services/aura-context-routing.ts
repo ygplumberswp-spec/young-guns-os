@@ -5,6 +5,7 @@ export type AuraContextDomain =
   | 'jobs'
   | 'scheduling'
   | 'finance'
+  | 'ownerFinance'
   | 'inventory'
   | 'fleet'
   | 'communications'
@@ -56,6 +57,7 @@ const ALL_DOMAINS: AuraContextDomain[] = [
   'jobs',
   'scheduling',
   'finance',
+  'ownerFinance',
   'inventory',
   'fleet',
   'communications',
@@ -115,8 +117,14 @@ const KEYWORD_DOMAINS: Array<{ pattern: RegExp; domains: AuraContextDomain[] }> 
     domains: ['scheduling', 'jobs', 'integrations'],
   },
   {
-    pattern: /\b(invoice|payment|finance|accounting|xero|revenue|expense|profit)\b/i,
-    domains: ['finance', 'financeIntelligence', 'integrations'],
+    pattern:
+      /\b(invoice|payment|finance|accounting|xero|revenue|expense|profit|cash|budget|growth planner|operating profit|gross profit|owe|outstanding|on track|revenue target)\b/i,
+    domains: ['finance', 'financeIntelligence', 'ownerFinance', 'integrations'],
+  },
+  {
+    pattern:
+      /\b(what needs my attention|how is the business|what happened today|biggest problems|are we on target)\b/i,
+    domains: ['ownerFinance', 'finance', 'jobs', 'executive', 'sales', 'fleet'],
   },
   { pattern: /\b(inventory|stock|parts|warehouse)\b/i, domains: ['inventory', 'procurement'] },
   {

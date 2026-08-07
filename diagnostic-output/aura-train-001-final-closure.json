@@ -1,0 +1,88 @@
+{
+  "phase": "AURA-TRAIN-001",
+  "title": "AURA Training & Business Intelligence Finalisation",
+  "branch": "cursor/aura-train-001-intelligence-663e",
+  "pr": "https://github.com/ygplumberswp-spec/young-guns-os/pull/43",
+  "baseBranch": "cursor/mobile-001-experience-663e",
+  "verdict": "PASS — AURA-TRAIN-001 AURA Training closed",
+  "completedAt": "2026-08-07T15:55:00.000Z",
+  "architectureMap": {
+    "orchestrator": "AuraService.sendMessage + AgentRuntimeService (Direct agent mode)",
+    "agentRegistry": "packages/shared/src/agents.ts AGENT_REGISTRY (48 specialists — no new speculative agents)",
+    "providerGateway": "AiProviderResilienceService / AI Provider Gateway (replaceable; routingCategory typed)",
+    "toolRegistry": "AGENT_TOOL_REGISTRY (571 tools; 232 approval-gated)",
+    "memoryContext": "MemoryService + CompanyBusinessRulesService + day plan (volatile finance not static memory)",
+    "sourceOfTruthRetrieval": "buildSelectedAuraContext domain loaders + ownerFinanceTruth composer",
+    "commandCentre": "existing AURA Command Centre + Owner dashboard surface (MOBILE-001 preserved)",
+    "approvalSystem": "requiresApproval tool gate; Draft→Approve→Execute preserved",
+    "auditLogging": "securityAuditLogs action aura.message.send (no prompt dump); deferredAudit=false",
+    "confidenceCompleteness": "AuraTruthCompleteness verified|provisional|incomplete|unavailable",
+    "tenantIsolation": "companyId scope on conversations/context/tools",
+    "rbac": "permission-gated loaders + canViewOwnerFinancialCommand + technician topic denial",
+    "providerFallback": "AiProviderResilienceService failover unchanged"
+  },
+  "sourceOfTruthDomains": 16,
+  "roleAccessRoles": ["Owner", "Admin", "Technician", "Client"],
+  "evaluationPackCases": 21,
+  "confirmedDefectsFixed": [
+    "Default finance routing hard-coded to summarization → now resolveAuraRoutingCategory → business_analysis for finance/ops",
+    "FIN/CASH/JPE/GROWTH not in AURA context → ownerFinanceTruth loader + prompt authority",
+    "execute_workflow missing requiresApproval → approval_required",
+    "Chat audit deferred → durable aura.message.send audit",
+    "Weak entity resolution → extractAuraEntityQuery + resolveAuraEntityMatches in context",
+    "Technician finance leakage risk → server-side isTechnicianForbiddenAuraTopic short-circuit",
+    "UI claimed automatic specialist selection → honesty copy + Direct agent mode",
+    "Finance specialist tools missing FIN authorities → four READ tools wired into AgentRuntime"
+  ],
+  "fixes": [
+    "packages/shared/src/aura-source-of-truth.ts",
+    "packages/shared/src/aura-train-evaluation.ts",
+    "apps/api/src/services/aura-owner-finance-truth.ts",
+    "apps/api/src/services/aura-context-build.ts",
+    "apps/api/src/services/aura-context-routing.ts",
+    "apps/api/src/services/aura.service.ts",
+    "apps/api/src/services/agent-runtime.service.ts",
+    "apps/api/src/index.ts",
+    "packages/aura/src/prompts.ts",
+    "packages/aura/src/types.ts",
+    "packages/shared/src/agents.ts",
+    "apps/web/src/pages/aura/AuraPage.tsx"
+  ],
+  "testsBuild": {
+    "shared": { "tests": 1438, "pass": 1438, "fail": 0 },
+    "auth": { "tests": 24, "pass": 24, "fail": 0 },
+    "api": { "tests": 1451, "pass": 1451, "fail": 0 },
+    "web": { "tests": 458, "pass": 458, "fail": 0 },
+    "auraTrainApiContracts": { "tests": 9, "pass": 9, "fail": 0 },
+    "typecheck": "pass",
+    "productionBuild": "pass"
+  },
+  "evaluations": {
+    "owner": "contract pack finance/ops/fleet/comms/approval — grounded in FIN/CASH/JPE/GROWTH SoT",
+    "admin": "contract pack booking/customer/comms — Owner-only finance truth gated by canViewOwnerFinancialCommand",
+    "technician": "assigned-work prompts allowed; finance/bank/payroll/CRM-list forbidden prompts denied server-side",
+    "client": "own records only via existing portal permissions; internal finance denied by role matrix",
+    "hallucinationAmbiguity": "entity none/ambiguous contracts; never-guess guidance in prompts",
+    "approval": "execute_workflow + send_whatsapp_draft requireApproval; no auto-send",
+    "failureHandling": "provider/tool unavailable return clear failure summaries; incomplete ≠ zero"
+  },
+  "remainingDebt": {
+    "P1": [],
+    "P2": [
+      "Default AURA chat uses authoritative context assembly rather than always auto-invoking AgentRuntime specialists (Direct agent mode remains explicit)",
+      "Live LLM staging prompt scoring not required for closure; deterministic contracts gate behaviour",
+      "Brand Profile consumption is groundwork only (preferences tone/notes) — Creative Studio later"
+    ]
+  },
+  "safety": {
+    "productionTouched": 0,
+    "realMessagesSent": 0,
+    "providerWrites": 0,
+    "bankWrites": 0,
+    "creativeStudioImplementation": 0,
+    "youngGunsLiveMigration": 0,
+    "realWhatsappMigration": 0,
+    "newSpeculativeAgents": 0,
+    "unrelatedWork": 0
+  }
+}
