@@ -4,7 +4,7 @@
   "repoRoot": "/workspace",
   "branch": "cursor/xero-official-number-authority-663e",
   "startingHead": "91e174f73aef63efb5b2809b4e1a8ef8ca05ecf2",
-  "endingHead": "PENDING_COMMIT",
+  "endingHead": "0f19326732cc65524ee469ddf69f5d3563e1242e",
   "ancestry": {
     "pr67_ee5a19c": true,
     "pr68_2aae5e1": true,
@@ -20,18 +20,18 @@
     "Customer 360 / Property 360 / Job 360"
   ],
   "migration": null,
-  "canonicalNumberResolver": "packages/shared/src/xero-official-number-authority.ts — resolveQuoteDisplayNumber / resolveInvoiceDisplayNumber",
+  "canonicalNumberResolver": "packages/shared/src/xero-official-number-authority.ts \u2014 resolveQuoteDisplayNumber / resolveInvoiceDisplayNumber",
   "quoteNumberPrecedence": [
     "1. xeroQuoteNumber",
     "2. persisted official import (never UUID/TITAN; local Q-#### only if Xero-backed)",
-    "3. Draft — Xero quote number pending"
+    "3. Draft \u2014 Xero quote number pending"
   ],
   "invoiceNumberPrecedence": [
     "1. xeroInvoiceNumber",
     "2. invoiceNumber when Xero authority/provider and not placeholder",
-    "3. Draft — Xero invoice number pending"
+    "3. Draft \u2014 Xero invoice number pending"
   ],
-  "draftNumberBehavior": "Draft label only — never invents QU-/INV-",
+  "draftNumberBehavior": "Draft label only \u2014 never invents QU-/INV-",
   "stagingQuoteAudit": {
     "totalXeroBackedInspected": 253,
     "withOfficialQuoteNumber": 253,
@@ -46,7 +46,12 @@
     "displayMismatchesFound": 0,
     "titanRawVsOfficialFixedByResolver": 1,
     "unresolvedConflicts": 0,
-    "statusCoverage": { "paid": 511, "cancelled": 64, "draft": 9, "sent": 3 }
+    "statusCoverage": {
+      "paid": 511,
+      "cancelled": 64,
+      "draft": 9,
+      "sent": 3
+    }
   },
   "royalCape": {
     "display": "QU-0183",
@@ -60,6 +65,7 @@
   "productionWrites": 0,
   "productionMigrations": 0,
   "row88Started": false,
-  "clientPortalFinalValidation": "NOT_PASS — numbering-specific check only",
-  "prUrl": "PENDING"
+  "clientPortalFinalValidation": "NOT_PASS \u2014 numbering-specific check only",
+  "prUrl": "PENDING",
+  "commit": "0f19326732cc65524ee469ddf69f5d3563e1242e"
 }
