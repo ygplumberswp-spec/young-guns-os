@@ -573,3 +573,37 @@ export async function fetchQuotePriceIntelligence(
     { accessToken },
   );
 }
+
+/** Row 106 — internal estimated vs actual GP comparison (Job level). */
+export type EstimatedActualGpComparisonDto = {
+  level: 'line' | 'quote' | 'invoice' | 'job';
+  status: string;
+  warnings: string[];
+  estimatedRevenueExVatCents: number | null;
+  estimatedCostExVatCents: number | null;
+  estimatedGpCents: number | null;
+  estimatedMarginBps: number | null;
+  actualRevenueExVatCents: number | null;
+  actualDirectCostExVatCents: number | null;
+  actualGpCents: number | null;
+  actualMarginBps: number | null;
+  gpVarianceCents: number | null;
+  marginVarianceBps: number | null;
+  profitableOrLossLabelled: boolean;
+  provenance: Record<string, unknown>;
+};
+
+export async function compareJobEstimatedActualGp(
+  accessToken: string,
+  jobId: string,
+  clientActionId?: string | null,
+): Promise<{ comparison: EstimatedActualGpComparisonDto; idempotentReplay: boolean }> {
+  return request<{ comparison: EstimatedActualGpComparisonDto; idempotentReplay: boolean }>(
+    `/finance/estimated-actual-gp/jobs/${jobId}`,
+    {
+      method: 'POST',
+      accessToken,
+      body: { clientActionId: clientActionId ?? null },
+    },
+  );
+}

@@ -114,6 +114,11 @@ export const PORTAL_EXPANSION_FORBIDDEN_FIELDS = [
   'supplierInvoiceAllocation',
   'allocationNetCents',
   'allocationVatCents',
+  'estimatedActualGpInternal',
+  'estimatedGpCents',
+  'actualGpCents',
+  'gpVarianceCents',
+  'marginVarianceBps',
 
   'xeroQuoteId',
   'xeroInvoiceNumber',

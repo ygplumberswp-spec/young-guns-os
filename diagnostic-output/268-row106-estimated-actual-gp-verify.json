@@ -1,0 +1,126 @@
+{
+  "schemaVersion": "row106-estimated-actual-gp-v1",
+  "generatedAt": "2026-08-08T12:50:10.340Z",
+  "pass": 23,
+  "fail": 0,
+  "results": [
+    {
+      "name": "migration_0224_applied",
+      "status": "PASS"
+    },
+    {
+      "name": "staging_readonly_gp_audit",
+      "status": "PASS",
+      "jobs": 2,
+      "quotes": 253,
+      "quoteLines": 1556,
+      "invoices": 590,
+      "invoiceLines": 1789,
+      "quoteJobLinks": 1,
+      "invoiceJobLinks": 0,
+      "quoteLineToInvoiceLineMappings": 0,
+      "row96CostSnapshots": 0,
+      "jpeDirectCostEntries": 0,
+      "storedComparisons": 0,
+      "jobsWithActualGpComputable": 0,
+      "quoteLevelComputable": 0,
+      "invoiceLevelComputable": 0,
+      "lineLevelComputable": 0,
+      "row92Status": "DRAFT",
+      "row92Automation": "OFF",
+      "note": "No fabricated GP; Royal Cape Row96 baseline remains incomplete if previously incomplete"
+    },
+    {
+      "name": "row92_off",
+      "status": "PASS"
+    },
+    {
+      "name": "royal_cape_unchanged",
+      "status": "PASS",
+      "totalCents": 4272250,
+      "xeroQuoteId": "4d9b1ceb-83dc-4ac6-8d58-ce7ac08f6db8",
+      "note": "Incomplete cost baseline preserved — no fabricated actual GP"
+    },
+    {
+      "name": "fixture_complete_estimate",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_incomplete_estimate",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_job_actual_gp",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_exact_gp",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_line_missing",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_invoice_cost_unavailable",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_row105_not_dup",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_provisional",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_rbac",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_client_leak",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_safety",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_row107_not_started",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_totals",
+      "status": "PASS",
+      "pass": 12,
+      "fail": 0
+    },
+    {
+      "name": "cleanup_no_fabricated_yg_gp",
+      "status": "PASS"
+    },
+    {
+      "name": "xero_writes",
+      "status": "PASS",
+      "count": 0
+    },
+    {
+      "name": "customer_sends",
+      "status": "PASS",
+      "count": 0
+    },
+    {
+      "name": "production_writes",
+      "status": "PASS",
+      "count": 0
+    },
+    {
+      "name": "row118_not_closed",
+      "status": "PASS"
+    },
+    {
+      "name": "rows94_96_103_105_preserved",
+      "status": "PASS"
+    }
+  ]
+}

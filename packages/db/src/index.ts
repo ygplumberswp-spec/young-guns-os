@@ -292,4 +292,11 @@ export type {
   MultiJobSupplierInvoiceAllocationCorrection,
 } from './schema/multi-job-supplier-invoice-allocation.js';
 
+/** Explicit re-export — Row 106 estimated vs actual GP. */
+export { estimatedActualGpComparisons } from './schema/estimated-actual-gp.js';
+export type {
+  EstimatedActualGpComparison,
+  NewEstimatedActualGpComparison,
+} from './schema/estimated-actual-gp.js';
+
 export { drizzle } from 'drizzle-orm/postgres-js';
