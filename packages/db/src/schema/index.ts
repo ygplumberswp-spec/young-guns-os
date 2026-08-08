@@ -37,6 +37,7 @@ export * from './inventory-items';
 export * from './pricebook-tier-formula';
 export * from './quote-price-override';
 export * from './plan-estimates';
+export * from './quote-cost-model';
 export * from './inventory-stock-levels';
 export * from './inventory-stock-movements';
 export * from './vehicles';

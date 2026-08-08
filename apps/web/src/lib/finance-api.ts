@@ -432,3 +432,93 @@ export async function executeQuotePriceOverride(
     method: 'POST',
   });
 }
+
+/** Row 96 — Canonical Quote Cost Model (internal only). */
+export type QuoteCostModelDto = {
+  quoteId: string;
+  quoteNumber: string;
+  status: string;
+  editable: boolean;
+  scopeOfWork: string | null;
+  exclusions: string | null;
+  assumptions: string | null;
+  components: Array<{
+    id: string;
+    componentType: string;
+    description: string;
+    quantity: number;
+    unit: string;
+    unitCostCents: number | null;
+    totalCostCents: number | null;
+    provenance: string;
+    vatBasis: string;
+    confidence: string;
+  }>;
+  summary: {
+    materialsCostCents: number | null;
+    labourCostCents: number | null;
+    wastageCostCents: number | null;
+    travelCostCents: number | null;
+    callOutCostCents: number | null;
+    equipmentCostCents: number | null;
+    subcontractorCostCents: number | null;
+    preliminariesCostCents: number | null;
+    estimatedDirectCostCents: number | null;
+    overheadCostCents: number | null;
+    contingencyCostCents: number | null;
+    warrantyProvisionCents: number | null;
+    totalEstimatedCostCents: number | null;
+    sellExVatCents: number | null;
+    multiplier: number | null;
+    markupBps: number | null;
+    grossMarginBps: number | null;
+    estimatedGrossProfitCents: number | null;
+    confidence: string;
+    warnings: string[];
+    costEstimateIncomplete: boolean;
+  };
+  warnings: Array<{ id: string; warningCode: string; severity: string; message: string }>;
+  latestSnapshot: {
+    id: string;
+    snapshotVersion: number;
+    lifecycleStatus: string;
+    totalEstimatedCostCents: number | null;
+    createdAt: string;
+  } | null;
+  labourRateConfigCentsPerHour: number | null;
+  row92AutomationOff: true;
+};
+
+export async function fetchQuoteCostModel(
+  accessToken: string,
+  quoteId: string,
+): Promise<QuoteCostModelDto> {
+  return request<QuoteCostModelDto>(`/finance/quotes/${quoteId}/cost-model`, { accessToken });
+}
+
+export async function addQuoteCostComponent(
+  accessToken: string,
+  quoteId: string,
+  body: Record<string, unknown>,
+): Promise<unknown> {
+  return request(`/finance/quotes/${quoteId}/cost-components`, {
+    accessToken,
+    method: 'POST',
+    body,
+  });
+}
+
+export async function snapshotQuoteCostModel(
+  accessToken: string,
+  quoteId: string,
+  clientActionId?: string | null,
+): Promise<{ id: string; snapshotVersion: number; idempotent: boolean }> {
+  return request<{ id: string; snapshotVersion: number; idempotent: boolean }>(
+    `/finance/quotes/${quoteId}/cost-model/snapshot`,
+    {
+      accessToken,
+      method: 'POST',
+      body: { clientActionId: clientActionId ?? null },
+    },
+  );
+}

@@ -28,6 +28,7 @@ import { useAuth } from '../../lib/auth-context';
 import { useStaffMutationInvalidation } from '../../lib/cache-invalidation';
 import { FinanceNav } from '../../features/finance/FinanceNav';
 import { QuotePriceOverridePanel } from '../../features/finance/QuotePriceOverridePanel';
+import { QuoteCostModelPanel } from '../../features/finance/QuoteCostModelPanel';
 import { canAccessFinance, canManageFinance, newFinanceClientActionId } from '../../features/finance/utils';
 import { useRecordRecentView } from '../../hooks/useRecordRecentView';
 
@@ -546,6 +547,16 @@ export function QuoteDetailPage() {
             </table>
           </div>
         </Panel>
+
+        {quote.profit ? (
+          <QuoteCostModelPanel
+            accessToken={accessToken!}
+            quoteId={quote.id}
+            currency={quote.currency}
+            canWrite={canWrite}
+            onChanged={() => void loadQuote()}
+          />
+        ) : null}
 
         {quote.profit ? (
           <Panel

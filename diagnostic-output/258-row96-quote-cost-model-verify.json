@@ -1,0 +1,92 @@
+{
+  "schemaVersion": "row96-quote-cost-model-v1",
+  "generatedAt": "2026-08-08T11:03:37.517Z",
+  "companyId": "095aef76-fef5-4139-af37-a42f2d7e2faf",
+  "pass": 13,
+  "fail": 0,
+  "results": [
+    {
+      "name": "migration_0215_applied_idempotent",
+      "status": "PASS"
+    },
+    {
+      "name": "staging_readonly_audit",
+      "status": "PASS",
+      "totalQuotes": 253,
+      "totalLines": 1556,
+      "linesWithCost": 0,
+      "linesWithoutCost": 1556,
+      "structuredComponents": 0,
+      "planCostComponents": 0,
+      "inventoryItems": 0,
+      "labourRateConfigured": true,
+      "labourRateCentsPerHour": 8000,
+      "overheadConfig": "OVERHEAD_NOT_CONFIGURED_COMPANY_SETTING",
+      "contingencyConfig": "NOT_AUTO_APPLIED",
+      "warrantyConfig": "NOT_AUTO_APPLIED",
+      "row92Status": "DRAFT",
+      "row92Automation": "OFF"
+    },
+    {
+      "name": "row92_automation_off",
+      "status": "PASS"
+    },
+    {
+      "name": "royal_cape_unchanged",
+      "status": "PASS",
+      "quoteNumber": "QU-0183",
+      "totalCents": 4272250,
+      "pricingMode": "ITEMISED",
+      "xeroQuoteId": "4d9b1ceb-83dc-4ac6-8d58-ce7ac08f6db8",
+      "estimatedCostCents": 0,
+      "costCompleteness": "INCOMPLETE_OR_ZERO"
+    },
+    {
+      "name": "fixture_cost_matrix",
+      "status": "PASS",
+      "directCostCents": 33600,
+      "totalKnownCostCents": 34900,
+      "sellExVatCents": 20000,
+      "estimatedGpCents": -14900,
+      "multiplier": 0.5730659025787965,
+      "markupBps": -4269,
+      "grossMarginBps": -7450,
+      "missingMaterialComponent": true
+    },
+    {
+      "name": "tenant_isolation_no_leak",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_cleanup",
+      "status": "PASS"
+    },
+    {
+      "name": "xero_writes",
+      "status": "PASS",
+      "count": 0
+    },
+    {
+      "name": "customer_sends",
+      "status": "PASS",
+      "count": 0
+    },
+    {
+      "name": "production_writes",
+      "status": "PASS",
+      "count": 0
+    },
+    {
+      "name": "row97_not_started",
+      "status": "PASS"
+    },
+    {
+      "name": "row98_not_started",
+      "status": "PASS"
+    },
+    {
+      "name": "row99_not_started",
+      "status": "PASS"
+    }
+  ]
+}

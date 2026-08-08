@@ -61,6 +61,7 @@ export * from './pricebook-tier-formula.js';
 export * from './quote-price-override.js';
 export * from './plan-estimate.js';
 export * from './quote-scenario.js';
+export * from './quote-cost-model.js';
 export * from './contact-validation.js';
 export * from './job-contract.js';
 export * from './job-execution.js';
