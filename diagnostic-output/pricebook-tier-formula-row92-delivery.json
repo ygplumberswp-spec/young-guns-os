@@ -4,7 +4,7 @@
   "repoRoot": "/workspace",
   "branch": "cursor/pricebook-tier-markup-formula-663e",
   "startingHead": "83c8b5d79922fb5f2b67d57326ae143ddb35f9e2",
-  "endingHead": "c04c602",
+  "endingHead": "3ffdc60b42f26e18113f40cfca44f65eded3be8a",
   "baseBranch": "cursor/ygp-service-item-codes-categories-663e",
   "ancestry": "PR #67 through PR #76 (merge-base --is-ancestor OK for all tips)",
   "prUrl": "https://github.com/ygplumberswp-spec/young-guns-os/pull/77",
@@ -23,9 +23,19 @@
   "ygRuleStatus": "DRAFT",
   "ygRuleVersion": 1,
   "exactTiers": [
-    { "maxInclusiveCents": 50000, "multiplier": 2.2 },
-    { "minExclusiveCents": 50000, "maxInclusiveCents": 150000, "multiplier": 2.0 },
-    { "minExclusiveCents": 150000, "multiplier": 1.68 }
+    {
+      "maxInclusiveCents": 50000,
+      "multiplier": 2.2
+    },
+    {
+      "minExclusiveCents": 50000,
+      "maxInclusiveCents": 150000,
+      "multiplier": 2.0
+    },
+    {
+      "minExclusiveCents": 150000,
+      "multiplier": 1.68
+    }
   ],
   "baseCostAuthority": "SUPPLIER_NET_DISCOUNTED with provenance required; never UNKNOWN; never double-discount",
   "vatBasis": "multiplier on ex-VAT base; VAT via canonical tax handling",
@@ -41,8 +51,8 @@
   ],
   "evidence": "diagnostic-output/pricebook-tier-formula-staging-proof.json",
   "knownGaps": [
-    "YG inventory_items = 0 — bulk impact preview truthfully empty",
-    "Temp YOUNG_GUNS_APPROVED_FINANCE_PRICEBOOK constants have unitCostCents=null — READ ONLY, not converted to catalogue",
+    "YG inventory_items = 0 \u2014 bulk impact preview truthfully empty",
+    "Temp YOUNG_GUNS_APPROVED_FINANCE_PRICEBOOK constants have unitCostCents=null \u2014 READ ONLY, not converted to catalogue",
     "Full Client Portal E2E remains OPEN (separate gate)",
     "TS2589 baseline debt on packages/db createDb remains; build uses --noEmitOnError false"
   ]
