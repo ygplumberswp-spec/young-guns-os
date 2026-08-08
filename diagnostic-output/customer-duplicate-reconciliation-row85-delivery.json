@@ -1,0 +1,32 @@
+{
+  "row": 85,
+  "title": "Customer Duplicate Detection / Side-by-Side Review / Safe Xero Contact Reconciliation",
+  "repoRoot": "/workspace",
+  "branch": "cursor/customer-duplicate-reconciliation-663e",
+  "startingHead": "a9c63b88c841578f3d32d83c261d9122dc67bfd8",
+  "endingHead": "pending",
+  "ancestry": {
+    "pr67_ee5a19c": true,
+    "pr68_2aae5e1": true,
+    "pr69_a9c63b8": true
+  },
+  "migration": {
+    "file": "packages/db/drizzle/0206_customer_duplicate_reconciliation.sql",
+    "purpose": "Additive customer_duplicate_reconciliations lifecycle (draft/approve/execute) over M7 candidates",
+    "stagingApplied": true,
+    "productionMigrations": 0
+  },
+  "xeroWriteCalls": 0,
+  "productionWrites": 0,
+  "realMergesExecuted": 0,
+  "row86Started": false,
+  "stagingScan": {
+    "totalCustomersScanned": 842,
+    "candidatePairsGenerated": 11,
+    "highConfidence": 0,
+    "possible": 7,
+    "sameCompanyDifferentPerson": 1,
+    "reviewRequired": 3,
+    "note": "Oversized shared-email groups skipped from pair explosion; CRC/Rowan classified SAME_COMPANY_DIFFERENT_CONTACT; no real merges"
+  }
+}

@@ -147,4 +147,12 @@ export async function closeDb(): Promise<void> {
 
 export * from './schema/index.js';
 
+/** Explicit re-export — ensures Row 85 table is visible even when schema barrel depth is stressed. */
+export {
+  customerDuplicateReconciliations,
+  customerDuplicateConfidenceLabelEnum,
+  customerDuplicateResolutionTypeEnum,
+  customerDuplicateReconciliationStatusEnum,
+} from './schema/customer-duplicate-reconciliation.js';
+
 export { drizzle } from 'drizzle-orm/postgres-js';

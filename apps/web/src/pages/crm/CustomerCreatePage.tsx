@@ -5,6 +5,7 @@ import type { CustomerStatus } from '@titan/shared';
 import { CUSTOMER_STATUS_OPTIONS } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import { createCustomer } from '../../lib/crm-api';
+import { warnPossibleDuplicateOnCreate } from '../../lib/customer-duplicate-reconciliation-api';
 import { fetchDraft } from '../../lib/drafts-api';
 import { useAuth } from '../../lib/auth-context';
 import { useStaffMutationInvalidation } from '../../lib/cache-invalidation';
@@ -25,6 +26,11 @@ export function CustomerCreatePage() {
   const [notes, setNotes] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [duplicateWarning, setDuplicateWarning] = useState<{
+    message: string;
+    candidates: Array<{ id: string; name: string; confidenceLabel: string; href: string }>;
+  } | null>(null);
+  const [forceCreateDespiteWarning, setForceCreateDespiteWarning] = useState(false);
   const [pendingDraft, setPendingDraft] = useState<{
     id: string;
     title: string | null;
@@ -99,6 +105,22 @@ export function CustomerCreatePage() {
     setError(null);
 
     try {
+      if (!forceCreateDespiteWarning) {
+        const warn = await warnPossibleDuplicateOnCreate(accessToken, {
+          name,
+          email: email.trim() || null,
+          phone: phone.trim() || null,
+        });
+        if (warn.warning && warn.candidates.length > 0) {
+          setDuplicateWarning({
+            message: warn.message ?? 'Possible existing customer',
+            candidates: warn.candidates,
+          });
+          setIsSaving(false);
+          return;
+        }
+      }
+
       const customer = await createCustomer(accessToken, {
         name,
         email: email.trim() || null,
@@ -151,6 +173,33 @@ export function CustomerCreatePage() {
       ) : null}
 
       {error ? <p className="form-error">{error}</p> : null}
+
+      {duplicateWarning ? (
+        <div className="mb-4 rounded border border-amber-300 bg-amber-50 p-3 text-sm">
+          <p className="font-medium">{duplicateWarning.message}</p>
+          <ul className="mt-2 list-disc pl-5">
+            {duplicateWarning.candidates.map((c) => (
+              <li key={c.id}>
+                <Link href={c.href} className="underline">
+                  {c.name}
+                </Link>{' '}
+                · {c.confidenceLabel}
+              </li>
+            ))}
+          </ul>
+          <p className="mt-2 text-xs text-slate-600">
+            Open an existing customer, or continue only with explicit confirmation. Never auto-merge.
+          </p>
+          <label className="mt-2 flex items-center gap-2 text-xs">
+            <input
+              type="checkbox"
+              checked={forceCreateDespiteWarning}
+              onChange={(e) => setForceCreateDespiteWarning(e.target.checked)}
+            />
+            I confirm this is a legitimate separate customer — continue create
+          </label>
+        </div>
+      ) : null}
 
       <form className="crm-form" onSubmit={(event) => void handleSubmit(event)}>
         <Input

@@ -177,6 +177,13 @@ export function Customer360WorkspacePanel({ customerId, initialTab = 'overview' 
 
       {tab === 'overview' ? (
         <Panel title="Company identity">
+          <p className="mb-3 text-xs text-slate-600">
+            Source associations: {associations.length}. Duplicate review:{' '}
+            <Link href="/crm/duplicates" className="underline">
+              open reconciliation queue
+            </Link>
+            . Financial ownership stays on original Xero/source records.
+          </p>
           <dl className="grid gap-3 sm:grid-cols-2">
             <div>
               <dt className="text-xs text-slate-500">Display name</dt>
