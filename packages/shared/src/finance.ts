@@ -1,6 +1,12 @@
 import type { JobPaymentLedger } from './job-payment-ledger.js';
 import type { FinanceDocumentAddressSnapshot } from './finance-document-roundtrip.js';
 import type { FinanceDocumentContent, FinanceDocumentSectionsSnapshot } from './finance-document-content.js';
+import {
+  DRAFT_INVOICE_DISPLAY_LABEL,
+  DRAFT_QUOTE_DISPLAY_LABEL,
+  resolveInvoiceDisplayNumberLabel,
+  resolveQuoteDisplayNumberLabel,
+} from './xero-official-number-authority.js';
 
 export type { FinanceDocumentContent, FinanceDocumentSectionsSnapshot };
 
@@ -515,10 +521,19 @@ export function displayInvoiceNumber(input: {
   internalNumber?: string | null;
   invoiceNumber: string;
   numberAuthority?: string | null;
+  id?: string | null;
+  sourceExternalId?: string | null;
+  sourceProvider?: string | null;
 }): string {
-  if (input.xeroInvoiceNumber?.trim()) return input.xeroInvoiceNumber.trim();
-  if (input.numberAuthority === 'xero') return input.invoiceNumber;
-  return displayOfficialInvoiceNumber({ xeroInvoiceNumber: input.xeroInvoiceNumber });
+  return resolveInvoiceDisplayNumberLabel({
+    id: input.id,
+    invoiceNumber: input.invoiceNumber,
+    internalNumber: input.internalNumber,
+    xeroInvoiceNumber: input.xeroInvoiceNumber,
+    sourceExternalId: input.sourceExternalId,
+    sourceProvider: input.sourceProvider,
+    numberAuthority: input.numberAuthority,
+  });
 }
 
 /** Legacy DB column only — finance documents no longer use user-entered titles. */
@@ -526,18 +541,58 @@ export function legacyFinanceDocumentTitle(customerName?: string | null): string
   return customerName?.trim() || '';
 }
 
-/** Xero is the only official invoice number authority for staff-facing UI. */
+/**
+ * Xero is the only official invoice number authority for customer-facing / operational display.
+ * Accepts optional richer fields (Row 87) while remaining backward compatible with
+ * `{ xeroInvoiceNumber }` call sites.
+ */
 export function displayOfficialInvoiceNumber(input: {
   xeroInvoiceNumber?: string | null;
+  invoiceNumber?: string | null;
+  internalNumber?: string | null;
+  id?: string | null;
+  xeroInvoiceId?: string | null;
+  sourceExternalId?: string | null;
+  sourceProvider?: string | null;
+  numberAuthority?: string | null;
 }): string {
-  return input.xeroInvoiceNumber?.trim() || 'Draft — Xero invoice number pending';
+  const resolved = resolveInvoiceDisplayNumberLabel(input);
+  // Preserve exact legacy draft string for single-field callers.
+  if (
+    !input.xeroInvoiceNumber?.trim() &&
+    input.invoiceNumber == null &&
+    input.internalNumber == null &&
+    input.numberAuthority == null &&
+    input.sourceProvider == null
+  ) {
+    return DRAFT_INVOICE_DISPLAY_LABEL;
+  }
+  return resolved;
 }
 
-/** Xero is the only official quote number authority for staff-facing UI. */
+/**
+ * Xero is the only official quote number authority for customer-facing / operational display.
+ * Accepts optional richer fields (Row 87) while remaining backward compatible with
+ * `{ xeroQuoteNumber }` call sites.
+ */
 export function displayOfficialQuoteNumber(input: {
   xeroQuoteNumber?: string | null;
+  quoteNumber?: string | null;
+  id?: string | null;
+  xeroQuoteId?: string | null;
+  sourceExternalId?: string | null;
+  sourceProvider?: string | null;
 }): string {
-  return input.xeroQuoteNumber?.trim() || 'Draft — Xero quote number pending';
+  const resolved = resolveQuoteDisplayNumberLabel(input);
+  if (
+    !input.xeroQuoteNumber?.trim() &&
+    input.quoteNumber == null &&
+    input.sourceProvider == null &&
+    input.xeroQuoteId == null
+  ) {
+    return DRAFT_QUOTE_DISPLAY_LABEL;
+  }
+  return resolved;
 }
 
 /** Returns true when a customer name closely matches an existing search result. */

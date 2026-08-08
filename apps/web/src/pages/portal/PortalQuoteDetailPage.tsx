@@ -159,12 +159,12 @@ export function PortalQuoteDetailPage() {
     try {
       await createPortalRequest(accessToken, {
         requestType: 'quote_clarification',
-        subject: `Clarification for quote ${quote.quoteNumber}`,
+        subject: `Clarification for quote ${quote.displayQuoteNumber}`,
         message: 'Please provide clarification on this quote.',
         entityType: 'quote',
         entityId: quote.id,
       });
-      setSuccess(`Clarification request sent for ${quote.quoteNumber}.`);
+      setSuccess(`Clarification request sent for ${quote.displayQuoteNumber}.`);
     } catch (err) {
       setError(err instanceof PortalApiClientError ? err.message : 'Unable to send request');
     } finally {

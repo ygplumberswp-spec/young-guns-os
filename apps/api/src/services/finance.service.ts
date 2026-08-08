@@ -25,6 +25,8 @@ import {
   canEditInvoice,
   displayOfficialInvoiceNumber,
   displayOfficialQuoteNumber,
+  pickPaymentInvoiceDisplayNumber,
+  resolveQuoteDisplayNumberLabel,
   deriveJobPaymentLedger,
   deriveJob360HistoricalCompleteness,
   buildJob360DigitalFileRollup,
@@ -1094,7 +1096,18 @@ export class FinanceService {
       })),
       recentPayments: paymentRows.map((row) => ({
         id: row.id,
-        invoiceNumber: row.invoice?.invoiceNumber ?? 'Unknown',
+        invoiceNumber: pickPaymentInvoiceDisplayNumber({
+          invoice: row.invoice
+            ? {
+                id: row.invoice.id,
+                invoiceNumber: row.invoice.invoiceNumber,
+                xeroInvoiceNumber: row.invoice.xeroInvoiceNumber,
+                numberAuthority: row.invoice.numberAuthority,
+                sourceProvider: row.invoice.sourceProvider,
+                sourceExternalId: row.invoice.sourceExternalId,
+              }
+            : null,
+        }),
         customerName: row.invoice?.customer?.name ?? 'Unknown',
         amountCents: row.amountCents,
         currency: row.currency,
@@ -1249,11 +1262,26 @@ type QuoteWithRelations = typeof quotes.$inferSelect & {
 type InvoiceWithRelations = typeof invoices.$inferSelect & {
   customer: { name: string } | null;
   job: { title: string; jobNumber?: string | null } | null;
-  quote?: { quoteNumber: string } | null;
+  quote?: {
+    quoteNumber: string;
+    xeroQuoteNumber?: string | null;
+    xeroQuoteId?: string | null;
+    sourceProvider?: string | null;
+    sourceExternalId?: string | null;
+    id?: string;
+  } | null;
 };
 
 type PaymentWithRelations = typeof payments.$inferSelect & {
-  invoice: { invoiceNumber: string; customer: { name: string } | null } | null;
+  invoice: {
+    id?: string;
+    invoiceNumber: string;
+    xeroInvoiceNumber?: string | null;
+    numberAuthority?: string | null;
+    sourceProvider?: string | null;
+    sourceExternalId?: string | null;
+    customer: { name: string } | null;
+  } | null;
 };
 
 function toQuoteSummary(row: QuoteWithRelations & Record<string, any>, profit: QuoteSummary['profit'] = null): QuoteSummary {
@@ -1261,7 +1289,14 @@ function toQuoteSummary(row: QuoteWithRelations & Record<string, any>, profit: Q
     id: row.id,
     quoteNumber: row.quoteNumber,
     xeroQuoteNumber: row.xeroQuoteNumber ?? null,
-    displayQuoteNumber: displayOfficialQuoteNumber({ xeroQuoteNumber: row.xeroQuoteNumber }),
+    displayQuoteNumber: displayOfficialQuoteNumber({
+      xeroQuoteNumber: row.xeroQuoteNumber,
+      quoteNumber: row.quoteNumber,
+      id: row.id,
+      xeroQuoteId: row.xeroQuoteId,
+      sourceExternalId: row.sourceExternalId,
+      sourceProvider: row.sourceProvider,
+    }),
     status: row.status,
     versionNumber: row.versionNumber ?? 1,
     isImmutable: row.isImmutable ?? false,
@@ -1289,12 +1324,31 @@ function toQuoteSummary(row: QuoteWithRelations & Record<string, any>, profit: Q
 }
 
 function toInvoiceSummary(row: InvoiceWithRelations & Record<string, any>): InvoiceSummary {
+  const officialInvoice = displayOfficialInvoiceNumber({
+    xeroInvoiceNumber: row.xeroInvoiceNumber,
+    invoiceNumber: row.invoiceNumber,
+    internalNumber: row.internalNumber,
+    id: row.id,
+    sourceExternalId: row.sourceExternalId,
+    sourceProvider: row.sourceProvider,
+    numberAuthority: row.numberAuthority,
+  });
+  const linkedQuoteNumber = row.quote
+    ? resolveQuoteDisplayNumberLabel({
+        id: row.quote.id,
+        quoteNumber: row.quote.quoteNumber,
+        xeroQuoteNumber: row.quote.xeroQuoteNumber,
+        xeroQuoteId: row.quote.xeroQuoteId,
+        sourceExternalId: row.quote.sourceExternalId,
+        sourceProvider: row.quote.sourceProvider,
+      })
+    : null;
   return {
     id: row.id,
     invoiceNumber: row.invoiceNumber,
     internalNumber: row.internalNumber ?? row.invoiceNumber,
-    displayInvoiceNumber: displayOfficialInvoiceNumber({ xeroInvoiceNumber: row.xeroInvoiceNumber }),
-    displayOfficialInvoiceNumber: displayOfficialInvoiceNumber({ xeroInvoiceNumber: row.xeroInvoiceNumber }),
+    displayInvoiceNumber: officialInvoice,
+    displayOfficialInvoiceNumber: officialInvoice,
     xeroInvoiceNumber: row.xeroInvoiceNumber ?? null,
     xeroReference: row.xeroReference ?? null,
     numberAuthority: (row.numberAuthority ?? 'internal_pending_xero') as InvoiceSummary['numberAuthority'],
@@ -1306,7 +1360,7 @@ function toInvoiceSummary(row: InvoiceWithRelations & Record<string, any>): Invo
     jobTitle: row.job?.title ?? null,
     jobNumber: row.job?.jobNumber ?? null,
     quoteId: row.quoteId ?? null,
-    quoteNumber: row.quote?.quoteNumber ?? null,
+    quoteNumber: linkedQuoteNumber,
     quoteVersionNumber: row.quoteVersionNumber ?? null,
     amountCents: row.amountCents,
     totalCents: row.totalCents ?? row.amountCents,
@@ -1326,7 +1380,18 @@ function toPaymentSummary(row: PaymentWithRelations & Record<string, any>): Paym
   return {
     id: row.id,
     invoiceId: row.invoiceId,
-    invoiceNumber: row.invoice?.invoiceNumber ?? 'Unknown',
+    invoiceNumber: pickPaymentInvoiceDisplayNumber({
+      invoice: row.invoice
+        ? {
+            id: row.invoice.id ?? row.invoiceId,
+            invoiceNumber: row.invoice.invoiceNumber,
+            xeroInvoiceNumber: row.invoice.xeroInvoiceNumber,
+            numberAuthority: row.invoice.numberAuthority,
+            sourceProvider: row.invoice.sourceProvider,
+            sourceExternalId: row.invoice.sourceExternalId,
+          }
+        : null,
+    }),
     invoiceTitle: row.invoice?.customer?.name ?? 'Unknown',
     customerName: row.invoice?.customer?.name ?? 'Unknown',
     amountCents: row.amountCents,

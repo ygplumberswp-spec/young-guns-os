@@ -65,7 +65,7 @@ export function PortalFinancePage() {
               <ul className="portal-list">
                 {finance.invoices.map((invoice) => (
                   <li key={invoice.id}>
-                    <strong>{invoice.invoiceNumber}</strong> — {invoice.status}
+                    <strong>{invoice.displayOfficialInvoiceNumber}</strong> — {invoice.status}
                     <span className="page-muted">
                       Online pay unavailable — contact the office to settle this invoice.
                     </span>
@@ -89,6 +89,7 @@ export function PortalFinancePage() {
                     <span className="tabular-nums">
                       {(payment.amountCents / 100).toFixed(2)} {finance.currency}
                     </span>
+                    {/* payment.invoiceNumber is official InvoiceNumber from API (Row 87) */}
                   </li>
                 ))}
               </ul>

@@ -2,6 +2,7 @@
  * Customer Portal Expansion (Department 7.1)
  */
 import type { PortalAccessPermission } from './portal.js';
+import { resolveInvoiceDisplayNumberLabel } from './xero-official-number-authority.js';
 
 export const PORTAL_EXPANSION_PRODUCT_COPY = {
   title: 'Customer Portal Expansion',
@@ -289,12 +290,21 @@ export function isPortalSafeCommunicationVisibility(visibility: string): boolean
 export function buildPortalSafeInvoiceDisplayNumber(input: {
   invoiceNumber: string;
   title?: string | null;
+  xeroInvoiceNumber?: string | null;
+  numberAuthority?: string | null;
+  sourceProvider?: string | null;
+  id?: string | null;
+  sourceExternalId?: string | null;
 }): string {
-  const trimmed = input.invoiceNumber?.trim();
-  if (trimmed) return trimmed;
-  const title = input.title?.trim();
-  if (title) return title;
-  return 'Invoice';
+  // Row 87: clients must see official InvoiceNumber, never TITAN-*/UUID.
+  return resolveInvoiceDisplayNumberLabel({
+    id: input.id,
+    invoiceNumber: input.invoiceNumber,
+    xeroInvoiceNumber: input.xeroInvoiceNumber,
+    numberAuthority: input.numberAuthority,
+    sourceProvider: input.sourceProvider,
+    sourceExternalId: input.sourceExternalId,
+  });
 }
 
 export function derivePortalSafePaymentStatus(input: {

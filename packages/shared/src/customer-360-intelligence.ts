@@ -531,7 +531,14 @@ export function buildC360TimelineEvents(input: {
   jobs: Array<{ id: string; title: string; status: string; updatedAt: string; jobNumber?: string | null }>;
   quotes: Array<{ id: string; title: string; status: string; createdAt: string; quoteNumber: string }>;
   invoices: Array<{ id: string; title: string; status: string; createdAt: string; invoiceNumber: string }>;
-  payments: Array<{ id: string; paidAt: string; invoiceId: string; reference?: string | null }>;
+  payments: Array<{
+    id: string;
+    paidAt: string;
+    invoiceId: string;
+    reference?: string | null;
+    /** Official InvoiceNumber for display — never a UUID. */
+    invoiceNumber?: string | null;
+  }>;
   communications: Array<{
     id: string;
     subject: string | null;
@@ -594,12 +601,14 @@ export function buildC360TimelineEvents(input: {
     });
   }
   for (const p of input.payments) {
+    const invoiceRef = p.invoiceNumber?.trim() || null;
     events.push({
       id: `payment:${p.id}`,
       kind: 'payment',
       occurredAt: p.paidAt,
       title: 'Payment recorded',
-      summary: p.reference?.trim() || `Payment on invoice ${p.invoiceId.slice(0, 8)}…`,
+      // Row 87: never show invoice UUID prefix as the customer-facing invoice reference.
+      summary: p.reference?.trim() || (invoiceRef ? `Payment on invoice ${invoiceRef}` : 'Payment recorded'),
       href: `/finance/payments`,
       relatedId: p.id,
     });

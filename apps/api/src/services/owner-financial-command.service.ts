@@ -22,6 +22,7 @@ import {
   emptyOwnerFinancialCommandDashboard,
   invoiceBalanceDueCents,
   isOutstandingCustomerInvoice,
+  resolveInvoiceDisplayNumberLabel,
   resolveOwnerFinancialPeriodRange,
   safeCents,
 } from '@titan/shared';
@@ -163,6 +164,10 @@ export class OwnerFinancialCommandService {
       .select({
         id: invoices.id,
         invoiceNumber: invoices.invoiceNumber,
+        xeroInvoiceNumber: invoices.xeroInvoiceNumber,
+        numberAuthority: invoices.numberAuthority,
+        sourceProvider: invoices.sourceProvider,
+        sourceExternalId: invoices.sourceExternalId,
         customerName: customers.name,
         jobId: invoices.jobId,
         totalCents: invoices.totalCents,
@@ -210,7 +215,14 @@ export class OwnerFinancialCommandService {
       });
       rows.push({
         invoiceId: inv.id,
-        invoiceNumber: inv.invoiceNumber,
+        invoiceNumber: resolveInvoiceDisplayNumberLabel({
+          id: inv.id,
+          invoiceNumber: inv.invoiceNumber,
+          xeroInvoiceNumber: inv.xeroInvoiceNumber,
+          numberAuthority: inv.numberAuthority,
+          sourceProvider: inv.sourceProvider,
+          sourceExternalId: inv.sourceExternalId,
+        }),
         customerName: inv.customerName ?? null,
         jobId: inv.jobId,
         balanceDueCents,
