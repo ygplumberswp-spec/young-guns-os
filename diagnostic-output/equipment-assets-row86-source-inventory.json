@@ -1,0 +1,95 @@
+{
+  "host": "aws-0-eu-west-1.pooler.supabase.com",
+  "stagingRefOk": true,
+  "productionForbiddenOk": true,
+  "youngGunsCompanyId": "095aef76-fef5-4139-af37-a42f2d7e2faf",
+  "sources": [
+    {
+      "sourceProvider": "titan.asset_equipment",
+      "recordCount": 0,
+      "externalIdsAvailable": false,
+      "serialNumbersAvailable": false,
+      "customerReferences": false,
+      "propertySiteReferences": false,
+      "jobReferences": false,
+      "note": "Canonical equipment table — currently empty for Young Guns staging"
+    },
+    {
+      "sourceProvider": "titan.al_asset_registry_profiles",
+      "recordCount": 0,
+      "customerReferences": true,
+      "propertySiteReferences": true,
+      "note": "Canonical customer/property bridge — currently empty for Young Guns staging"
+    },
+    {
+      "sourceProvider": "titan.dm_import_jobs(entity_type=asset)",
+      "recordCount": 0,
+      "note": "No authorised DM asset import jobs present"
+    },
+    {
+      "sourceProvider": "titan.ops_recurring_maintenance_plans",
+      "recordCount": 0,
+      "withAssetId": 0,
+      "note": "Maintenance plans exist but do not constitute equipment source inventory"
+    },
+    {
+      "sourceProvider": "repo_seed_csv_xlsx",
+      "recordCount": 0,
+      "note": "No equipment CSV/XLSX seed files found in repository"
+    },
+    {
+      "sourceProvider": "documents_equipment_titles",
+      "recordCount": 0,
+      "note": "Title keyword hits only — not structured equipment records"
+    },
+    {
+      "sourceProvider": "jobs_text_equipment_mentions",
+      "recordCount": 0,
+      "note": "Free-text mentions only — not authorised structured equipment import source"
+    }
+  ],
+  "dm_jobs": [],
+  "dm_records": [],
+  "dm_jobs_date_span": {
+    "oldest": null,
+    "newest": null,
+    "n": 0
+  },
+  "royal_cape_equip": 0,
+  "crc_equip": 0,
+  "royalCapeTruth": "NO_VERIFIED_EQUIPMENT_LINKED",
+  "assets_by_company_top": [],
+  "relevant_tables": [
+    "al_asset_alerts",
+    "al_asset_categories",
+    "al_asset_registry_profiles",
+    "asset_calibrations",
+    "asset_equipment",
+    "asset_inspections",
+    "asset_lifecycle_events",
+    "asset_maintenance_actions",
+    "asset_maintenance_costs",
+    "asset_maintenance_records",
+    "asset_maintenance_schedules",
+    "bev_strategic_roadmap_items",
+    "dm_action_drafts",
+    "dm_analytics_snapshots",
+    "dm_audit_logs",
+    "dm_duplicate_reviews",
+    "dm_export_jobs",
+    "dm_field_mappings",
+    "dm_import_jobs",
+    "dm_import_records",
+    "dm_migration_alerts",
+    "dm_migration_history",
+    "dm_platform_config",
+    "dm_rollback_requests",
+    "dm_validation_results",
+    "ip_asset_types",
+    "ip_equipment_catalog",
+    "mi_brand_assets",
+    "mobile_media_assets"
+  ],
+  "conclusion": "MISSING_AUTHORISED_EQUIPMENT_SOURCE",
+  "detail": "No asset_equipment rows, no dm asset import jobs, no seed CSV/XLSX. Row 86 must implement reconciliation path without inventing equipment. Staging apply creates 0 assets until an authorised source is provided."
+}

@@ -344,6 +344,13 @@ export function Customer360WorkspacePanel({ customerId, initialTab = 'overview' 
                 <li key={e.id} className="text-sm">
                   <strong>{e.name}</strong> · {e.assetType} · {e.status}
                   {e.serialNumber ? ` · SN ${e.serialNumber}` : ''}
+                  {e.manufacturer || e.model
+                    ? ` · ${[e.manufacturer, e.model].filter(Boolean).join(' ')}`
+                    : ''}
+                  {e.propertyName ? ` · Site: ${e.propertyName}` : ' · Site: unassigned'}
+                  {e.latestServiceAt
+                    ? ` · Last service: ${new Date(e.latestServiceAt).toLocaleDateString()}`
+                    : ''}
                 </li>
               ))}
             </ul>
