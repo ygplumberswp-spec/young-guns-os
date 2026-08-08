@@ -154,6 +154,11 @@ export type Customer360EquipmentSummary = {
   assetType: string;
   status: string;
   serialNumber: string | null;
+  manufacturer: string | null;
+  model: string | null;
+  propertyId: string | null;
+  propertyName: string | null;
+  latestServiceAt: string | null;
   href: string;
 };
 

@@ -337,6 +337,7 @@ import { SalesAnalyticsIntelligenceService } from './services/sales-analytics-in
 import { Customer360IntelligenceService } from './services/customer-360-intelligence.service.js';
 import { Customer360Service } from './services/customer-360.service.js';
 import { CustomerDuplicateReconciliationService } from './services/customer-duplicate-reconciliation.service.js';
+import { EquipmentAssetsImportService } from './services/equipment-assets-import.service.js';
 import { PropertySite360Service } from './services/property-site-360.service.js';
 import { PropertyIntelligenceService } from './services/property-intelligence.service.js';
 import { DocumentIntelligenceService } from './services/document-intelligence.service.js';
@@ -399,6 +400,7 @@ import { createSalesAnalyticsIntelligenceRouter } from './routes/sales-analytics
 import { createCustomer360IntelligenceRouter } from './routes/customer-360-intelligence.js';
 import { createCustomer360Router } from './routes/customer-360.js';
 import { createCustomerDuplicateReconciliationRouter } from './routes/customer-duplicate-reconciliation.js';
+import { createEquipmentAssetsImportRouter } from './routes/equipment-assets-import.js';
 import { createPropertySite360Router } from './routes/property-site-360.js';
 import { createPropertyIntelligenceRouter } from './routes/property-intelligence.js';
 import { createDocumentIntelligenceRouter } from './routes/document-intelligence.js';
@@ -1308,6 +1310,11 @@ const enterpriseAssetLifecycleService = new EnterpriseAssetLifecycleService({
   assetEquipmentIntelligenceService,
   enterpriseDigitalTwinService,
 });
+const equipmentAssetsImportService = new EquipmentAssetsImportService(
+  db,
+  assetEquipmentIntelligenceService,
+  enterpriseAssetLifecycleService,
+);
 const recurringMaintenanceService = new RecurringMaintenanceService({
   db,
   enterpriseAssetLifecycleService,
@@ -3186,6 +3193,15 @@ app.use(
   '/api/v1/customer-duplicate-reconciliation',
   createCustomerDuplicateReconciliationRouter({
     reconciliationService: customerDuplicateReconciliationService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/equipment-assets-import',
+  createEquipmentAssetsImportRouter({
+    equipmentAssetsImportService,
     teamService,
     jwtSecret: env.JWT_SECRET,
     authService,

@@ -1,0 +1,175 @@
+{
+  "label": "equipment-assets-import-staging-proof",
+  "row": 86,
+  "generatedAt": "2026-08-08T08:03:15.402Z",
+  "mode": "apply-migration+staging-proof",
+  "stagingOnly": true,
+  "xeroWriteCalls": 0,
+  "productionWrites": 0,
+  "productionMigrations": 0,
+  "inventsData": false,
+  "row87Started": false,
+  "results": [
+    {
+      "name": "row87_not_started",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "migration_0207_applied_staging",
+      "status": "PASS",
+      "detail": "Additive review/audit tables applied on staging"
+    },
+    {
+      "name": "source_inventory",
+      "status": "PASS",
+      "detail": "{\"asset_equipment\":0,\"registry_profiles\":0,\"dm_asset_jobs\":0,\"royal_cape_equipment\":0,\"crc_equipment\":0,\"conclusion\":\"MISSING_AUTHORISED_EQUIPMENT_SOURCE\"}"
+    },
+    {
+      "name": "royal_cape_truth",
+      "status": "PASS",
+      "detail": "NO_VERIFIED_EQUIPMENT_LINKED"
+    },
+    {
+      "name": "crc_customer",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "rowan_preserved",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "job_000002",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "qu_0183",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "preview_missing_source_no_creates",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "apply_counts_zero_without_source",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "idempotent_zero_duplicates",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "serial_normalization",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "data_quality_empty",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "review_audit_tables",
+      "status": "PASS",
+      "detail": "equipment_import_audit_logs,equipment_import_reviews"
+    }
+  ],
+  "blockers": [],
+  "proof": {
+    "sourceInventory": {
+      "asset_equipment": 0,
+      "registry_profiles": 0,
+      "dm_asset_jobs": 0,
+      "royal_cape_equipment": 0,
+      "crc_equipment": 0,
+      "conclusion": "MISSING_AUTHORISED_EQUIPMENT_SOURCE"
+    },
+    "preview": {
+      "discovered": 0,
+      "exactMatch": 0,
+      "create": 0,
+      "update": 0,
+      "unchanged": 0,
+      "reviewRequired": 0,
+      "skip": 0,
+      "failed": 0,
+      "missingAuthorisedSource": true,
+      "oldestSourceDate": null,
+      "newestSourceDate": null,
+      "xeroWrites": 0,
+      "productionWrites": 0,
+      "inventsData": false,
+      "rows": []
+    },
+    "firstApply": {
+      "discovered": 0,
+      "created": 0,
+      "updated": 0,
+      "unchanged": 0,
+      "reviewRequired": 0,
+      "skipped": 0,
+      "failed": 0,
+      "duplicateEquipment": 0,
+      "duplicateRegistryProfiles": 0,
+      "duplicatePropertyLinks": 0,
+      "duplicateJobLinks": 0,
+      "duplicateDocumentLinks": 0,
+      "xeroWrites": 0,
+      "productionWrites": 0
+    },
+    "secondIdempotentApply": {
+      "discovered": 0,
+      "created": 0,
+      "updated": 0,
+      "unchanged": 0,
+      "reviewRequired": 0,
+      "skipped": 0,
+      "failed": 0,
+      "duplicateEquipment": 0,
+      "duplicateRegistryProfiles": 0,
+      "duplicatePropertyLinks": 0,
+      "duplicateJobLinks": 0,
+      "duplicateDocumentLinks": 0,
+      "xeroWrites": 0,
+      "productionWrites": 0
+    },
+    "dataQuality": {
+      "withSerial": 0,
+      "missingSerial": 0,
+      "withMake": 0,
+      "missingMake": 0,
+      "withModel": 0,
+      "missingModel": 0,
+      "customerLinked": 0,
+      "customerUnlinked": 0,
+      "propertyLinked": 0,
+      "propertyUnassigned": 0,
+      "jobHistoryLinked": 0,
+      "noHistory": 0,
+      "ambiguous": 0,
+      "duplicateCandidates": 0
+    },
+    "architecture": {
+      "canonicalModel": [
+        "asset_equipment",
+        "al_asset_registry_profiles"
+      ],
+      "parallelRegistry": false,
+      "customer360UsesRegistry": true,
+      "property360UsesRegistry": true
+    },
+    "xeroWrites": 0,
+    "productionWrites": 0,
+    "productionMigrations": 0,
+    "row87Started": false,
+    "clientPortalFinalValidation": "NOT_PASS — separate mandatory pre-V1 gate"
+  },
+  "ok": true
+}

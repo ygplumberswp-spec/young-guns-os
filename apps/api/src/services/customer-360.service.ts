@@ -18,7 +18,9 @@ import {
 } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
 import {
+  alAssetRegistryProfiles,
   assetEquipment,
+  assetMaintenanceRecords,
   communications,
   customerActivities,
   customerMarketingConsents,
@@ -689,9 +691,41 @@ export class Customer360Service {
             .orderBy(desc(payments.paidAt))
             .limit(50);
 
-    const assetIds = [...new Set(planRows.map((p) => p.assetId))];
-    const assetRows =
-      assetIds.length === 0
+    // Row 86: surface canonical registry-linked equipment (not only maintenance plans).
+    const registryRows = await this.db
+      .select({
+        profile: alAssetRegistryProfiles,
+        asset: assetEquipment,
+        propertyName: cxCustomerProperties.propertyName,
+      })
+      .from(alAssetRegistryProfiles)
+      .innerJoin(
+        assetEquipment,
+        and(
+          eq(assetEquipment.id, alAssetRegistryProfiles.assetId),
+          eq(assetEquipment.companyId, actor.companyId),
+        ),
+      )
+      .leftJoin(
+        cxCustomerProperties,
+        and(
+          eq(cxCustomerProperties.id, alAssetRegistryProfiles.propertyId),
+          eq(cxCustomerProperties.companyId, actor.companyId),
+        ),
+      )
+      .where(
+        and(
+          eq(alAssetRegistryProfiles.companyId, actor.companyId),
+          inArray(alAssetRegistryProfiles.customerId, historyCustomerIds),
+        ),
+      )
+      .limit(100);
+
+    const planAssetIds = [...new Set(planRows.map((p) => p.assetId).filter(Boolean))];
+    const registryAssetIds = new Set(registryRows.map((r) => r.asset.id));
+    const missingPlanAssetIds = planAssetIds.filter((id) => !registryAssetIds.has(id));
+    const planOnlyAssets =
+      missingPlanAssetIds.length === 0
         ? []
         : await this.db
             .select()
@@ -699,9 +733,66 @@ export class Customer360Service {
             .where(
               and(
                 eq(assetEquipment.companyId, actor.companyId),
-                inArray(assetEquipment.id, assetIds),
+                inArray(assetEquipment.id, missingPlanAssetIds),
               ),
             );
+
+    const allAssetIds = [
+      ...registryRows.map((r) => r.asset.id),
+      ...planOnlyAssets.map((a) => a.id),
+    ];
+    const latestServiceByAsset = new Map<string, string>();
+    if (allAssetIds.length > 0) {
+      const serviceRows = await this.db
+        .select({
+          assetId: assetMaintenanceRecords.assetId,
+          completedAt: assetMaintenanceRecords.completedAt,
+          scheduledAt: assetMaintenanceRecords.scheduledAt,
+        })
+        .from(assetMaintenanceRecords)
+        .where(
+          and(
+            eq(assetMaintenanceRecords.companyId, actor.companyId),
+            inArray(assetMaintenanceRecords.assetId, allAssetIds),
+          ),
+        )
+        .orderBy(desc(assetMaintenanceRecords.completedAt))
+        .limit(200);
+      for (const row of serviceRows) {
+        if (latestServiceByAsset.has(row.assetId)) continue;
+        const at = row.completedAt ?? row.scheduledAt;
+        if (at) latestServiceByAsset.set(row.assetId, at.toISOString());
+      }
+    }
+
+    const equipmentSummaries = [
+      ...registryRows.map((r) => ({
+        id: r.asset.id,
+        name: r.asset.name,
+        assetType: r.asset.assetType,
+        status: r.asset.status,
+        serialNumber: r.asset.serialNumber,
+        manufacturer: r.profile.manufacturer ?? null,
+        model: r.profile.model ?? null,
+        propertyId: r.profile.propertyId ?? null,
+        propertyName: r.propertyName ?? null,
+        latestServiceAt: latestServiceByAsset.get(r.asset.id) ?? null,
+        href: `/assets/${r.asset.id}`,
+      })),
+      ...planOnlyAssets.map((a) => ({
+        id: a.id,
+        name: a.name,
+        assetType: a.assetType,
+        status: a.status,
+        serialNumber: a.serialNumber,
+        manufacturer: null as string | null,
+        model: null as string | null,
+        propertyId: null as string | null,
+        propertyName: null as string | null,
+        latestServiceAt: latestServiceByAsset.get(a.id) ?? null,
+        href: `/assets/${a.id}`,
+      })),
+    ];
 
     const primaryPerson = people.find((p) => p.isPrimary && p.status === 'active') ?? people[0] ?? null;
 
@@ -867,14 +958,7 @@ export class Customer360Service {
         isPrimary: p.isPrimary,
         href: `/properties/${p.id}`,
       })),
-      equipment: assetRows.map((a) => ({
-        id: a.id,
-        name: a.name,
-        assetType: a.assetType,
-        status: a.status,
-        serialNumber: a.serialNumber,
-        href: `/assets/${a.id}`,
-      })),
+      equipment: equipmentSummaries,
       leads: leadRows.map((l) => ({
         id: l.id,
         title: l.title,

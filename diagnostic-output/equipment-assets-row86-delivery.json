@@ -1,0 +1,137 @@
+{
+  "row": 86,
+  "title": "Real Young Guns Equipment / Assets Import + Linkage",
+  "repoRoot": "/workspace",
+  "branch": "cursor/equipment-assets-import-663e",
+  "startingHead": "128a4345742920e18e3e20b11848f558fce2df71",
+  "endingHead": "160c4e83318d36466d36e524f252bffe303e7da5",
+  "ancestry": {
+    "pr65_25f50ee": true,
+    "pr67_ee5a19c": true,
+    "pr68_2aae5e1": true,
+    "pr69_a9c63b8": true,
+    "pr70_128a434": true
+  },
+  "architectureReused": [
+    "asset_equipment",
+    "al_asset_registry_profiles",
+    "Customer 360",
+    "Property/Site 360",
+    "Job 360",
+    "Enterprise Data Migration importAsset",
+    "scoreEquipmentHistoricalMatch"
+  ],
+  "canonicalAssetModel": "ONE \u2014 asset_equipment + al_asset_registry_profiles (no parallel registry)",
+  "matchingLogic": [
+    "1 sourceProvider+sourceExternalId",
+    "2 exact normalized serial",
+    "3 explicit mappingAssetId",
+    "4 strong evidence only \u2014 never name/type/customer/make-model alone"
+  ],
+  "duplicateReviewLogic": "Ambiguous/conflicting serial/customer/site/source/verified fields \u2192 REVIEW_REQUIRED; no silent merge",
+  "migration": {
+    "file": "packages/db/drizzle/0207_equipment_assets_import.sql",
+    "purpose": "Additive equipment_import_reviews + equipment_import_audit_logs",
+    "stagingApplied": true,
+    "productionMigrations": 0
+  },
+  "sourceInventoryConclusion": "MISSING_AUTHORISED_EQUIPMENT_SOURCE",
+  "sourceRecordCounts": {
+    "asset_equipment": 0,
+    "al_asset_registry_profiles": 0,
+    "dm_asset_jobs": 0,
+    "repo_csv_xlsx": 0,
+    "maintenance_plans_with_asset": 0,
+    "document_equipment_titles": 0,
+    "jobs_text_equipment_mentions": 0
+  },
+  "oldestSourceDate": null,
+  "newestSourceDate": null,
+  "previewCounts": {
+    "discovered": 0,
+    "exactMatch": 0,
+    "create": 0,
+    "update": 0,
+    "unchanged": 0,
+    "reviewRequired": 0,
+    "skip": 0,
+    "failed": 0,
+    "missingAuthorisedSource": true
+  },
+  "firstStagingApplyCounts": {
+    "created": 0,
+    "updated": 0,
+    "unchanged": 0,
+    "reviewRequired": 0,
+    "skipped": 0,
+    "failed": 0
+  },
+  "secondIdempotencyCounts": {
+    "created": 0,
+    "updated": 0,
+    "duplicateEquipment": 0,
+    "duplicateRegistryProfiles": 0,
+    "duplicatePropertyLinks": 0,
+    "duplicateJobLinks": 0,
+    "duplicateDocumentLinks": 0
+  },
+  "serialDataQuality": {
+    "withSerial": 0,
+    "missingSerial": 0,
+    "withMake": 0,
+    "missingMake": 0,
+    "withModel": 0,
+    "missingModel": 0
+  },
+  "customerLinkage": {
+    "linked": 0,
+    "unlinked": 0
+  },
+  "propertyLinkage": {
+    "linked": 0,
+    "unassigned": 0
+  },
+  "jobServiceHistoryLinkage": {
+    "linked": 0,
+    "noHistory": 0
+  },
+  "documentLinkage": {
+    "linked": 0
+  },
+  "lifecycleHandling": "active/inactive/retired/disposed supported on asset_equipment; replaced assets kept as separate historical rows",
+  "customer360Result": "Equipment section loads al_asset_registry_profiles by customer (+ plan fallback); CRC currently empty (truthful)",
+  "property360Result": "Unchanged registry join; Royal Cape empty",
+  "job360Result": "No fabricated job-equipment links; JOB-000002 preserved",
+  "royalCapeTruth": "NO_VERIFIED_EQUIPMENT_LINKED",
+  "rbac": {
+    "ownerManagerAdminOffice": "import/search allowed",
+    "technician": "denied unrestricted import directory",
+    "client": "denied import API; portal assets remain customer-scoped"
+  },
+  "clientEquipmentIsolationRegression": "Portal list/detail scoped by companyId+customerId; cross-client denial covered in shared tests; Client Portal final gate NOT marked PASS",
+  "tenantIsolation": "All queries company_id scoped",
+  "audit": "equipment_import_audit_logs for preview/apply/create/update/associations",
+  "testsTypecheckBuild": {
+    "sharedFocusedTests": "92 pass (equipment + c360 + property + duplicate + historical + royal cape)",
+    "sharedEquipmentTests": "32 pass",
+    "apiEnvelopeTests": "5 pass",
+    "sharedTypecheck": "pass",
+    "apiTypecheck": "pass",
+    "webTypecheck": "pass",
+    "sharedBuild": "pass",
+    "dbBuild": "TS2589 baseline retained (pre-existing deep schema instantiation)",
+    "apiBuild": "fails on pre-existing TS2589 + unrelated xero-sync typing debt (typecheck still passes)",
+    "webBuild": "pass"
+  },
+  "knownGaps": [
+    "No authorised Young Guns equipment source file/DM asset job currently available in staging \u2014 apply creates 0 until source is provided",
+    "Client Portal final validation remains a separate mandatory pre-V1 gate",
+    "Job\u2194equipment still metadata/customer-scoped count (no new FK invented)"
+  ],
+  "xeroWriteCalls": 0,
+  "productionWrites": 0,
+  "productionMigrations": 0,
+  "row87Started": false,
+  "clientPortalFinalValidation": "NOT_PASS \u2014 separate mandatory pre-V1 gate",
+  "prUrl": "https://github.com/ygplumberswp-spec/young-guns-os/pull/71"
+}

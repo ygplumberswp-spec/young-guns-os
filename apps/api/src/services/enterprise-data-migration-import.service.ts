@@ -10,6 +10,7 @@ import {
   paymentImportCreatesLedgerEntry,
   preferXeroCanonicalRecord,
   previewInventoryStockImpact,
+  normalizeEquipmentSerial,
   scoreEquipmentHistoricalMatch,
   toDbSourceProvider,
 } from '@titan/shared';
@@ -512,10 +513,23 @@ export class EnterpriseDataMigrationImportService {
     }
 
     if (serialNumber) {
+      const targetSerial = normalizeEquipmentSerial(serialNumber);
       const serialMatches = existingAssets.filter(
-        (asset) => (asset.serialNumber ?? '').toLowerCase() === serialNumber.toLowerCase(),
+        (asset) => normalizeEquipmentSerial(asset.serialNumber) === targetSerial,
       );
       if (serialMatches.length === 1) {
+        const matched = serialMatches[0]!;
+        const matchedMeta = (matched.metadata ?? {}) as Record<string, unknown>;
+        if (
+          provenance.sourceExternalId &&
+          matchedMeta.sourceExternalId &&
+          (matchedMeta.sourceProvider !== provenance.sourceProvider ||
+            matchedMeta.sourceExternalId !== provenance.sourceExternalId)
+        ) {
+          throw new Error(
+            `IDENTITY CONFLICT — serial ${serialNumber} conflicts with existing source identity — REVIEW required.`,
+          );
+        }
         const scored = scoreEquipmentHistoricalMatch({
           serialMatch: true,
           customerMatch: Boolean(customerId),
@@ -527,7 +541,7 @@ export class EnterpriseDataMigrationImportService {
             `Low-confidence equipment match for serial ${serialNumber} — REVIEW required.`,
           );
         }
-        return serialMatches[0]!.id;
+        return matched.id;
       }
       if (serialMatches.length > 1) {
         throw new Error(

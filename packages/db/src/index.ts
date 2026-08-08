@@ -155,4 +155,13 @@ export {
   customerDuplicateReconciliationStatusEnum,
 } from './schema/customer-duplicate-reconciliation.js';
 
+/** Explicit re-export — Row 86 equipment import review/audit. */
+export {
+  equipmentImportReviews,
+  equipmentImportAuditLogs,
+  equipmentImportActionEnum,
+  equipmentImportReviewStatusEnum,
+  equipmentImportAuditActionEnum,
+} from './schema/equipment-assets-import.js';
+
 export { drizzle } from 'drizzle-orm/postgres-js';
