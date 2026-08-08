@@ -98,6 +98,8 @@ export * from './finance-document-photo-utils.js';
 export * from './finance-document-evidence.js';
 export * from './job-payment-ledger.js';
 export * from './inventory.js';
+export * from './inventory-operational-truth-row133.js';
+export * from './supplier-operational-record-row134.js';
 export * from './job-costing.js';
 export * from './job-profitability.js';
 export * from './job-profitability-source-integrity.js';
