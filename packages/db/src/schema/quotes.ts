@@ -124,6 +124,17 @@ export const quotes = pgTable('quotes', {
   depositPercent: integer('deposit_percent'),
   optionTier: text('option_tier'),
   notes: text('notes'),
+  /**
+   * Row 90 — pricing presentation mode.
+   * ITEMISED (default / historical) | FLAT_RATE_INCLUDED
+   */
+  pricingPresentationMode: text('pricing_presentation_mode').notNull().default('ITEMISED'),
+  /** Row 90 — labour absorbed into customer-facing service price when flat-rate. */
+  labourIncluded: boolean('labour_included').notNull().default(false),
+  /** Row 90 — call-out absorbed into customer-facing service price when flat-rate. */
+  calloutIncluded: boolean('callout_included').notNull().default(false),
+  /** Row 90 — PER_JOB | PER_UNIT */
+  calloutAllocation: text('callout_allocation').notNull().default('PER_JOB'),
   billingAddress: text('billing_address'),
   siteAddress: text('site_address'),
   postalAddress: text('postal_address'),
@@ -165,6 +176,11 @@ export const quoteLineItems = pgTable('quote_line_items', {
   lineCostCents: integer('line_cost_cents').notNull().default(0),
   isOptional: boolean('is_optional').notNull().default(false),
   optionTier: text('option_tier'),
+  /**
+   * Row 90 — when false, line is an internal pricing component
+   * (retained for costing; excluded from customer-facing charges).
+   */
+  customerVisible: boolean('customer_visible').notNull().default(true),
   accountCode: text('account_code'),
   sourceExternalId: text('source_external_id'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

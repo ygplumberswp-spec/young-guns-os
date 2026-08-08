@@ -1,0 +1,42 @@
+{
+  "row": 90,
+  "title": "Fixed-price / flat-rate quoting",
+  "repoRoot": "/workspace",
+  "branch": "cursor/fixed-price-flat-rate-quoting-663e",
+  "startingHead": "f06499a5c93242a86391dcbf5c91ce293a4d7ceb",
+  "endingHead": "0d89659aaa12b7bae7de7d837ae02ae31dc58997",
+  "commit": "0d89659aaa12b7bae7de7d837ae02ae31dc58997",
+  "ancestry": "PR#67..#74 present",
+  "pricingPresentationModel": "FLAT_RATE_INCLUDED | ITEMISED (explicit, per-quote)",
+  "migration": "0209_fixed_price_flat_rate_quoting.sql (additive, staging applied)",
+  "row91Started": false,
+  "row92Started": false,
+  "xeroWrites": 0,
+  "customerSends": 0,
+  "productionWrites": 0,
+  "productionMigrations": 0,
+  "stagingProof": "diagnostic-output/fixed-price-flat-rate-quoting-staging-proof.json",
+  "royalCape": {
+    "quoteNumber": "QU-0183",
+    "totalCents": 4272250,
+    "xeroQuoteId": "4d9b1ceb-83dc-4ac6-8d58-ce7ac08f6db8",
+    "mode": "ITEMISED",
+    "unchanged": true
+  },
+  "realDataAudit": {
+    "totalQuotes": 253,
+    "totalLines": 1556,
+    "labourLines": 137,
+    "calloutLines": 4,
+    "potentialDuplicateChargeCandidates": 127,
+    "historicalRepricingApplied": false
+  },
+  "knownGaps": [
+    "Full Client Portal E2E remains a separate mandatory pre-v1 gate (Row 90 proves customer-safe projection only)",
+    "Canonical labour/call-out sell rates MISSING \u2014 Row 90 does not invent rates",
+    "All existing quote lines classified category=other in staging (labour/call-out detected via description heuristics for audit only)",
+    "TS2589 baseline remains on full @titan/db build"
+  ],
+  "prUrl": "https://github.com/ygplumberswp-spec/young-guns-os/pull/75",
+  "prNumber": 75
+}

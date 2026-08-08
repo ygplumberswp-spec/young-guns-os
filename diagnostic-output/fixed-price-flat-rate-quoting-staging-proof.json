@@ -1,0 +1,164 @@
+{
+  "label": "fixed-price-flat-rate-quoting-staging-proof",
+  "row": 90,
+  "generatedAt": "2026-08-08T09:11:55.224Z",
+  "stagingOnly": true,
+  "xeroWriteCalls": 0,
+  "customerSends": 0,
+  "productionWrites": 0,
+  "productionMigrations": 0,
+  "row91Started": false,
+  "row92Started": false,
+  "architecture": {
+    "pricingFields": "quotes.pricing_presentation_mode, labour_included, callout_included, callout_allocation; quote_line_items.customer_visible",
+    "pricebookSource": "finance_catalogue / YOUNG_GUNS_APPROVED_FINANCE_PRICEBOOK (not auto-applied by Row 90)",
+    "labourConfigSource": "company_finance_settings.default_internal_labour_rate_cents_per_hour (COST only — sell rate MISSING)",
+    "calloutConfigSource": "No canonical call-out sell setting — MISSING (pricebook not auto-applied)",
+    "taxSource": "company_finance_settings.default_vat_rate_bps + line vat_rate_bps",
+    "xeroLineMappingSource": "projectXeroRevenueLines → customer-facing lines only (writes=0; dry-run projection)"
+  },
+  "realDataAudit": {
+    "totalQuotes": 253,
+    "totalLines": 1556,
+    "linesByCategory": {
+      "other": 1556
+    },
+    "labourLines": 137,
+    "calloutLines": 4,
+    "serviceProductLines": 1415,
+    "quotesWithServiceAndLabourOrCallout": 127,
+    "potentialDuplicateChargeCandidates": 127,
+    "note": "Candidates are READ-ONLY observations — no automatic historical repricing applied",
+    "labourSellRate": {
+      "status": "MISSING",
+      "reason": "No canonical customer-facing labour sell rate configured for this tenant. Internal labour cost rate is not used as a sell rate. Row 90 does not invent rates."
+    },
+    "calloutSellRate": {
+      "status": "MISSING",
+      "reason": "No canonical call-out sell rate configured for this tenant. Pricebook catalogue constants are not auto-applied by Row 90. Do not invent rates."
+    },
+    "vatRateBps": 1500,
+    "historicalRepricingApplied": false
+  },
+  "safeFixtures": {
+    "labourIncluded": "PASS",
+    "calloutIncluded": "PASS",
+    "bothIncluded": "PASS",
+    "itemised": "PASS",
+    "quantity": "PASS",
+    "vat": "PASS",
+    "invoiceConversion": "PASS",
+    "pdf": "PASS",
+    "portal": "PASS",
+    "xeroProjection": "PASS",
+    "noDoubleCharge": "PASS",
+    "idempotency": "PASS",
+    "missingLabourSellRate": "PASS",
+    "missingCalloutSellRate": "PASS"
+  },
+  "royalCape": {
+    "quoteNumber": "QU-0183",
+    "totalCents": 4272250,
+    "xeroQuoteId": "4d9b1ceb-83dc-4ac6-8d58-ce7ac08f6db8",
+    "customerId": "773497f7-2d71-4a3a-8d80-d113b841b843",
+    "jobId": "5920ef4a-51a9-44ec-8577-09d187ca9c33",
+    "pricingPresentationMode": "ITEMISED",
+    "labourIncluded": false,
+    "calloutIncluded": false,
+    "paymentTerms": null,
+    "unchanged": true
+  },
+  "results": [
+    {
+      "name": "safety_gates",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "fixture_labourIncluded",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "fixture_calloutIncluded",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "fixture_bothIncluded",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "fixture_itemised",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "fixture_quantity",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "fixture_vat",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "fixture_invoiceConversion",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "fixture_pdf",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "fixture_portal",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "fixture_xeroProjection",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "fixture_noDoubleCharge",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "fixture_idempotency",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "fixture_missingLabourSellRate",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "fixture_missingCalloutSellRate",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "staging_additive_migration",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "real_data_audit_readonly",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "royal_cape_unchanged",
+      "status": "PASS",
+      "detail": ""
+    }
+  ],
+  "blockers": []
+}

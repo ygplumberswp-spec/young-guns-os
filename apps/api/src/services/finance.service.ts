@@ -20,8 +20,6 @@ import type {
   UpdateInvoiceRequest,
 } from '@titan/shared';
 import {
-  calculateLineAmounts,
-  calculateQuoteProfit,
   canEditInvoice,
   displayOfficialInvoiceNumber,
   displayOfficialQuoteNumber,
@@ -66,6 +64,14 @@ import {
   buildFinanceMetadataAuditEvent,
   rejectFabricatedCustomerPo,
   safeAuditText,
+  calculateCustomerFacingQuoteAmounts,
+  pricingConfigFromQuoteRow,
+  normalizeFixedPriceQuoteConfig,
+  buildFixedPriceAuditEvent,
+  buildInternalPricingBreakdown,
+  projectCustomerFacingLines,
+  assertHistoricalQuoteNotSilentlyRepriced,
+  type FixedPriceQuoteConfig,
   type FinanceDocumentPreviewModel,
 } from '@titan/shared';
 import { FinanceDocumentSectionsService } from './finance-document-sections.service.js';
@@ -114,6 +120,27 @@ function invoiceMeta(row: { customerPoNumber?: string | null; internalNotes?: st
     customerPoNumber: row?.customerPoNumber ?? null,
     internalNotes: row?.internalNotes ?? null,
   };
+}
+
+/** Row 90 additive quote pricing columns — safe access under TS2589 baseline. */
+type QuotePricingColumns = {
+  pricingPresentationMode?: string | null;
+  labourIncluded?: boolean | null;
+  calloutIncluded?: boolean | null;
+  calloutAllocation?: string | null;
+};
+
+function quotePricing(row: QuotePricingColumns | null | undefined): FixedPriceQuoteConfig {
+  return pricingConfigFromQuoteRow({
+    pricingPresentationMode: row?.pricingPresentationMode,
+    labourIncluded: row?.labourIncluded,
+    calloutIncluded: row?.calloutIncluded,
+    calloutAllocation: row?.calloutAllocation,
+  });
+}
+
+function quoteLineCustomerVisible(line: { customerVisible?: boolean | null }): boolean {
+  return line.customerVisible !== false;
 }
 
 export class FinanceError extends Error {
@@ -256,7 +283,22 @@ export class FinanceService {
       if (existing) return toQuoteSummary(existing);
     }
     const settings = await this.ensureFinanceSettings(companyId);
-    const computed = quoteAmounts(sanitized.lineItems ?? legacyQuoteLines(sanitized.amountCents!, settings.defaultVatRateBps), settings.profitFloorMarginBps, sanitized.discountCents ?? 0);
+    const pricingConfig = normalizeFixedPriceQuoteConfig({
+      pricingPresentationMode: sanitized.pricingPresentationMode,
+      labourIncluded: sanitized.labourIncluded,
+      calloutIncluded: sanitized.calloutIncluded,
+      calloutAllocation: sanitized.calloutAllocation,
+    });
+    const computed = quoteAmounts(
+      sanitized.lineItems ?? legacyQuoteLines(sanitized.amountCents!, settings.defaultVatRateBps),
+      settings.profitFloorMarginBps,
+      sanitized.discountCents ?? 0,
+      pricingConfig,
+      settings.defaultVatRateBps,
+    );
+    if (!computed.validation.ok) {
+      throw new FinanceError(computed.validation.code, computed.validation.message);
+    }
     this.assertFloor(actor, computed.profit.belowFloor, sanitized.belowFloorOverride, sanitized.belowFloorReason, settings.allowBelowFloorWithOverride);
     const [created] = await this.db.insert(quotes).values({
       companyId, customerId: sanitized.customerId, jobId: sanitized.jobId ?? null, propertyId: sanitized.propertyId ?? null,
@@ -273,6 +315,10 @@ export class FinanceService {
       assumptions: normalizeOptionalText(sanitized.assumptions), customerNotes: normalizeOptionalText(sanitized.customerNotes),
       internalNotes: normalizeOptionalText(sanitized.internalNotes), paymentTerms: normalizeOptionalText(sanitized.paymentTerms),
       depositPercent: sanitized.depositPercent ?? null, optionTier: normalizeOptionalText(sanitized.optionTier), notes: normalizeOptionalText(sanitized.notes),
+      pricingPresentationMode: pricingConfig.pricingPresentationMode,
+      labourIncluded: pricingConfig.labourIncluded,
+      calloutIncluded: pricingConfig.calloutIncluded,
+      calloutAllocation: pricingConfig.calloutAllocation,
       issuedAt: parseOptionalDate(sanitized.issuedAt),
       billingAddress: normalizeOptionalText(sanitized.billingAddress),
       siteAddress: normalizeOptionalText(sanitized.siteAddress),
@@ -543,6 +589,36 @@ export class FinanceService {
       sourceProvider: row.sourceProvider,
       xeroQuoteId: row.xeroQuoteId,
     });
+    const pricing = quotePricing(row as QuotePricingColumns);
+    const mappedLines = row.lineItems.map((line) => ({
+      id: line.id,
+      position: line.position,
+      category: line.category,
+      description: line.description,
+      quantity: Number(line.quantity),
+      unitPriceCents: line.unitPriceCents,
+      unitCostCents: options.includeProfit ? line.unitCostCents : null,
+      vatRateBps: line.vatRateBps,
+      lineSubtotalCents: line.lineSubtotalCents,
+      lineVatCents: line.lineVatCents,
+      lineTotalCents: line.lineTotalCents,
+      lineCostCents: options.includeProfit ? line.lineCostCents : null,
+      isOptional: line.isOptional,
+      optionTier: line.optionTier,
+      customerVisible: quoteLineCustomerVisible(line as { customerVisible?: boolean | null }),
+    }));
+    const showInternalPricing = Boolean(options.includeProfit);
+    const internalPricing = showInternalPricing
+      ? buildInternalPricingBreakdown({
+          lines: mappedLines.map((line) => ({
+            ...line,
+            unitCostCents: line.unitCostCents ?? 0,
+            lineCostCents: line.lineCostCents ?? 0,
+          })),
+          config: pricing,
+          customerTotalCents: row.totalCents ?? row.amountCents,
+        })
+      : null;
     return {
       ...toQuoteSummary(row, profit), scopeOfWork: row.scopeOfWork, exclusions: row.exclusions, assumptions: row.assumptions,
       customerNotes: row.customerNotes,
@@ -552,15 +628,16 @@ export class FinanceService {
       paymentTerms: row.paymentTerms,
       notes: row.notes ?? null,
       customerFacingNotes: meta.customerFacingNotes,
+      pricingPresentationMode: pricing.pricingPresentationMode,
+      labourIncluded: pricing.labourIncluded,
+      calloutIncluded: pricing.calloutIncluded,
+      calloutAllocation: pricing.calloutAllocation,
+      internalPricing,
       addresses: toFinanceDocumentAddressSnapshot(row),
       depositPercent: row.depositPercent, optionTier: row.optionTier, discountCents: row.discountCents,
       belowFloorOverride: row.belowFloorOverride, belowFloorReason: options.includeProfit ? row.belowFloorReason : null,
-      lineItems: row.lineItems.map((line) => ({
-        id: line.id, position: line.position, category: line.category, description: line.description, quantity: Number(line.quantity),
-        unitPriceCents: line.unitPriceCents, unitCostCents: options.includeProfit ? line.unitCostCents : null, vatRateBps: line.vatRateBps,
-        lineSubtotalCents: line.lineSubtotalCents, lineVatCents: line.lineVatCents, lineTotalCents: line.lineTotalCents,
-        lineCostCents: options.includeProfit ? line.lineCostCents : null, isOptional: line.isOptional, optionTier: line.optionTier,
-      })), acceptance: row.acceptances[0] ? acceptanceSummary(row.acceptances[0]) : null, xeroQuoteId: row.xeroQuoteId,
+      lineItems: mappedLines,
+      acceptance: row.acceptances[0] ? acceptanceSummary(row.acceptances[0]) : null, xeroQuoteId: row.xeroQuoteId,
       documentSections,
     };
   }
@@ -617,8 +694,49 @@ export class FinanceService {
       }
     }
     const settings = await this.ensureFinanceSettings(actor.companyId);
-    const computed = sanitized.lineItems ? quoteAmounts(sanitized.lineItems, settings.profitFloorMarginBps, sanitized.discountCents ?? current.discountCents) : null;
-    if (computed) this.assertFloor(actor, computed.profit.belowFloor, sanitized.belowFloorOverride, sanitized.belowFloorReason, settings.allowBelowFloorWithOverride);
+    const currentPricing = quotePricing(current as QuotePricingColumns);
+    const nextPricing = normalizeFixedPriceQuoteConfig({
+      pricingPresentationMode:
+        sanitized.pricingPresentationMode ?? currentPricing.pricingPresentationMode,
+      labourIncluded:
+        sanitized.labourIncluded !== undefined
+          ? sanitized.labourIncluded
+          : currentPricing.labourIncluded,
+      calloutIncluded:
+        sanitized.calloutIncluded !== undefined
+          ? sanitized.calloutIncluded
+          : currentPricing.calloutIncluded,
+      calloutAllocation:
+        sanitized.calloutAllocation ?? currentPricing.calloutAllocation,
+    });
+    const computed = sanitized.lineItems
+      ? quoteAmounts(
+          sanitized.lineItems,
+          settings.profitFloorMarginBps,
+          sanitized.discountCents ?? current.discountCents,
+          nextPricing,
+          settings.defaultVatRateBps,
+        )
+      : null;
+    if (computed && !computed.validation.ok) {
+      throw new FinanceError(computed.validation.code, computed.validation.message);
+    }
+    if (computed) {
+      try {
+        assertHistoricalQuoteNotSilentlyRepriced({
+          previousMode: currentPricing.pricingPresentationMode,
+          nextMode: nextPricing.pricingPresentationMode,
+          isIssued,
+          totalsChanged: computed.totalCents !== (current.totalCents ?? current.amountCents),
+        });
+      } catch (error) {
+        throw new FinanceError(
+          'QUOTE_TRANSITION_NOT_ALLOWED',
+          error instanceof Error ? error.message : 'Issued quote cannot be silently repriced',
+        );
+      }
+      this.assertFloor(actor, computed.profit.belowFloor, sanitized.belowFloorOverride, sanitized.belowFloorReason, settings.allowBelowFloorWithOverride);
+    }
     let issuedAtUpdate: Date | null | undefined;
     try {
       issuedAtUpdate = resolveQuoteIssuedAtUpdate(current.issuedAt, sanitized.issuedAt, current.isImmutable);
@@ -641,12 +759,22 @@ export class FinanceService {
         sanitized.internalNotes === undefined
           ? current.internalNotes
           : normalizeOptionalText(sanitized.internalNotes),
+      pricingPresentationMode: nextPricing.pricingPresentationMode,
+      labourIncluded: nextPricing.labourIncluded,
+      calloutIncluded: nextPricing.calloutIncluded,
+      calloutAllocation: nextPricing.calloutAllocation,
       ...(issuedAtUpdate !== undefined ? { issuedAt: issuedAtUpdate } : {}),
       ...(addressUpdate ?? {}),
       ...computed && { amountCents: computed.totalCents, subtotalCents: computed.subtotalCents, vatCents: computed.vatCents, totalCents: computed.totalCents, estimatedCostCents: computed.profit.estimatedCostCents, grossProfitCents: computed.profit.grossProfitCents, markupBps: computed.profit.markupBps, marginBps: computed.profit.marginBps, profitFloorCents: computed.profit.profitFloorCents, targetPriceCents: computed.profit.targetPriceCents },
       updatedAt: new Date(),
     }).where(eq(quotes.id, quoteId));
     if (computed) { await this.db.delete(quoteLineItems).where(eq(quoteLineItems.quoteId, quoteId)); await this.insertQuoteLines(quoteId, actor.companyId, computed.lines); }
+    await this.auditQuotePricingChanges(actor, current as QuotePricingColumns & { id: string; quoteNumber: string; totalCents?: number | null; amountCents: number }, {
+      pricing: nextPricing,
+      previousPricing: currentPricing,
+      previousTotalCents: current.totalCents ?? current.amountCents,
+      nextTotalCents: computed?.totalCents ?? (current.totalCents ?? current.amountCents),
+    });
     if (sanitized.documentContent !== undefined) {
       await this.documentSections.saveSections(toSectionsActor(actor), {
         quoteId,
@@ -1008,7 +1136,34 @@ export class FinanceService {
     if (!source) throw new FinanceError('NOT_FOUND', 'Quote not found');
     const replay = await this.db.query.quotes.findFirst({ where: and(eq(quotes.companyId, actor.companyId), eq(quotes.clientActionId, input.clientActionId)), with: { customer: true, job: true } });
     if (replay) return toQuoteSummary(replay);
-    const next = await this.createQuote(actor, { customerId: source.customerId, jobId: source.jobId, propertyId: source.propertyId, leadId: source.leadId, currency: source.currency, validUntil: source.validUntil?.toISOString() ?? null, lineItems: source.lineItems.map(line => ({ category: line.category, description: line.description, quantity: Number(line.quantity), unitPriceCents: line.unitPriceCents, unitCostCents: line.unitCostCents, vatRateBps: line.vatRateBps, isOptional: line.isOptional, optionTier: line.optionTier })), clientActionId: input.clientActionId, notes: input.reason ?? source.notes, belowFloorOverride: source.belowFloorOverride, belowFloorReason: source.belowFloorReason });
+    const sourcePricing = quotePricing(source as QuotePricingColumns);
+    const next = await this.createQuote(actor, {
+      customerId: source.customerId,
+      jobId: source.jobId,
+      propertyId: source.propertyId,
+      leadId: source.leadId,
+      currency: source.currency,
+      validUntil: source.validUntil?.toISOString() ?? null,
+      lineItems: source.lineItems.map((line) => ({
+        category: line.category,
+        description: line.description,
+        quantity: Number(line.quantity),
+        unitPriceCents: line.unitPriceCents,
+        unitCostCents: line.unitCostCents,
+        vatRateBps: line.vatRateBps,
+        isOptional: line.isOptional,
+        optionTier: line.optionTier,
+        customerVisible: quoteLineCustomerVisible(line as { customerVisible?: boolean | null }),
+      })),
+      clientActionId: input.clientActionId,
+      notes: input.reason ?? source.notes,
+      belowFloorOverride: source.belowFloorOverride,
+      belowFloorReason: source.belowFloorReason,
+      pricingPresentationMode: sourcePricing.pricingPresentationMode,
+      labourIncluded: sourcePricing.labourIncluded,
+      calloutIncluded: sourcePricing.calloutIncluded,
+      calloutAllocation: sourcePricing.calloutAllocation,
+    });
     await this.db.update(quotes).set({ rootQuoteId: source.rootQuoteId ?? source.id, supersedesQuoteId: source.id, versionNumber: source.versionNumber + 1 }).where(eq(quotes.id, next.id));
     await this.db.update(quotes).set({ status: 'superseded', updatedAt: new Date() }).where(eq(quotes.id, source.id));
     return (await this.getQuote(actor.companyId, next.id))!;
@@ -1085,7 +1240,27 @@ export class FinanceService {
       providerWriteAllowed: false,
     });
 
-    const lines = quote.lineItems.map(line => ({ category: line.category, description: line.description, quantity: Number(line.quantity), unitPriceCents: line.unitPriceCents, vatRateBps: line.vatRateBps }));
+    // Row 90 — invoice conversion preserves customer-facing commercial price only.
+    // Absorbed labour/call-out must not explode into new invoice charges.
+    const conversionPricing = quotePricing(quote as QuotePricingColumns);
+    const customerFacing = projectCustomerFacingLines(
+      quote.lineItems.map((line) => ({
+        category: line.category,
+        description: line.description,
+        quantity: Number(line.quantity),
+        unitPriceCents: line.unitPriceCents,
+        vatRateBps: line.vatRateBps,
+        customerVisible: quoteLineCustomerVisible(line as { customerVisible?: boolean | null }),
+      })),
+      conversionPricing,
+    );
+    const lines = customerFacing.map((line) => ({
+      category: line.category as CreateQuoteRequest['lineItems'][number]['category'],
+      description: line.description,
+      quantity: Number(line.quantity ?? 1),
+      unitPriceCents: line.unitPriceCents,
+      vatRateBps: line.vatRateBps ?? 1500,
+    }));
     const invoice = await this.createInvoice(actor, {
       customerId: quote.customerId,
       jobId: quote.jobId,
@@ -1962,6 +2137,82 @@ export class FinanceService {
     }
   }
 
+  private async auditQuotePricingChanges(
+    actor: FinanceActor,
+    current: QuotePricingColumns & {
+      id: string;
+      quoteNumber: string;
+      totalCents?: number | null;
+      amountCents: number;
+    },
+    input: {
+      pricing: FixedPriceQuoteConfig;
+      previousPricing: FixedPriceQuoteConfig;
+      previousTotalCents: number;
+      nextTotalCents: number;
+    },
+  ) {
+    const events: Array<{
+      eventType:
+        | 'pricing_mode_changed'
+        | 'flat_rate_price_changed'
+        | 'labour_inclusion_changed'
+        | 'callout_inclusion_changed';
+      before: unknown;
+      after: unknown;
+    }> = [];
+    if (
+      input.previousPricing.pricingPresentationMode !== input.pricing.pricingPresentationMode
+    ) {
+      events.push({
+        eventType: 'pricing_mode_changed',
+        before: input.previousPricing.pricingPresentationMode,
+        after: input.pricing.pricingPresentationMode,
+      });
+    }
+    if (input.previousPricing.labourIncluded !== input.pricing.labourIncluded) {
+      events.push({
+        eventType: 'labour_inclusion_changed',
+        before: input.previousPricing.labourIncluded,
+        after: input.pricing.labourIncluded,
+      });
+    }
+    if (input.previousPricing.calloutIncluded !== input.pricing.calloutIncluded) {
+      events.push({
+        eventType: 'callout_inclusion_changed',
+        before: input.previousPricing.calloutIncluded,
+        after: input.pricing.calloutIncluded,
+      });
+    }
+    if (input.previousTotalCents !== input.nextTotalCents) {
+      events.push({
+        eventType: 'flat_rate_price_changed',
+        before: input.previousTotalCents,
+        after: input.nextTotalCents,
+      });
+    }
+    for (const change of events) {
+      const audit = buildFixedPriceAuditEvent({
+        eventType: change.eventType,
+        companyId: actor.companyId,
+        quoteId: current.id,
+        quoteNumber: current.quoteNumber,
+        actorId: actor.userId ?? null,
+        before: change.before,
+        after: change.after,
+      });
+      await this.db.insert(securityAuditLogs).values({
+        companyId: audit.companyId,
+        category: 'security',
+        action: audit.action,
+        entityType: audit.entityType,
+        entityId: audit.entityId,
+        userId: actor.userId ?? null,
+        metadata: audit.metadata,
+      });
+    }
+  }
+
   private async insertQuoteLines(quoteId: string, companyId: string, lines: ReturnType<typeof quoteAmounts>['lines']) {
     if (!lines.length) return;
     await this.db.insert(quoteLineItems).values(lines.map((line, position) => ({
@@ -1969,6 +2220,7 @@ export class FinanceService {
       quantity: String(line.quantity), unitPriceCents: line.unitPriceCents, unitCostCents: line.unitCostCents ?? 0,
       vatRateBps: line.vatRateBps, lineSubtotalCents: line.lineSubtotalCents, lineVatCents: line.lineVatCents,
       lineTotalCents: line.lineTotalCents, lineCostCents: line.lineCostCents, isOptional: Boolean(line.isOptional), optionTier: line.optionTier ?? null,
+      customerVisible: line.customerVisible !== false,
     })));
   }
 
@@ -2161,13 +2413,44 @@ function legacyQuoteLines(amountCents: number, vatRateBps: number) {
   return [{ description: 'Quote total', quantity: 1, unitPriceCents: subtotal, vatRateBps, category: 'other' as const }];
 }
 
-function quoteAmounts(lines: NonNullable<CreateQuoteRequest['lineItems']>, floor: number, discountCents: number) {
-  const calculated = lines.map((line) => ({ ...line, quantity: line.quantity ?? 1, vatRateBps: line.vatRateBps ?? 1500, ...calculateLineAmounts({ quantity: line.quantity ?? 1, unitPriceCents: line.unitPriceCents, unitCostCents: line.unitCostCents, vatRateBps: line.vatRateBps ?? 1500 }) }));
-  const subtotalCents = calculated.reduce((sum, line) => sum + line.lineSubtotalCents, 0) - discountCents;
-  const vatCents = calculated.reduce((sum, line) => sum + line.lineVatCents, 0);
-  const totalCents = subtotalCents + vatCents;
-  const profit = calculateQuoteProfit({ totalCents, estimatedCostCents: calculated.reduce((sum, line) => sum + line.lineCostCents, 0), profitFloorMarginBps: floor });
-  return { lines: calculated, subtotalCents, vatCents, totalCents, profit };
+function quoteAmounts(
+  lines: NonNullable<CreateQuoteRequest['lineItems']>,
+  floor: number,
+  discountCents: number,
+  pricingConfig?: FixedPriceQuoteConfig,
+  defaultVatRateBps = 1500,
+) {
+  const result = calculateCustomerFacingQuoteAmounts({
+    lines,
+    config: pricingConfig ?? normalizeFixedPriceQuoteConfig(null),
+    discountCents,
+    profitFloorMarginBps: floor,
+    defaultVatRateBps,
+  });
+  return {
+    lines: result.lines.map((line) => ({
+      category: line.category as CreateQuoteRequest['lineItems'][number]['category'],
+      description: line.description,
+      quantity: line.quantity,
+      unitPriceCents: line.unitPriceCents,
+      unitCostCents: line.unitCostCents,
+      vatRateBps: line.vatRateBps,
+      isOptional: Boolean(line.isOptional),
+      optionTier: line.optionTier ?? null,
+      customerVisible: line.customerVisible,
+      lineSubtotalCents: line.lineSubtotalCents,
+      lineVatCents: line.lineVatCents,
+      lineTotalCents: line.lineTotalCents,
+      lineCostCents: line.lineCostCents,
+    })),
+    subtotalCents: result.subtotalCents,
+    vatCents: result.vatCents,
+    totalCents: result.totalCents,
+    profit: result.profit,
+    validation: result.validation,
+    pricingConfig: result.config,
+    internal: result.internal,
+  };
 }
 
 function profitFromQuote(row: Record<string, any>) {

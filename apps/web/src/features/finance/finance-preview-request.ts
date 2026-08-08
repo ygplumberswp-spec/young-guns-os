@@ -43,6 +43,10 @@ export type FinanceEditorPreviewContext = {
   amountPaidCents?: number | null;
   depositReceivedCents?: number | null;
   photos?: DocumentPhoto[];
+  /** Row 90 */
+  pricingPresentationMode?: 'FLAT_RATE_INCLUDED' | 'ITEMISED' | null;
+  labourIncluded?: boolean | null;
+  calloutIncluded?: boolean | null;
 };
 
 export function buildFinanceEditorPreviewInput(
@@ -90,6 +94,9 @@ export function buildFinanceEditorPreviewInput(
       unitPriceCents: line.unitPriceCents,
       vatRateBps: line.vatRateBps,
     })),
+    pricingPresentationMode: context.pricingPresentationMode ?? null,
+    labourIncluded: context.labourIncluded ?? null,
+    calloutIncluded: context.calloutIncluded ?? null,
     notes: context.notes.trim() || null,
     paymentTerms: sections?.paymentTerms.trim() || null,
     scopeOfWork: sections?.scopeOfWork.trim() || null,
