@@ -252,6 +252,7 @@ export * from './bank-reconciliation-states.js';
 export * from './bank-transaction-idempotency.js';
 export * from './bank-finance-exactly-once.js';
 export * from './bank-statement-archive.js';
+export * from './bank-health-exceptions.js';
 export * from './job-evidence.js';
 export * from './universal-evidence-upload.js';
 export * from './quality-assurance.js';

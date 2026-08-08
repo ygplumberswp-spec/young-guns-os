@@ -1597,6 +1597,13 @@
       "when": 1789569600000,
       "tag": "0232_bank_statement_archive",
       "breakpoints": true
+    },
+    {
+      "idx": 228,
+      "version": "7",
+      "when": 1789656000000,
+      "tag": "0233_bank_health_exceptions",
+      "breakpoints": true
     }
   ]
 }

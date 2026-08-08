@@ -28,7 +28,8 @@ export type OwnerFinancialAttentionKind =
   | 'review_stale'
   | 'low_margin_job'
   | 'missing_labour'
-  | 'missing_material';
+  | 'missing_material'
+  | 'bank_exception';
 
 export type OwnerFinancialDrillHref =
   | '/finance/cash-control'
