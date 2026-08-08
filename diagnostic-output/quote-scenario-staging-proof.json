@@ -1,0 +1,842 @@
+{
+  "label": "quote-scenario-staging-proof",
+  "row": 95,
+  "startedAt": "2026-08-08T10:46:58.230Z",
+  "checks": [
+    {
+      "name": "safety_boundaries",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "staging_db_identity",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "migration_0214_already_present",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "staging_audit_read_only",
+      "pass": true,
+      "detail": {
+        "totalQuotes": 253,
+        "explicitScenarioStored": 0,
+        "standardLegacyUnclassified": 253,
+        "phaseRelationships": 0,
+        "planEstimateLinks": 0,
+        "tenderBoqRefs": 0,
+        "variations": 0,
+        "milestoneDepositMetadata": 0,
+        "maintenanceLikeDiagnosticHintsInSample": 0,
+        "commercialManagingAgentLikeDiagnosticHintsInSample": 0,
+        "historicalAutoClassifications": 0,
+        "note": "Diagnostic text hints are reporting-only; no historical quotes were classified."
+      }
+    },
+    {
+      "name": "historical_auto_classifications_zero",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "royal_cape_unchanged",
+      "pass": true,
+      "detail": {
+        "quote": "QU-0183",
+        "totalCents": 4272250,
+        "pricingMode": "ITEMISED",
+        "jobNumber": "JOB-000002",
+        "xeroQuoteId": "4d9b1ceb-83dc-4ac6-8d58-ce7ac08f6db8",
+        "scenario": null,
+        "unchanged": true
+      }
+    },
+    {
+      "name": "validate_EMERGENCY",
+      "pass": true,
+      "detail": {
+        "ok": true,
+        "code": "OK",
+        "message": "Scenario valid."
+      }
+    },
+    {
+      "name": "edit_validate_EMERGENCY",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "edit_preserves_total_EMERGENCY",
+      "pass": true,
+      "detail": {
+        "total_cents": 150000,
+        "scenario": "EMERGENCY",
+        "quote_number": "R95-1786186022903-EMERGENCY"
+      }
+    },
+    {
+      "name": "lifecycle_EMERGENCY",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "doc_projection_EMERGENCY",
+      "pass": true,
+      "detail": {
+        "customerFacingLabel": "Emergency / urgent",
+        "context": {
+          "urgencyNote": "Burst pipe"
+        }
+      }
+    },
+    {
+      "name": "validate_FIXED_PRICE",
+      "pass": true,
+      "detail": {
+        "ok": true,
+        "code": "OK",
+        "message": "Scenario valid."
+      }
+    },
+    {
+      "name": "edit_validate_FIXED_PRICE",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "edit_preserves_total_FIXED_PRICE",
+      "pass": true,
+      "detail": {
+        "total_cents": 200000,
+        "scenario": "FIXED_PRICE",
+        "quote_number": "R95-1786186022903-FIXED_PRICE"
+      }
+    },
+    {
+      "name": "lifecycle_FIXED_PRICE",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "doc_projection_FIXED_PRICE",
+      "pass": true,
+      "detail": {
+        "customerFacingLabel": "Fixed-price / flat-rate",
+        "context": {}
+      }
+    },
+    {
+      "name": "validate_GEYSER_COMPLIANCE",
+      "pass": true,
+      "detail": {
+        "ok": true,
+        "code": "OK",
+        "message": "Scenario valid."
+      }
+    },
+    {
+      "name": "edit_validate_GEYSER_COMPLIANCE",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "edit_preserves_total_GEYSER_COMPLIANCE",
+      "pass": true,
+      "detail": {
+        "total_cents": 180000,
+        "scenario": "GEYSER_COMPLIANCE",
+        "quote_number": "R95-1786186022903-GEYSER_COMPLIANCE"
+      }
+    },
+    {
+      "name": "lifecycle_GEYSER_COMPLIANCE",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "doc_projection_GEYSER_COMPLIANCE",
+      "pass": true,
+      "detail": {
+        "customerFacingLabel": "Geyser compliance",
+        "context": {
+          "geyserNotes": "Install — COC by plumber"
+        }
+      }
+    },
+    {
+      "name": "validate_DRAINS_CAMERA",
+      "pass": true,
+      "detail": {
+        "ok": true,
+        "code": "OK",
+        "message": "Scenario valid."
+      }
+    },
+    {
+      "name": "edit_validate_DRAINS_CAMERA",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "edit_preserves_total_DRAINS_CAMERA",
+      "pass": true,
+      "detail": {
+        "total_cents": 120000,
+        "scenario": "DRAINS_CAMERA",
+        "quote_number": "R95-1786186022903-DRAINS_CAMERA"
+      }
+    },
+    {
+      "name": "lifecycle_DRAINS_CAMERA",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "doc_projection_DRAINS_CAMERA",
+      "pass": true,
+      "detail": {
+        "customerFacingLabel": "Drains / camera inspection",
+        "context": {
+          "drainsNotes": "Camera inspection requested"
+        }
+      }
+    },
+    {
+      "name": "validate_BATHROOM",
+      "pass": true,
+      "detail": {
+        "ok": true,
+        "code": "OK",
+        "message": "Scenario valid."
+      }
+    },
+    {
+      "name": "edit_validate_BATHROOM",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "edit_preserves_total_BATHROOM",
+      "pass": true,
+      "detail": {
+        "total_cents": 500000,
+        "scenario": "BATHROOM",
+        "quote_number": "R95-1786186022903-BATHROOM"
+      }
+    },
+    {
+      "name": "lifecycle_BATHROOM",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "doc_projection_BATHROOM",
+      "pass": true,
+      "detail": {
+        "customerFacingLabel": "Bathroom project",
+        "context": {
+          "bathroomScopeNotes": "Full bathroom reno"
+        }
+      }
+    },
+    {
+      "name": "validate_CONSTRUCTION",
+      "pass": true,
+      "detail": {
+        "ok": true,
+        "code": "OK",
+        "message": "Scenario valid."
+      }
+    },
+    {
+      "name": "edit_validate_CONSTRUCTION",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "edit_preserves_total_CONSTRUCTION",
+      "pass": true,
+      "detail": {
+        "total_cents": 750000,
+        "scenario": "CONSTRUCTION",
+        "quote_number": "R95-1786186022903-CONSTRUCTION"
+      }
+    },
+    {
+      "name": "lifecycle_CONSTRUCTION",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "doc_projection_CONSTRUCTION",
+      "pass": true,
+      "detail": {
+        "customerFacingLabel": "Construction / project site",
+        "context": {
+          "siteName": "Site A",
+          "siteReference": "SA-1"
+        }
+      }
+    },
+    {
+      "name": "validate_COMMERCIAL_MANAGING_AGENT",
+      "pass": true,
+      "detail": {
+        "ok": true,
+        "code": "OK",
+        "message": "Scenario valid."
+      }
+    },
+    {
+      "name": "edit_validate_COMMERCIAL_MANAGING_AGENT",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "edit_preserves_total_COMMERCIAL_MANAGING_AGENT",
+      "pass": true,
+      "detail": {
+        "total_cents": 220000,
+        "scenario": "COMMERCIAL_MANAGING_AGENT",
+        "quote_number": "R95-1786186022903-COMMERCIAL_MANAGING_AGENT"
+      }
+    },
+    {
+      "name": "lifecycle_COMMERCIAL_MANAGING_AGENT",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "doc_projection_COMMERCIAL_MANAGING_AGENT",
+      "pass": true,
+      "detail": {
+        "customerFacingLabel": "Commercial / managing agent",
+        "context": {
+          "commercialReference": "MA-PO-12"
+        }
+      }
+    },
+    {
+      "name": "validate_MAINTENANCE_AGREEMENT",
+      "pass": true,
+      "detail": {
+        "ok": true,
+        "code": "OK",
+        "message": "Scenario valid."
+      }
+    },
+    {
+      "name": "edit_validate_MAINTENANCE_AGREEMENT",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "edit_preserves_total_MAINTENANCE_AGREEMENT",
+      "pass": true,
+      "detail": {
+        "total_cents": 90000,
+        "scenario": "MAINTENANCE_AGREEMENT",
+        "quote_number": "R95-1786186022903-MAINTENANCE_AGREEMENT"
+      }
+    },
+    {
+      "name": "lifecycle_MAINTENANCE_AGREEMENT",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "doc_projection_MAINTENANCE_AGREEMENT",
+      "pass": true,
+      "detail": {
+        "customerFacingLabel": "Maintenance agreement",
+        "context": {
+          "maintenanceScope": "Geyser service",
+          "frequencyLabel": "Quarterly"
+        }
+      }
+    },
+    {
+      "name": "validate_MULTI_PHASE_PROJECT",
+      "pass": true,
+      "detail": {
+        "ok": true,
+        "code": "OK",
+        "message": "Scenario valid."
+      }
+    },
+    {
+      "name": "edit_validate_MULTI_PHASE_PROJECT",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "edit_preserves_total_MULTI_PHASE_PROJECT",
+      "pass": true,
+      "detail": {
+        "total_cents": 100000,
+        "scenario": "MULTI_PHASE_PROJECT",
+        "quote_number": "R95-1786186022903-MULTI_PHASE_PROJECT"
+      }
+    },
+    {
+      "name": "lifecycle_MULTI_PHASE_PROJECT",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "doc_projection_MULTI_PHASE_PROJECT",
+      "pass": true,
+      "detail": {
+        "customerFacingLabel": "Multi-phase project",
+        "context": {
+          "phaseLabels": "Phase 1, Phase 2"
+        }
+      }
+    },
+    {
+      "name": "validate_PLAN_ESTIMATE",
+      "pass": true,
+      "detail": {
+        "ok": true,
+        "code": "OK",
+        "message": "Scenario valid."
+      }
+    },
+    {
+      "name": "edit_validate_PLAN_ESTIMATE",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "edit_preserves_total_PLAN_ESTIMATE",
+      "pass": true,
+      "detail": {
+        "total_cents": 300000,
+        "scenario": "PLAN_ESTIMATE",
+        "quote_number": "R95-1786186022903-PLAN_ESTIMATE"
+      }
+    },
+    {
+      "name": "lifecycle_PLAN_ESTIMATE",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "doc_projection_PLAN_ESTIMATE",
+      "pass": true,
+      "detail": {
+        "customerFacingLabel": "Plan / floor-plan estimate",
+        "context": {}
+      }
+    },
+    {
+      "name": "validate_BOQ_TENDER",
+      "pass": true,
+      "detail": {
+        "ok": true,
+        "code": "OK",
+        "message": "Scenario valid."
+      }
+    },
+    {
+      "name": "edit_validate_BOQ_TENDER",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "edit_preserves_total_BOQ_TENDER",
+      "pass": true,
+      "detail": {
+        "total_cents": 400000,
+        "scenario": "BOQ_TENDER",
+        "quote_number": "R95-1786186022903-BOQ_TENDER"
+      }
+    },
+    {
+      "name": "lifecycle_BOQ_TENDER",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "doc_projection_BOQ_TENDER",
+      "pass": true,
+      "detail": {
+        "customerFacingLabel": "BOQ / tender",
+        "context": {
+          "tenderReference": "TENDER-95"
+        }
+      }
+    },
+    {
+      "name": "validate_DEPOSIT_PROGRESS_FINAL",
+      "pass": true,
+      "detail": {
+        "ok": true,
+        "code": "OK",
+        "message": "Scenario valid."
+      }
+    },
+    {
+      "name": "edit_validate_DEPOSIT_PROGRESS_FINAL",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "edit_preserves_total_DEPOSIT_PROGRESS_FINAL",
+      "pass": true,
+      "detail": {
+        "total_cents": 250000,
+        "scenario": "DEPOSIT_PROGRESS_FINAL",
+        "quote_number": "R95-1786186022903-DEPOSIT_PROGRESS_FINAL"
+      }
+    },
+    {
+      "name": "lifecycle_DEPOSIT_PROGRESS_FINAL",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "doc_projection_DEPOSIT_PROGRESS_FINAL",
+      "pass": true,
+      "detail": {
+        "customerFacingLabel": "Deposit / progress / final",
+        "context": {
+          "milestoneLabels": "40% deposit, 40% progress, 20% final"
+        }
+      }
+    },
+    {
+      "name": "validate_VARIATION",
+      "pass": true,
+      "detail": {
+        "ok": true,
+        "code": "OK",
+        "message": "Scenario valid."
+      }
+    },
+    {
+      "name": "edit_validate_VARIATION",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "edit_preserves_total_VARIATION",
+      "pass": true,
+      "detail": {
+        "total_cents": 25000,
+        "scenario": "VARIATION",
+        "quote_number": "R95-1786186022903-VARIATION"
+      }
+    },
+    {
+      "name": "lifecycle_VARIATION",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "doc_projection_VARIATION",
+      "pass": true,
+      "detail": {
+        "customerFacingLabel": "Variation",
+        "context": {
+          "variationLabel": "Extra points"
+        }
+      }
+    },
+    {
+      "name": "variation_idempotent_contract",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "fixture_matrix_complete",
+      "pass": true,
+      "detail": [
+        {
+          "scenario": "EMERGENCY",
+          "create": true,
+          "edit": true,
+          "lifecycleCompatible": true,
+          "customerSafeDocProjection": true,
+          "quoteToInvoiceCompatible": true,
+          "cleanup": true
+        },
+        {
+          "scenario": "FIXED_PRICE",
+          "create": true,
+          "edit": true,
+          "lifecycleCompatible": true,
+          "customerSafeDocProjection": true,
+          "quoteToInvoiceCompatible": true,
+          "cleanup": true
+        },
+        {
+          "scenario": "GEYSER_COMPLIANCE",
+          "create": true,
+          "edit": true,
+          "lifecycleCompatible": true,
+          "customerSafeDocProjection": true,
+          "quoteToInvoiceCompatible": true,
+          "cleanup": true
+        },
+        {
+          "scenario": "DRAINS_CAMERA",
+          "create": true,
+          "edit": true,
+          "lifecycleCompatible": true,
+          "customerSafeDocProjection": true,
+          "quoteToInvoiceCompatible": true,
+          "cleanup": true
+        },
+        {
+          "scenario": "BATHROOM",
+          "create": true,
+          "edit": true,
+          "lifecycleCompatible": true,
+          "customerSafeDocProjection": true,
+          "quoteToInvoiceCompatible": true,
+          "cleanup": true
+        },
+        {
+          "scenario": "CONSTRUCTION",
+          "create": true,
+          "edit": true,
+          "lifecycleCompatible": true,
+          "customerSafeDocProjection": true,
+          "quoteToInvoiceCompatible": true,
+          "cleanup": true
+        },
+        {
+          "scenario": "COMMERCIAL_MANAGING_AGENT",
+          "create": true,
+          "edit": true,
+          "lifecycleCompatible": true,
+          "customerSafeDocProjection": true,
+          "quoteToInvoiceCompatible": true,
+          "cleanup": true
+        },
+        {
+          "scenario": "MAINTENANCE_AGREEMENT",
+          "create": true,
+          "edit": true,
+          "lifecycleCompatible": true,
+          "customerSafeDocProjection": true,
+          "quoteToInvoiceCompatible": true,
+          "cleanup": true
+        },
+        {
+          "scenario": "MULTI_PHASE_PROJECT",
+          "create": true,
+          "edit": true,
+          "lifecycleCompatible": true,
+          "customerSafeDocProjection": true,
+          "quoteToInvoiceCompatible": true,
+          "cleanup": true
+        },
+        {
+          "scenario": "PLAN_ESTIMATE",
+          "create": true,
+          "edit": true,
+          "lifecycleCompatible": true,
+          "customerSafeDocProjection": true,
+          "quoteToInvoiceCompatible": true,
+          "cleanup": true
+        },
+        {
+          "scenario": "BOQ_TENDER",
+          "create": true,
+          "edit": true,
+          "lifecycleCompatible": true,
+          "customerSafeDocProjection": true,
+          "quoteToInvoiceCompatible": true,
+          "cleanup": true
+        },
+        {
+          "scenario": "DEPOSIT_PROGRESS_FINAL",
+          "create": true,
+          "edit": true,
+          "lifecycleCompatible": true,
+          "customerSafeDocProjection": true,
+          "quoteToInvoiceCompatible": true,
+          "cleanup": true
+        },
+        {
+          "scenario": "VARIATION",
+          "create": true,
+          "edit": true,
+          "lifecycleCompatible": true,
+          "customerSafeDocProjection": true,
+          "quoteToInvoiceCompatible": "n/a",
+          "cleanup": true
+        }
+      ]
+    },
+    {
+      "name": "historical_fallback_standard",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "all_scenario_codes_covered",
+      "pass": true,
+      "detail": null
+    }
+  ],
+  "stagingCounts": {
+    "totalQuotes": 253,
+    "explicitScenarioStored": 0,
+    "standardLegacyUnclassified": 253,
+    "phaseRelationships": 0,
+    "planEstimateLinks": 0,
+    "tenderBoqRefs": 0,
+    "variations": 0,
+    "milestoneDepositMetadata": 0,
+    "maintenanceLikeDiagnosticHintsInSample": 0,
+    "commercialManagingAgentLikeDiagnosticHintsInSample": 0,
+    "historicalAutoClassifications": 0,
+    "note": "Diagnostic text hints are reporting-only; no historical quotes were classified."
+  },
+  "fixtureMatrix": [
+    {
+      "scenario": "EMERGENCY",
+      "create": true,
+      "edit": true,
+      "lifecycleCompatible": true,
+      "customerSafeDocProjection": true,
+      "quoteToInvoiceCompatible": true,
+      "cleanup": true
+    },
+    {
+      "scenario": "FIXED_PRICE",
+      "create": true,
+      "edit": true,
+      "lifecycleCompatible": true,
+      "customerSafeDocProjection": true,
+      "quoteToInvoiceCompatible": true,
+      "cleanup": true
+    },
+    {
+      "scenario": "GEYSER_COMPLIANCE",
+      "create": true,
+      "edit": true,
+      "lifecycleCompatible": true,
+      "customerSafeDocProjection": true,
+      "quoteToInvoiceCompatible": true,
+      "cleanup": true
+    },
+    {
+      "scenario": "DRAINS_CAMERA",
+      "create": true,
+      "edit": true,
+      "lifecycleCompatible": true,
+      "customerSafeDocProjection": true,
+      "quoteToInvoiceCompatible": true,
+      "cleanup": true
+    },
+    {
+      "scenario": "BATHROOM",
+      "create": true,
+      "edit": true,
+      "lifecycleCompatible": true,
+      "customerSafeDocProjection": true,
+      "quoteToInvoiceCompatible": true,
+      "cleanup": true
+    },
+    {
+      "scenario": "CONSTRUCTION",
+      "create": true,
+      "edit": true,
+      "lifecycleCompatible": true,
+      "customerSafeDocProjection": true,
+      "quoteToInvoiceCompatible": true,
+      "cleanup": true
+    },
+    {
+      "scenario": "COMMERCIAL_MANAGING_AGENT",
+      "create": true,
+      "edit": true,
+      "lifecycleCompatible": true,
+      "customerSafeDocProjection": true,
+      "quoteToInvoiceCompatible": true,
+      "cleanup": true
+    },
+    {
+      "scenario": "MAINTENANCE_AGREEMENT",
+      "create": true,
+      "edit": true,
+      "lifecycleCompatible": true,
+      "customerSafeDocProjection": true,
+      "quoteToInvoiceCompatible": true,
+      "cleanup": true
+    },
+    {
+      "scenario": "MULTI_PHASE_PROJECT",
+      "create": true,
+      "edit": true,
+      "lifecycleCompatible": true,
+      "customerSafeDocProjection": true,
+      "quoteToInvoiceCompatible": true,
+      "cleanup": true
+    },
+    {
+      "scenario": "PLAN_ESTIMATE",
+      "create": true,
+      "edit": true,
+      "lifecycleCompatible": true,
+      "customerSafeDocProjection": true,
+      "quoteToInvoiceCompatible": true,
+      "cleanup": true
+    },
+    {
+      "scenario": "BOQ_TENDER",
+      "create": true,
+      "edit": true,
+      "lifecycleCompatible": true,
+      "customerSafeDocProjection": true,
+      "quoteToInvoiceCompatible": true,
+      "cleanup": true
+    },
+    {
+      "scenario": "DEPOSIT_PROGRESS_FINAL",
+      "create": true,
+      "edit": true,
+      "lifecycleCompatible": true,
+      "customerSafeDocProjection": true,
+      "quoteToInvoiceCompatible": true,
+      "cleanup": true
+    },
+    {
+      "scenario": "VARIATION",
+      "create": true,
+      "edit": true,
+      "lifecycleCompatible": true,
+      "customerSafeDocProjection": true,
+      "quoteToInvoiceCompatible": "n/a",
+      "cleanup": true
+    }
+  ],
+  "royalCape": {
+    "quote": "QU-0183",
+    "totalCents": 4272250,
+    "pricingMode": "ITEMISED",
+    "jobNumber": "JOB-000002",
+    "xeroQuoteId": "4d9b1ceb-83dc-4ac6-8d58-ce7ac08f6db8",
+    "scenario": null,
+    "unchanged": true
+  },
+  "xeroWrites": 0,
+  "customerSends": 0,
+  "productionWrites": 0,
+  "historicalAutoClassifications": 0,
+  "row92AutomationEnabled": false,
+  "row96Started": false,
+  "row97Started": false,
+  "row98Started": false,
+  "row99Started": false,
+  "finishedAt": "2026-08-08T10:47:24.884Z",
+  "passCount": 75,
+  "failCount": 0
+}

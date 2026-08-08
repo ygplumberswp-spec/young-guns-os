@@ -48,6 +48,11 @@ export const PORTAL_EXPANSION_FORBIDDEN_FIELDS = [
   'sourceExternalId',
   'sourceProvider',
   'sourceImportJobId',
+  // Row 95 — raw scenario enum / metadata never portal-visible (use customerFacingScenarioLabel).
+  'scenario',
+  'scenarioMetadata',
+  'scenario_metadata',
+  'variationParentQuoteId',
 ] as const;
 
 export type PortalExpansionAvailability = 'available' | 'unavailable';
@@ -140,6 +145,8 @@ export type PortalSafeQuote = {
   paymentTerms: string | null;
   /** Explicitly customer-visible note. */
   customerFacingNotes: string | null;
+  /** Row 95 — human-friendly scenario label only (never raw enum). */
+  customerFacingScenarioLabel?: string | null;
   depositPercent: number | null;
   lineItems: PortalSafeQuoteLine[];
   canRequestClarification: boolean;

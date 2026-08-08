@@ -226,6 +226,18 @@ export type QuoteDetail = QuoteSummary & {
   labourIncluded?: boolean;
   calloutIncluded?: boolean;
   calloutAllocation?: 'PER_JOB' | 'PER_UNIT';
+  /**
+   * Row 95 — explicit quote scenario (null/missing → STANDARD legacy fallback).
+   * Never inferred from descriptions.
+   */
+  scenario?: import('./quote-scenario.js').QuoteScenarioCode | null;
+  /** True when scenario was null/LEGACY → STANDARD fallback. */
+  scenarioIsLegacyFallback?: boolean;
+  scenarioLabel?: string | null;
+  scenarioMetadata?: import('./quote-scenario.js').QuoteScenarioMetadata | null;
+  variationParentQuoteId?: string | null;
+  phases?: import('./quote-scenario.js').QuoteScenarioPhase[] | null;
+  milestones?: import('./quote-scenario.js').QuoteScenarioMilestone[] | null;
   /** Row 90 — authorised staff internal pricing breakdown (never client/technician). */
   internalPricing?: {
     customerFixedSellCents: number;
@@ -418,6 +430,10 @@ export type CreateQuoteRequest = {
   labourIncluded?: boolean;
   calloutIncluded?: boolean;
   calloutAllocation?: 'PER_JOB' | 'PER_UNIT';
+  /** Row 95 — explicit scenario (defaults STANDARD when omitted). */
+  scenario?: import('./quote-scenario.js').QuoteScenarioCode | null;
+  scenarioMetadata?: import('./quote-scenario.js').QuoteScenarioMetadata | null;
+  variationParentQuoteId?: string | null;
 };
 
 export type UpdateQuoteRequest = Partial<Omit<CreateQuoteRequest, 'customerId' | 'clientActionId'>> & {

@@ -46,6 +46,11 @@ import {
   type FinancePricingPresentationState,
 } from '../../features/finance/FinancePricingPresentationFields';
 import {
+  DEFAULT_QUOTE_SCENARIO_STATE,
+  QuoteScenarioFields,
+  type QuoteScenarioEditorState,
+} from '../../features/finance/QuoteScenarioFields';
+import {
   emptyFinanceDocumentSectionsEditorState,
   quoteSectionsToApiPayload,
   type FinanceDocumentSectionsEditorState,
@@ -81,6 +86,9 @@ export function QuoteCreatePage() {
   const [priceMode, setPriceMode] = useState<FinanceDocumentPriceMode>('excluding_vat');
   const [pricingPresentation, setPricingPresentation] = useState<FinancePricingPresentationState>(
     DEFAULT_FINANCE_PRICING_PRESENTATION,
+  );
+  const [quoteScenario, setQuoteScenario] = useState<QuoteScenarioEditorState>(
+    DEFAULT_QUOTE_SCENARIO_STATE,
   );
   const [savedQuoteId, setSavedQuoteId] = useState<string | null>(null);
   const [photos, setPhotos] = useState<DocumentPhoto[]>([]);
@@ -287,6 +295,8 @@ export function QuoteCreatePage() {
         labourIncluded: pricingPresentation.labourIncluded,
         calloutIncluded: pricingPresentation.calloutIncluded,
         calloutAllocation: pricingPresentation.calloutAllocation,
+        scenario: quoteScenario.scenario,
+        scenarioMetadata: quoteScenario.metadata,
         clientActionId,
       };
 
@@ -313,6 +323,8 @@ export function QuoteCreatePage() {
           labourIncluded: body.labourIncluded,
           calloutIncluded: body.calloutIncluded,
           calloutAllocation: body.calloutAllocation,
+          scenario: body.scenario,
+          scenarioMetadata: body.scenarioMetadata,
         });
         setStatus(updated.status);
         return updated;
@@ -335,6 +347,8 @@ export function QuoteCreatePage() {
         labourIncluded: body.labourIncluded,
         calloutIncluded: body.calloutIncluded,
         calloutAllocation: body.calloutAllocation,
+        scenario: body.scenario,
+        scenarioMetadata: body.scenarioMetadata,
         clientActionId,
       });
       setSavedQuoteId(created.id);
@@ -357,6 +371,7 @@ export function QuoteCreatePage() {
       priceMode,
       pricingPresentation,
       quoteDate,
+      quoteScenario,
       savedQuoteId,
       validUntil,
       vatMode,
@@ -588,6 +603,14 @@ export function QuoteCreatePage() {
 
           <FinanceEditorCard title="Addresses" className="finance-editor-card--full finance-editor-card--addresses">
             <FinanceDocumentAddressesFields addresses={addresses} onChange={setAddresses} />
+          </FinanceEditorCard>
+
+          <FinanceEditorCard title="Quote type / scenario" className="finance-editor-card--full">
+            <QuoteScenarioFields
+              value={quoteScenario}
+              onChange={setQuoteScenario}
+              disabled={!canWrite}
+            />
           </FinanceEditorCard>
 
           <FinanceEditorCard title="Pricing presentation" className="finance-editor-card--full">
