@@ -126,6 +126,11 @@ export const bankTransactions = pgTable(
     maskedAccountIdentity: text('masked_account_identity'),
     /** Exact signed amount (credit +, debit -). Never fabricated. */
     signedAmountCents: integer('signed_amount_cents'),
+    /** Row 111 vocabulary — null until projected/reviewed. */
+    reconState: text('recon_state'),
+    reconReviewedBy: uuid('recon_reviewed_by').references(() => users.id, { onDelete: 'set null' }),
+    reconReviewedAt: timestamp('recon_reviewed_at', { withTimezone: true }),
+    reconReviewEvidence: jsonb('recon_review_evidence').$type<Record<string, unknown>>().notNull().default({}),
     importBatchId: uuid('import_batch_id').references(() => bankStatementImportBatches.id, {
       onDelete: 'set null',
     }),

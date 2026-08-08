@@ -1569,6 +1569,13 @@
       "when": 1789224000000,
       "tag": "0228_bank_transaction_matching",
       "breakpoints": true
+    },
+    {
+      "idx": 224,
+      "version": "7",
+      "when": 1789310400000,
+      "tag": "0229_bank_reconciliation_states",
+      "breakpoints": true
     }
   ]
 }
