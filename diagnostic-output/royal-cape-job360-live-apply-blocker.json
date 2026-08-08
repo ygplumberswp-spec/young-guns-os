@@ -1,0 +1,99 @@
+{
+  "label": "royal-cape-job360-live-apply-blocker",
+  "generatedAt": "2026-08-08T06:02:00.000Z",
+  "branch": "cursor/royal-cape-job360-rehearsal-663e",
+  "head": "0616847",
+  "pr": "https://github.com/ygplumberswp-spec/young-guns-os/pull/67",
+  "verdict": "STOP — STAGING CREDENTIALS UNAVAILABLE IN THIS AGENT",
+  "objective": "Complete live staging inspect + idempotent --apply for Xero QU-0183 / Royal Cape Job 360",
+  "stagingIdentity": {
+    "supabaseProjectRefRequired": "cpkuwtaipjxeipvbssvn",
+    "youngGunsCompanyId": "095aef76-fef5-4139-af37-a42f2d7e2faf",
+    "apiBase": "https://young-guns-os-staging.up.railway.app",
+    "webBase": "https://comfortable-determination-staging.up.railway.app",
+    "apiHealthLive": "200 live",
+    "apiHealthReady": "200 ready database=connected providersEnabled=true"
+  },
+  "productionProtection": {
+    "forbiddenSupabaseRef": "rshuiaghmtrvvilhqpwm",
+    "productionTouched": false,
+    "productionMigrationApplied": false,
+    "productionDeployAttempted": false
+  },
+  "accessAttempts": [
+    {
+      "source": "apps/api/.env.staging.local",
+      "result": "MISSING"
+    },
+    {
+      "source": "process.env.STAGING_DATABASE_URL / DATABASE_URL / APP_ENV / TITAN_ENV",
+      "result": "UNSET"
+    },
+    {
+      "source": "GitHub Actions secrets / environment secrets",
+      "result": "HTTP 403 — Resource not accessible by integration"
+    },
+    {
+      "source": "Railway CLI",
+      "result": "Unauthorized — railway login required (interactive; not available)"
+    },
+    {
+      "source": "Cursor cloud linked environment",
+      "result": "null — no linked environment / no secret mounts"
+    },
+    {
+      "source": "Staging API GET /api/v1/finance/quotes?q=QU-0183",
+      "result": "401 UNAUTHORIZED — Young Guns owner token not available; signup creates a different tenant and cannot see QU-0183"
+    },
+    {
+      "source": "Filesystem search for .env.staging.local",
+      "result": "NOT FOUND under /workspace, /home/ubuntu, /opt, /tmp"
+    }
+  ],
+  "dryRunWithoutCredentials": {
+    "command": "node packages/db/scripts/royal-cape-job360-rehearsal.mjs",
+    "exitCode": 2,
+    "blockedReason": "APP_ENV and TITAN_ENV must both be staging.",
+    "xeroWriteCalls": 0,
+    "customerSendCalls": 0,
+    "applyNotAttempted": true
+  },
+  "realStagingQuoteValues": {
+    "status": "NOT_AVAILABLE",
+    "reason": "Could not open staging DATABASE_URL for Young Guns company; live QU-0183 fields not readable from this agent."
+  },
+  "applyResult": {
+    "status": "NOT_RUN",
+    "reason": "Blocked before --apply — credentials missing."
+  },
+  "idempotencySecondRun": {
+    "status": "NOT_RUN"
+  },
+  "multiDayStillBusyProof": {
+    "status": "CODE_LEVEL_ONLY",
+    "note": "Shared rehearsal proves work_continues blocks final invoice; live staging visit append not executed without DB access."
+  },
+  "safetyConfirmed": {
+    "xeroWrites": 0,
+    "customerSends": 0,
+    "productionWrites": 0,
+    "noReplacementCredentialsCreated": true,
+    "noProductionCredentialsUsed": true
+  },
+  "missingConfigurationExact": [
+    "apps/api/.env.staging.local containing APP_ENV=staging, TITAN_ENV=staging, and DATABASE_URL targeting Supabase project cpkuwtaipjxeipvbssvn (not rshuiaghmtrvvilhqpwm)",
+    "OR injected env vars: APP_ENV=staging, TITAN_ENV=staging, STAGING_DATABASE_URL=<staging pooler url for cpkuwtaipjxeipvbssvn>",
+    "Optional for API-path inspect: STAGING_OWNER_TOKEN for Young Guns company 095aef76-fef5-4139-af37-a42f2d7e2faf (finance:read) — not a substitute for DB apply path"
+  ],
+  "ownerUnblockSteps": [
+    "Provide staging DB credentials to the agent host as apps/api/.env.staging.local OR STAGING_DATABASE_URL + APP_ENV/TITAN_ENV (do not commit secrets).",
+    "Re-run on the same branch: node packages/db/scripts/royal-cape-job360-rehearsal.mjs",
+    "If unique/safe match: node packages/db/scripts/royal-cape-job360-rehearsal.mjs --apply",
+    "Re-run --apply a second time to prove idempotency.",
+    "Do not use production Supabase rshuiaghmtrvvilhqpwm."
+  ],
+  "tests": {
+    "sharedBuild": "PASS",
+    "royalCapeUnitTests": "11/11 PASS (prior commit)"
+  }
+}
