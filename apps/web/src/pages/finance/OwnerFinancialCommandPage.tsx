@@ -7,6 +7,7 @@ import type {
 } from '@titan/shared';
 import {
   canViewOwnerFinancialCommand,
+  displayCashflowField,
   formatFinanceTruthDisplay,
   formatMoney,
   type FinanceMoneyTruth,
@@ -201,27 +202,50 @@ export function OwnerFinancialCommandPage() {
           {dashboard.pageTruth.cashflow.moneyIn.reason
             ? ` — ${dashboard.pageTruth.cashflow.moneyIn.reason}`
             : ''}
+          {dashboard.cashflowTruth
+            ? ' · Invoice revenue ≠ cash received · Xero bank import ≠ live balance'
+            : ''}
         </p>
         <MetricGrid>
           <StatCard
-            label="Money in"
-            value={truthMoney(dashboard.pageTruth.cashflow.moneyIn, currency)}
+            label="Invoiced revenue"
+            value={
+              dashboard.cashflowTruth
+                ? truthMoney(dashboard.cashflowTruth.invoicedRevenue, currency)
+                : formatMoney(dashboard.heartbeat.invoicedRevenueCents, currency)
+            }
           />
           <StatCard
-            label="Money out"
-            value={truthMoney(dashboard.pageTruth.cashflow.moneyOut, currency)}
+            label="Cash received"
+            value={
+              dashboard.cashflowTruth
+                ? truthMoney(dashboard.cashflowTruth.cashReceived, currency)
+                : truthMoney(dashboard.pageTruth.cashflow.moneyIn, currency)
+            }
           />
           <StatCard
-            label="Direct job cash out"
-            value={formatMoney(dashboard.cash.directJobCashOutCents, currency)}
+            label="Money out / spend"
+            value={
+              dashboard.cashflowTruth
+                ? truthMoney(dashboard.cashflowTruth.spend, currency)
+                : truthMoney(dashboard.pageTruth.cashflow.moneyOut, currency)
+            }
           />
           <StatCard
-            label="Overhead cash out"
-            value={formatMoney(dashboard.cash.overheadCashOutCents, currency)}
+            label="Authorised bank balance"
+            value={
+              dashboard.cashflowTruth
+                ? displayCashflowField(dashboard.cashflowTruth.authorisedBankBalance)
+                : 'NOT AVAILABLE'
+            }
           />
           <StatCard
             label="Known Net Cash Movement"
-            value={formatMoney(dashboard.cash.knownNetCashMovementCents, currency)}
+            value={
+              dashboard.cashflowTruth
+                ? truthMoney(dashboard.cashflowTruth.netCashMovement, currency)
+                : formatMoney(dashboard.cash.knownNetCashMovementCents, currency)
+            }
           />
           <StatCard
             label="Unexplained debits"
@@ -300,6 +324,29 @@ export function OwnerFinancialCommandPage() {
             ))}
           </ul>
         )}
+        {dashboard.receivables.ageingBuckets && dashboard.receivables.ageingBuckets.length > 0 ? (
+          <>
+            <p className="page-muted">
+              Ageing: {dashboard.receivables.ageingAvailability ?? 'AVAILABLE'} (due date +
+              outstanding)
+            </p>
+            <MetricGrid>
+              {dashboard.receivables.ageingBuckets.map((bucket) => (
+                <StatCard
+                  key={bucket.bucket}
+                  label={bucket.bucket}
+                  value={
+                    bucket.outstandingCents == null
+                      ? bucket.availability === 'EMPTY'
+                        ? '0'
+                        : bucket.availability
+                      : `${bucket.count} · ${formatMoney(bucket.outstandingCents, currency)}`
+                  }
+                />
+              ))}
+            </MetricGrid>
+          </>
+        ) : null}
         <div className="owner-fin-command__links">
           <Link href={dashboard.drillDown.overdueInvoices}>Overdue invoices</Link>
         </div>

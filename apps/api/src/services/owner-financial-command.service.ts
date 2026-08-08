@@ -12,6 +12,7 @@ import {
   customers,
   invoices,
   jobProfitabilitySnapshots,
+  xeroBankTransactions,
   xeroBills,
 } from '@titan/db';
 import type {
@@ -30,7 +31,9 @@ import {
   invoiceBalanceDueCents,
   isOutstandingCustomerInvoice,
   projectCashflowTruth,
+  projectCashflowTruthRow132,
   projectPayablesTruth,
+  projectReceivablesAgeing,
   projectReceivablesTruth,
   resolveInvoiceDisplayNumberLabel,
   resolveOwnerFinancialPeriodRange,
@@ -250,8 +253,9 @@ export class OwnerFinancialCommandService {
   private async loadPageTruthSources(companyId: string): Promise<{
     billRows: Array<{ id: string; amountDueCents: number | null; status: string }>;
     bankTransactionCount: number;
+    xeroBankTransactionCount: number;
   }> {
-    const [billRows, bankCountRows] = await Promise.all([
+    const [billRows, bankCountRows, xeroBankCountRows] = await Promise.all([
       this.db
         .select({
           id: xeroBills.id,
@@ -265,6 +269,10 @@ export class OwnerFinancialCommandService {
         .select({ c: count() })
         .from(bankTransactions)
         .where(eq(bankTransactions.companyId, companyId)),
+      this.db
+        .select({ c: count() })
+        .from(xeroBankTransactions)
+        .where(eq(xeroBankTransactions.companyId, companyId)),
     ]);
     return {
       billRows: billRows.map((b) => ({
@@ -273,6 +281,7 @@ export class OwnerFinancialCommandService {
         status: b.status ?? 'UNKNOWN',
       })),
       bankTransactionCount: Number(bankCountRows[0]?.c ?? 0),
+      xeroBankTransactionCount: Number(xeroBankCountRows[0]?.c ?? 0),
     };
   }
 
@@ -457,12 +466,44 @@ export class OwnerFinancialCommandService {
       cashCompleteness: cashSummary.completeness,
     });
 
+    const ageing = projectReceivablesAgeing({
+      asOfDate,
+      invoices: outstanding.map((r) => ({
+        id: r.invoiceId,
+        dueDate: r.dueDate,
+        outstandingCents: r.balanceDueCents,
+        status: r.status,
+        customerName: r.customerName,
+        jobId: r.jobId,
+      })),
+    });
+
+    const payablesDue = pageTruth.payables.totalDue.amountCents;
+    const cashflowTruth = projectCashflowTruthRow132({
+      invoicedRevenueCents: safeCents(invoicedRevenueCents),
+      cashReceivedCents: safeCents(periodMetrics.moneyIn.customerCashCollectedCents),
+      spendCents: safeCents(moneyOutCents),
+      receivablesCents: safeCents(totalOutstandingCents),
+      payablesCents: payablesDue,
+      netCashMovementCents: safeCents(periodMetrics.knownNetCashMovementCents),
+      supplierCommitmentsCents: payablesDue,
+      bankBalanceSource:
+        pageTruthSources.bankTransactionCount > 0
+          ? 'none'
+          : pageTruthSources.xeroBankTransactionCount > 0
+            ? 'xero_import_only'
+            : 'none',
+      xeroImportedBankTransactionCount: pageTruthSources.xeroBankTransactionCount,
+      authorisedBankBalanceCents: null,
+    });
+
     return {
       currency: cashSummary.currency || 'ZAR',
       asOfDate,
       period,
       financialTruth: truth,
       pageTruth,
+      cashflowTruth,
       heartbeat: {
         period,
         fromDate: range.fromDate,
@@ -494,6 +535,8 @@ export class OwnerFinancialCommandService {
         dueSoonCount: dueSoon.length,
         unpaidOrPartialCount: outstanding.length,
         largest: outstanding.slice(0, 8),
+        ageingBuckets: ageing.buckets,
+        ageingAvailability: ageing.availability,
       },
       profitability: {
         profitableJobsCount: gpBundle.profitableJobsCount,

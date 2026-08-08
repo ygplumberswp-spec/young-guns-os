@@ -9,6 +9,8 @@ import type { CashControlCompletenessReason, CashTruthCompleteness } from './cas
 import { canViewCashControl } from './cash-control.js';
 import type { JobCostControlQueue } from './job-cost-control.js';
 import type { FinanceMoneyTruth, FinanceTruthAvailability } from './finance-page-truth.js';
+import type { ReceivablesAgeingBucketTotal } from './receivables-ageing-row131.js';
+import type { CashflowTruthProjection } from './cashflow-truth-row132.js';
 
 export type OwnerFinancialCommandPeriod = 'today' | 'week' | 'month';
 
@@ -91,6 +93,9 @@ export type OwnerFinancialReceivables = {
   dueSoonCount: number;
   unpaidOrPartialCount: number;
   largest: OwnerFinancialReceivableRow[];
+  /** Row 131 — due-date + outstanding ageing buckets. */
+  ageingBuckets?: ReceivablesAgeingBucketTotal[];
+  ageingAvailability?: FinanceTruthAvailability;
 };
 
 export type OwnerFinancialProfitabilityJob = {
@@ -177,6 +182,8 @@ export type OwnerFinancialCommandDashboard = {
   };
   /** Row 119 page truth — no false R0 when sources absent. */
   pageTruth: OwnerFinancialPageTruth;
+  /** Row 132 — separated cashflow layers (invoice ≠ cash; bank unavailable ≠ R0). */
+  cashflowTruth?: CashflowTruthProjection;
   heartbeat: OwnerFinancialHeartbeat;
   cash: OwnerFinancialCashView;
   receivables: OwnerFinancialReceivables;
