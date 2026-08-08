@@ -43,6 +43,7 @@ export * from './bank-transaction-idempotency';
 export * from './bank-finance-exactly-once';
 export * from './bank-statement-archive';
 export * from './bank-health-exceptions';
+export * from './bank-production-connect-gate';
 export * from './draft-workspace';
 export * from './job-document-packs';
 export * from './completion-reports';

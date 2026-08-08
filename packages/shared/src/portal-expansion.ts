@@ -131,6 +131,14 @@ export const PORTAL_EXPANSION_FORBIDDEN_FIELDS = [
   'bankFeedIntake',
   'credentialsEncrypted',
   'fullAccountNumber',
+  // Rows 114–116 — bank archive/health/production gate internals
+  'bankStatementArchiveInternal',
+  'storageKey',
+  'bankHealthInternal',
+  'bankProductionConnectGate',
+  'reconciliationInternals',
+  'bankBalance',
+  'runningBalanceCents',
 
   'xeroQuoteId',
   'xeroInvoiceNumber',
