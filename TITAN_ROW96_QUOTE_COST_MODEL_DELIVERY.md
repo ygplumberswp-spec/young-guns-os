@@ -42,7 +42,7 @@
 1. **repo root** — `/Users/keanuventer/Downloads/Titan-Aura-Row95` (maps `/workspace`)
 2. **branch** — `cursor/canonical-quote-cost-model-663e`
 3. **starting HEAD** — `63871e6`
-4. **ending HEAD** — `0e8a20504f3172b9e38047919861021da9e77321`
+4. **ending HEAD** — `30e543b3a4599ba346e1a95463ba9c0ba925c027` (code `0e8a205` + docs pin)
 5. **ancestry** — PR #80 (`cursor/quote-scenarios-663e` @ `63871e6`)
 6. **architecture reused** — FinanceService quote engine, Row 90/91/92/93/94/95, JPE cost separation, portal forbid list, audit/RBAC
 7. **files changed** — shared model+tests, migration `0215`, db schema, API service+routes, web panel+API client, portal forbid fields, verify JSON, this report
