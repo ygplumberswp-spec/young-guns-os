@@ -1,19 +1,33 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRoute } from 'wouter';
 import { PageHeader } from '../../components/ux';
-import { LoadingState, Panel } from '@titan/ui';
+import { Button, LoadingState, Panel } from '@titan/ui';
 import { ApiClientError } from '../../lib/api-client';
-import { fetchBoqWorkbookImport, type BoqWorkbookImportDetail } from '../../lib/boq-api';
+import {
+  confirmSupplierQuoteMatchProposal,
+  fetchBoqWorkbookImport,
+  fetchSupplierQuoteMatch,
+  rejectSupplierQuoteMatchProposal,
+  runSupplierQuoteBoqMatch,
+  type BoqWorkbookImportDetail,
+  type SupplierQuoteMatchDetail,
+} from '../../lib/boq-api';
 import { useAuth } from '../../lib/auth-context';
 import { FinanceNav } from '../../features/finance/FinanceNav';
+import { canManageFinance, newFinanceClientActionId } from '../../features/finance/utils';
 
 export function BoqImportDetailPage() {
   const [, params] = useRoute('/finance/boq-imports/:id');
   const id = params?.id ?? '';
-  const { accessToken } = useAuth();
+  const { accessToken, user } = useAuth();
+  const canWrite = user ? canManageFinance(user.permissions) : false;
   const [detail, setDetail] = useState<BoqWorkbookImportDetail | null>(null);
+  const [match, setMatch] = useState<SupplierQuoteMatchDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [sheetFilter, setSheetFilter] = useState<string>('ALL');
+  const [busy, setBusy] = useState(false);
+  const [clientActionId] = useState(() => newFinanceClientActionId('sup-boq-match'));
 
   const load = useCallback(async () => {
     if (!accessToken || !id) return;
@@ -36,6 +50,67 @@ export function BoqImportDetailPage() {
     return detail.rows.filter((r) => r.sheetName === sheetFilter);
   }, [detail, sheetFilter]);
 
+  async function runFixtureMatch() {
+    if (!accessToken || !detail) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const itemRows = detail.rows.filter((r) => r.rowKind === 'ITEM' && r.itemCode);
+      const supplierLines = itemRows.slice(0, 5).map((r, index) => ({
+        clientKey: `fixture-${index}`,
+        sourceLineOrder: index + 1,
+        supplierSku: r.itemCode,
+        description: r.description,
+        unit: r.unit,
+        quantity: r.quantity != null ? Number(r.quantity) : null,
+        unitPriceCents: 1000 + index * 100,
+        vatBasis: 'EXCLUSIVE' as const,
+        currency: 'ZAR',
+      }));
+      if (!supplierLines.length) {
+        setError('No ITEM rows with codes available for fixture supplier match');
+        return;
+      }
+      const result = await runSupplierQuoteBoqMatch(accessToken, id, {
+        originalFilename: 'fixture-supplier-quote.pdf',
+        supplierName: 'Fixture Supplier',
+        revisionLabel: 'Rev A',
+        clientActionId,
+        supplierLines,
+      });
+      setMatch(result);
+      setSuccess(
+        result.idempotentReplay
+          ? 'Idempotent match replay'
+          : `Match proposals: ${result.proposals.length}`,
+      );
+    } catch (err) {
+      setError(err instanceof ApiClientError ? err.message : 'Supplier match failed');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function proposalAct(proposalId: string, action: 'confirm' | 'reject') {
+    if (!accessToken || !match) return;
+    setBusy(true);
+    setError(null);
+    try {
+      if (action === 'confirm') {
+        await confirmSupplierQuoteMatchProposal(accessToken, match.import.id, proposalId);
+      } else {
+        await rejectSupplierQuoteMatchProposal(accessToken, match.import.id, proposalId);
+      }
+      const refreshed = await fetchSupplierQuoteMatch(accessToken, match.import.id);
+      setMatch(refreshed);
+      setSuccess(`Proposal ${action} ok (BOQ source unchanged)`);
+    } catch (err) {
+      setError(err instanceof ApiClientError ? err.message : `Proposal ${action} failed`);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   if (!detail) {
     return error ? <p className="form-error">{error}</p> : <LoadingState label="Loading…" />;
   }
@@ -50,18 +125,78 @@ export function BoqImportDetailPage() {
       />
       <FinanceNav />
       {error ? <p className="form-error">{error}</p> : null}
+      {success ? <p className="form-success">{success}</p> : null}
 
       <Panel title="Source / revision">
         <p>Hash: {imp.fileHashSha256.slice(0, 16)}…</p>
         <p>Sheets (order): {(imp.sheetOrder ?? []).join(' → ') || '—'}</p>
         <p className="page-muted">
-          No automatic pricing. No supplier matching. Formulas are text-only evidence.
+          Row 99 BOQ source is immutable here. Supplier prices are evidence only — not catalogue /
+          quote / Row 92 / Xero.
         </p>
-        {(imp.auraNarrativeFacts ?? []).slice(0, 4).map((fact) => (
-          <p key={fact} className="page-muted">
-            {fact}
-          </p>
-        ))}
+      </Panel>
+
+      <Panel title="Supplier quote → BOQ matching (Row 100)">
+        <p className="page-muted">
+          Multi-signal matching only (SKU/code, description, unit, qty, pack). Sequence alone is
+          rejected. Ambiguous/conflicting cases require human review.
+        </p>
+        {canWrite ? (
+          <Button type="button" disabled={busy} onClick={() => void runFixtureMatch()}>
+            Run structured supplier-line match (fixture)
+          </Button>
+        ) : null}
+        {match ? (
+          <div style={{ marginTop: 12 }}>
+            <p>
+              {match.import.originalFilename} · {match.import.supplierName ?? '—'} ·{' '}
+              {match.import.status}
+            </p>
+            {(match.import.auraNarrativeFacts ?? []).slice(0, 3).map((fact) => (
+              <p key={fact} className="page-muted">
+                {fact}
+              </p>
+            ))}
+            <ul>
+              {match.proposals.map((p) => (
+                <li key={p.id} style={{ marginBottom: 8 }}>
+                  {p.matchState}
+                  {p.supplierSku ? ` · SKU ${p.supplierSku}` : ''}
+                  {p.description ? ` — ${p.description}` : ''}
+                  {p.unitPriceCents != null ? ` · evidence price ${p.unitPriceCents}c` : ''}
+                  {p.vatBasis ? ` · VAT ${p.vatBasis}` : ''}
+                  {(p.signalsUsed ?? []).length ? ` · [${(p.signalsUsed ?? []).join(', ')}]` : ''}
+                  {(p.warnings ?? []).length ? ` · warn: ${(p.warnings ?? []).join(', ')}` : ''}
+                  {canWrite &&
+                  !p.humanConfirmed &&
+                  p.matchState !== 'REJECTED' &&
+                  p.matchState !== 'UNMATCHED' &&
+                  p.matchState !== 'CONFIRMED' ? (
+                    <span>
+                      {' '}
+                      <Button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => void proposalAct(p.id, 'confirm')}
+                      >
+                        Confirm
+                      </Button>{' '}
+                      <Button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => void proposalAct(p.id, 'reject')}
+                      >
+                        Reject
+                      </Button>
+                    </span>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : (
+          <p className="page-muted">No supplier match run yet for this BOQ import.</p>
+        )}
       </Panel>
 
       <Panel title="Review warnings">
@@ -102,8 +237,6 @@ export function BoqImportDetailPage() {
               {row.unit ? ` · ${row.unit}` : ' · UNIT MISSING'}
               {row.quantity != null ? ` × ${row.quantity}` : ' · QTY MISSING'}
               {row.formulaText ? ` · formula=${row.formulaText}` : ''}
-              {row.displayValue && row.formulaText ? ` (cached ${row.displayValue})` : ''}
-              {(row.warnings ?? []).length ? ` · ${(row.warnings ?? []).join(', ')}` : ''}
             </li>
           ))}
         </ul>

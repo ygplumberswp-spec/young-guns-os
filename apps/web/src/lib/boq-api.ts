@@ -121,3 +121,102 @@ export async function fetchBoqWorkbookImport(
   });
   return data;
 }
+
+export type SupplierQuoteMatchDetail = {
+  import: {
+    id: string;
+    originalFilename: string;
+    fileHashSha256: string;
+    supplierName: string | null;
+    status: string;
+    auraNarrativeFacts: string[];
+  };
+  lines: Array<{
+    id: string;
+    clientKey: string;
+    supplierSku: string | null;
+    description: string | null;
+    unit: string | null;
+    quantity: string | null;
+    unitPriceCents: number | null;
+    vatBasis: string;
+  }>;
+  proposals: Array<{
+    id: string;
+    proposalKey: string;
+    matchState: string;
+    signalsUsed: string[];
+    warnings: string[];
+    boqImportRowId: string | null;
+    supplierSku: string | null;
+    description: string | null;
+    unitPriceCents: number | null;
+    vatBasis: string;
+    humanConfirmed: boolean;
+  }>;
+  catalogueMutation: false;
+  quotePriceMutation: false;
+  idempotentReplay?: boolean;
+};
+
+export async function runSupplierQuoteBoqMatch(
+  accessToken: string,
+  boqImportId: string,
+  body: {
+    originalFilename: string;
+    supplierName?: string | null;
+    revisionLabel?: string | null;
+    clientActionId?: string | null;
+    supplierLines: Array<{
+      clientKey: string;
+      sourceLineOrder: number;
+      supplierSku?: string | null;
+      description?: string | null;
+      unit?: string | null;
+      quantity?: number | null;
+      packSize?: number | null;
+      unitPriceCents?: number | null;
+      vatBasis?: 'INCLUSIVE' | 'EXCLUSIVE' | 'UNKNOWN' | null;
+      currency?: string | null;
+    }>;
+  },
+): Promise<SupplierQuoteMatchDetail> {
+  const data = await request<SupplierQuoteMatchDetail>(
+    `/finance/boq-imports/${boqImportId}/supplier-quote-matches`,
+    { method: 'POST', accessToken, body },
+  );
+  return data;
+}
+
+export async function fetchSupplierQuoteMatch(
+  accessToken: string,
+  importId: string,
+): Promise<SupplierQuoteMatchDetail> {
+  const data = await request<SupplierQuoteMatchDetail>(
+    `/finance/supplier-quote-imports/${importId}`,
+    { accessToken },
+  );
+  return data;
+}
+
+export async function confirmSupplierQuoteMatchProposal(
+  accessToken: string,
+  importId: string,
+  proposalId: string,
+) {
+  return request(`/finance/supplier-quote-imports/${importId}/proposals/${proposalId}/confirm`, {
+    method: 'POST',
+    accessToken,
+  });
+}
+
+export async function rejectSupplierQuoteMatchProposal(
+  accessToken: string,
+  importId: string,
+  proposalId: string,
+) {
+  return request(`/finance/supplier-quote-imports/${importId}/proposals/${proposalId}/reject`, {
+    method: 'POST',
+    accessToken,
+  });
+}

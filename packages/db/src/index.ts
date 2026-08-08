@@ -216,4 +216,16 @@ export type {
   BoqImportRow,
 } from './schema/boq-workbook-import.js';
 
+/** Explicit re-export — Row 100 supplier quote → BOQ matching. */
+export {
+  supplierQuoteImports,
+  supplierQuoteImportLines,
+  supplierQuoteBoqMatchProposals,
+} from './schema/supplier-quote-boq-match.js';
+export type {
+  SupplierQuoteImport,
+  SupplierQuoteImportLine,
+  SupplierQuoteBoqMatchProposal,
+} from './schema/supplier-quote-boq-match.js';
+
 export { drizzle } from 'drizzle-orm/postgres-js';

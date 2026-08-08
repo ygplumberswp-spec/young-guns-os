@@ -1492,6 +1492,13 @@
       "when": 1788273600000,
       "tag": "0217_boq_workbook_import",
       "breakpoints": true
+    },
+    {
+      "idx": 213,
+      "version": "7",
+      "when": 1788360000000,
+      "tag": "0218_supplier_quote_boq_match",
+      "breakpoints": true
     }
   ]
 }

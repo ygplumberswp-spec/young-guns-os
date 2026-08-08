@@ -1,0 +1,89 @@
+{
+  "schemaVersion": "row100-supplier-quote-boq-match-v1",
+  "generatedAt": "2026-08-08T11:48:03.146Z",
+  "pass": 17,
+  "fail": 0,
+  "results": [
+    {
+      "name": "migration_0218_applied",
+      "status": "PASS"
+    },
+    {
+      "name": "staging_readonly_supplier_source_audit",
+      "status": "PASS",
+      "loosePdfOrQuoteDocs": 0,
+      "authorisedSupplierQuoteLike": 0,
+      "existingSupplierQuoteImports": 0,
+      "authorisedSourceResult": "NO_AUTHORISED_SUPPLIER_QUOTE_SOURCE_AVAILABLE",
+      "row92Status": "DRAFT",
+      "row92Automation": "OFF"
+    },
+    {
+      "name": "row92_off",
+      "status": "PASS"
+    },
+    {
+      "name": "royal_cape_unchanged",
+      "status": "PASS",
+      "totalCents": 4272250,
+      "xeroQuoteId": "4d9b1ceb-83dc-4ac6-8d58-ce7ac08f6db8"
+    },
+    {
+      "name": "fixture_exact_code",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_vat_preserved",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_no_price_push",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_confirm_preserves",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_idempotent",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_client_leak",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_safety",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_totals",
+      "status": "PASS",
+      "pass": 7,
+      "fail": 0
+    },
+    {
+      "name": "cleanup_no_fake_supplier_pdf_upload",
+      "status": "PASS"
+    },
+    {
+      "name": "xero_writes",
+      "status": "PASS",
+      "count": 0
+    },
+    {
+      "name": "customer_sends",
+      "status": "PASS",
+      "count": 0
+    },
+    {
+      "name": "production_writes",
+      "status": "PASS",
+      "count": 0
+    },
+    {
+      "name": "row101_not_started",
+      "status": "PASS"
+    }
+  ]
+}

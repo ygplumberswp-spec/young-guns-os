@@ -75,6 +75,12 @@ export const PORTAL_EXPANSION_FORBIDDEN_FIELDS = [
   'fileChecksumSha256',
   'sheetRaw',
   'supplierMatch',
+  // Row 100 — supplier quote → BOQ match internals never reach Client Portal
+  'supplierQuoteImport',
+  'supplierQuoteMatch',
+  'matchProposal',
+  'matchSignals',
+  'supplierBoqMatchInternal',
 
   'xeroQuoteId',
   'xeroInvoiceNumber',

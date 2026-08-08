@@ -107,12 +107,14 @@ import { createLiveUpdatesRouter } from './routes/live-updates.js';
 import './lib/live-updates.js';
 import { createBoqRouter } from './routes/boq.js';
 import { createBoqWorkbookImportRouter } from './routes/boq-workbook-import.js';
+import { createSupplierQuoteBoqMatchRouter } from './routes/supplier-quote-boq-match.js';
 import { createDraftsRouter } from './routes/drafts.js';
 import { createJobDocumentPackRouter } from './routes/job-document-packs.js';
 import { createCompletionReportRouter } from './routes/completion-reports.js';
 import { createReportExportRouter, createPortalReportExportRouter } from './routes/report-exports.js';
 import { BoqService } from './services/boq.service.js';
 import { BoqWorkbookImportService } from './services/boq-workbook-import.service.js';
+import { SupplierQuoteBoqMatchService } from './services/supplier-quote-boq-match.service.js';
 import { DraftAutosaveService } from './services/draft-autosave.service.js';
 import { InventoryService } from './services/inventory.service.js';
 import { StockMovementsService } from './services/stock-movements.service.js';
@@ -646,6 +648,7 @@ const documentEngineService = new DocumentEngineService({
 });
 const boqService = new BoqService(db, financeService);
 const boqWorkbookImportService = new BoqWorkbookImportService(db);
+const supplierQuoteBoqMatchService = new SupplierQuoteBoqMatchService(db);
 const draftAutosaveService = new DraftAutosaveService(db);
 const inventoryService = new InventoryService(db);
 const stockMovementsService = new StockMovementsService(db);
@@ -2271,6 +2274,16 @@ app.use(
   '/api/v1/finance',
   createBoqWorkbookImportRouter({
     boqWorkbookImportService,
+    teamService,
+    db,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/finance',
+  createSupplierQuoteBoqMatchRouter({
+    supplierQuoteBoqMatchService,
     teamService,
     db,
     jwtSecret: env.JWT_SECRET,
