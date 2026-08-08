@@ -4,7 +4,7 @@
   "repoRoot": "/workspace",
   "branch": "cursor/quote-invoice-metadata-terms-notes-663e",
   "startingHead": "ef7e14165dced2bf9f8f307d1d75bba00865a64e",
-  "endingHead": "PENDING_COMMIT",
+  "endingHead": "3c49424c452cb63c06f403bef19318c95d3aa43b",
   "ancestry": {
     "pr67_ee5a19c": true,
     "pr68_2aae5e1": true,
@@ -91,5 +91,5 @@
   "row90Started": false,
   "clientPortalFinalValidation": "NOT_PASS \u2014 Row 89 metadata/numbering scope only",
   "prUrl": "PENDING",
-  "commit": "PENDING_COMMIT"
+  "commit": "3c49424c452cb63c06f403bef19318c95d3aa43b"
 }
