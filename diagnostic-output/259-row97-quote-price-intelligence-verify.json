@@ -1,0 +1,119 @@
+{
+  "schemaVersion": "row97-quote-price-intelligence-v1",
+  "generatedAt": "2026-08-08T11:12:59.301Z",
+  "pass": 22,
+  "fail": 0,
+  "results": [
+    {
+      "name": "staging_readonly_audit",
+      "status": "PASS",
+      "totalQuotes": 253,
+      "structuredComponents": 0,
+      "linesWithCost": 0,
+      "inventoryItems": 0,
+      "quotesWithCompleteRow96CostFloor": 0,
+      "quotesWithIncompleteCostFloor": 253,
+      "profitFloorConfigFound": true,
+      "profitFloorMarginBps": 2000,
+      "targetMarginConfigFound": true,
+      "targetMarginSource": "COMPANY_FINANCE_SETTINGS_PROFIT_FLOOR_MARGIN_BPS",
+      "legitimateComparableMarketEvidenceCount": 0,
+      "quotesWhereTargetCanBeComputed": 0,
+      "row92Status": "DRAFT",
+      "row92Automation": "OFF"
+    },
+    {
+      "name": "row92_automation_off",
+      "status": "PASS"
+    },
+    {
+      "name": "royal_cape_unchanged_incomplete_cost",
+      "status": "PASS",
+      "totalCents": 4272250,
+      "xeroQuoteId": "4d9b1ceb-83dc-4ac6-8d58-ce7ac08f6db8",
+      "costFloorStatus": "COST_FLOOR_INCOMPLETE",
+      "targetStatus": "UNAVAILABLE_COST_INCOMPLETE"
+    },
+    {
+      "name": "fixture_complete_cost_floor",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_incomplete_cost_floor",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_approved_profit_floor",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_missing_profit_floor",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_target_exact",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_missing_target",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_below_cost_warn",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_below_floor_warn",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_market_exact",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_market_insufficient",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_row92_draft_label",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_client_leak_blocked",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_customer_not_mutated",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_totals",
+      "status": "PASS",
+      "pass": 13,
+      "fail": 0
+    },
+    {
+      "name": "xero_writes",
+      "status": "PASS",
+      "count": 0
+    },
+    {
+      "name": "customer_sends",
+      "status": "PASS",
+      "count": 0
+    },
+    {
+      "name": "production_writes",
+      "status": "PASS",
+      "count": 0
+    },
+    {
+      "name": "row98_not_started",
+      "status": "PASS"
+    },
+    {
+      "name": "row99_not_started",
+      "status": "PASS"
+    }
+  ]
+}

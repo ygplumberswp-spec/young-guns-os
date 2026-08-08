@@ -522,3 +522,54 @@ export async function snapshotQuoteCostModel(
     },
   );
 }
+
+/** Row 97 — Quote price intelligence (internal, read-only). */
+export type QuotePriceIntelligenceDto = {
+  quoteId: string;
+  quoteNumber: string;
+  readOnly: true;
+  customerAmountMutated: false;
+  currentSellExVatCents: number | null;
+  knownCostFloorCents: number | null;
+  costFloorStatus: string;
+  costCompleteness: string;
+  profitFloorConfigStatus: string;
+  profitFloorMarginBps: number | null;
+  approvedProfitFloorCents: number | null;
+  targetProfitablePriceCents: number | null;
+  targetStatus: string;
+  targetSource: string;
+  marketEvidence: {
+    status: string;
+    sampleCount: number;
+    medianCents: number | null;
+    lowCents: number | null;
+    highCents: number | null;
+    limitations: string[];
+  };
+  estimatedGrossProfitCents: number | null;
+  estimatedGrossMarginBps: number | null;
+  sellVsFloorStatus: string;
+  warnings: string[];
+  missingInputs: string[];
+  confidence: string;
+  recommendationStatus: string;
+  recommendationExplanation: string;
+  auraNarrativeFacts: string[];
+  row92Preview: {
+    labelled: string;
+    status: string;
+    globalAutomationEnabled: false;
+    previewSellExVatCents: number | null;
+  } | null;
+};
+
+export async function fetchQuotePriceIntelligence(
+  accessToken: string,
+  quoteId: string,
+): Promise<QuotePriceIntelligenceDto> {
+  return request<QuotePriceIntelligenceDto>(
+    `/finance/quotes/${quoteId}/price-intelligence`,
+    { accessToken },
+  );
+}

@@ -48,6 +48,17 @@ export const PORTAL_EXPANSION_FORBIDDEN_FIELDS = [
   'contingencyCostCents',
   'warrantyProvisionCents',
   'labourRateConfigCentsPerHour',
+  // Row 97 — quote price intelligence never reaches Client Portal
+  'priceIntelligence',
+  'knownCostFloorCents',
+  'approvedProfitFloorCents',
+  'targetProfitablePriceCents',
+  'profitFloorMarginBps',
+  'marketEvidence',
+  'recommendationExplanation',
+  'auraNarrativeFacts',
+  'row92Preview',
+
   'xeroQuoteId',
   'xeroInvoiceNumber',
   'xeroReference',
