@@ -4,7 +4,7 @@
   "repoRoot": "/workspace",
   "branch": "cursor/customer-duplicate-reconciliation-663e",
   "startingHead": "a9c63b88c841578f3d32d83c261d9122dc67bfd8",
-  "endingHead": "pending",
+  "endingHead": "76952e06b66b8dc734e11671535a602a11f45814",
   "ancestry": {
     "pr67_ee5a19c": true,
     "pr68_2aae5e1": true,
