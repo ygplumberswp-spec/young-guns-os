@@ -266,6 +266,8 @@ export function createFinanceRouter({
   router.get('/catalogue/search', requireAnyPermission('finance:read', 'finance:write'), async (req, res) => {
     const { companyId } = getAuth(req);
     const q = stringQuery(req.query.q) ?? '';
+    const category = stringQuery(req.query.category);
+    const itemType = stringQuery(req.query.itemType);
     if (q.length > 120) {
       res.status(400).json({
         error: { code: 'VALIDATION_ERROR', message: 'Catalogue search query must be 120 characters or fewer' },
@@ -275,6 +277,8 @@ export function createFinanceRouter({
     const auth = getAuth(req);
     const items = await financeService.searchCatalogueItems(companyId, q, {
       includeCost: canViewFinanceProfit(auth.permissions, auth.roleName),
+      category,
+      itemType,
     });
     res.json({ data: { items } });
   });

@@ -80,10 +80,10 @@ test('buildCatalogueLineAutoFill returns document-only defaults', () => {
   assert.equal(patch.unitPriceCents, 65000);
 });
 
-test('catalogue data sources document inventory-only search until YGP-001', () => {
+test('catalogue data sources document inventory_items as canonical sell catalogue (Row 91)', () => {
   assert.equal(FINANCE_CATALOGUE_DATA_SOURCES.inventoryTable, 'inventory_items');
-  assert.equal(FINANCE_CATALOGUE_DATA_SOURCES.pricebookTable, null);
-  assert.match(FINANCE_CATALOGUE_DATA_SOURCES.pricebookStatus, /YGP-001/);
+  assert.equal(FINANCE_CATALOGUE_DATA_SOURCES.pricebookTable, 'inventory_items');
+  assert.match(FINANCE_CATALOGUE_DATA_SOURCES.pricebookStatus, /Row 91/);
 });
 
 test('duplicateCatalogueSelectionWarning is advisory only', () => {

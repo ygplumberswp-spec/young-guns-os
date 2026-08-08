@@ -1,0 +1,128 @@
+{
+  "label": "ygp-catalogue-classification-staging-proof",
+  "row": 91,
+  "generatedAt": "2026-08-08T09:27:45.493Z",
+  "stagingOnly": true,
+  "xeroWriteCalls": 0,
+  "customerSends": 0,
+  "productionWrites": 0,
+  "productionMigrations": 0,
+  "row92Started": false,
+  "priceChanges": 0,
+  "architecture": {
+    "canonicalCatalogue": "inventory_items",
+    "inventorySeparation": "is_stockable + inventory_stock_levels; price_book import never writes stock",
+    "quoteLineCategoryVsCatalogueCategory": "quote_line_items.category = commercial bucket; inventory_items.catalogue_category = product taxonomy"
+  },
+  "rootCause": {
+    "summary": "PR #75 staging “category=other” referred to quote_line_items.category (QuoteLineCategory commercial bucket), not catalogue product taxonomy.",
+    "causes": [
+      "A. quote_line_items.category defaults to other",
+      "B. Xero quote/invoice line sync hardcodes category: other",
+      "C. Legacy amount-only quotes use legacyQuoteLines → other",
+      "D. Draft placeholder lines use category other",
+      "E. inventory_items historically had no catalogue_category column — import stuffed Category: into description",
+      "F. inventoryItemToFinanceCatalogue previously forced quote-line category materials for all inventory rows"
+    ],
+    "notCause": "Not primarily that every catalogue product lacked a Geysers/Pipes taxonomy — quote lines and catalogue taxonomy were conflated in the audit metric."
+  },
+  "catalogue": {
+    "totalRecords": 0,
+    "active": 0,
+    "inactive": 0,
+    "physical": 0,
+    "service": 0,
+    "labour": 0,
+    "callOut": 0,
+    "other": 0,
+    "withYgpCode": 0,
+    "missingYgpCode": 0,
+    "duplicateYgpCodes": 0,
+    "withXeroCode": 0,
+    "withSupplierSku": 0
+  },
+  "categories": {
+    "counts": {},
+    "otherCount": 0,
+    "uncategorisedCount": 0,
+    "classified": 0,
+    "reviewRequired": 0,
+    "afterApply": {}
+  },
+  "quoteLineCategoryAudit": {
+    "counts": {
+      "other": 1556
+    },
+    "note": "PR #75 staging “category=other” referred to quote_line_items.category (QuoteLineCategory commercial bucket), not catalogue product taxonomy."
+  },
+  "safeApply": {
+    "created": 0,
+    "updated": 0,
+    "unchanged": 0,
+    "reviewRequired": 0,
+    "skipped": 0,
+    "failed": 0,
+    "secondRunUpdates": 0,
+    "idempotent": true,
+    "priceChanges": 0
+  },
+  "royalCape": {
+    "quoteNumber": "QU-0183",
+    "totalCents": 4272250,
+    "xeroQuoteId": "4d9b1ceb-83dc-4ac6-8d58-ce7ac08f6db8",
+    "pricingPresentationMode": "ITEMISED",
+    "unchanged": true
+  },
+  "results": [
+    {
+      "name": "safety_gates",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "fixture_callout_type",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "fixture_idempotency",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "staging_additive_migration",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "catalogue_audit_readonly",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "quote_line_category_root_cause",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "no_price_changes",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "idempotent_second_run",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "safe_apply",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "royal_cape_unchanged",
+      "status": "PASS",
+      "detail": ""
+    }
+  ]
+}

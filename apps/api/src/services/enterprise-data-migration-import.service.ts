@@ -13,6 +13,7 @@ import {
   normalizeEquipmentSerial,
   scoreEquipmentHistoricalMatch,
   toDbSourceProvider,
+  planDeterministicClassificationApply,
 } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
 import {
@@ -1121,24 +1122,58 @@ export class EnterpriseDataMigrationImportService {
     if (sellPriceCents == null) throw new Error('Price book sell price is required.');
 
     const provenance = this.provenance(row, context);
+    const importCategory = rowText(row, 'category');
+    const description = [
+      rowText(row, 'description'),
+      importCategory ? `Category: ${importCategory}` : null,
+      rowText(row, 'taxTreatment') ? `Tax: ${rowText(row, 'taxTreatment')}` : null,
+      'HISTORICAL_PRICE_BOOK — catalogue only; not stock on hand.',
+      `source=${provenance.sourceProvider}`,
+      provenance.sourceExternalId ? `externalId=${provenance.sourceExternalId}` : null,
+    ]
+      .filter(Boolean)
+      .join(' | ');
     const created = await this.deps.inventoryService.createItem(companyId, {
       sku: code,
       name,
-      description: [
-        rowText(row, 'description'),
-        rowText(row, 'category') ? `Category: ${rowText(row, 'category')}` : null,
-        rowText(row, 'taxTreatment') ? `Tax: ${rowText(row, 'taxTreatment')}` : null,
-        'HISTORICAL_PRICE_BOOK — catalogue only; not stock on hand.',
-        `source=${provenance.sourceProvider}`,
-        provenance.sourceExternalId ? `externalId=${provenance.sourceExternalId}` : null,
-      ]
-        .filter(Boolean)
-        .join(' | '),
+      description,
       unit: rowText(row, 'unit') ?? 'each',
       sellPriceCents,
       unitCostCents: 0,
       status: 'active',
     });
+    // Row 91 — populate classification columns when present (additive; never changes sell price).
+    try {
+      const plan = planDeterministicClassificationApply({
+        id: created.id,
+        sku: code,
+        description,
+        sellPriceCents,
+      });
+      const classificationUpdate: Record<string, unknown> = {
+        isStockable: plan.patch.isStockable ?? false,
+        updatedAt: new Date(),
+      };
+      if (plan.patch.ygpCode) classificationUpdate.ygpCode = plan.patch.ygpCode;
+      if (plan.patch.catalogueCategory || importCategory) {
+        classificationUpdate.catalogueCategory =
+          plan.patch.catalogueCategory ?? importCategory;
+      }
+      if (plan.patch.itemType) classificationUpdate.itemType = plan.patch.itemType;
+      if (plan.patch.classificationStatus) {
+        classificationUpdate.classificationStatus = plan.patch.classificationStatus;
+      }
+      if (plan.patch.sourceExternalId || provenance.sourceExternalId) {
+        classificationUpdate.sourceExternalId =
+          plan.patch.sourceExternalId ?? provenance.sourceExternalId;
+      }
+      await this.deps.db
+        .update(inventoryItems)
+        .set(classificationUpdate)
+        .where(eq(inventoryItems.id, created.id));
+    } catch {
+      // Classification columns may be unavailable if migration not yet applied — create still succeeded.
+    }
     return created.id;
   }
 

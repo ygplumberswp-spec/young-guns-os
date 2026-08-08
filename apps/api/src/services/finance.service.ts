@@ -606,6 +606,9 @@ export class FinanceService {
       isOptional: line.isOptional,
       optionTier: line.optionTier,
       customerVisible: quoteLineCustomerVisible(line as { customerVisible?: boolean | null }),
+      catalogueItemId: (line as { catalogueItemId?: string | null }).catalogueItemId ?? null,
+      ygpCode: (line as { ygpCode?: string | null }).ygpCode ?? null,
+      catalogueCategory: (line as { catalogueCategory?: string | null }).catalogueCategory ?? null,
     }));
     const showInternalPricing = Boolean(options.includeProfit);
     const internalPricing = showInternalPricing
@@ -1778,32 +1781,50 @@ export class FinanceService {
   async searchCatalogueItems(
     companyId: string,
     query: string,
-    options: { includeCost?: boolean } = {},
+    options: {
+      includeCost?: boolean;
+      category?: string | null;
+      itemType?: string | null;
+    } = {},
   ): Promise<FinanceCatalogueItemSearchResult[]> {
     const trimmed = query.trim();
-    if (trimmed.length < 1) return [];
+    const category = options.category?.trim() || null;
+    const itemType = options.itemType?.trim() || null;
+    if (trimmed.length < 1 && !category && !itemType) return [];
 
-    const pattern = `%${trimmed}%`;
+    const pattern = trimmed.length >= 1 ? `%${trimmed}%` : null;
     const inventoryRows = await this.db.query.inventoryItems.findMany({
       where: and(
         eq(inventoryItems.companyId, companyId),
         eq(inventoryItems.status, 'active'),
-        or(
-          ilike(inventoryItems.sku, pattern),
-          ilike(inventoryItems.name, pattern),
-          ilike(inventoryItems.description, pattern),
-        ),
+        pattern
+          ? or(
+              ilike(inventoryItems.sku, pattern),
+              ilike(inventoryItems.name, pattern),
+              ilike(inventoryItems.description, pattern),
+              // Row 91 — also match ygp_code when present (column may be null pre-migration in typed clients).
+              sql`coalesce(${inventoryItems.ygpCode}, '') ilike ${pattern}`,
+              sql`coalesce(${inventoryItems.catalogueCategory}, '') ilike ${pattern}`,
+            )
+          : undefined,
       ),
       orderBy: [desc(inventoryItems.updatedAt)],
-      limit: 24,
+      limit: 48,
     });
 
     const company = await this.db.query.companies.findFirst({
       where: eq(companies.id, companyId),
     });
 
-    const catalogue = inventoryRows.map((row) =>
-      inventoryItemToFinanceCatalogue({
+    const catalogue = inventoryRows.map((row) => {
+      const classified = row as typeof row & {
+        ygpCode?: string | null;
+        catalogueCategory?: string | null;
+        itemType?: string | null;
+        classificationStatus?: string | null;
+        isStockable?: boolean | null;
+      };
+      return inventoryItemToFinanceCatalogue({
         id: row.id,
         sku: row.sku,
         name: row.name,
@@ -1811,11 +1832,41 @@ export class FinanceService {
         unit: row.unit,
         unitCostCents: row.unitCostCents,
         sellPriceCents: row.sellPriceCents,
-      }),
-    );
+        ygpCode: classified.ygpCode,
+        catalogueCategory: classified.catalogueCategory,
+        itemType: classified.itemType,
+        classificationStatus: classified.classificationStatus,
+        isStockable: classified.isStockable,
+      });
+    });
 
-    const pricebook = resolveYoungGunsPricebookForTenant(companyId, company ?? null);
-    const results = searchFinanceCatalogueItems(trimmed, [...catalogue, ...pricebook], { limit: 12 });
+    const pricebook = resolveYoungGunsPricebookForTenant(companyId, company ?? null).map((row) => ({
+      ...row,
+      ygpCode: row.itemCode,
+      catalogueCategory:
+        row.category === 'travel'
+          ? 'Call-out'
+          : row.category === 'labour'
+            ? 'Labour'
+            : row.category === 'scope'
+              ? 'Services'
+              : 'Other',
+      itemType:
+        row.category === 'travel'
+          ? 'CALL_OUT'
+          : row.category === 'labour'
+            ? 'LABOUR'
+            : row.category === 'scope'
+              ? 'SERVICE'
+              : 'OTHER',
+      isStockable: false,
+      catalogueItemId: null,
+    }));
+    const results = searchFinanceCatalogueItems(trimmed, [...catalogue, ...pricebook], {
+      limit: 12,
+      category,
+      itemType,
+    });
     return filterFinanceCatalogueCostFields(results, options.includeCost ?? false);
   }
 
@@ -2221,6 +2272,9 @@ export class FinanceService {
       vatRateBps: line.vatRateBps, lineSubtotalCents: line.lineSubtotalCents, lineVatCents: line.lineVatCents,
       lineTotalCents: line.lineTotalCents, lineCostCents: line.lineCostCents, isOptional: Boolean(line.isOptional), optionTier: line.optionTier ?? null,
       customerVisible: line.customerVisible !== false,
+      catalogueItemId: (line as { catalogueItemId?: string | null }).catalogueItemId ?? null,
+      ygpCode: (line as { ygpCode?: string | null }).ygpCode ?? null,
+      catalogueCategory: (line as { catalogueCategory?: string | null }).catalogueCategory ?? null,
     })));
   }
 
@@ -2428,7 +2482,7 @@ function quoteAmounts(
     defaultVatRateBps,
   });
   return {
-    lines: result.lines.map((line) => ({
+    lines: result.lines.map((line, index) => ({
       category: line.category as CreateQuoteRequest['lineItems'][number]['category'],
       description: line.description,
       quantity: line.quantity,
@@ -2438,6 +2492,12 @@ function quoteAmounts(
       isOptional: Boolean(line.isOptional),
       optionTier: line.optionTier ?? null,
       customerVisible: line.customerVisible,
+      catalogueItemId: lines[index]?.catalogueItemId ?? (line as { catalogueItemId?: string | null }).catalogueItemId ?? null,
+      ygpCode: lines[index]?.ygpCode ?? (line as { ygpCode?: string | null }).ygpCode ?? null,
+      catalogueCategory:
+        lines[index]?.catalogueCategory ??
+        (line as { catalogueCategory?: string | null }).catalogueCategory ??
+        null,
       lineSubtotalCents: line.lineSubtotalCents,
       lineVatCents: line.lineVatCents,
       lineTotalCents: line.lineTotalCents,

@@ -14,6 +14,10 @@ export type FinanceEditorLine = {
   vatRateBps: string;
   /** Set when line originated from catalogue pick — used for duplicate prevention only. */
   catalogueSourceKey?: string | null;
+  /** Row 91 — catalogue identity snapshot fields. */
+  catalogueItemId?: string | null;
+  ygpCode?: string | null;
+  catalogueCategory?: string | null;
   isManualLine?: boolean;
 };
 
@@ -120,6 +124,9 @@ export type ParsedEditorLine = {
   unitPriceCents: number;
   unitCostCents?: number;
   vatRateBps: number;
+  catalogueItemId?: string | null;
+  ygpCode?: string | null;
+  catalogueCategory?: string | null;
 };
 
 function mapLineForApi(
@@ -138,6 +145,9 @@ function mapLineForApi(
     unitPriceCents,
     ...(unitCostCents != null ? { unitCostCents } : {}),
     vatRateBps,
+    catalogueItemId: line.catalogueItemId ?? null,
+    ygpCode: line.ygpCode ?? null,
+    catalogueCategory: line.catalogueCategory ?? null,
   };
 }
 
@@ -259,6 +269,9 @@ export function lineItemsToEditorLines(
     unitPriceCents: number;
     unitCostCents?: number | null;
     vatRateBps: number;
+    catalogueItemId?: string | null;
+    ygpCode?: string | null;
+    catalogueCategory?: string | null;
   }>,
   priceMode: FinanceDocumentPriceMode = 'excluding_vat',
 ): FinanceEditorLine[] {
@@ -272,8 +285,11 @@ export function lineItemsToEditorLines(
     unitPrice: exVatCentsToDisplay(line.unitPriceCents, priceMode, line.vatRateBps),
     unitCost: line.unitCostCents != null ? (line.unitCostCents / 100).toFixed(2) : '',
     vatRateBps: String(line.vatRateBps),
-    catalogueSourceKey: null,
-    isManualLine: true,
+    catalogueSourceKey: line.catalogueItemId ? `inventory:${line.catalogueItemId}` : null,
+    catalogueItemId: line.catalogueItemId ?? null,
+    ygpCode: line.ygpCode ?? null,
+    catalogueCategory: line.catalogueCategory ?? null,
+    isManualLine: !line.catalogueItemId,
   }));
   return ensureTrailingBlankLines(mapped.length ? mapped : createBlankEditorLines(), 2);
 }
@@ -288,6 +304,9 @@ export function applyCatalogueItemToEditorLine(
   return {
     ...line,
     catalogueSourceKey: autoFill.catalogueSourceKey,
+    catalogueItemId: autoFill.catalogueItemId ?? null,
+    ygpCode: autoFill.ygpCode ?? null,
+    catalogueCategory: autoFill.catalogueCategory ?? null,
     isManualLine: false,
     category: autoFill.category,
     description: autoFill.description,
@@ -311,6 +330,9 @@ export function applyManualLineDescription(
     ...line,
     description: description.trim(),
     catalogueSourceKey: null,
+    catalogueItemId: null,
+    ygpCode: null,
+    catalogueCategory: null,
     isManualLine: true,
   };
 }
