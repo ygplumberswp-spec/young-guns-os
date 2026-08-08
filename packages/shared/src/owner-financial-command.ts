@@ -8,6 +8,7 @@
 import type { CashControlCompletenessReason, CashTruthCompleteness } from './cash-control.js';
 import { canViewCashControl } from './cash-control.js';
 import type { JobCostControlQueue } from './job-cost-control.js';
+import type { FinanceMoneyTruth, FinanceTruthAvailability } from './finance-page-truth.js';
 
 export type OwnerFinancialCommandPeriod = 'today' | 'week' | 'month';
 
@@ -148,6 +149,24 @@ export type OwnerFinancialRecentImportant = {
   worstMarginJobs: OwnerFinancialProfitabilityJob[];
 };
 
+/** Row 119 — honest availability for Receivables / Payables / Cashflow panels. */
+export type OwnerFinancialPageTruth = {
+  receivables: {
+    availability: FinanceTruthAvailability;
+    totalOutstanding: FinanceMoneyTruth;
+    overdue: FinanceMoneyTruth;
+  };
+  payables: {
+    availability: FinanceTruthAvailability;
+    totalDue: FinanceMoneyTruth;
+  };
+  cashflow: {
+    availability: FinanceTruthAvailability;
+    moneyIn: FinanceMoneyTruth;
+    moneyOut: FinanceMoneyTruth;
+  };
+};
+
 export type OwnerFinancialCommandDashboard = {
   currency: string;
   asOfDate: string;
@@ -156,6 +175,8 @@ export type OwnerFinancialCommandDashboard = {
     completeness: CashTruthCompleteness;
     reasons: string[];
   };
+  /** Row 119 page truth — no false R0 when sources absent. */
+  pageTruth: OwnerFinancialPageTruth;
   heartbeat: OwnerFinancialHeartbeat;
   cash: OwnerFinancialCashView;
   receivables: OwnerFinancialReceivables;
@@ -170,6 +191,8 @@ export type OwnerFinancialCommandDashboard = {
     invoices: string;
     overdueInvoices: string;
     payments: string;
+    payables?: string;
+    cashflow?: string;
   };
   sourceTrace: string[];
 };
@@ -503,6 +526,57 @@ export function emptyOwnerFinancialCommandDashboard(
     asOfDate,
     period,
     financialTruth: { completeness: 'INCOMPLETE', reasons: ['incomplete bank coverage'] },
+    pageTruth: {
+      receivables: {
+        availability: 'INCOMPLETE',
+        totalOutstanding: {
+          availability: 'INCOMPLETE',
+          amountCents: null,
+          reconciledToSources: false,
+          sourceCount: 0,
+          label: 'Receivables',
+          reason: 'Dashboard not loaded',
+        },
+        overdue: {
+          availability: 'INCOMPLETE',
+          amountCents: null,
+          reconciledToSources: false,
+          sourceCount: 0,
+          label: 'Overdue receivables',
+          reason: 'Dashboard not loaded',
+        },
+      },
+      payables: {
+        availability: 'UNKNOWN',
+        totalDue: {
+          availability: 'UNKNOWN',
+          amountCents: null,
+          reconciledToSources: false,
+          sourceCount: 0,
+          label: 'Bills & Payables',
+          reason: 'Payables not loaded',
+        },
+      },
+      cashflow: {
+        availability: 'INCOMPLETE',
+        moneyIn: {
+          availability: 'INCOMPLETE',
+          amountCents: null,
+          reconciledToSources: false,
+          sourceCount: 0,
+          label: 'Money in',
+          reason: 'Cashflow not loaded',
+        },
+        moneyOut: {
+          availability: 'INCOMPLETE',
+          amountCents: null,
+          reconciledToSources: false,
+          sourceCount: 0,
+          label: 'Money out',
+          reason: 'Cashflow not loaded',
+        },
+      },
+    },
     heartbeat: {
       period,
       fromDate: range.fromDate,
@@ -568,6 +642,8 @@ export function emptyOwnerFinancialCommandDashboard(
       invoices: '/finance/invoices',
       overdueInvoices: '/finance/invoices?overdueOnly=true',
       payments: '/finance/payments',
+      payables: '/finance/cash-control',
+      cashflow: '/finance-cashflow-profit',
     },
     sourceTrace: [
       'cash_control',

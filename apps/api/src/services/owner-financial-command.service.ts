@@ -5,13 +5,20 @@
  * No second accounting engine. No Xero/FNB calls.
  */
 
-import { and, desc, eq, gte, lte, ne, sql } from 'drizzle-orm';
+import { and, count, desc, eq, gte, lte, ne, sql } from 'drizzle-orm';
 import type { DatabaseClient } from '@titan/db';
-import { invoices, jobProfitabilitySnapshots, customers } from '@titan/db';
+import {
+  bankTransactions,
+  customers,
+  invoices,
+  jobProfitabilitySnapshots,
+  xeroBills,
+} from '@titan/db';
 import type {
   CashControlPeriodKey,
   OwnerFinancialCommandDashboard,
   OwnerFinancialCommandPeriod,
+  OwnerFinancialPageTruth,
   OwnerFinancialProfitabilityJob,
   OwnerFinancialReceivableRow,
 } from '@titan/shared';
@@ -22,6 +29,9 @@ import {
   emptyOwnerFinancialCommandDashboard,
   invoiceBalanceDueCents,
   isOutstandingCustomerInvoice,
+  projectCashflowTruth,
+  projectPayablesTruth,
+  projectReceivablesTruth,
   resolveInvoiceDisplayNumberLabel,
   resolveOwnerFinancialPeriodRange,
   safeCents,
@@ -237,6 +247,85 @@ export class OwnerFinancialCommandService {
     return { rows, unlinkedInvoiceCount };
   }
 
+  private async loadPageTruthSources(companyId: string): Promise<{
+    billRows: Array<{ id: string; amountDueCents: number | null; status: string }>;
+    bankTransactionCount: number;
+  }> {
+    const [billRows, bankCountRows] = await Promise.all([
+      this.db
+        .select({
+          id: xeroBills.id,
+          amountDueCents: xeroBills.amountDueCents,
+          status: xeroBills.status,
+        })
+        .from(xeroBills)
+        .where(eq(xeroBills.companyId, companyId))
+        .limit(500),
+      this.db
+        .select({ c: count() })
+        .from(bankTransactions)
+        .where(eq(bankTransactions.companyId, companyId)),
+    ]);
+    return {
+      billRows: billRows.map((b) => ({
+        id: b.id,
+        amountDueCents: b.amountDueCents,
+        status: b.status ?? 'UNKNOWN',
+      })),
+      bankTransactionCount: Number(bankCountRows[0]?.c ?? 0),
+    };
+  }
+
+  private buildPageTruth(input: {
+    outstanding: OwnerFinancialReceivableRow[];
+    billRows: Array<{ id: string; amountDueCents: number | null; status: string }>;
+    bankTransactionCount: number;
+    moneyInCents: number;
+    moneyOutCents: number;
+    cashCompleteness: 'VERIFIED' | 'PROVISIONAL' | 'INCOMPLETE';
+  }): OwnerFinancialPageTruth {
+    const receivables = projectReceivablesTruth({
+      xeroConnected: true,
+      invoices: input.outstanding.map((r) => ({
+        id: r.invoiceId,
+        status: r.status,
+        balanceDueCents: r.balanceDueCents,
+        isOverdue: r.isOverdue,
+      })),
+    });
+    const openBills = input.billRows.filter(
+      (b) => !['VOIDED', 'DELETED', 'PAID'].includes((b.status ?? '').toUpperCase()),
+    );
+    const payables = projectPayablesTruth({
+      bills: openBills,
+      xeroBillsImportSupported: true,
+      xeroConnected: true,
+    });
+    const cashflow = projectCashflowTruth({
+      bankTransactionCount: input.bankTransactionCount,
+      knownMoneyInCents: input.moneyInCents,
+      knownMoneyOutCents: input.moneyOutCents,
+      cashControlCompleteness: input.cashCompleteness,
+      bankConnectedOrImportReady: input.bankTransactionCount > 0 || input.cashCompleteness !== 'INCOMPLETE',
+    });
+    return {
+      receivables: {
+        availability: receivables.availability,
+        totalOutstanding: receivables.totalOutstanding,
+        overdue: receivables.overdue,
+      },
+      payables: {
+        availability: payables.availability,
+        totalDue: payables.totalDue,
+      },
+      cashflow: {
+        availability: cashflow.availability,
+        moneyIn: cashflow.moneyIn,
+        moneyOut: cashflow.moneyOut,
+      },
+    };
+  }
+
   async getDashboard(
     actor: OwnerFinancialCommandActor,
     period: OwnerFinancialCommandPeriod = 'month',
@@ -254,22 +343,30 @@ export class OwnerFinancialCommandService {
       permissions: actor.permissions,
     };
 
-    const [cashSummary, periodMetrics, costQueue, receivablesBundle, gpBundle, invoicedRevenueCents] =
-      await Promise.all([
-        this.cashControlService.getSummary(actorCash),
-        this.cashControlService.getPeriodMetrics(actorCash, {
-          periodKey: periodToCashKey(period),
-          fromDate: range.fromDate,
-          toDate: range.toDate,
-        }),
-        this.jobCostControlService.getOwnerQueue(actor.companyId, {
-          fromDate: range.fromDate,
-          toDate: range.toDate,
-        }),
-        this.loadReceivables(actor.companyId, asOfDate),
-        this.sumKnownGrossProfitFromSnapshots(actor.companyId),
-        this.sumInvoicedRevenueCents(actor.companyId, range.fromDate, range.toDate),
-      ]);
+    const [
+      cashSummary,
+      periodMetrics,
+      costQueue,
+      receivablesBundle,
+      gpBundle,
+      invoicedRevenueCents,
+      pageTruthSources,
+    ] = await Promise.all([
+      this.cashControlService.getSummary(actorCash),
+      this.cashControlService.getPeriodMetrics(actorCash, {
+        periodKey: periodToCashKey(period),
+        fromDate: range.fromDate,
+        toDate: range.toDate,
+      }),
+      this.jobCostControlService.getOwnerQueue(actor.companyId, {
+        fromDate: range.fromDate,
+        toDate: range.toDate,
+      }),
+      this.loadReceivables(actor.companyId, asOfDate),
+      this.sumKnownGrossProfitFromSnapshots(actor.companyId),
+      this.sumInvoicedRevenueCents(actor.companyId, range.fromDate, range.toDate),
+      this.loadPageTruthSources(actor.companyId),
+    ]);
 
     const outstanding = receivablesBundle.rows;
     const overdue = outstanding.filter((r) => r.isOverdue);
@@ -351,11 +448,21 @@ export class OwnerFinancialCommandService {
         href: '/finance/cash-control',
       }));
 
+    const pageTruth = this.buildPageTruth({
+      outstanding,
+      billRows: pageTruthSources.billRows,
+      bankTransactionCount: pageTruthSources.bankTransactionCount,
+      moneyInCents: safeCents(moneyInCents),
+      moneyOutCents: safeCents(moneyOutCents),
+      cashCompleteness: cashSummary.completeness,
+    });
+
     return {
       currency: cashSummary.currency || 'ZAR',
       asOfDate,
       period,
       financialTruth: truth,
+      pageTruth,
       heartbeat: {
         period,
         fromDate: range.fromDate,

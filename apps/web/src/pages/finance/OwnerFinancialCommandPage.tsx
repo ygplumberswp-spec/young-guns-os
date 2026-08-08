@@ -5,7 +5,21 @@ import type {
   OwnerFinancialCommandDashboard,
   OwnerFinancialCommandPeriod,
 } from '@titan/shared';
-import { canViewOwnerFinancialCommand, formatMoney } from '@titan/shared';
+import {
+  canViewOwnerFinancialCommand,
+  formatFinanceTruthDisplay,
+  formatMoney,
+  type FinanceMoneyTruth,
+} from '@titan/shared';
+
+function truthMoney(truth: FinanceMoneyTruth, currency: string): string {
+  const label = formatFinanceTruthDisplay(truth);
+  if (label === 'NOT CONNECTED' || label === 'NOT AVAILABLE' || label === 'UNKNOWN' || label === 'INCOMPLETE') {
+    return label;
+  }
+  if (truth.amountCents == null) return 'UNKNOWN';
+  return formatMoney(truth.amountCents, currency);
+}
 import { ApiClientError } from '../../lib/api-client';
 import { fetchOwnerFinancialCommandDashboard } from '../../lib/owner-financial-command-api';
 import { useAuth } from '../../lib/auth-context';
@@ -182,14 +196,20 @@ export function OwnerFinancialCommandPage() {
       </Panel>
 
       <Panel title="Cash Movement">
+        <p className="page-muted">
+          Cashflow truth: {dashboard.pageTruth.cashflow.availability}
+          {dashboard.pageTruth.cashflow.moneyIn.reason
+            ? ` — ${dashboard.pageTruth.cashflow.moneyIn.reason}`
+            : ''}
+        </p>
         <MetricGrid>
           <StatCard
             label="Money in"
-            value={formatMoney(dashboard.cash.moneyInCents, currency)}
+            value={truthMoney(dashboard.pageTruth.cashflow.moneyIn, currency)}
           />
           <StatCard
             label="Money out"
-            value={formatMoney(dashboard.cash.moneyOutCents, currency)}
+            value={truthMoney(dashboard.pageTruth.cashflow.moneyOut, currency)}
           />
           <StatCard
             label="Direct job cash out"
@@ -225,14 +245,25 @@ export function OwnerFinancialCommandPage() {
       </Panel>
 
       <Panel title="Receivables">
+        <p className="page-muted">
+          Truth: {dashboard.pageTruth.receivables.availability}
+          {dashboard.pageTruth.receivables.totalOutstanding.reason
+            ? ` — ${dashboard.pageTruth.receivables.totalOutstanding.reason}`
+            : ''}
+        </p>
         <MetricGrid>
           <StatCard
             label="Total outstanding"
-            value={formatMoney(dashboard.receivables.totalOutstandingCents, currency)}
+            value={truthMoney(dashboard.pageTruth.receivables.totalOutstanding, currency)}
           />
           <StatCard
             label="Overdue"
-            value={`${dashboard.receivables.overdueCount} · ${formatMoney(dashboard.receivables.overdueCents, currency)}`}
+            value={
+              dashboard.pageTruth.receivables.overdue.availability === 'AVAILABLE' ||
+              dashboard.pageTruth.receivables.overdue.availability === 'EMPTY'
+                ? `${dashboard.receivables.overdueCount} · ${truthMoney(dashboard.pageTruth.receivables.overdue, currency)}`
+                : truthMoney(dashboard.pageTruth.receivables.overdue, currency)
+            }
           />
           <StatCard label="Due soon (7 days)" value={String(dashboard.receivables.dueSoonCount)} />
           <StatCard
@@ -271,6 +302,31 @@ export function OwnerFinancialCommandPage() {
         )}
         <div className="owner-fin-command__links">
           <Link href={dashboard.drillDown.overdueInvoices}>Overdue invoices</Link>
+        </div>
+      </Panel>
+
+      <Panel title="Bills & Payables">
+        <p className="page-muted">
+          Truth: {dashboard.pageTruth.payables.availability}
+          {dashboard.pageTruth.payables.totalDue.reason
+            ? ` — ${dashboard.pageTruth.payables.totalDue.reason}`
+            : ''}
+        </p>
+        <MetricGrid>
+          <StatCard
+            label="Total due"
+            value={truthMoney(dashboard.pageTruth.payables.totalDue, currency)}
+          />
+          <StatCard
+            label="Source bills"
+            value={String(dashboard.pageTruth.payables.totalDue.sourceCount)}
+          />
+        </MetricGrid>
+        <div className="owner-fin-command__links">
+          <Link href={dashboard.drillDown.payables ?? '/finance/cash-control'}>Cash Control</Link>
+          <Link href={dashboard.drillDown.cashflow ?? '/finance-cashflow-profit'}>
+            Cashflow & Profit
+          </Link>
         </div>
       </Panel>
 
