@@ -4,7 +4,7 @@
   "repoRoot": "/workspace",
   "branch": "cursor/quote-lifecycle-e2e-663e",
   "startingHead": "ea2796acbf311bfed4d527d308e00cf9a7155866",
-  "endingHead": "PENDING_COMMIT",
+  "endingHead": "258629f9316c03938b25366e72f2fe648496e9aa",
   "ancestry": {
     "pr67_ee5a19c": true,
     "pr68_2aae5e1": true,
@@ -109,5 +109,5 @@
   "row121LifecycleStarted": false,
   "clientPortalFinalValidation": "NOT_PASS \u2014 Row 88 numbering/lifecycle scope only",
   "prUrl": "PENDING",
-  "commit": "PENDING_COMMIT"
+  "commit": "258629f9316c03938b25366e72f2fe648496e9aa"
 }
