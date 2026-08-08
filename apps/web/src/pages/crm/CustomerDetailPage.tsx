@@ -32,6 +32,7 @@ import {
 } from '../../lib/whatsapp-api';
 import { useAuth } from '../../lib/auth-context';
 import { canManageCustomers } from '../../features/crm/CustomerList';
+import { Customer360WorkspacePanel } from '../../features/crm/Customer360WorkspacePanel';
 import { canAccessMarketingIntelligence } from '../../features/marketing-intelligence/utils';
 import { FinanceReportExportActions } from '../../features/reports/FinanceReportExportActions';
 
@@ -442,7 +443,7 @@ export function CustomerDetailPage() {
     <div className="crm-page">
       <PageHeader
         title={customer.name}
-        description="Customer profile and activity history."
+        description="Customer 360 — company relationship, people, history, and activity."
         actions={
           <div className="crm-detail__actions">
             <Link href={`/aura?customerId=${customer.id}`}>
@@ -454,6 +455,8 @@ export function CustomerDetailPage() {
           </div>
         }
       />
+
+      <Customer360WorkspacePanel customerId={customer.id} />
 
       {error ? <p className="form-error">{error}</p> : null}
       {success ? <p className="form-success">{success}</p> : null}
