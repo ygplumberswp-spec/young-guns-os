@@ -1,0 +1,100 @@
+{
+  "schemaVersion": "row99-boq-workbook-import-v1",
+  "generatedAt": "2026-08-08T11:37:20.549Z",
+  "pass": 20,
+  "fail": 0,
+  "results": [
+    {
+      "name": "migration_0217_applied",
+      "status": "PASS"
+    },
+    {
+      "name": "staging_readonly_boq_source_audit",
+      "status": "PASS",
+      "boqLikeDocuments": 0,
+      "existingImports": 0,
+      "authorisedSourceResult": "NO_AUTHORISED_BOQ_SOURCE_AVAILABLE",
+      "row92Status": "DRAFT",
+      "row92Automation": "OFF"
+    },
+    {
+      "name": "row92_off",
+      "status": "PASS"
+    },
+    {
+      "name": "royal_cape_unchanged",
+      "status": "PASS",
+      "totalCents": 4272250,
+      "xeroQuoteId": "4d9b1ceb-83dc-4ac6-8d58-ce7ac08f6db8"
+    },
+    {
+      "name": "fixture_multi_sheet",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_sheet_order",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_formula_preserved",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_no_recalc",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_idempotent",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_new_revision",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_tender_link",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_no_pricing",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_client_leak",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_safety",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_totals",
+      "status": "PASS",
+      "pass": 10,
+      "fail": 0
+    },
+    {
+      "name": "cleanup",
+      "status": "PASS"
+    },
+    {
+      "name": "xero_writes",
+      "status": "PASS",
+      "count": 0
+    },
+    {
+      "name": "customer_sends",
+      "status": "PASS",
+      "count": 0
+    },
+    {
+      "name": "production_writes",
+      "status": "PASS",
+      "count": 0
+    },
+    {
+      "name": "row100_not_started",
+      "status": "PASS"
+    }
+  ]
+}

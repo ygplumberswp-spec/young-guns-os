@@ -27,6 +27,7 @@ export * from './job-profitability';
 export * from './job-financial-linkage';
 export * from './quotes';
 export * from './boq';
+export * from './boq-workbook-import';
 export * from './draft-workspace';
 export * from './job-document-packs';
 export * from './completion-reports';

@@ -61,3 +61,63 @@ export async function convertBoqToQuote(
   });
   return data.quote;
 }
+
+export type BoqWorkbookImportDetail = {
+  import: {
+    id: string;
+    originalFilename: string;
+    fileHashSha256: string;
+    revisionLabel: string | null;
+    importVersion: number;
+    status: string;
+    sheetOrder: string[];
+    warnings: string[];
+    auraNarrativeFacts: string[];
+  };
+  sheets: Array<{ id: string; sheetName: string; sheetOrder: number }>;
+  rows: Array<{
+    id: string;
+    sheetName: string;
+    originalRowNumber: number;
+    sectionLabel: string | null;
+    rowKind: string;
+    itemCode: string | null;
+    description: string | null;
+    unit: string | null;
+    quantity: string | null;
+    formulaText: string | null;
+    displayValue: string | null;
+    warnings: string[];
+    reviewState: string;
+  }>;
+  automaticPricing: false;
+  supplierMatching: false;
+  idempotentReplay?: boolean;
+};
+
+export async function importBoqWorkbook(
+  accessToken: string,
+  body: {
+    originalFilename: string;
+    contentBase64: string;
+    revisionLabel?: string | null;
+    clientActionId?: string | null;
+  },
+): Promise<BoqWorkbookImportDetail> {
+  const data = await request<BoqWorkbookImportDetail>('/finance/boq-imports', {
+    method: 'POST',
+    accessToken,
+    body,
+  });
+  return data;
+}
+
+export async function fetchBoqWorkbookImport(
+  accessToken: string,
+  importId: string,
+): Promise<BoqWorkbookImportDetail> {
+  const data = await request<BoqWorkbookImportDetail>(`/finance/boq-imports/${importId}`, {
+    accessToken,
+  });
+  return data;
+}

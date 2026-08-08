@@ -411,6 +411,10 @@ export function App() {
                           component={OwnerPages.PlanEstimateListPage}
                         />
                         <Route path="/finance/boq/new" component={OwnerPages.BoqCreatePage} />
+                        <Route
+                          path="/finance/boq-imports/:id"
+                          component={OwnerPages.BoqImportDetailPage}
+                        />
                         <Route path="/finance/boq/:id" component={OwnerPages.BoqDetailPage} />
                         <Route path="/finance/boq" component={OwnerPages.BoqListPage} />
                         <Route

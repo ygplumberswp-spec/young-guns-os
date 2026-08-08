@@ -204,4 +204,16 @@ export type {
   PlanEstimateAiTakeoffItem,
 } from './schema/plan-ai-takeoff.js';
 
+/** Explicit re-export — Row 99 BOQ workbook import. */
+export {
+  boqImports,
+  boqImportSheets,
+  boqImportRows,
+} from './schema/boq-workbook-import.js';
+export type {
+  BoqImport,
+  BoqImportSheet,
+  BoqImportRow,
+} from './schema/boq-workbook-import.js';
+
 export { drizzle } from 'drizzle-orm/postgres-js';

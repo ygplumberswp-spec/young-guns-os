@@ -132,6 +132,10 @@ export const BoqDetailPage = lazyNamed(
   () => import('../pages/finance/BoqDetailPage'),
   'BoqDetailPage',
 );
+export const BoqImportDetailPage = lazyNamed(
+  () => import('../pages/finance/BoqImportDetailPage'),
+  'BoqImportDetailPage',
+);
 export const InvoiceListPage = lazyNamed(
   () => import('../pages/finance/InvoiceListPage'),
   'InvoiceListPage',

@@ -67,6 +67,14 @@ export const PORTAL_EXPANSION_FORBIDDEN_FIELDS = [
   'evidenceCandidates',
   'planAiTakeoffInternal',
   'scaleProvenance',
+  // Row 99 — BOQ workbook import internals never reach Client Portal
+  'boqImport',
+  'boqImportRows',
+  'boqWorkbookInternal',
+  'formulaText',
+  'fileChecksumSha256',
+  'sheetRaw',
+  'supplierMatch',
 
   'xeroQuoteId',
   'xeroInvoiceNumber',

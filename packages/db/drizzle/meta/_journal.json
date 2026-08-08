@@ -1485,6 +1485,13 @@
       "when": 1788187200000,
       "tag": "0216_plan_ai_takeoff",
       "breakpoints": true
+    },
+    {
+      "idx": 212,
+      "version": "7",
+      "when": 1788273600000,
+      "tag": "0217_boq_workbook_import",
+      "breakpoints": true
     }
   ]
 }

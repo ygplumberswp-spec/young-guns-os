@@ -5,7 +5,7 @@ import { Button, Input } from '@titan/ui';
 import type { BoqLineInput, CustomerSummary, JobSummary } from '@titan/shared';
 import { parseBoqImportText } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
-import { createBoqDocument } from '../../lib/boq-api';
+import { createBoqDocument, importBoqWorkbook } from '../../lib/boq-api';
 import { fetchCustomers } from '../../lib/crm-api';
 import { fetchJobs } from '../../lib/jobs-api';
 import { useAuth } from '../../lib/auth-context';
@@ -38,9 +38,12 @@ export function BoqCreatePage() {
   const [importText, setImportText] = useState('');
   const [lines, setLines] = useState<DraftLine[]>([newLine()]);
   const [clientActionId] = useState(() => newFinanceClientActionId('boq'));
+  const [workbookClientActionId] = useState(() => newFinanceClientActionId('boq-xlsx'));
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isImportingWorkbook, setIsImportingWorkbook] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [workbookNote, setWorkbookNote] = useState<string | null>(null);
 
   const canWrite = user ? canManageFinance(user.permissions) : false;
 
@@ -96,6 +99,37 @@ export function BoqCreatePage() {
     setError(null);
   }
 
+  async function handleWorkbookFile(file: File | null) {
+    if (!file || !accessToken || !canWrite) return;
+    setIsImportingWorkbook(true);
+    setError(null);
+    setWorkbookNote(null);
+    try {
+      const buffer = await file.arrayBuffer();
+      const bytes = new Uint8Array(buffer);
+      let binary = '';
+      for (let i = 0; i < bytes.length; i += 1) binary += String.fromCharCode(bytes[i]!);
+      const contentBase64 = btoa(binary);
+      const result = await importBoqWorkbook(accessToken, {
+        originalFilename: file.name,
+        contentBase64,
+        revisionLabel: 'Rev A',
+        clientActionId: workbookClientActionId,
+      });
+      setWorkbookNote(
+        result.idempotentReplay
+          ? `Idempotent replay · import ${result.import.id.slice(0, 8)}`
+          : `Imported v${result.import.importVersion} · ${result.rows.length} rows`,
+      );
+      setSourceFilename(file.name);
+      navigate(`/finance/boq-imports/${result.import.id}`);
+    } catch (err) {
+      setError(err instanceof ApiClientError ? err.message : 'Workbook import failed');
+    } finally {
+      setIsImportingWorkbook(false);
+    }
+  }
+
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     if (!accessToken || !canWrite) return;
@@ -135,10 +169,28 @@ export function BoqCreatePage() {
     <div className="finance-page">
       <PageHeader
         title="New BOQ"
-        description="Capture tender or take-off line items. Import CSV/TSV or enter manually."
+        description="Capture tender or take-off line items. Import workbook (Row 99), CSV/TSV, or enter manually."
       />
       <FinanceNav />
       {error ? <p className="form-error">{error}</p> : null}
+      {workbookNote ? <p className="form-success">{workbookNote}</p> : null}
+
+      <div className="finance-form" style={{ marginBottom: 24 }}>
+        <label className="titan-input-group">
+          <span className="titan-input-label">Upload / import BOQ workbook (XLSX)</span>
+          <input
+            className="titan-input"
+            type="file"
+            accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            disabled={!canWrite || isImportingWorkbook}
+            onChange={(e) => void handleWorkbookFile(e.target.files?.[0] ?? null)}
+          />
+        </label>
+        <p className="page-muted">
+          Preserves sheet order, row order, formulas as text (not recalculated). Opens review
+          workspace — no automatic pricing or supplier matching.
+        </p>
+      </div>
 
       <form className="finance-form" onSubmit={(event) => void handleSubmit(event)}>
         <Input label="Title" value={title} onChange={(e) => setTitle(e.target.value)} required />
