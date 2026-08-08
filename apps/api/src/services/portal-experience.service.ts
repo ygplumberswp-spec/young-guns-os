@@ -15,7 +15,11 @@ import type {
   PortalKnowledgeSearchRequest,
   PortalQuoteDetail,
 } from '@titan/shared';
-import { displayOfficialInvoiceNumber, displayOfficialQuoteNumber } from '@titan/shared';
+import {
+  displayOfficialInvoiceNumber,
+  displayOfficialQuoteNumber,
+  pickPaymentInvoiceDisplayNumber,
+} from '@titan/shared';
 import type { PortalAccessPermission } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
 import {
@@ -951,7 +955,14 @@ function toQuoteSummary(
     id: row.id,
     quoteNumber: row.quoteNumber,
     xeroQuoteNumber: row.xeroQuoteNumber ?? null,
-    displayQuoteNumber: displayOfficialQuoteNumber({ xeroQuoteNumber: row.xeroQuoteNumber }),
+    displayQuoteNumber: displayOfficialQuoteNumber({
+      xeroQuoteNumber: row.xeroQuoteNumber,
+      quoteNumber: row.quoteNumber,
+      id: row.id,
+      xeroQuoteId: row.xeroQuoteId,
+      sourceExternalId: row.sourceExternalId,
+      sourceProvider: row.sourceProvider,
+    }),
     status: row.status,
     versionNumber: row.versionNumber ?? 1,
     isImmutable: row.isImmutable ?? false,
@@ -987,15 +998,19 @@ function toInvoiceSummary(
   const internalNumber = row.internalNumber ?? row.invoiceNumber;
   const displayInvoiceNumber = displayOfficialInvoiceNumber({
     xeroInvoiceNumber: row.xeroInvoiceNumber,
+    invoiceNumber: row.invoiceNumber,
+    internalNumber: row.internalNumber,
+    id: row.id,
+    sourceExternalId: row.sourceExternalId,
+    sourceProvider: row.sourceProvider,
+    numberAuthority: row.numberAuthority,
   });
   return {
     id: row.id,
     invoiceNumber: row.invoiceNumber,
     internalNumber,
     displayInvoiceNumber,
-    displayOfficialInvoiceNumber: displayOfficialInvoiceNumber({
-      xeroInvoiceNumber: row.xeroInvoiceNumber,
-    }),
+    displayOfficialInvoiceNumber: displayInvoiceNumber,
     xeroInvoiceNumber: row.xeroInvoiceNumber ?? null,
     xeroReference: row.xeroReference ?? null,
     numberAuthority: (row.numberAuthority ?? 'internal_pending_xero') as
@@ -1031,13 +1046,32 @@ function toInvoiceSummary(
 
 function toPaymentSummary(
   row: typeof payments.$inferSelect & {
-    invoice?: { invoiceNumber: string; customer?: { name: string } | null } | null;
+    invoice?: {
+      id?: string;
+      invoiceNumber: string;
+      xeroInvoiceNumber?: string | null;
+      numberAuthority?: string | null;
+      sourceProvider?: string | null;
+      sourceExternalId?: string | null;
+      customer?: { name: string } | null;
+    } | null;
   },
 ) {
   return {
     id: row.id,
     invoiceId: row.invoiceId,
-    invoiceNumber: row.invoice?.invoiceNumber ?? '',
+    invoiceNumber: pickPaymentInvoiceDisplayNumber({
+      invoice: row.invoice
+        ? {
+            id: row.invoice.id ?? row.invoiceId,
+            invoiceNumber: row.invoice.invoiceNumber,
+            xeroInvoiceNumber: row.invoice.xeroInvoiceNumber,
+            numberAuthority: row.invoice.numberAuthority,
+            sourceProvider: row.invoice.sourceProvider,
+            sourceExternalId: row.invoice.sourceExternalId,
+          }
+        : null,
+    }),
     invoiceTitle: row.invoice?.customer?.name ?? '',
     customerName: row.invoice?.customer?.name ?? '',
     amountCents: row.amountCents,

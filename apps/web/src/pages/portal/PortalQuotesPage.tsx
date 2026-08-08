@@ -88,7 +88,7 @@ export function PortalQuotesPage() {
                       size="sm"
                       variant="outline"
                       disabled={busyId === quote.id}
-                      onClick={() => void requestClarification(quote.id, quote.quoteNumber)}
+                      onClick={() => void requestClarification(quote.id, quote.displayQuoteNumber)}
                     >
                       Request clarification
                     </Button>

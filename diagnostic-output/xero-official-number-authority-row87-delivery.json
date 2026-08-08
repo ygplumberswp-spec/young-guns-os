@@ -1,0 +1,65 @@
+{
+  "row": 87,
+  "title": "Official Xero QuoteNumber / InvoiceNumber Authority",
+  "repoRoot": "/workspace",
+  "branch": "cursor/xero-official-number-authority-663e",
+  "startingHead": "91e174f73aef63efb5b2809b4e1a8ef8ca05ecf2",
+  "endingHead": "PENDING_COMMIT",
+  "ancestry": {
+    "pr67_ee5a19c": true,
+    "pr68_2aae5e1": true,
+    "pr69_a9c63b8": true,
+    "pr70_128a434": true,
+    "pr71_91e174f": true
+  },
+  "architectureReused": [
+    "quotes.quote_number / xero_quote_number / xero_quote_id",
+    "invoices.invoice_number / xero_invoice_number / number_authority",
+    "displayOfficialQuoteNumber / displayOfficialInvoiceNumber",
+    "finance document preview",
+    "Customer 360 / Property 360 / Job 360"
+  ],
+  "migration": null,
+  "canonicalNumberResolver": "packages/shared/src/xero-official-number-authority.ts — resolveQuoteDisplayNumber / resolveInvoiceDisplayNumber",
+  "quoteNumberPrecedence": [
+    "1. xeroQuoteNumber",
+    "2. persisted official import (never UUID/TITAN; local Q-#### only if Xero-backed)",
+    "3. Draft — Xero quote number pending"
+  ],
+  "invoiceNumberPrecedence": [
+    "1. xeroInvoiceNumber",
+    "2. invoiceNumber when Xero authority/provider and not placeholder",
+    "3. Draft — Xero invoice number pending"
+  ],
+  "draftNumberBehavior": "Draft label only — never invents QU-/INV-",
+  "stagingQuoteAudit": {
+    "totalXeroBackedInspected": 253,
+    "withOfficialQuoteNumber": 253,
+    "missingQuoteNumber": 0,
+    "displayMismatchesFound": 0,
+    "unresolvedConflicts": 0
+  },
+  "stagingInvoiceAudit": {
+    "totalXeroBackedInspected": 587,
+    "withOfficialInvoiceNumber": 587,
+    "missingInvoiceNumber": 0,
+    "displayMismatchesFound": 0,
+    "titanRawVsOfficialFixedByResolver": 1,
+    "unresolvedConflicts": 0,
+    "statusCoverage": { "paid": 511, "cancelled": 64, "draft": 9, "sent": 3 }
+  },
+  "royalCape": {
+    "display": "QU-0183",
+    "titanQuoteIdUnchanged": true,
+    "xeroQuoteIdUnchanged": true,
+    "crcUnchanged": true,
+    "job000002Unchanged": true
+  },
+  "xeroWriteCalls": 0,
+  "customerSends": 0,
+  "productionWrites": 0,
+  "productionMigrations": 0,
+  "row88Started": false,
+  "clientPortalFinalValidation": "NOT_PASS — numbering-specific check only",
+  "prUrl": "PENDING"
+}

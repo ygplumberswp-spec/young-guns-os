@@ -12,6 +12,7 @@ import {
   assertNoClientFinancialLeak,
   buildCartrackArrivalPrompt,
   isInvoiceBlockedByVisitState,
+  resolveInvoiceDisplayNumberLabel,
   toClientSafeCompletionPack,
   toTechnicianInvoicePaymentStrip,
   validateAuraFinanceCompletionPack,
@@ -173,7 +174,14 @@ export class PaperlessFieldCashService {
         readyForDraftInvoice: false,
         draftInvoice: {
           id: existingInvoice.id,
-          invoiceNumber: existingInvoice.invoiceNumber,
+          invoiceNumber: resolveInvoiceDisplayNumberLabel({
+            id: existingInvoice.id,
+            invoiceNumber: existingInvoice.invoiceNumber,
+            xeroInvoiceNumber: existingInvoice.xeroInvoiceNumber,
+            numberAuthority: existingInvoice.numberAuthority,
+            sourceProvider: existingInvoice.sourceProvider,
+            sourceExternalId: existingInvoice.sourceExternalId,
+          }),
           totalCents: existingInvoice.totalCents,
           status: existingInvoice.status,
         },
@@ -238,7 +246,14 @@ export class PaperlessFieldCashService {
       );
       draftInvoice = {
         id: invoice.id,
-        invoiceNumber: invoice.invoiceNumber,
+        invoiceNumber:
+          invoice.displayOfficialInvoiceNumber ??
+          resolveInvoiceDisplayNumberLabel({
+            id: invoice.id,
+            invoiceNumber: invoice.invoiceNumber,
+            xeroInvoiceNumber: invoice.xeroInvoiceNumber,
+            numberAuthority: invoice.numberAuthority,
+          }),
         totalCents: invoice.totalCents,
         status: invoice.status,
       };
@@ -302,10 +317,18 @@ export class PaperlessFieldCashService {
     });
     if (!invoice) return null;
     // Technician may only see strip after invoice left pure draft / is issued-or-sent
+    const officialNumber = resolveInvoiceDisplayNumberLabel({
+      id: invoice.id,
+      invoiceNumber: invoice.invoiceNumber,
+      xeroInvoiceNumber: invoice.xeroInvoiceNumber,
+      numberAuthority: invoice.numberAuthority,
+      sourceProvider: invoice.sourceProvider,
+      sourceExternalId: invoice.sourceExternalId,
+    });
     if (invoice.status === 'draft') {
       return toTechnicianInvoicePaymentStrip({
         invoiceId: invoice.id,
-        invoiceNumber: invoice.invoiceNumber,
+        invoiceNumber: officialNumber,
         amountDueCents: invoice.totalCents,
         amountPaidCents: 0,
         jobId,
@@ -314,7 +337,7 @@ export class PaperlessFieldCashService {
     const paid = (invoice.payments ?? []).reduce((sum, p) => sum + (p.amountCents ?? 0), 0);
     const strip = toTechnicianInvoicePaymentStrip({
       invoiceId: invoice.id,
-      invoiceNumber: invoice.invoiceNumber,
+      invoiceNumber: officialNumber,
       amountDueCents: invoice.totalCents,
       amountPaidCents: paid,
       jobId,

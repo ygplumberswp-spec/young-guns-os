@@ -75,17 +75,34 @@ function isoDate(value: Date | string | null | undefined): string | null {
 function invoicePublicNumber(row: {
   xeroInvoiceNumber: string | null;
   invoiceNumber: string;
+  numberAuthority?: string | null;
+  sourceProvider?: string | null;
 }): string {
-  return displayOfficialInvoiceNumber({ xeroInvoiceNumber: row.xeroInvoiceNumber });
+  return displayOfficialInvoiceNumber({
+    xeroInvoiceNumber: row.xeroInvoiceNumber,
+    invoiceNumber: row.invoiceNumber,
+    numberAuthority: row.numberAuthority,
+    sourceProvider: row.sourceProvider,
+  });
 }
 
 function quotePublicNumber(row: {
   xeroQuoteNumber: string | null;
   quoteNumber: string;
+  id?: string;
+  xeroQuoteId?: string | null;
+  sourceProvider?: string | null;
+  sourceExternalId?: string | null;
 }): string {
-  const official = displayOfficialQuoteNumber({ xeroQuoteNumber: row.xeroQuoteNumber });
-  if (official.startsWith('Draft')) return row.quoteNumber;
-  return official;
+  // Row 87: never fall back to inventing/showing non-official local sequences as public.
+  return displayOfficialQuoteNumber({
+    xeroQuoteNumber: row.xeroQuoteNumber,
+    quoteNumber: row.quoteNumber,
+    id: row.id,
+    xeroQuoteId: row.xeroQuoteId,
+    sourceProvider: row.sourceProvider,
+    sourceExternalId: row.sourceExternalId,
+  });
 }
 
 function jobPublicReference(row: { jobNumber: string | null; id: string }): string {

@@ -919,6 +919,11 @@ export class PortalExpansionService {
       displayNumber: buildPortalSafeInvoiceDisplayNumber({
         invoiceNumber: row.invoiceNumber,
         title: row.title,
+        xeroInvoiceNumber: row.xeroInvoiceNumber,
+        numberAuthority: row.numberAuthority,
+        sourceProvider: row.sourceProvider,
+        sourceExternalId: row.sourceExternalId,
+        id: row.id,
       }),
       title: row.title,
       status: row.status,

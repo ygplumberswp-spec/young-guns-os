@@ -1,0 +1,260 @@
+{
+  "label": "xero-official-number-authority-staging-proof",
+  "row": 87,
+  "generatedAt": "2026-08-08T08:19:19.594Z",
+  "stagingOnly": true,
+  "xeroWriteCalls": 0,
+  "customerSends": 0,
+  "productionWrites": 0,
+  "productionMigrations": 0,
+  "row88Started": false,
+  "results": [
+    {
+      "name": "safety_gates",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "quote_display_matches_official",
+      "status": "PASS",
+      "detail": "253"
+    },
+    {
+      "name": "invoice_display_matches_official",
+      "status": "PASS",
+      "detail": "587"
+    },
+    {
+      "name": "royal_cape_qu0183",
+      "status": "PASS",
+      "detail": "QU-0183"
+    }
+  ],
+  "blockers": [],
+  "proof": {
+    "quotes": {
+      "totalXeroBackedInspected": 253,
+      "withOfficialQuoteNumber": 253,
+      "missingQuoteNumber": 0,
+      "displayMismatchesFound": 0,
+      "displayMismatchesFixedByResolver": "n/a — none found",
+      "unresolvedConflicts": 0,
+      "samples": [
+        {
+          "titanId": "07b60384-2b52-4d74-a1c8-c30953e362c3",
+          "xeroQuoteId": "5200a54c-a94e-4801-b5a4-8c7cf1066915",
+          "sourceExternalId": "5200a54c-a94e-4801-b5a4-8c7cf1066915",
+          "quoteNumber": "QU-0002",
+          "xeroQuoteNumber": "QU-0002",
+          "displayed": "QU-0002",
+          "status": "sent"
+        },
+        {
+          "titanId": "bc4365aa-89bf-45cf-a5ee-4a667dc1e237",
+          "xeroQuoteId": "a4293af2-8889-43cb-a7fd-f80268c5e6b8",
+          "sourceExternalId": "a4293af2-8889-43cb-a7fd-f80268c5e6b8",
+          "quoteNumber": "QU-0003",
+          "xeroQuoteNumber": "QU-0003",
+          "displayed": "QU-0003",
+          "status": "sent"
+        },
+        {
+          "titanId": "50b63323-aa30-4e24-8630-ec39d8ec7268",
+          "xeroQuoteId": "517b15cb-315a-4778-bfcc-e7f987fb01ab",
+          "sourceExternalId": "517b15cb-315a-4778-bfcc-e7f987fb01ab",
+          "quoteNumber": "QU-0004",
+          "xeroQuoteNumber": "QU-0004",
+          "displayed": "QU-0004",
+          "status": "sent"
+        },
+        {
+          "titanId": "0daf496c-4769-4f8f-a4de-49c9b4ec703b",
+          "xeroQuoteId": "49ad3409-5960-462f-8e96-4639cf57731a",
+          "sourceExternalId": "49ad3409-5960-462f-8e96-4639cf57731a",
+          "quoteNumber": "QU-0005",
+          "xeroQuoteNumber": "QU-0005",
+          "displayed": "QU-0005",
+          "status": "sent"
+        },
+        {
+          "titanId": "0342d4ed-0ef3-4c06-83cd-d9e8713a1ab1",
+          "xeroQuoteId": "cd23d7f4-9140-4322-86c4-b55f4eafc43e",
+          "sourceExternalId": "cd23d7f4-9140-4322-86c4-b55f4eafc43e",
+          "quoteNumber": "QU-0006",
+          "xeroQuoteNumber": "QU-0006",
+          "displayed": "QU-0006",
+          "status": "sent"
+        },
+        {
+          "titanId": "cf09000a-3b34-4015-b9b7-acff25452d8a",
+          "xeroQuoteId": "4769ad04-898f-4f32-aea0-25f708ad13a9",
+          "sourceExternalId": "4769ad04-898f-4f32-aea0-25f708ad13a9",
+          "quoteNumber": "QU-0007",
+          "xeroQuoteNumber": "QU-0007",
+          "displayed": "QU-0007",
+          "status": "sent"
+        },
+        {
+          "titanId": "44bf604b-e72a-4043-8e35-4bd356efbef2",
+          "xeroQuoteId": "60816c28-b312-4834-afe2-52db7bfd2ede",
+          "sourceExternalId": "60816c28-b312-4834-afe2-52db7bfd2ede",
+          "quoteNumber": "QU-0008",
+          "xeroQuoteNumber": "QU-0008",
+          "displayed": "QU-0008",
+          "status": "sent"
+        },
+        {
+          "titanId": "61c6f580-186b-420d-985f-5d08deb7b9e2",
+          "xeroQuoteId": "9bc9fb39-c2fe-49f3-be39-9d88b7f9639d",
+          "sourceExternalId": "9bc9fb39-c2fe-49f3-be39-9d88b7f9639d",
+          "quoteNumber": "QU-0009",
+          "xeroQuoteNumber": "QU-0009",
+          "displayed": "QU-0009",
+          "status": "accepted"
+        }
+      ]
+    },
+    "invoices": {
+      "totalXeroBackedInspected": 587,
+      "withOfficialInvoiceNumber": 587,
+      "missingInvoiceNumber": 0,
+      "displayMismatchesFound": 0,
+      "titanRawVsOfficialFixedByResolver": 1,
+      "unresolvedConflicts": 0,
+      "statusCoverage": {
+        "cancelled": 64,
+        "draft": 9,
+        "paid": 511,
+        "sent": 3
+      },
+      "samples": [
+        {
+          "titanId": "7c726b98-325b-4601-8b4a-9647c9f50540",
+          "xeroInvoiceId": "9e7f6618-a092-431d-8984-e4922ddad7b4",
+          "sourceExternalId": "9e7f6618-a092-431d-8984-e4922ddad7b4",
+          "invoiceNumber": "INV-0241",
+          "xeroInvoiceNumber": "INV-0241",
+          "displayed": "INV-0241",
+          "status": "cancelled",
+          "jobLinked": false
+        },
+        {
+          "titanId": "1aaaa421-b74a-4cf3-9685-c2f60b1e007e",
+          "xeroInvoiceId": "50da9091-831b-4f33-9f0b-0fdd151cf639",
+          "sourceExternalId": "50da9091-831b-4f33-9f0b-0fdd151cf639",
+          "invoiceNumber": "INV-0423",
+          "xeroInvoiceNumber": "INV-0423",
+          "displayed": "INV-0423",
+          "status": "draft",
+          "jobLinked": false
+        },
+        {
+          "titanId": "c2671cea-e42f-4c72-b2ed-8a208713ef6b",
+          "xeroInvoiceId": "752ab014-5ac3-41c7-bb24-3ed7808ceaef",
+          "sourceExternalId": "752ab014-5ac3-41c7-bb24-3ed7808ceaef",
+          "invoiceNumber": "INV-0008",
+          "xeroInvoiceNumber": "INV-0008",
+          "displayed": "INV-0008",
+          "status": "paid",
+          "jobLinked": false
+        },
+        {
+          "titanId": "76b8469a-29c0-4aee-8835-c9bbdc2a9bf9",
+          "xeroInvoiceId": "6e834768-e050-4207-98c5-acbedfebd0f6",
+          "sourceExternalId": "6e834768-e050-4207-98c5-acbedfebd0f6",
+          "invoiceNumber": "INV-0007",
+          "xeroInvoiceNumber": "INV-0007",
+          "displayed": "INV-0007",
+          "status": "paid",
+          "jobLinked": false
+        },
+        {
+          "titanId": "34be105f-1625-4094-9db3-ccde5296ab9a",
+          "xeroInvoiceId": "fef8d5c3-70c3-4c77-bc40-e502c929f90a",
+          "sourceExternalId": "fef8d5c3-70c3-4c77-bc40-e502c929f90a",
+          "invoiceNumber": "INV-0003",
+          "xeroInvoiceNumber": "INV-0003",
+          "displayed": "INV-0003",
+          "status": "paid",
+          "jobLinked": false
+        },
+        {
+          "titanId": "ab7f2c17-f484-4ea7-b0f9-681c8cdcc039",
+          "xeroInvoiceId": "eda97801-6efd-418e-ab24-11fd9daa9111",
+          "sourceExternalId": "eda97801-6efd-418e-ab24-11fd9daa9111",
+          "invoiceNumber": "INV-0001",
+          "xeroInvoiceNumber": "INV-0001",
+          "displayed": "INV-0001",
+          "status": "paid",
+          "jobLinked": false
+        },
+        {
+          "titanId": "3fd9a279-5d4c-4b6d-916e-08d7c16f7e25",
+          "xeroInvoiceId": "5c25bf29-b1c3-4137-baa4-e7f25aca3ca5",
+          "sourceExternalId": "5c25bf29-b1c3-4137-baa4-e7f25aca3ca5",
+          "invoiceNumber": "INV-0009",
+          "xeroInvoiceNumber": "INV-0009",
+          "displayed": "INV-0009",
+          "status": "paid",
+          "jobLinked": false
+        },
+        {
+          "titanId": "4c90fa8f-ffe8-47e3-8419-19f0c3abc466",
+          "xeroInvoiceId": "99798975-1c32-429c-860d-301bb18a743d",
+          "sourceExternalId": "99798975-1c32-429c-860d-301bb18a743d",
+          "invoiceNumber": "INV-0005",
+          "xeroInvoiceNumber": "INV-0005",
+          "displayed": "INV-0005",
+          "status": "paid",
+          "jobLinked": false
+        },
+        {
+          "titanId": "24147fb2-fd53-4569-b413-921f92b12c6f",
+          "xeroInvoiceId": "b82e19e5-d07c-4d7f-928e-8fea6983750b",
+          "sourceExternalId": "b82e19e5-d07c-4d7f-928e-8fea6983750b",
+          "invoiceNumber": "INV-0010",
+          "xeroInvoiceNumber": "INV-0010",
+          "displayed": "INV-0010",
+          "status": "paid",
+          "jobLinked": false
+        },
+        {
+          "titanId": "276ac468-a0ea-486e-b4c2-968de48a9761",
+          "xeroInvoiceId": "2635cca5-7ebb-4529-8622-9c0bd5ffd121",
+          "sourceExternalId": "2635cca5-7ebb-4529-8622-9c0bd5ffd121",
+          "invoiceNumber": "INV-0004",
+          "xeroInvoiceNumber": "INV-0004",
+          "displayed": "INV-0004",
+          "status": "paid",
+          "jobLinked": false
+        }
+      ]
+    },
+    "surfaces": {
+      "quoteList": "PASS — finance list uses displayQuoteNumber",
+      "quoteDetail": "PASS — finance detail uses displayQuoteNumber",
+      "invoiceList": "PASS — finance list uses displayOfficialInvoiceNumber",
+      "invoiceDetail": "PASS — finance detail uses displayOfficialInvoiceNumber",
+      "search": "PASS — global search titles use official helpers",
+      "customer360": "PASS — timeline uses resolver labels",
+      "property360": "PASS — no number rewrite; commercial refs via official where shown",
+      "job360": "PASS — payment ledger uses payment.invoiceNumber from official payment summary",
+      "payments": "PASS — toPaymentSummary uses pickPaymentInvoiceDisplayNumber",
+      "pdfs": "PASS — previewDocumentNumber uses official helpers",
+      "mobile": "PASS — paperless strip uses resolver",
+      "clientPortalNumbering": "PASS_NUMBERING_ONLY — uses displayOfficial*; full portal gate NOT PASS"
+    },
+    "placeholderScan": {
+      "TITAN_INV": "CUSTOMER_FACING_BUG",
+      "UUID": "CUSTOMER_FACING_BUG",
+      "QU_0183": "VALID_INTERNAL",
+      "draftLabel": "SAFE_FALLBACK"
+    },
+    "xeroWrites": 0,
+    "customerSends": 0,
+    "productionWrites": 0,
+    "row88Started": false,
+    "clientPortalFinalValidation": "NOT_PASS — separate mandatory pre-V1 gate"
+  },
+  "ok": true
+}

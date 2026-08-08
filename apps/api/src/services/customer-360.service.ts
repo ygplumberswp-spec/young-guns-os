@@ -9,6 +9,8 @@ import {
   dedupeTimelineEvents,
   paginateTimelineEvents,
   resolveConsentTruth,
+  resolveInvoiceDisplayNumberLabel,
+  resolveQuoteDisplayNumberLabel,
   type CreateCustomerPersonRequest,
   type CreateCustomerSourceAssociationRequest,
   type Customer360Workspace,
@@ -814,21 +816,50 @@ export class Customer360Service {
         title: q.title,
         status: q.status,
         createdAt: q.createdAt.toISOString(),
-        quoteNumber: q.quoteNumber,
+        quoteNumber: resolveQuoteDisplayNumberLabel({
+          id: q.id,
+          quoteNumber: q.quoteNumber,
+          xeroQuoteNumber: q.xeroQuoteNumber,
+          xeroQuoteId: q.xeroQuoteId,
+          sourceExternalId: q.sourceExternalId,
+          sourceProvider: q.sourceProvider,
+        }),
       })),
       invoices: invoiceRows.map((i) => ({
         id: i.id,
         title: i.title,
         status: i.status,
         createdAt: i.createdAt.toISOString(),
-        invoiceNumber: i.invoiceNumber,
+        invoiceNumber: resolveInvoiceDisplayNumberLabel({
+          id: i.id,
+          invoiceNumber: i.invoiceNumber,
+          internalNumber: i.internalNumber,
+          xeroInvoiceNumber: i.xeroInvoiceNumber,
+          sourceExternalId: i.sourceExternalId,
+          sourceProvider: i.sourceProvider,
+          numberAuthority: i.numberAuthority,
+        }),
       })),
-      payments: paymentRows.map((p) => ({
-        id: p.id,
-        paidAt: p.paidAt.toISOString(),
-        invoiceId: p.invoiceId,
-        reference: p.reference,
-      })),
+      payments: paymentRows.map((p) => {
+        const inv = invoiceRows.find((i) => i.id === p.invoiceId);
+        return {
+          id: p.id,
+          paidAt: p.paidAt.toISOString(),
+          invoiceId: p.invoiceId,
+          reference: p.reference,
+          invoiceNumber: inv
+            ? resolveInvoiceDisplayNumberLabel({
+                id: inv.id,
+                invoiceNumber: inv.invoiceNumber,
+                internalNumber: inv.internalNumber,
+                xeroInvoiceNumber: inv.xeroInvoiceNumber,
+                sourceExternalId: inv.sourceExternalId,
+                sourceProvider: inv.sourceProvider,
+                numberAuthority: inv.numberAuthority,
+              })
+            : null,
+        };
+      }),
       communications: commRows.map((c) => ({
         id: c.id,
         subject: c.subject,

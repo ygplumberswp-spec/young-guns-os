@@ -13,7 +13,13 @@ import type {
   ExecutiveXeroFinance,
   XeroSyncStatusResponse,
 } from '@titan/shared';
-import { buildFinanceDashboardSnapshot, buildDash001Extensions, countQuotesAwaitingCustomerApproval, countQuotesFollowUpDue } from '@titan/shared';
+import {
+  buildFinanceDashboardSnapshot,
+  buildDash001Extensions,
+  countQuotesAwaitingCustomerApproval,
+  countQuotesFollowUpDue,
+  resolveInvoiceDisplayNumberLabel,
+} from '@titan/shared';
 import type { DashboardQuoteMetricRow } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
 import {
@@ -774,6 +780,10 @@ export class DashboardExecutiveService {
         .select({
           id: invoices.id,
           invoiceNumber: invoices.invoiceNumber,
+          xeroInvoiceNumber: invoices.xeroInvoiceNumber,
+          numberAuthority: invoices.numberAuthority,
+          sourceProvider: invoices.sourceProvider,
+          sourceExternalId: invoices.sourceExternalId,
           customerId: invoices.customerId,
           customerName: customers.name,
           issuedAt: invoices.issuedAt,
@@ -807,7 +817,14 @@ export class DashboardExecutiveService {
 
     const invoiceRows: ExecutiveOutstandingInvoiceRow[] = rows.map((row) => ({
       id: row.id,
-      invoiceNumber: row.invoiceNumber,
+      invoiceNumber: resolveInvoiceDisplayNumberLabel({
+        id: row.id,
+        invoiceNumber: row.invoiceNumber,
+        xeroInvoiceNumber: row.xeroInvoiceNumber,
+        numberAuthority: row.numberAuthority,
+        sourceProvider: row.sourceProvider,
+        sourceExternalId: row.sourceExternalId,
+      }),
       customerId: row.customerId ?? null,
       customerName: row.customerName ?? 'Unknown customer',
       issuedAt: row.issuedAt ? row.issuedAt.toISOString() : null,
