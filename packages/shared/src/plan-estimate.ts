@@ -2,7 +2,7 @@
  * Row 94 — Plan / Floor-Plan Quotation & Estimate Baseline
  *
  * Manual/structured take-off + cost/sell/GP summary + estimate→quote→job linkage.
- * NOT Row 98 AI plan reading. NOT Row 96 full cost engine.
+ * Row 98 AI take-off may propose DRAFT items into this model (human gate preserved).
  * Row 92 global automation remains OFF.
  */
 

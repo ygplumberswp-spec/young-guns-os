@@ -1478,6 +1478,13 @@
       "when": 1788100800000,
       "tag": "0215_quote_cost_model",
       "breakpoints": true
+    },
+    {
+      "idx": 211,
+      "version": "7",
+      "when": 1788187200000,
+      "tag": "0216_plan_ai_takeoff",
+      "breakpoints": true
     }
   ]
 }

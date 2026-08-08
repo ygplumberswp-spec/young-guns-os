@@ -60,6 +60,7 @@ export * from './ygp-catalogue-classification.js';
 export * from './pricebook-tier-formula.js';
 export * from './quote-price-override.js';
 export * from './plan-estimate.js';
+export * from './plan-ai-takeoff.js';
 export * from './quote-scenario.js';
 export * from './quote-cost-model.js';
 export * from './quote-price-intelligence.js';

@@ -58,6 +58,15 @@ export const PORTAL_EXPANSION_FORBIDDEN_FIELDS = [
   'recommendationExplanation',
   'auraNarrativeFacts',
   'row92Preview',
+  // Row 98 — AI plan take-off internals never reach Client Portal
+  'aiTakeoff',
+  'aiDraftItems',
+  'ambiguityFlags',
+  'providerConfidence',
+  'humanReviewReasons',
+  'evidenceCandidates',
+  'planAiTakeoffInternal',
+  'scaleProvenance',
 
   'xeroQuoteId',
   'xeroInvoiceNumber',

@@ -76,12 +76,14 @@ import { FinanceService } from './services/finance.service.js';
 import { PricebookTierFormulaService } from './services/pricebook-tier-formula.service.js';
 import { QuotePriceOverrideService } from './services/quote-price-override.service.js';
 import { PlanEstimateService } from './services/plan-estimate.service.js';
+import { PlanAiTakeoffService } from './services/plan-ai-takeoff.service.js';
 import { QuoteCostModelService } from './services/quote-cost-model.service.js';
 import { QuotePriceIntelligenceService } from './services/quote-price-intelligence.service.js';
 import { createFinanceRouter } from './routes/finance.js';
 import { createPricebookTierFormulaRouter } from './routes/pricebook-tier-formula.js';
 import { createQuotePriceOverrideRouter } from './routes/quote-price-override.js';
 import { createPlanEstimateRouter } from './routes/plan-estimate.js';
+import { createPlanAiTakeoffRouter } from './routes/plan-ai-takeoff.js';
 import { createQuoteCostModelRouter } from './routes/quote-cost-model.js';
 import { createQuotePriceIntelligenceRouter } from './routes/quote-price-intelligence.js';
 import { createBankStatementImportRouter } from './routes/bank-statement-import.js';
@@ -632,6 +634,7 @@ const financeService = new FinanceService(db);
 const pricebookTierFormulaService = new PricebookTierFormulaService(db);
 const quotePriceOverrideService = new QuotePriceOverrideService(db, financeService);
 const planEstimateService = new PlanEstimateService(db, financeService);
+const planAiTakeoffService = new PlanAiTakeoffService(db);
 const quoteCostModelService = new QuoteCostModelService(db);
 const quotePriceIntelligenceService = new QuotePriceIntelligenceService(db);
 const documentEngineService = new DocumentEngineService({
@@ -2102,6 +2105,16 @@ app.use(
   '/api/v1/finance',
   createPlanEstimateRouter({
     planEstimateService,
+    teamService,
+    db,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/finance',
+  createPlanAiTakeoffRouter({
+    planAiTakeoffService,
     teamService,
     db,
     jwtSecret: env.JWT_SECRET,

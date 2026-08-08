@@ -194,4 +194,14 @@ export type {
   PlanEstimateCostComponent,
 } from './schema/plan-estimates.js';
 
+/** Explicit re-export — Row 98 AI plan take-off drafts. */
+export {
+  planEstimateAiTakeoffs,
+  planEstimateAiTakeoffItems,
+} from './schema/plan-ai-takeoff.js';
+export type {
+  PlanEstimateAiTakeoff,
+  PlanEstimateAiTakeoffItem,
+} from './schema/plan-ai-takeoff.js';
+
 export { drizzle } from 'drizzle-orm/postgres-js';

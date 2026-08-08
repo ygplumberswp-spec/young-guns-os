@@ -1,0 +1,97 @@
+{
+  "schemaVersion": "row98-ai-plan-takeoff-v1",
+  "generatedAt": "2026-08-08T11:28:05.714Z",
+  "pass": 19,
+  "fail": 0,
+  "results": [
+    {
+      "name": "migration_0216_already_present",
+      "status": "PASS"
+    },
+    {
+      "name": "staging_readonly_authorised_source_audit",
+      "status": "PASS",
+      "planLikeDocuments": 0,
+      "planEstimates": 0,
+      "estimatesWithSourceDocumentId": 0,
+      "authorisedSourceResult": "NO_AUTHORISED_PLAN_SOURCE_AVAILABLE",
+      "row92Status": "DRAFT",
+      "row92Automation": "OFF"
+    },
+    {
+      "name": "row92_off",
+      "status": "PASS"
+    },
+    {
+      "name": "royal_cape_unchanged",
+      "status": "PASS",
+      "totalCents": 4272250,
+      "xeroQuoteId": "4d9b1ceb-83dc-4ac6-8d58-ce7ac08f6db8"
+    },
+    {
+      "name": "fixture_authorised_source",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_no_source",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_water_waste_geyser",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_scale_blocks_length",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_ai_cannot_self_approve",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_accept_reject",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_client_leak",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_idempotent",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_safety_gates",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_totals",
+      "status": "PASS",
+      "pass": 9,
+      "fail": 0
+    },
+    {
+      "name": "xero_writes",
+      "status": "PASS",
+      "count": 0
+    },
+    {
+      "name": "customer_sends",
+      "status": "PASS",
+      "count": 0
+    },
+    {
+      "name": "production_writes",
+      "status": "PASS",
+      "count": 0
+    },
+    {
+      "name": "row99_not_started",
+      "status": "PASS"
+    },
+    {
+      "name": "cleanup_no_fake_plan_upload",
+      "status": "PASS"
+    }
+  ]
+}
