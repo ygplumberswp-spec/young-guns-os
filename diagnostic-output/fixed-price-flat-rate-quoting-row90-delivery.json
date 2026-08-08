@@ -4,6 +4,8 @@
   "repoRoot": "/workspace",
   "branch": "cursor/fixed-price-flat-rate-quoting-663e",
   "startingHead": "f06499a5c93242a86391dcbf5c91ce293a4d7ceb",
+  "endingHead": "e40142bec103846f7ad815d40decea87c9fa954e",
+  "commit": "e40142bec103846f7ad815d40decea87c9fa954e",
   "ancestry": "PR#67..#74 present",
   "pricingPresentationModel": "FLAT_RATE_INCLUDED | ITEMISED (explicit, per-quote)",
   "migration": "0209_fixed_price_flat_rate_quoting.sql (additive, staging applied)",
