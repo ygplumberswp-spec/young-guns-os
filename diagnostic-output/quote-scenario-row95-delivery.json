@@ -1,13 +1,13 @@
 {
   "row": 95,
-  "title": "Quote Scenarios — canonical registry + relationships",
+  "title": "Quote Scenarios \u2014 canonical registry + relationships",
   "repoRoot": "/Users/keanuventer/Downloads/Titan-Aura-Row95",
-  "mappedFromWorkspace": "/workspace → Titan-Aura-Row95 worktree (Row 94 tip; no prior Row 95 WIP found on disk)",
+  "mappedFromWorkspace": "/workspace \u2192 Titan-Aura-Row95 worktree (Row 94 tip; no prior Row 95 WIP found on disk)",
   "branch": "cursor/quote-scenarios-663e",
   "startingHead": "606c9b6",
-  "endingHead": "PENDING_COMMIT",
+  "endingHead": "6549bfa653b1d8897874d63345692b681a64d02a",
   "baseBranch": "cursor/plan-floor-plan-quotation-663e",
-  "ancestry": "PR #67–#79 (Rows 87–94) are ancestors of 606c9b6; Row 95 branched from Row 94 tip",
+  "ancestry": "PR #67\u2013#79 (Rows 87\u201394) are ancestors of 606c9b6; Row 95 branched from Row 94 tip",
   "prUrl": "PENDING",
   "architectureReused": [
     "finance.service createQuote/updateQuote/getQuoteDetail (single quote engine)",
@@ -44,8 +44,8 @@
     "diagnostic-output/quote-scenario-row95-delivery.json"
   ],
   "migration": "0214_quote_scenarios.sql (additive: quotes.scenario/scenario_metadata/variation_parent_quote_id, quote_line_items.phase_key, quote_phases, quote_commercial_milestones, quote_scenario_audit_events)",
-  "scenarioModel": "quotes.scenario + quotes.scenario_metadata jsonb; null/LEGACY/UNCLASSIFIED → STANDARD fallback at read time",
-  "registryResolver": "packages/shared/src/quote-scenario.ts — QUOTE_SCENARIO_CODES + getQuoteScenarioCapabilities + validateQuoteScenario + resolveQuoteScenario",
+  "scenarioModel": "quotes.scenario + quotes.scenario_metadata jsonb; null/LEGACY/UNCLASSIFIED \u2192 STANDARD fallback at read time",
+  "registryResolver": "packages/shared/src/quote-scenario.ts \u2014 QUOTE_SCENARIO_CODES + getQuoteScenarioCapabilities + validateQuoteScenario + resolveQuoteScenario",
   "historicalFallback": "STANDARD / legacy / unclassified; historical_auto_classifications = 0",
   "scenarios": {
     "STANDARD": "legacy fallback for null/missing",
@@ -57,7 +57,7 @@
     "CONSTRUCTION": "site metadata; preliminariesClaimed forbidden",
     "COMMERCIAL_MANAGING_AGENT": "canonical commercial reference/links",
     "MAINTENANCE_AGREEMENT": "scope/frequency only; subscription engine forbidden",
-    "MULTI_PHASE_PROJECT": "phases + line→phase + exact phase totals; phase status ≠ lifecycle",
+    "MULTI_PHASE_PROJECT": "phases + line\u2192phase + exact phase totals; phase status \u2260 lifecycle",
     "PLAN_ESTIMATE": "Row 94 planEstimateId/version; no AI take-off",
     "BOQ_TENDER": "tender/BOQ reference/attachment only; Row 99 forbidden",
     "DEPOSIT_PROGRESS_FINAL": "commercial milestones only; not payments",
@@ -119,7 +119,7 @@
     "API typecheck retains pre-existing AI/aura baseline errors (28)",
     "TS2589 baseline debt on packages/db createDb remains"
   ],
-  "commit": "PENDING",
+  "commit": "6549bfa653b1d8897874d63345692b681a64d02a",
   "row96Started": false,
   "row97Started": false,
   "row98Started": false,
