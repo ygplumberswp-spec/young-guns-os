@@ -5,25 +5,18 @@ import type {
   PaymentSummary,
   QuoteSummary,
 } from '@titan/shared';
+import {
+  invoiceMatchesCanonicalFilter,
+  quoteMatchesCanonicalFilter,
+  resolveCanonicalInvoiceDisplayStatus,
+  resolveCanonicalQuoteDisplayStatus,
+  type CanonicalInvoiceListFilter,
+  type CanonicalQuoteListFilter,
+} from '@titan/shared';
 
-export type QuoteListFilter =
-  | 'all'
-  | 'drafts'
-  | 'awaiting_approval'
-  | 'sent'
-  | 'accepted'
-  | 'declined'
-  | 'archived';
+export type QuoteListFilter = CanonicalQuoteListFilter;
 
-export type InvoiceListFilter =
-  | 'all'
-  | 'drafts'
-  | 'awaiting_payment'
-  | 'partially_paid'
-  | 'paid'
-  | 'overdue'
-  | 'cancelled'
-  | 'archived';
+export type InvoiceListFilter = CanonicalInvoiceListFilter | 'cancelled';
 
 export type BoqListFilter = 'all' | 'drafts' | 'approved' | 'archived';
 
@@ -47,11 +40,13 @@ export const QUOTE_LIST_FILTERS: CompactFilterOption<QuoteListFilter>[] = [
 export const INVOICE_LIST_FILTERS: CompactFilterOption<InvoiceListFilter>[] = [
   { id: 'all', label: 'All' },
   { id: 'drafts', label: 'Drafts' },
+  { id: 'awaiting_approval', label: 'Awaiting Approval' },
   { id: 'awaiting_payment', label: 'Awaiting Payment' },
   { id: 'partially_paid', label: 'Partially Paid' },
   { id: 'paid', label: 'Paid' },
   { id: 'overdue', label: 'Overdue' },
-  { id: 'cancelled', label: 'Cancelled' },
+  { id: 'voided', label: 'Voided' },
+  { id: 'cancelled', label: 'Voided' },
   { id: 'archived', label: 'Archived' },
 ];
 
@@ -90,53 +85,49 @@ export function isBoqDraft(document: Pick<BoqDocumentSummary, 'status'>): boolea
   return document.status === 'draft';
 }
 
+export function quoteDisplayStatus(quote: QuoteSummary): string {
+  return resolveCanonicalQuoteDisplayStatus(quote);
+}
+
+export function invoiceDisplayStatus(
+  invoice: InvoiceSummary,
+  asOfDate?: string | null,
+): string {
+  const balanceDueCents =
+    invoice.outstandingCents ??
+    Math.max(0, (invoice.totalCents ?? 0) - (invoice.amountPaidCents ?? 0));
+  return resolveCanonicalInvoiceDisplayStatus({
+    status: invoice.status,
+    dueDate: invoice.dueDate,
+    balanceDueCents,
+    asOfDate,
+    xeroInvoiceNumber: invoice.xeroInvoiceNumber,
+    numberAuthority: invoice.numberAuthority,
+  });
+}
+
 export function quoteMatchesFilter(quote: QuoteSummary, filter: QuoteListFilter): boolean {
-  switch (filter) {
-    case 'all':
-      return quote.status !== 'cancelled' && quote.status !== 'superseded';
-    case 'drafts':
-      return isQuoteDraft(quote);
-    case 'awaiting_approval':
-      return quote.status === 'internal_review' || quote.status === 'approved_for_sending';
-    case 'sent':
-      return quote.status === 'sent' || quote.status === 'viewed';
-    case 'accepted':
-      return quote.status === 'accepted';
-    case 'declined':
-      return quote.status === 'declined';
-    case 'archived':
-      return (
-        quote.status === 'cancelled' ||
-        quote.status === 'superseded' ||
-        quote.status === 'expired' ||
-        quote.status === 'converted'
-      );
-    default:
-      return true;
-  }
+  if (filter === 'drafts') return isQuoteDraft(quote);
+  return quoteMatchesCanonicalFilter(quote, filter);
 }
 
 export function invoiceMatchesFilter(invoice: InvoiceSummary, filter: InvoiceListFilter): boolean {
-  switch (filter) {
-    case 'all':
-      return invoice.status !== 'cancelled';
-    case 'drafts':
-      return isInvoiceDraft(invoice);
-    case 'awaiting_payment':
-      return invoice.status === 'sent';
-    case 'partially_paid':
-      return invoice.status === 'partial';
-    case 'paid':
-      return invoice.status === 'paid';
-    case 'overdue':
-      return invoice.status === 'overdue' || invoice.isOverdue;
-    case 'cancelled':
-      return invoice.status === 'cancelled';
-    case 'archived':
-      return invoice.status === 'cancelled';
-    default:
-      return true;
-  }
+  if (filter === 'drafts') return isInvoiceDraft(invoice);
+  const balanceDueCents =
+    invoice.outstandingCents ??
+    Math.max(0, (invoice.totalCents ?? 0) - (invoice.amountPaidCents ?? 0));
+  const canonicalFilter: CanonicalInvoiceListFilter =
+    filter === 'cancelled' ? 'voided' : filter;
+  return invoiceMatchesCanonicalFilter(
+    {
+      status: invoice.status,
+      dueDate: invoice.dueDate,
+      balanceDueCents,
+      xeroInvoiceNumber: invoice.xeroInvoiceNumber,
+      numberAuthority: invoice.numberAuthority,
+    },
+    canonicalFilter,
+  );
 }
 
 export function boqMatchesFilter(document: BoqDocumentSummary, filter: BoqListFilter): boolean {
