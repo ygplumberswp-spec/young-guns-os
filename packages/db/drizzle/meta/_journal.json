@@ -1422,6 +1422,13 @@
       "when": 1787409600000,
       "tag": "0207_equipment_assets_import",
       "breakpoints": true
+    },
+    {
+      "idx": 203,
+      "version": "7",
+      "when": 1787496000000,
+      "tag": "0208_finance_document_metadata",
+      "breakpoints": true
     }
   ]
 }

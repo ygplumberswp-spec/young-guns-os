@@ -21,7 +21,8 @@ export const PORTAL_EXPANSION_PRODUCT_COPY = {
 
 export const PORTAL_EXPANSION_FORBIDDEN_FIELDS = [
   'internalNotes',
-  'notes',
+  'internal_notes',
+  // Raw staff-only aliases — customerFacingNotes is the explicit portal field.
   'estimatedCostCents',
   'grossProfitCents',
   'markupBps',
@@ -132,8 +133,13 @@ export type PortalSafeQuote = {
   scopeOfWork: string | null;
   exclusions: string | null;
   assumptions: string | null;
+  /** Customer PO / reference (never internal notes). */
   customerNotes: string | null;
+  customerReference: string | null;
+  customerPoNumber: string | null;
   paymentTerms: string | null;
+  /** Explicitly customer-visible note. */
+  customerFacingNotes: string | null;
   depositPercent: number | null;
   lineItems: PortalSafeQuoteLine[];
   canRequestClarification: boolean;
@@ -167,6 +173,10 @@ export type PortalSafeInvoice = {
   isOverdue: boolean;
   currency: string;
   dueDate: string | null;
+  paymentTerms: string | null;
+  customerReference: string | null;
+  customerPoNumber: string | null;
+  customerFacingNotes: string | null;
   lineItems: PortalSafeInvoiceLine[];
   createdAt: string;
 };

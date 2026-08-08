@@ -1,0 +1,95 @@
+{
+  "row": 89,
+  "title": "Quote / Invoice Payment Terms, PO/Reference, Internal + Customer-Facing Notes",
+  "repoRoot": "/workspace",
+  "branch": "cursor/quote-invoice-metadata-terms-notes-663e",
+  "startingHead": "ef7e14165dced2bf9f8f307d1d75bba00865a64e",
+  "endingHead": "594fac30dd04be194fd59cfc1c3309d20b13da27",
+  "ancestry": {
+    "pr67_ee5a19c": true,
+    "pr68_2aae5e1": true,
+    "pr69_a9c63b8": true,
+    "pr70_128a434": true,
+    "pr71_91e174f": true,
+    "pr72_ea2796a": true,
+    "pr73_ef7e141": true
+  },
+  "architectureReused": [
+    "quotes.payment_terms / customer_notes / notes / internal_notes",
+    "invoices.payment_terms / notes / xero_reference",
+    "finance document preview PDF pipeline",
+    "portal expansion forbidden fields",
+    "Row 87 number authority",
+    "Row 88 lifecycle edit protections"
+  ],
+  "migration": "0208_finance_document_metadata.sql (additive invoices.customer_po_number + invoices.internal_notes)",
+  "canonicalMetadataModel": "packages/shared/src/finance-document-metadata.ts",
+  "stagingQuoteAudit": {
+    "totalScanned": 253,
+    "paymentTermsPresent": 0,
+    "paymentTermsMissing": 253,
+    "poOrReferencePresent": 0,
+    "poOrReferenceMissing": 253,
+    "internalNotePresent": 0,
+    "customerFacingNotePresent": 253,
+    "ambiguousGenericNoteRecords": 0,
+    "leakageIssuesFound": 0,
+    "leakageIssuesFixed": 0
+  },
+  "stagingInvoiceAudit": {
+    "totalScanned": 590,
+    "paymentTermsPresent": 0,
+    "paymentTermsMissing": 590,
+    "poPresent": 0,
+    "referencePresent": 204,
+    "poOrReferenceMissing": 386,
+    "internalNotePresent": 0,
+    "customerFacingNotePresent": 589,
+    "ambiguousGenericNoteRecords": 586,
+    "leakageIssuesFound": 0,
+    "leakageIssuesFixed": 0
+  },
+  "safeFixtureProof": {
+    "savePaymentTerms": "PASS",
+    "saveCustomerPoReference": "PASS",
+    "saveInternalNote": "PASS",
+    "saveCustomerFacingNote": "PASS",
+    "pdfExcludesInternal": "PASS",
+    "clientDtoExcludesInternal": "PASS",
+    "staffIncludesInternal": "PASS",
+    "commsExcludesInternal": "PASS"
+  },
+  "royalCape": {
+    "display": "QU-0183",
+    "customerReference": null,
+    "paymentTerms": null,
+    "fabricatedPo": false,
+    "internalNoteLeakage": 0,
+    "titanQuoteIdUnchanged": true,
+    "xeroQuoteIdUnchanged": true,
+    "crcUnchanged": true,
+    "job000002Unchanged": true,
+    "check": {
+      "ok": true
+    }
+  },
+  "surfaces": {
+    "quoteDetail": "PASS \u2014 explicit payment terms / PO / customer-facing / internal labels",
+    "invoiceDetail": "PASS \u2014 same",
+    "pdfPrint": "PASS \u2014 toPdfSafeFinanceMetadata excludes internalNotes",
+    "emailRender": "PASS \u2014 communication-safe payload excludes internalNotes; send=0",
+    "whatsappRender": "PASS \u2014 templates do not include internal notes fields",
+    "customer360": "PASS \u2014 no ownership mutation; metadata via finance DTOs",
+    "property360": "PASS \u2014 no property reassignment",
+    "job360": "PASS \u2014 quote/invoice linkage unchanged",
+    "clientPortalRow89": "PASS_NUMBERING_AND_METADATA_SCOPE \u2014 customerFacingNotes/paymentTerms/PO; internalNotes forbidden; full portal E2E NOT PASS"
+  },
+  "xeroWriteCalls": 0,
+  "customerSends": 0,
+  "productionWrites": 0,
+  "productionMigrations": 0,
+  "row90Started": false,
+  "clientPortalFinalValidation": "NOT_PASS \u2014 Row 89 metadata/numbering scope only",
+  "prUrl": "https://github.com/ygplumberswp-spec/young-guns-os/pull/74",
+  "commit": "594fac30dd04be194fd59cfc1c3309d20b13da27"
+}

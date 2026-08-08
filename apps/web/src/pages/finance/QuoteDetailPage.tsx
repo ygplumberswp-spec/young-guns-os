@@ -356,8 +356,13 @@ export function QuoteDetailPage() {
           ) : null}
         </Panel>
 
-        {(quote.scopeOfWork || quote.exclusions || quote.paymentTerms) ? (
-          <Panel title="Scope & Terms">
+        {(quote.scopeOfWork ||
+          quote.exclusions ||
+          quote.paymentTerms ||
+          quote.customerNotes ||
+          quote.notes ||
+          quote.internalNotes) ? (
+          <Panel title="Scope, Terms & Notes">
             <dl className="finance-detail-list">
               {quote.scopeOfWork ? (
                 <div>
@@ -371,10 +376,28 @@ export function QuoteDetailPage() {
                   <dd>{quote.exclusions}</dd>
                 </div>
               ) : null}
-              {quote.paymentTerms ? (
+              <div>
+                <dt>Payment terms</dt>
+                <dd>{quote.paymentTerms?.trim() || 'Not specified'}</dd>
+              </div>
+              <div>
+                <dt>Customer PO / reference</dt>
+                <dd>{quote.customerNotes?.trim() || 'Not provided'}</dd>
+              </div>
+              <div>
+                <dt>Customer-facing note</dt>
+                <dd>
+                  <span className="page-muted">Visible to customer</span>
+                  <div>{quote.notes?.trim() || '—'}</div>
+                </dd>
+              </div>
+              {quote.internalNotes ? (
                 <div>
-                  <dt>Payment terms</dt>
-                  <dd>{quote.paymentTerms}</dd>
+                  <dt>Internal note</dt>
+                  <dd>
+                    <span className="page-muted">Internal — not visible to customer</span>
+                    <div>{quote.internalNotes}</div>
+                  </dd>
                 </div>
               ) : null}
             </dl>

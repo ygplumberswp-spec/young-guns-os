@@ -60,6 +60,12 @@ import {
   resolveQuotePaymentVisibility,
   toCanonicalQuoteLifecycleState,
   QuoteLifecycleError,
+  resolveQuoteMetadata,
+  resolveInvoiceMetadata,
+  assertIssuedCommercialMetadataEditable,
+  buildFinanceMetadataAuditEvent,
+  rejectFabricatedCustomerPo,
+  safeAuditText,
   type FinanceDocumentPreviewModel,
 } from '@titan/shared';
 import { FinanceDocumentSectionsService } from './finance-document-sections.service.js';
@@ -96,6 +102,19 @@ import {
 } from './api-read-cache.js';
 
 const OPEN_QUOTE_STATUSES = ['draft', 'sent'] as const;
+
+/** Row 89 additive invoice columns — TS2589 baseline may omit them from deep Drizzle inference. */
+type InvoiceMetadataColumns = {
+  customerPoNumber?: string | null;
+  internalNotes?: string | null;
+};
+
+function invoiceMeta(row: { customerPoNumber?: string | null; internalNotes?: string | null } | null | undefined): InvoiceMetadataColumns {
+  return {
+    customerPoNumber: row?.customerPoNumber ?? null,
+    internalNotes: row?.internalNotes ?? null,
+  };
+}
 
 export class FinanceError extends Error {
   constructor(
@@ -321,6 +340,14 @@ export class FinanceService {
     const computed = quoteAmounts(sanitized.lineItems ?? legacyQuoteLines(sanitized.amountCents!, settings.defaultVatRateBps), settings.profitFloorMarginBps, 0);
     const invoiceNumber = await this.nextInvoiceNumber(companyId);
 
+    let customerPoNumber: string | null = null;
+    try {
+      customerPoNumber = rejectFabricatedCustomerPo(
+        sanitized.customerPoNumber ?? sanitized.customerReference,
+      );
+    } catch {
+      throw new FinanceError('VALIDATION_ERROR', 'Fabricated customer PO values are not allowed');
+    }
     const [created] = await this.db
       .insert(invoices)
       .values({
@@ -344,12 +371,20 @@ export class FinanceService {
         issuedAt: parseOptionalDate(sanitized.issuedAt) ?? new Date(),
         paymentTerms: normalizeOptionalText(sanitized.paymentTerms),
         notes: normalizeOptionalText(sanitized.notes),
-        xeroReference: mapCustomerReferenceToStorage(sanitized.customerReference),
+        // Keep xero_reference for legacy local drafts / provider reference; prefer dedicated PO column.
+        xeroReference: mapCustomerReferenceToStorage(
+          sanitized.customerPoNumber ? null : sanitized.customerReference,
+        ),
         billingAddress: normalizeOptionalText(sanitized.billingAddress),
         siteAddress: normalizeOptionalText(sanitized.siteAddress),
         postalAddress: normalizeOptionalText(sanitized.postalAddress),
         clientActionId: normalizeOptionalText(sanitized.clientActionId),
-      })
+        // Additive Row 89 columns (cast: TS2589 baseline omits from deep inference)
+        ...({
+          internalNotes: normalizeOptionalText(sanitized.internalNotes),
+          customerPoNumber,
+        } as InvoiceMetadataColumns),
+      } as typeof invoices.$inferInsert)
       .returning();
 
     if (!created) {
@@ -487,7 +522,11 @@ export class FinanceService {
     return payment;
   }
 
-  async getQuoteDetail(companyId: string, quoteId: string, options: { includeProfit?: boolean } = {}): Promise<QuoteDetail | null> {
+  async getQuoteDetail(
+    companyId: string,
+    quoteId: string,
+    options: { includeProfit?: boolean; includeInternalNotes?: boolean } = {},
+  ): Promise<QuoteDetail | null> {
     const row = await this.db.query.quotes.findFirst({ where: and(eq(quotes.id, quoteId), eq(quotes.companyId, companyId)), with: { customer: true, job: true, lineItems: true, acceptances: true } });
     if (!row) return null;
     const profit = options.includeProfit ? profitFromQuote(row) : null;
@@ -495,10 +534,24 @@ export class FinanceService {
       companyId,
       quoteId,
     });
+    const includeInternal = Boolean(options.includeInternalNotes ?? options.includeProfit);
+    const meta = resolveQuoteMetadata({
+      paymentTerms: row.paymentTerms,
+      customerNotes: row.customerNotes,
+      notes: row.notes,
+      internalNotes: row.internalNotes,
+      sourceProvider: row.sourceProvider,
+      xeroQuoteId: row.xeroQuoteId,
+    });
     return {
       ...toQuoteSummary(row, profit), scopeOfWork: row.scopeOfWork, exclusions: row.exclusions, assumptions: row.assumptions,
-      customerNotes: row.customerNotes, internalNotes: options.includeProfit ? row.internalNotes : null, paymentTerms: row.paymentTerms,
+      customerNotes: row.customerNotes,
+      customerReference: meta.customerReference,
+      customerPoNumber: meta.customerPoNumber,
+      internalNotes: includeInternal ? row.internalNotes : null,
+      paymentTerms: row.paymentTerms,
       notes: row.notes ?? null,
+      customerFacingNotes: meta.customerFacingNotes,
       addresses: toFinanceDocumentAddressSnapshot(row),
       depositPercent: row.depositPercent, optionTier: row.optionTier, discountCents: row.discountCents,
       belowFloorOverride: row.belowFloorOverride, belowFloorReason: options.includeProfit ? row.belowFloorReason : null,
@@ -538,6 +591,31 @@ export class FinanceService {
         throw this.mapQuoteLifecycleError(error);
       }
     }
+    const xeroBacked =
+      current.sourceProvider === 'xero' || Boolean(current.xeroQuoteId?.trim());
+    const isIssued = Boolean(current.isImmutable || current.issuedAt);
+    // Issued Xero-backed commercial customer-facing fields are protected (Row 88/89).
+    // Internal notes remain TITAN-owned and editable when authorised.
+    if (isIssued && xeroBacked) {
+      const commercialTouched =
+        (sanitized.paymentTerms !== undefined && sanitized.paymentTerms !== current.paymentTerms) ||
+        (sanitized.customerNotes !== undefined && sanitized.customerNotes !== current.customerNotes) ||
+        (sanitized.notes !== undefined && sanitized.notes !== current.notes);
+      if (commercialTouched) {
+        try {
+          assertIssuedCommercialMetadataEditable({
+            isIssued: true,
+            xeroBacked: true,
+            field: 'paymentTerms',
+          });
+        } catch (error) {
+          throw new FinanceError(
+            'QUOTE_TRANSITION_NOT_ALLOWED',
+            error instanceof Error ? error.message : 'Issued Xero commercial metadata is protected',
+          );
+        }
+      }
+    }
     const settings = await this.ensureFinanceSettings(actor.companyId);
     const computed = sanitized.lineItems ? quoteAmounts(sanitized.lineItems, settings.profitFloorMarginBps, sanitized.discountCents ?? current.discountCents) : null;
     if (computed) this.assertFloor(actor, computed.profit.belowFloor, sanitized.belowFloorOverride, sanitized.belowFloorReason, settings.allowBelowFloorWithOverride);
@@ -551,11 +629,18 @@ export class FinanceService {
     await this.db.update(quotes).set({
       status: nextStatus, currency: sanitized.currency?.trim() || current.currency,
       jobId: sanitized.jobId === undefined ? current.jobId : sanitized.jobId ?? null,
-      customerNotes: sanitized.customerNotes === undefined ? current.customerNotes : normalizeOptionalText(sanitized.customerNotes),
       validUntil: sanitized.validUntil === undefined ? current.validUntil : parseOptionalDate(sanitized.validUntil), notes: sanitized.notes === undefined ? current.notes : normalizeOptionalText(sanitized.notes),
       scopeOfWork: sanitized.scopeOfWork === undefined ? current.scopeOfWork : normalizeOptionalText(sanitized.scopeOfWork),
       exclusions: sanitized.exclusions === undefined ? current.exclusions : normalizeOptionalText(sanitized.exclusions),
       paymentTerms: sanitized.paymentTerms === undefined ? current.paymentTerms : normalizeOptionalText(sanitized.paymentTerms),
+      customerNotes:
+        sanitized.customerNotes === undefined
+          ? current.customerNotes
+          : normalizeOptionalText(sanitized.customerNotes),
+      internalNotes:
+        sanitized.internalNotes === undefined
+          ? current.internalNotes
+          : normalizeOptionalText(sanitized.internalNotes),
       ...(issuedAtUpdate !== undefined ? { issuedAt: issuedAtUpdate } : {}),
       ...(addressUpdate ?? {}),
       ...computed && { amountCents: computed.totalCents, subtotalCents: computed.subtotalCents, vatCents: computed.vatCents, totalCents: computed.totalCents, estimatedCostCents: computed.profit.estimatedCostCents, grossProfitCents: computed.profit.grossProfitCents, markupBps: computed.profit.markupBps, marginBps: computed.profit.marginBps, profitFloorCents: computed.profit.profitFloorCents, targetPriceCents: computed.profit.targetPriceCents },
@@ -572,6 +657,12 @@ export class FinanceService {
         content: sanitized.documentContent,
       });
     }
+    await this.auditQuoteMetadataChanges(actor, current, {
+      paymentTerms: sanitized.paymentTerms,
+      customerNotes: sanitized.customerNotes,
+      notes: sanitized.notes,
+      internalNotes: sanitized.internalNotes,
+    });
     const lifecycleEventType =
       current.status === 'draft' && nextStatus === 'internal_review'
         ? 'quote_approval_requested'
@@ -995,8 +1086,29 @@ export class FinanceService {
     });
 
     const lines = quote.lineItems.map(line => ({ category: line.category, description: line.description, quantity: Number(line.quantity), unitPriceCents: line.unitPriceCents, vatRateBps: line.vatRateBps }));
-    const invoice = await this.createInvoice(actor, { customerId: quote.customerId, jobId: quote.jobId, quoteId: quote.id, propertyId: quote.propertyId, stage: input.stage, dueDate: input.dueDate, notes: input.notes, amountCents: input.amountCents ?? quote.totalCents, lineItems: lines, clientActionId: input.clientActionId });
-    await this.db.update(invoices).set({ quoteVersionNumber: quote.versionNumber, xeroReference: quote.job?.jobNumber ?? null }).where(eq(invoices.id, invoice.id));
+    const invoice = await this.createInvoice(actor, {
+      customerId: quote.customerId,
+      jobId: quote.jobId,
+      quoteId: quote.id,
+      propertyId: quote.propertyId,
+      stage: input.stage,
+      dueDate: input.dueDate,
+      notes: input.notes ?? quote.notes,
+      paymentTerms: quote.paymentTerms,
+      customerPoNumber: quote.customerNotes,
+      customerReference: quote.customerNotes,
+      amountCents: input.amountCents ?? quote.totalCents,
+      lineItems: lines,
+      clientActionId: input.clientActionId,
+    });
+    // Preserve job number on provider reference only when not already set as customer PO.
+    await this.db
+      .update(invoices)
+      .set({
+        quoteVersionNumber: quote.versionNumber,
+        xeroReference: quote.job?.jobNumber ?? invoice.xeroReference ?? null,
+      })
+      .where(eq(invoices.id, invoice.id));
 
     const shouldConvert = input.stage === 'final' || !quote.lineItems.length;
     if (shouldConvert) {
@@ -1099,11 +1211,23 @@ export class FinanceService {
   async getInvoiceDetail(
     companyId: string,
     invoiceId: string,
-    _options: { includeProfit?: boolean } = {},
+    options: { includeProfit?: boolean; includeInternalNotes?: boolean } = {},
   ): Promise<InvoiceDetail | null> {
     const row = await this.db.query.invoices.findFirst({ where: and(eq(invoices.id, invoiceId), eq(invoices.companyId, companyId)), with: { customer: true, job: true, quote: true, lineItems: true, payments: { with: { invoice: { with: { customer: true } } } } } });
     if (!row) return null;
     const documentSections = await this.documentSections.loadSections({ companyId, invoiceId });
+    const includeInternal = Boolean(options.includeInternalNotes ?? options.includeProfit);
+    const metaCols = invoiceMeta(row as InvoiceMetadataColumns);
+    const meta = resolveInvoiceMetadata({
+      paymentTerms: row.paymentTerms,
+      customerPoNumber: metaCols.customerPoNumber,
+      notes: row.notes,
+      internalNotes: metaCols.internalNotes,
+      xeroReference: row.xeroReference,
+      sourceProvider: row.sourceProvider,
+      xeroInvoiceNumber: row.xeroInvoiceNumber,
+      numberAuthority: row.numberAuthority,
+    });
     return {
       ...toInvoiceSummary(row),
       subtotalCents: row.subtotalCents,
@@ -1112,6 +1236,8 @@ export class FinanceService {
       billingName: row.billingName,
       billingEmail: row.billingEmail,
       billingPhone: row.billingPhone,
+      customerFacingNotes: meta.customerFacingNotes,
+      internalNotes: includeInternal ? metaCols.internalNotes ?? null : null,
       notes: row.notes,
       addresses: toFinanceDocumentAddressSnapshot(row),
       lineItems: row.lineItems.map((line) => ({
@@ -1146,7 +1272,20 @@ export class FinanceService {
     });
     if (!current) throw new FinanceError('NOT_FOUND', 'Invoice not found');
     if (!canEditInvoice(current)) {
-      throw new FinanceError('SYNC_CONFLICT', 'Cannot edit synced invoice without approval workflow');
+      // Internal notes may still be updated on synced invoices (TITAN-owned, never customer-facing).
+      const onlyInternalNote =
+        sanitized.internalNotes !== undefined &&
+        sanitized.notes === undefined &&
+        sanitized.paymentTerms === undefined &&
+        sanitized.customerReference === undefined &&
+        sanitized.customerPoNumber === undefined &&
+        sanitized.lineItems === undefined &&
+        sanitized.status === undefined &&
+        sanitized.dueDate === undefined &&
+        sanitized.documentContent === undefined;
+      if (!onlyInternalNote) {
+        throw new FinanceError('SYNC_CONFLICT', 'Cannot edit synced invoice without approval workflow');
+      }
     }
 
     const settings = await this.ensureFinanceSettings(actor.companyId);
@@ -1161,6 +1300,21 @@ export class FinanceService {
       throw new FinanceError('VALIDATION_ERROR', 'Invalid invoice date');
     }
     const addressUpdate = resolveDocumentAddressColumns(current, sanitized);
+    const currentMeta = invoiceMeta(current as InvoiceMetadataColumns);
+    let nextCustomerPo = currentMeta.customerPoNumber ?? null;
+    if (sanitized.customerPoNumber !== undefined || sanitized.customerReference !== undefined) {
+      try {
+        nextCustomerPo = rejectFabricatedCustomerPo(
+          sanitized.customerPoNumber ?? sanitized.customerReference,
+        );
+      } catch {
+        throw new FinanceError('VALIDATION_ERROR', 'Fabricated customer PO values are not allowed');
+      }
+    }
+    const nextInternalNotes =
+      sanitized.internalNotes === undefined
+        ? currentMeta.internalNotes ?? null
+        : normalizeOptionalText(sanitized.internalNotes);
 
     await this.db
       .update(invoices)
@@ -1172,7 +1326,9 @@ export class FinanceService {
         notes: sanitized.notes === undefined ? current.notes : normalizeOptionalText(sanitized.notes),
         paymentTerms:
           sanitized.paymentTerms === undefined ? current.paymentTerms : normalizeOptionalText(sanitized.paymentTerms),
-        ...(sanitized.customerReference !== undefined
+        // Do not overwrite provider-authoritative xero_reference when Xero-backed and PO has its own column.
+        ...(sanitized.customerReference !== undefined &&
+        !(current.sourceProvider === 'xero' || current.numberAuthority === 'xero' || current.xeroInvoiceNumber)
           ? { xeroReference: mapCustomerReferenceToStorage(sanitized.customerReference) }
           : {}),
         ...(issuedAtUpdate !== undefined ? { issuedAt: issuedAtUpdate } : {}),
@@ -1184,8 +1340,19 @@ export class FinanceService {
           totalCents: computed.totalCents,
         }),
         updatedAt: new Date(),
-      })
+        ...({
+          customerPoNumber: nextCustomerPo,
+          internalNotes: nextInternalNotes,
+        } as InvoiceMetadataColumns),
+      } as Partial<typeof invoices.$inferInsert>)
       .where(eq(invoices.id, invoiceId));
+
+    await this.auditInvoiceMetadataChanges(actor, current as typeof current & InvoiceMetadataColumns, {
+      paymentTerms: sanitized.paymentTerms,
+      customerPoNumber: sanitized.customerPoNumber ?? sanitized.customerReference,
+      notes: sanitized.notes,
+      internalNotes: sanitized.internalNotes,
+    });
 
     if (computed) {
       await this.db.delete(invoiceLineItems).where(eq(invoiceLineItems.invoiceId, invoiceId));
@@ -1691,6 +1858,103 @@ export class FinanceService {
     return new FinanceError('VALIDATION_ERROR', error instanceof Error ? error.message : 'Quote lifecycle error');
   }
 
+  private async auditQuoteMetadataChanges(
+    actor: FinanceActor,
+    current: typeof quotes.$inferSelect,
+    next: {
+      paymentTerms?: string | null;
+      customerNotes?: string | null;
+      notes?: string | null;
+      internalNotes?: string | null;
+    },
+  ) {
+    const official = displayOfficialQuoteNumber({ xeroQuoteNumber: current.xeroQuoteNumber });
+    const changes: Array<{ eventType: Parameters<typeof buildFinanceMetadataAuditEvent>[0]['eventType']; before: string | null; after: string | null }> = [];
+    if (next.paymentTerms !== undefined && (next.paymentTerms ?? null) !== (current.paymentTerms ?? null)) {
+      changes.push({ eventType: 'payment_terms_changed', before: current.paymentTerms, after: next.paymentTerms });
+    }
+    if (next.customerNotes !== undefined && (next.customerNotes ?? null) !== (current.customerNotes ?? null)) {
+      changes.push({ eventType: 'customer_reference_changed', before: current.customerNotes, after: next.customerNotes });
+    }
+    if (next.notes !== undefined && (next.notes ?? null) !== (current.notes ?? null)) {
+      changes.push({ eventType: 'customer_note_changed', before: current.notes, after: next.notes });
+    }
+    if (next.internalNotes !== undefined && (next.internalNotes ?? null) !== (current.internalNotes ?? null)) {
+      changes.push({ eventType: 'internal_note_changed', before: current.internalNotes, after: next.internalNotes });
+    }
+    for (const change of changes) {
+      const audit = buildFinanceMetadataAuditEvent({
+        eventType: change.eventType,
+        companyId: actor.companyId,
+        entityType: 'quote',
+        entityId: current.id,
+        officialNumber: official,
+        actorId: actor.userId ?? null,
+        sourceProvider: current.sourceProvider,
+        beforeSafe: change.eventType === 'internal_note_changed' ? safeAuditText(change.before) : change.before,
+        afterSafe: change.eventType === 'internal_note_changed' ? safeAuditText(change.after) : change.after,
+      });
+      await this.db.insert(securityAuditLogs).values({
+        companyId: audit.companyId,
+        category: 'security',
+        action: audit.action,
+        entityType: audit.entityType,
+        entityId: audit.entityId,
+        userId: actor.userId ?? null,
+        metadata: audit.metadata,
+      });
+    }
+  }
+
+  private async auditInvoiceMetadataChanges(
+    actor: FinanceActor,
+    current: typeof invoices.$inferSelect & InvoiceMetadataColumns,
+    next: {
+      paymentTerms?: string | null;
+      customerPoNumber?: string | null;
+      notes?: string | null;
+      internalNotes?: string | null;
+    },
+  ) {
+    const official = displayOfficialInvoiceNumber({ xeroInvoiceNumber: current.xeroInvoiceNumber });
+    const currentMeta = invoiceMeta(current);
+    const changes: Array<{ eventType: Parameters<typeof buildFinanceMetadataAuditEvent>[0]['eventType']; before: string | null; after: string | null }> = [];
+    if (next.paymentTerms !== undefined && (next.paymentTerms ?? null) !== (current.paymentTerms ?? null)) {
+      changes.push({ eventType: 'payment_terms_changed', before: current.paymentTerms, after: next.paymentTerms });
+    }
+    if (next.customerPoNumber !== undefined && (next.customerPoNumber ?? null) !== (currentMeta.customerPoNumber ?? null)) {
+      changes.push({ eventType: 'customer_po_changed', before: currentMeta.customerPoNumber ?? null, after: next.customerPoNumber });
+    }
+    if (next.notes !== undefined && (next.notes ?? null) !== (current.notes ?? null)) {
+      changes.push({ eventType: 'customer_note_changed', before: current.notes, after: next.notes });
+    }
+    if (next.internalNotes !== undefined && (next.internalNotes ?? null) !== (currentMeta.internalNotes ?? null)) {
+      changes.push({ eventType: 'internal_note_changed', before: currentMeta.internalNotes ?? null, after: next.internalNotes });
+    }
+    for (const change of changes) {
+      const audit = buildFinanceMetadataAuditEvent({
+        eventType: change.eventType,
+        companyId: actor.companyId,
+        entityType: 'invoice',
+        entityId: current.id,
+        officialNumber: official,
+        actorId: actor.userId ?? null,
+        sourceProvider: current.sourceProvider,
+        beforeSafe: change.eventType === 'internal_note_changed' ? safeAuditText(change.before) : change.before,
+        afterSafe: change.eventType === 'internal_note_changed' ? safeAuditText(change.after) : change.after,
+      });
+      await this.db.insert(securityAuditLogs).values({
+        companyId: audit.companyId,
+        category: 'security',
+        action: audit.action,
+        entityType: audit.entityType,
+        entityId: audit.entityId,
+        userId: actor.userId ?? null,
+        metadata: audit.metadata,
+      });
+    }
+  }
+
   private assertFloor(actor: FinanceActor, belowFloor: boolean, override?: boolean, reason?: string | null, allowed = true) {
     if (!belowFloor) return;
     if (!override || !reason?.trim() || !allowed || actor.canWrite === false) {
@@ -1837,7 +2101,19 @@ function toInvoiceSummary(row: InvoiceWithRelations & Record<string, any>): Invo
     currency: row.currency,
     dueDate: row.dueDate ? row.dueDate.toISOString() : null,
     issuedAt: row.issuedAt?.toISOString() ?? null,
-    customerReference: mapCustomerReferenceFromStorage(row.xeroReference),
+    customerReference: (() => {
+      const metaCols = invoiceMeta(row as InvoiceMetadataColumns);
+      const meta = resolveInvoiceMetadata({
+        customerPoNumber: metaCols.customerPoNumber,
+        xeroReference: row.xeroReference,
+        customerReference: mapCustomerReferenceFromStorage(row.xeroReference),
+        sourceProvider: row.sourceProvider,
+        xeroInvoiceNumber: row.xeroInvoiceNumber,
+        numberAuthority: row.numberAuthority,
+      });
+      return meta.customerReference;
+    })(),
+    customerPoNumber: invoiceMeta(row as InvoiceMetadataColumns).customerPoNumber ?? null,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };

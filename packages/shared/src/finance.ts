@@ -190,7 +190,13 @@ export type QuoteDetail = QuoteSummary & {
   scopeOfWork: string | null;
   exclusions: string | null;
   assumptions: string | null;
+  /** Customer PO / customer reference (combined existing column). */
   customerNotes: string | null;
+  /** Alias of customerNotes for explicit PO/reference semantics. */
+  customerReference?: string | null;
+  /** Alias when customerNotes looks like a PO. */
+  customerPoNumber?: string | null;
+  /** Staff-only — never customer-visible. */
   internalNotes: string | null;
   paymentTerms: string | null;
   depositPercent: number | null;
@@ -198,7 +204,10 @@ export type QuoteDetail = QuoteSummary & {
   discountCents: number;
   belowFloorOverride: boolean;
   belowFloorReason: string | null;
+  /** Customer-facing notes (message to customer). */
   notes: string | null;
+  /** Explicit alias of notes. */
+  customerFacingNotes?: string | null;
   addresses: FinanceDocumentAddressSnapshot;
   lineItems: QuoteLineItemSummary[];
   acceptance: QuoteAcceptanceSummary | null;
@@ -234,8 +243,14 @@ export type InvoiceSummary = {
   currency: string;
   dueDate: string | null;
   issuedAt: string | null;
-  /** Customer-entered reference (PO/site ref) — never the official Xero invoice number. */
+  /**
+   * Customer reference / PO for display.
+   * Prefer customerPoNumber when set; else legacy local xero_reference mapping;
+   * Xero-backed provider reference remains in xeroReference.
+   */
   customerReference: string | null;
+  /** Dedicated customer PO (additive) — never fabricated. */
+  customerPoNumber?: string | null;
   xeroSyncStatus?: 'synced' | 'pending' | 'failed' | 'out_of_sync' | null;
   financialDataComplete?: boolean;
   createdAt: string;
@@ -262,7 +277,11 @@ export type InvoiceDetail = InvoiceSummary & {
   billingName: string | null;
   billingEmail: string | null;
   billingPhone: string | null;
+  /** Customer-facing notes. */
   notes: string | null;
+  customerFacingNotes?: string | null;
+  /** Staff-only — never customer-visible. */
+  internalNotes?: string | null;
   addresses: FinanceDocumentAddressSnapshot;
   lineItems: InvoiceLineItemSummary[];
   payments: PaymentSummary[];
@@ -391,8 +410,10 @@ export type CreateInvoiceRequest = {
   currency?: string;
   dueDate?: string | null;
   notes?: string | null;
+  internalNotes?: string | null;
   issuedAt?: string | null;
   customerReference?: string | null;
+  customerPoNumber?: string | null;
   billingAddress?: string | null;
   siteAddress?: string | null;
   postalAddress?: string | null;

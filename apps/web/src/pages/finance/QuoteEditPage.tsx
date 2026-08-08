@@ -67,6 +67,7 @@ export function QuoteEditPage() {
   const [validUntil, setValidUntil] = useState('');
   const [customerReference, setCustomerReference] = useState('');
   const [message, setMessage] = useState('');
+  const [internalNotes, setInternalNotes] = useState('');
   const [documentSections, setDocumentSections] = useState<FinanceDocumentSectionsEditorState>(
     emptyFinanceDocumentSectionsEditorState(),
   );
@@ -102,6 +103,7 @@ export function QuoteEditPage() {
       validUntil,
       customerReference,
       message,
+      internalNotes,
       addresses,
       lines,
       vatMode,
@@ -153,6 +155,7 @@ export function QuoteEditPage() {
         setValidUntil(toDateInputValue(quote.validUntil));
         setCustomerReference(quote.customerNotes ?? '');
         setMessage(quote.notes ?? '');
+        setInternalNotes(quote.internalNotes ?? '');
         setDocumentSections(sectionsFromQuoteDetail(quote));
         setAddresses(addressesFromSnapshot(quote.addresses));
         setVatMode(inferVatModeFromLines(quote.lineItems));
@@ -212,6 +215,7 @@ export function QuoteEditPage() {
         issuedAt: quoteDate ? new Date(quoteDate).toISOString() : null,
         customerNotes: customerReference.trim() || null,
         notes: message.trim() || null,
+        internalNotes: internalNotes.trim() || null,
         ...addressesToApiPayload(addresses),
         ...quoteSectionsToApiPayload(documentSections),
         lineItems: lineItems!,
@@ -222,6 +226,7 @@ export function QuoteEditPage() {
       addresses,
       canWrite,
       customerReference,
+      internalNotes,
       jobId,
       lines,
       message,
@@ -397,11 +402,12 @@ export function QuoteEditPage() {
               <span>Customer cannot be changed on an existing quote.</span>
             </div>
             <Input
-              label="Customer reference"
+              label="Customer PO / reference"
               value={customerReference}
               onChange={(e) => setCustomerReference(e.target.value)}
-              placeholder="PO number, site reference, etc."
+              placeholder="PO number or customer reference (e.g. Royal Cape Yacht Club)"
             />
+            <p className="finance-editor-hint">Visible to customer on quote documents.</p>
             <label className="titan-input-group finance-editor-field-group">
               <span className="titan-input-label">Job (optional)</span>
               <select
@@ -470,15 +476,27 @@ export function QuoteEditPage() {
           />
 
           <div className="finance-editor__bottom-grid">
-            <FinanceEditorCard title="Message / Notes" className="finance-editor-card--notes">
+            <FinanceEditorCard title="Notes" className="finance-editor-card--notes">
               <label className="titan-input-group finance-editor-field-group">
-                <span className="titan-input-label">Message to customer</span>
+                <span className="titan-input-label">Customer-facing note</span>
+                <span className="finance-editor-hint">Visible to customer</span>
                 <textarea
                   className="titan-input finance-editor-field finance-textarea"
                   rows={4}
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   placeholder="Notes shown on the quote document"
+                />
+              </label>
+              <label className="titan-input-group finance-editor-field-group">
+                <span className="titan-input-label">Internal note</span>
+                <span className="finance-editor-hint">Internal — not visible to customer</span>
+                <textarea
+                  className="titan-input finance-editor-field finance-textarea"
+                  rows={3}
+                  value={internalNotes}
+                  onChange={(e) => setInternalNotes(e.target.value)}
+                  placeholder="Staff-only operational notes"
                 />
               </label>
             </FinanceEditorCard>

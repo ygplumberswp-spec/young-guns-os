@@ -411,7 +411,7 @@ export function InvoiceEditPage() {
               <CustomerSearchField accessToken={accessToken} value={customer} onChange={() => {}} disabled />
             ) : null}
             <Input
-              label="Customer reference"
+              label="Customer PO / reference"
               value={customerReference}
               onChange={(e) => setCustomerReference(e.target.value)}
               placeholder="PO number, site reference, etc."
@@ -505,7 +505,8 @@ export function InvoiceEditPage() {
           <div className="finance-editor__bottom-grid">
             <FinanceEditorCard title="Message / Notes" className="finance-editor-card--notes">
               <label className="titan-input-group finance-editor-field-group">
-                <span className="titan-input-label">Message to customer</span>
+                <span className="titan-input-label">Customer-facing note</span>
+                <span className="finance-editor-hint">Visible to customer</span>
                 <textarea
                   className="titan-input finance-editor-field finance-textarea"
                   rows={4}
