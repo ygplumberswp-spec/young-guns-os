@@ -402,6 +402,14 @@ export function App() {
                         <Route path="/finance/quotes/:id/edit" component={OwnerPages.QuoteEditPage} />
                         <Route path="/finance/quotes/:id" component={OwnerPages.QuoteDetailPage} />
                         <Route path="/finance/quotes" component={OwnerPages.QuoteListPage} />
+                        <Route
+                          path="/finance/plan-estimates/:id"
+                          component={OwnerPages.PlanEstimateDetailPage}
+                        />
+                        <Route
+                          path="/finance/plan-estimates"
+                          component={OwnerPages.PlanEstimateListPage}
+                        />
                         <Route path="/finance/boq/new" component={OwnerPages.BoqCreatePage} />
                         <Route path="/finance/boq/:id" component={OwnerPages.BoqDetailPage} />
                         <Route path="/finance/boq" component={OwnerPages.BoqListPage} />

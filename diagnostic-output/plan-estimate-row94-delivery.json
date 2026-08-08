@@ -1,0 +1,63 @@
+{
+  "row": 94,
+  "title": "Plan / Floor-Plan Quotation & Estimate Baseline",
+  "repoRoot": "/workspace",
+  "branch": "cursor/plan-floor-plan-quotation-663e",
+  "startingHead": "a2ff9a33783533865e25f48e0f63979694d58d6c",
+  "endingHead": "82161089c47450cc74e76ac8e38310cd59e78403",
+  "baseBranch": "cursor/quote-one-off-price-override-663e",
+  "ancestry": "PR #67 through PR #78 (Row 87–93 feat commits are ancestors of a2ff9a3; merge-base --is-ancestor OK)",
+  "prUrl": "https://github.com/ygplumberswp-spec/young-guns-os/pull/79",
+  "stagingOnly": true,
+  "productionDeploy": 0,
+  "productionMigration": 0,
+  "productionWrites": 0,
+  "xeroWrites": 0,
+  "customerSends": 0,
+  "realHistoricalQuoteChanges": 0,
+  "row95Started": false,
+  "row96Started": false,
+  "row98AiTakeoffStarted": false,
+  "row92AutomationEnabled": false,
+  "row92Status": "DRAFT",
+  "migration": "0213_plan_estimates.sql",
+  "canonicalModel": "plan_estimates + plan_estimate_items + plan_estimate_cost_components",
+  "evidence": "diagnostic-output/plan-estimate-staging-proof.json",
+  "realSourceAudit": "NO_AUTHORISED_PLAN_SOURCE_AVAILABLE",
+  "ownerUi": [
+    "/finance/plan-estimates",
+    "/finance/plan-estimates/:id"
+  ],
+  "api": [
+    "GET /api/v1/finance/plan-estimates",
+    "GET /api/v1/finance/plan-estimates/:id",
+    "POST /api/v1/finance/plan-estimates",
+    "POST /api/v1/finance/plan-estimates/:id/review",
+    "POST /api/v1/finance/plan-estimates/:id/approve",
+    "POST /api/v1/finance/plan-estimates/:id/generate-quote",
+    "POST /api/v1/finance/plan-estimates/:id/link-job",
+    "GET /api/v1/finance/plan-estimates/:id/comparison"
+  ],
+  "royalCape": {
+    "quote": "QU-0183",
+    "totalCents": 4272250,
+    "pricingMode": "ITEMISED",
+    "unchanged": true,
+    "fakePlanCreated": false
+  },
+  "knownGaps": [
+    "Plan annotation coordinates not implemented — page/textual reference only",
+    "No authorised YG staging plan/floor-plan document source found",
+    "Full Client Portal E2E remains OPEN (separate pre-v1 gate)",
+    "Row 98 AI take-off not started",
+    "Row 96 full cost engine not started",
+    "TS2589 baseline debt on packages/db createDb remains"
+  ],
+  "tests": {
+    "sharedFocused": "149 pass (plan-estimate + Rows 87–93 regressions)",
+    "apiTypecheck": "pass",
+    "webBuild": "pass",
+    "dbBuild": "TS2589 baseline only (exit 0 with --noEmitOnError false)",
+    "stagingProof": "35 PASS / 0 FAIL"
+  }
+}

@@ -75,9 +75,11 @@ import { SchedulingService } from './services/scheduling.service.js';
 import { FinanceService } from './services/finance.service.js';
 import { PricebookTierFormulaService } from './services/pricebook-tier-formula.service.js';
 import { QuotePriceOverrideService } from './services/quote-price-override.service.js';
+import { PlanEstimateService } from './services/plan-estimate.service.js';
 import { createFinanceRouter } from './routes/finance.js';
 import { createPricebookTierFormulaRouter } from './routes/pricebook-tier-formula.js';
 import { createQuotePriceOverrideRouter } from './routes/quote-price-override.js';
+import { createPlanEstimateRouter } from './routes/plan-estimate.js';
 import { createBankStatementImportRouter } from './routes/bank-statement-import.js';
 import { createBankTransactionControlRouter } from './routes/bank-transaction-control.js';
 import { createFinanceReceiptReconciliationRouter } from './routes/finance-receipt-reconciliation.js';
@@ -625,6 +627,7 @@ const schedulingService = new SchedulingService(db, googleMapsService);
 const financeService = new FinanceService(db);
 const pricebookTierFormulaService = new PricebookTierFormulaService(db);
 const quotePriceOverrideService = new QuotePriceOverrideService(db, financeService);
+const planEstimateService = new PlanEstimateService(db, financeService);
 const documentEngineService = new DocumentEngineService({
   db,
   encryptionKey: env.INTEGRATIONS_ENCRYPTION_KEY,
@@ -2083,6 +2086,16 @@ app.use(
   '/api/v1/finance',
   createQuotePriceOverrideRouter({
     quotePriceOverrideService,
+    teamService,
+    db,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/finance',
+  createPlanEstimateRouter({
+    planEstimateService,
     teamService,
     db,
     jwtSecret: env.JWT_SECRET,
