@@ -129,6 +129,8 @@ import { MaterialQuantityReconciliationService } from './services/material-quant
 import { MultiJobSupplierInvoiceAllocationService } from './services/multi-job-supplier-invoice-allocation.service.js';
 import { EstimatedActualGpService } from './services/estimated-actual-gp.service.js';
 import { JobProfitabilityTruthService } from './services/job-profitability-truth.service.js';
+import { BankFeedFoundationService } from './services/bank-feed-foundation.service.js';
+import { createBankFeedFoundationRouter } from './routes/bank-feed-foundation.js';
 import { DraftAutosaveService } from './services/draft-autosave.service.js';
 import { InventoryService } from './services/inventory.service.js';
 import { StockMovementsService } from './services/stock-movements.service.js';
@@ -942,6 +944,7 @@ const materialQuantityReconciliationService = new MaterialQuantityReconciliation
 const multiJobSupplierInvoiceAllocationService = new MultiJobSupplierInvoiceAllocationService(db);
 const estimatedActualGpService = new EstimatedActualGpService(db);
 const jobProfitabilityTruthService = new JobProfitabilityTruthService(db);
+const bankFeedFoundationService = new BankFeedFoundationService(db);
 const executiveService = new ExecutiveService({
   db,
   intelligenceService,
@@ -2375,6 +2378,16 @@ app.use(
   '/api/v1/finance',
   createJobProfitabilityTruthRouter({
     jobProfitabilityTruthService,
+    teamService,
+    db,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/finance',
+  createBankFeedFoundationRouter({
+    bankFeedFoundationService,
     teamService,
     db,
     jwtSecret: env.JWT_SECRET,

@@ -12,6 +12,7 @@ import { fetchBankTransactionControlQueue } from '../../lib/bank-transaction-con
 import { fetchReceiptReconciliationControlQueue } from '../../lib/finance-receipt-reconciliation-api';
 import { useAuth } from '../../lib/auth-context';
 import { FinanceNav } from '../../features/finance/FinanceNav';
+import { BankConnectionCard } from '../../features/finance/BankConnectionCard';
 
 function TransactionList({
   title,
@@ -270,6 +271,8 @@ export function BankControlPage() {
         title="Bank Control"
         description="Allocate bank debits/credits, attach receipts, reconcile suppliers, and verify evidence."
       />
+
+      <BankConnectionCard />
 
       <Panel title="Needs Attention">
         <dl className="jobs-detail-list">

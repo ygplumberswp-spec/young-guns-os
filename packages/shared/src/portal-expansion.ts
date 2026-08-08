@@ -124,6 +124,13 @@ export const PORTAL_EXPANSION_FORBIDDEN_FIELDS = [
   'missingMoneyAlerts',
   'materialCostCents',
   'labourCostCents',
+  // Row 108 — bank feed / tokens / intake internals never reach Client Portal
+  'bankFeedInternal',
+  'serverTokenReference',
+  'bankFeedConnection',
+  'bankFeedIntake',
+  'credentialsEncrypted',
+  'fullAccountNumber',
 
   'xeroQuoteId',
   'xeroInvoiceNumber',

@@ -61,6 +61,12 @@ function IntegrationCategoryLinks() {
         <Link href="/integrations/email" className="integration-overview-footer__link">
           Email settings
         </Link>
+        <Link href="/finance/bank-control" className="integration-overview-footer__link">
+          Bank Connection
+        </Link>
+        <Link href="/finance/bank-transactions/import" className="integration-overview-footer__link">
+          Import statement
+        </Link>
       </div>
     </footer>
   );

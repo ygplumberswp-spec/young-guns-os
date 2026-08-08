@@ -36,6 +36,7 @@ export * from './material-quantity-reconciliation';
 export * from './multi-job-supplier-invoice-allocation';
 export * from './estimated-actual-gp';
 export * from './job-profitability-truth';
+export * from './bank-feed-foundation';
 export * from './draft-workspace';
 export * from './job-document-packs';
 export * from './completion-reports';

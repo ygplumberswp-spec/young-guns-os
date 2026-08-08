@@ -1,0 +1,231 @@
+{
+  "schemaVersion": "row108-bank-feed-foundation-v1",
+  "generatedAt": "2026-08-08T13:14:12.168Z",
+  "pass": 41,
+  "fail": 0,
+  "results": [
+    {
+      "name": "migration_0226_applied",
+      "status": "PASS"
+    },
+    {
+      "name": "staging_readonly_bank_provider_audit",
+      "status": "PASS",
+      "bankIntegrationProviderConfigs": [
+        {
+          "provider": "google_maps",
+          "status": "connected",
+          "tokenPresent": false
+        },
+        {
+          "provider": "email",
+          "status": "disconnected",
+          "tokenPresent": false
+        },
+        {
+          "provider": "cartrack",
+          "status": "connected",
+          "tokenPresent": false
+        },
+        {
+          "provider": "resend",
+          "status": "connected",
+          "tokenPresent": false
+        },
+        {
+          "provider": "gmail",
+          "status": "connected",
+          "tokenPresent": false
+        },
+        {
+          "provider": "yoco",
+          "status": "connected",
+          "tokenPresent": false
+        },
+        {
+          "provider": "xero",
+          "status": "connected",
+          "tokenPresent": false
+        }
+      ],
+      "bankAccountRecords": 0,
+      "importedBankTransactions": 0,
+      "xeroBankTransactions": 3142,
+      "statementImportBatches": 4,
+      "statementOrDocumentRecordsApprox": 0,
+      "bankFeedConnections": 0,
+      "bankFeedIntakeEvents": 0,
+      "foundationMode": "PROVIDER_UNAVAILABLE",
+      "operatingMode": "CONTROLLED_STATEMENT_IMPORT",
+      "legitimateFnbOrOpenBankingFeed": false,
+      "supportedIntakeModes": [
+        "CONTROLLED_STATEMENT_IMPORT"
+      ],
+      "note": "No live FNB/open-banking feed client; secrets not returned"
+    },
+    {
+      "name": "row92_off",
+      "status": "PASS"
+    },
+    {
+      "name": "royal_cape_unchanged",
+      "status": "PASS",
+      "totalCents": 4272250,
+      "xeroQuoteId": "4d9b1ceb-83dc-4ac6-8d58-ce7ac08f6db8"
+    },
+    {
+      "name": "cleanup_fixture_rows_removed",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_1_provider_neutral",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_2_supported_provider_mode",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_3_unavailable_fallback",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_4_csv_intake",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_5_xlsx_unavailable",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_6_file_hash",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_7_malformed_rejected",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_8_preview_before_confirm",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_9_masked_account",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_10_no_username_password",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_11_no_pin",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_12_no_otp",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_13_no_card",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_14_tokens_hidden",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_15_tenant_isolation",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_16_owner_finance",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_17_tech_denied",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_18_client_denied",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_19_no_auto_match",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_20_no_reconcile",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_21_no_jpe",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_22_no_xero_write",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_23_no_payment_init",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_24_no_fabricated_balance",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_25_audit_gates",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_26_card_not_connected_from_config",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_client_leak",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_rows109_blocked",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_totals",
+      "status": "PASS",
+      "pass": 28,
+      "fail": 0
+    },
+    {
+      "name": "xero_writes",
+      "status": "PASS",
+      "count": 0
+    },
+    {
+      "name": "money_movement",
+      "status": "PASS",
+      "count": 0
+    },
+    {
+      "name": "customer_sends",
+      "status": "PASS",
+      "count": 0
+    },
+    {
+      "name": "production_writes",
+      "status": "PASS",
+      "count": 0
+    },
+    {
+      "name": "rows109_to_116_not_started",
+      "status": "PASS"
+    },
+    {
+      "name": "row117_ocr_not_started",
+      "status": "PASS"
+    },
+    {
+      "name": "row118_not_closed",
+      "status": "PASS"
+    }
+  ]
+}
