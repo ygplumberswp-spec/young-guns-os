@@ -6,6 +6,7 @@ import { describe, it } from 'node:test';
 import {
   assertRow127AcceptanceGate,
   proveProcureToPayCoverage,
+  runProcureToPayFixture,
 } from './procure-to-pay-row127.js';
 import {
   assertRow128SafetyGates,
@@ -28,10 +29,11 @@ import { assertRow92GlobalAutomationDisabled } from './pricebook-tier-formula.js
 import { QUOTE_LIFECYCLE_ROYAL_CAPE } from './quote-lifecycle.js';
 
 describe('Rows 127–132 combined regression', () => {
-  it('Row127 procure-to-pay mid-chain + explicit gaps', () => {
-    const cells = proveProcureToPayCoverage();
-    assertRow127AcceptanceGate(cells);
-    assert.equal(cells.find((c) => c.step === 'need')?.status, 'NOT_AVAILABLE');
+  it('Row127 procure-to-pay closed hops (no NOT_AVAILABLE)', () => {
+    const report = runProcureToPayFixture();
+    assert.equal(report.pass, true);
+    assertRow127AcceptanceGate(report.hops);
+    assert.ok(proveProcureToPayCoverage().every((c) => c.status !== 'NOT_AVAILABLE'));
   });
 
   it('Row128 AURA suggestion only', () => {

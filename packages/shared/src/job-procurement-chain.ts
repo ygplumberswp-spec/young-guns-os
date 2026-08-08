@@ -36,9 +36,20 @@ export type JobProcurementChainWarning =
   | 'MISSING_PRICE'
   | 'MISSING_QUANTITY'
   | 'MISSING_VAT'
+  | 'INSPECTION_REQUIRED'
+  | 'INSPECTION_REJECTED'
+  | 'AP_PAYMENT_APPROVAL_REQUIRED'
+  | 'AP_PAYMENT_APPROVAL_FORBIDDEN'
+  | 'AP_PAYMENT_INITIATION_FORBIDDEN'
   | 'ROW104_NOT_STARTED'
   | 'ROW105_MULTI_JOB_SPLIT_NOT_STARTED'
   | 'ROW106_107_PROFIT_ENGINE_NOT_STARTED';
+
+/** Row 127 — delivery inspection outcome before inventory/cost truth. */
+export type DeliveryInspectionOutcome = 'accepted' | 'rejected' | 'review_required';
+
+/** Row 127 — AP payment approval is internal control only (no money movement). */
+export type ApPaymentApprovalStatus = 'pending' | 'approved' | 'rejected';
 
 export type ProcurementCostAuthority =
   | 'direct_to_job_invoice'
@@ -659,6 +670,277 @@ export function canManageJobProcurementChain(input: {
     return true;
   }
   return ['owner', 'company owner', 'admin', 'manager', 'office'].includes(role);
+}
+
+/**
+ * Row 127 Need — canonical Job + BOQ/material requirement (not free-text-only).
+ */
+export function resolveProcurementNeedFromBoqJob(input: {
+  companyId: string;
+  jobId: string | null;
+  expectedJobCompanyId: string;
+  expectedJobId?: string | null;
+  boqImportId: string | null;
+  boqImportRowId: string | null;
+  materialKey?: string | null;
+  quantityRequired?: number | null;
+  /** Free-text note alone is never sufficient. */
+  freeTextOnly?: boolean;
+}): {
+  ok: boolean;
+  warnings: JobProcurementChainWarning[];
+  need: {
+    companyId: string;
+    jobId: string;
+    boqImportId: string;
+    boqImportRowId: string;
+    materialKey: string | null;
+    quantityRequired: number | null;
+    source: 'job_boq_requirement';
+  } | null;
+} {
+  if (input.freeTextOnly) {
+    return {
+      ok: false,
+      warnings: ['FREE_TEXT_JOB_LINK_REJECTED', 'JOB_LINK_MISSING'],
+      need: null,
+    };
+  }
+  const jobLink = assertCanonicalJobLink({
+    companyId: input.companyId,
+    jobId: input.jobId,
+    expectedJobCompanyId: input.expectedJobCompanyId,
+    expectedJobId: input.expectedJobId ?? null,
+  });
+  if (!jobLink.ok) return { ok: false, warnings: jobLink.warnings, need: null };
+  if (!input.boqImportId || !input.boqImportRowId) {
+    return { ok: false, warnings: ['BOQ_SOURCE_MISSING'], need: null };
+  }
+  return {
+    ok: true,
+    warnings: [],
+    need: {
+      companyId: input.companyId,
+      jobId: jobLink.jobId,
+      boqImportId: input.boqImportId,
+      boqImportRowId: input.boqImportRowId,
+      materialKey: input.materialKey ?? null,
+      quantityRequired: input.quantityRequired ?? null,
+      source: 'job_boq_requirement',
+    },
+  };
+}
+
+/**
+ * Row 127 Purchase Request — auditable proposal request opened from Need
+ * before supplier approval/PO (canonical proposal model, DRAFT status).
+ */
+export function openPurchaseRequestFromNeed(input: {
+  need: NonNullable<ReturnType<typeof resolveProcurementNeedFromBoqJob>['need']>;
+  proposalId: string;
+  proposalLineId: string;
+  actorUserId: string;
+  openedAt: string;
+}): {
+  ok: boolean;
+  warnings: JobProcurementChainWarning[];
+  purchaseRequest: {
+    id: string;
+    proposalId: string;
+    proposalLineId: string;
+    status: 'DRAFT';
+    jobId: string;
+    boqImportId: string;
+    boqImportRowId: string;
+    openedByUserId: string;
+    openedAt: string;
+    auditable: true;
+  } | null;
+} {
+  if (!input.proposalId || !input.proposalLineId || !input.actorUserId) {
+    return { ok: false, warnings: ['REVIEW_REQUIRED'], purchaseRequest: null };
+  }
+  return {
+    ok: true,
+    warnings: [],
+    purchaseRequest: {
+      id: `pr:${input.proposalId}`,
+      proposalId: input.proposalId,
+      proposalLineId: input.proposalLineId,
+      status: 'DRAFT',
+      jobId: input.need.jobId,
+      boqImportId: input.need.boqImportId,
+      boqImportRowId: input.need.boqImportRowId,
+      openedByUserId: input.actorUserId,
+      openedAt: input.openedAt,
+      auditable: true,
+    },
+  };
+}
+
+/**
+ * Row 127 Inspection — delivery evidence must be accepted/rejected/review_required
+ * before downstream inventory/cost truth where required.
+ */
+export function recordDeliveryInspection(input: {
+  companyId: string;
+  deliveryEvidenceId: string | null;
+  purchaseOrderId: string;
+  purchaseOrderLineId: string;
+  jobId: string;
+  expectedJobId: string;
+  outcome: DeliveryInspectionOutcome;
+  inspectedByUserId: string;
+  inspectedAt: string;
+  notes?: string | null;
+}): {
+  ok: boolean;
+  warnings: JobProcurementChainWarning[];
+  inspection: {
+    deliveryEvidenceId: string;
+    outcome: DeliveryInspectionOutcome;
+    allowsInventoryCost: boolean;
+    inspectedByUserId: string;
+    inspectedAt: string;
+    notes: string | null;
+  } | null;
+} {
+  const jobLink = assertCanonicalJobLink({
+    companyId: input.companyId,
+    jobId: input.jobId,
+    expectedJobCompanyId: input.companyId,
+    expectedJobId: input.expectedJobId,
+  });
+  if (!jobLink.ok) return { ok: false, warnings: jobLink.warnings, inspection: null };
+  if (!input.deliveryEvidenceId) {
+    return { ok: false, warnings: ['DELIVERY_EVIDENCE_MISSING', 'INSPECTION_REQUIRED'], inspection: null };
+  }
+  if (!input.inspectedByUserId?.trim()) {
+    return { ok: false, warnings: ['REVIEW_REQUIRED'], inspection: null };
+  }
+  if (input.outcome === 'rejected') {
+    return {
+      ok: false,
+      warnings: ['INSPECTION_REJECTED'],
+      inspection: {
+        deliveryEvidenceId: input.deliveryEvidenceId,
+        outcome: 'rejected',
+        allowsInventoryCost: false,
+        inspectedByUserId: input.inspectedByUserId,
+        inspectedAt: input.inspectedAt,
+        notes: input.notes ?? null,
+      },
+    };
+  }
+  if (input.outcome === 'review_required') {
+    return {
+      ok: false,
+      warnings: ['INSPECTION_REQUIRED', 'REVIEW_REQUIRED'],
+      inspection: {
+        deliveryEvidenceId: input.deliveryEvidenceId,
+        outcome: 'review_required',
+        allowsInventoryCost: false,
+        inspectedByUserId: input.inspectedByUserId,
+        inspectedAt: input.inspectedAt,
+        notes: input.notes ?? null,
+      },
+    };
+  }
+  return {
+    ok: true,
+    warnings: [],
+    inspection: {
+      deliveryEvidenceId: input.deliveryEvidenceId,
+      outcome: 'accepted',
+      allowsInventoryCost: true,
+      inspectedByUserId: input.inspectedByUserId,
+      inspectedAt: input.inspectedAt,
+      notes: input.notes ?? null,
+    },
+  };
+}
+
+/**
+ * Row 127 AP payment approval — authorised Finance/Owner only.
+ * Does NOT initiate payment / money movement / Xero write.
+ */
+export function approveSupplierApPayment(input: {
+  companyId: string;
+  supplierInvoiceEvidenceId: string;
+  amountCents: number;
+  roleName?: string | null;
+  permissions?: string[] | null;
+  approverUserId: string;
+  approvedAt: string;
+  initiatePayment?: boolean;
+  xeroWrites?: number;
+}): {
+  ok: boolean;
+  warnings: JobProcurementChainWarning[];
+  approval: {
+    status: ApPaymentApprovalStatus;
+    supplierInvoiceEvidenceId: string;
+    amountCents: number;
+    approvedByUserId: string;
+    approvedAt: string;
+    paymentInitiated: false;
+    moneyMovement: 0;
+    xeroWrites: 0;
+  } | null;
+} {
+  if ((input.xeroWrites ?? 0) !== 0) {
+    return { ok: false, warnings: ['AP_PAYMENT_INITIATION_FORBIDDEN'], approval: null };
+  }
+  if (input.initiatePayment === true) {
+    return { ok: false, warnings: ['AP_PAYMENT_INITIATION_FORBIDDEN'], approval: null };
+  }
+  if (!canApproveApPayment(input)) {
+    return { ok: false, warnings: ['AP_PAYMENT_APPROVAL_FORBIDDEN'], approval: null };
+  }
+  if (!input.supplierInvoiceEvidenceId || !input.approverUserId) {
+    return { ok: false, warnings: ['AP_PAYMENT_APPROVAL_REQUIRED'], approval: null };
+  }
+  if (!Number.isInteger(input.amountCents) || input.amountCents <= 0) {
+    return { ok: false, warnings: ['MISSING_PRICE', 'AP_PAYMENT_APPROVAL_REQUIRED'], approval: null };
+  }
+  return {
+    ok: true,
+    warnings: [],
+    approval: {
+      status: 'approved',
+      supplierInvoiceEvidenceId: input.supplierInvoiceEvidenceId,
+      amountCents: input.amountCents,
+      approvedByUserId: input.approverUserId,
+      approvedAt: input.approvedAt,
+      paymentInitiated: false,
+      moneyMovement: 0,
+      xeroWrites: 0,
+    },
+  };
+}
+
+export function canApproveApPayment(input: {
+  roleName?: string | null;
+  permissions?: string[] | null;
+}): boolean {
+  const role = (input.roleName ?? '').toLowerCase();
+  if (role === 'technician' || role === 'client' || role.includes('tech')) return false;
+  const perms = input.permissions ?? [];
+  if (perms.includes('*') || perms.includes('finance:write')) return true;
+  return ['owner', 'company owner', 'admin'].includes(role);
+}
+
+/**
+ * Gate inventory/cost posting on accepted inspection (Row 127).
+ */
+export function assertInspectionAllowsInventoryCost(input: {
+  inspectionOutcome: DeliveryInspectionOutcome | null;
+}): { ok: true } | { ok: false; warnings: JobProcurementChainWarning[] } {
+  if (input.inspectionOutcome === 'accepted') return { ok: true };
+  if (input.inspectionOutcome === 'rejected') {
+    return { ok: false, warnings: ['INSPECTION_REJECTED'] };
+  }
+  return { ok: false, warnings: ['INSPECTION_REQUIRED'] };
 }
 
 export function assertNoJobProcurementChainClientLeak(payload: unknown, path = 'root'): void {
