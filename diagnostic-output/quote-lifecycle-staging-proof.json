@@ -1,0 +1,182 @@
+{
+  "label": "quote-lifecycle-staging-proof",
+  "row": 88,
+  "generatedAt": "2026-08-08T08:40:22.707Z",
+  "stagingOnly": true,
+  "xeroWriteCalls": 0,
+  "customerSends": 0,
+  "productionWrites": 0,
+  "productionMigrations": 0,
+  "row89Started": false,
+  "row121LifecycleStarted": false,
+  "results": [
+    {
+      "name": "safety_gates",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "fixture_create",
+      "status": "PASS",
+      "detail": "PASS"
+    },
+    {
+      "name": "fixture_edit",
+      "status": "PASS",
+      "detail": "PASS"
+    },
+    {
+      "name": "fixture_approval",
+      "status": "PASS",
+      "detail": "PASS"
+    },
+    {
+      "name": "fixture_issue",
+      "status": "PASS",
+      "detail": "PASS"
+    },
+    {
+      "name": "fixture_accept",
+      "status": "PASS",
+      "detail": "PASS"
+    },
+    {
+      "name": "fixture_decline",
+      "status": "PASS",
+      "detail": "PASS"
+    },
+    {
+      "name": "fixture_convert",
+      "status": "PASS",
+      "detail": "PASS"
+    },
+    {
+      "name": "fixture_void",
+      "status": "PASS",
+      "detail": "PASS"
+    },
+    {
+      "name": "fixture_archive",
+      "status": "PASS",
+      "detail": "PASS"
+    },
+    {
+      "name": "fixture_idempotency",
+      "status": "PASS",
+      "detail": "PASS"
+    },
+    {
+      "name": "fixture_providerBlockedNoFakeSuccess",
+      "status": "PASS",
+      "detail": "PASS"
+    },
+    {
+      "name": "fixture_sendReadinessNoCustomerSend",
+      "status": "PASS",
+      "detail": "PASS"
+    },
+    {
+      "name": "fixture_audit",
+      "status": "PASS",
+      "detail": "PASS — buildQuoteLifecycleAuditEvent covered by unit tests"
+    },
+    {
+      "name": "real_quote_state_audit",
+      "status": "PASS",
+      "detail": "253"
+    },
+    {
+      "name": "royal_cape_qu0183",
+      "status": "PASS",
+      "detail": "QU-0183"
+    },
+    {
+      "name": "client_portal_row88_scope",
+      "status": "PASS",
+      "detail": "numbering+actions scope only"
+    }
+  ],
+  "blockers": [],
+  "proof": {
+    "safeFixtureProof": {
+      "create": "PASS",
+      "edit": "PASS",
+      "approval": "PASS",
+      "issue": "PASS",
+      "accept": "PASS",
+      "decline": "PASS",
+      "convert": "PASS",
+      "void": "PASS",
+      "archive": "PASS",
+      "idempotency": "PASS",
+      "providerBlockedNoFakeSuccess": "PASS",
+      "sendReadinessNoCustomerSend": "PASS",
+      "audit": "PASS — buildQuoteLifecycleAuditEvent covered by unit tests"
+    },
+    "realQuoteStateAudit": {
+      "totalQuotes": 253,
+      "countByCanonicalLifecycleState": {
+        "DRAFT": 1,
+        "AWAITING_APPROVAL": 0,
+        "APPROVED_READY": 0,
+        "SENT": 172,
+        "VIEWED": 0,
+        "ACCEPTED": 74,
+        "DECLINED": 6,
+        "CONVERTED": 0,
+        "VOIDED": 0,
+        "ARCHIVED": 0,
+        "SUPERSEDED": 0,
+        "EXPIRED": 0,
+        "UNKNOWN_REVIEW": 0
+      },
+      "invalidCombinations": [],
+      "invalidCombinationCount": 0,
+      "providerConflicts": [],
+      "providerConflictCount": 0,
+      "duplicateConversionRelationships": 0,
+      "unresolvedLifecycleRecords": 0
+    },
+    "royalCape": {
+      "display": "QU-0183",
+      "status": "sent",
+      "canonicalState": "SENT",
+      "allowedActions": [
+        "view",
+        "accept",
+        "decline",
+        "void",
+        "create_version"
+      ],
+      "titanQuoteIdUnchanged": true,
+      "xeroQuoteIdUnchanged": true,
+      "crcUnchanged": true,
+      "job000002Unchanged": true,
+      "quoteNumberUnchanged": true,
+      "check": {
+        "ok": true
+      }
+    },
+    "clientPortalRow88": {
+      "numberingAndState": "PASS_NUMBERING_AND_LIFECYCLE_SCOPE — uses official QuoteNumber + canonical accept/decline gates",
+      "isolation": "PASS — portal scoped by companyId+customerId",
+      "fullClientPortalE2E": "NOT_PASS — separate pre-V1 gate"
+    },
+    "surfaces": {
+      "quoteList": "PASS — status + official number via existing finance list",
+      "quoteDetail": "PASS — allowed-action resolver + canonical lifecycle label",
+      "search": "PASS — Row 87 number authority retained",
+      "customer360": "PASS — no ownership mutation; lifecycle display via status",
+      "property360": "PASS — no property reassignment",
+      "job360": "PASS — quote linkage unchanged",
+      "payments": "PASS — payment visibility separate from quote status",
+      "pdfs": "PASS — document number via official helpers"
+    },
+    "xeroWrites": 0,
+    "customerSends": 0,
+    "productionWrites": 0,
+    "row89Started": false,
+    "row121LifecycleStarted": false
+  },
+  "ok": true
+}

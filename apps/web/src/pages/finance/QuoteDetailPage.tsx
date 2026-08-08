@@ -3,7 +3,19 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useRoute } from 'wouter';
 import { Button, LoadingState, Panel } from '@titan/ui';
 import type { InvoiceStage, QuoteDetail } from '@titan/shared';
-import { formatMoney, INVOICE_STAGE_OPTIONS, QUOTE_STATUS_OPTIONS, canEditQuote, canIssueQuote, nextQuoteApprovalAction } from '@titan/shared';
+import {
+  formatMoney,
+  INVOICE_STAGE_OPTIONS,
+  QUOTE_STATUS_OPTIONS,
+  canEditQuote,
+  canIssueQuote,
+  nextQuoteApprovalAction,
+  getAllowedQuoteActions,
+  normalizeQuoteLifecycleRole,
+  toCanonicalQuoteLifecycleState,
+  canonicalLifecycleLabel,
+  resolveQuotePaymentVisibility,
+} from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import {
   createInvoiceFromQuote,
@@ -129,11 +141,36 @@ export function QuoteDetailPage() {
 
   const activeQuote = quote;
   const approvalAction = nextQuoteApprovalAction(activeQuote.status);
-  const showEdit = canWrite && canEditQuote(activeQuote);
-  const canIssue = canWrite && canIssueQuote(activeQuote);
+  const lifecycleRole = normalizeQuoteLifecycleRole(user?.roleName ?? null);
+  const allowedActions = getAllowedQuoteActions({
+    status: activeQuote.status,
+    sourceProvider: activeQuote.sourceProvider ?? null,
+    xeroQuoteId: activeQuote.xeroQuoteId ?? null,
+    xeroQuoteNumber: activeQuote.xeroQuoteNumber ?? null,
+    isImmutable: activeQuote.isImmutable,
+    issuedAt: activeQuote.issuedAt,
+    validUntil: activeQuote.validUntil,
+    role: lifecycleRole,
+    hasInvoice: false,
+  });
+  const canonicalState = toCanonicalQuoteLifecycleState(activeQuote.status);
+  const paymentVisibility = resolveQuotePaymentVisibility({
+    quoteStatus: activeQuote.status,
+    depositPercent: activeQuote.depositPercent,
+    hasLinkedInvoice: false,
+  });
+  const showEdit = canWrite && canEditQuote(activeQuote) && allowedActions.includes('edit');
+  const canIssue = canWrite && canIssueQuote(activeQuote) && allowedActions.includes('issue');
   const canCreateVersion =
-    canWrite && (activeQuote.isImmutable || !DRAFT_STATUSES.has(activeQuote.status));
-  const canConvertToInvoice = canWrite && activeQuote.status === 'accepted';
+    canWrite &&
+    allowedActions.includes('create_version') &&
+    (activeQuote.isImmutable || !DRAFT_STATUSES.has(activeQuote.status));
+  const canConvertToInvoice =
+    canWrite && allowedActions.includes('convert') && activeQuote.status === 'accepted';
+  const showAdvanceApproval =
+    canWrite &&
+    Boolean(approvalAction) &&
+    (allowedActions.includes('submit_for_review') || allowedActions.includes('approve_for_sending'));
 
   async function handleAdvanceApproval() {
     if (!accessToken || !approvalAction) return;
@@ -241,6 +278,12 @@ export function QuoteDetailPage() {
                 <span className={`finance-status finance-status--${quote.status}`}>
                   {formatStatus(quote.status)}
                 </span>
+                <div className="page-muted">
+                  Lifecycle: {canonicalLifecycleLabel(canonicalState)}
+                  {' · '}
+                  Payment: {paymentVisibility.replace(/_/g, ' ')}
+                  {' (separate from quote status)'}
+                </div>
               </dd>
             </div>
             <div>
@@ -291,7 +334,7 @@ export function QuoteDetailPage() {
 
           {canWrite ? (
             <div className="finance-panel-actions">
-              {approvalAction ? (
+              {showAdvanceApproval && approvalAction ? (
                 <Button
                   type="button"
                   variant="secondary"

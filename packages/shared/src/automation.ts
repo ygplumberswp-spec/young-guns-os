@@ -23,6 +23,20 @@ export type BusinessEventType =
   | 'job.time_captured'
   | 'job.direct_cost_captured'
   | 'quote.created'
+  | 'quote.edited'
+  | 'quote.approval_requested'
+  | 'quote.approved'
+  | 'quote.approval_rejected'
+  | 'quote.send_prepared'
+  | 'quote.sent'
+  | 'quote.accepted'
+  | 'quote.declined'
+  | 'quote.conversion_requested'
+  | 'quote.converted'
+  | 'quote.voided'
+  | 'quote.archived'
+  | 'quote.action_failed'
+  | 'quote.action_blocked'
   | 'invoice.created'
   | 'payment.received'
   | 'invoice.overdue'
@@ -31,7 +45,6 @@ export type BusinessEventType =
   | 'gps.event'
   | 'communication.received'
   | 'whatsapp.message.received'
-  | 'quote.accepted'
   | 'lead.created'
   | 'lead.status_changed'
   | 'lead.updated'
@@ -526,6 +539,20 @@ export const BUSINESS_EVENT_TO_TRIGGER: Record<BusinessEventType, WorkflowTrigge
   'job.time_captured': 'job_status_changed',
   'job.direct_cost_captured': 'job_status_changed',
   'quote.created': 'quote_created',
+  'quote.edited': 'quote_created',
+  'quote.approval_requested': 'quote_created',
+  'quote.approved': 'quote_created',
+  'quote.approval_rejected': 'quote_created',
+  'quote.send_prepared': 'quote_created',
+  'quote.sent': 'quote_created',
+  'quote.accepted': 'quote_accepted',
+  'quote.declined': 'quote_accepted',
+  'quote.conversion_requested': 'invoice_created',
+  'quote.converted': 'invoice_created',
+  'quote.voided': 'quote_created',
+  'quote.archived': 'quote_created',
+  'quote.action_failed': 'quote_created',
+  'quote.action_blocked': 'quote_created',
   'invoice.created': 'invoice_created',
   'payment.received': 'payment_received',
   'invoice.overdue': 'invoice_overdue',
@@ -534,7 +561,6 @@ export const BUSINESS_EVENT_TO_TRIGGER: Record<BusinessEventType, WorkflowTrigge
   'gps.event': 'gps_event',
   'communication.received': 'communication_received',
   'whatsapp.message.received': 'whatsapp_message_received',
-  'quote.accepted': 'quote_accepted',
   'lead.created': 'lead_created',
   'lead.status_changed': 'lead_created',
   'lead.updated': 'lead_created',

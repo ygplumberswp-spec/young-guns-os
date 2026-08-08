@@ -1,0 +1,113 @@
+{
+  "row": 88,
+  "title": "Quote Lifecycle End-to-End Verification",
+  "repoRoot": "/workspace",
+  "branch": "cursor/quote-lifecycle-e2e-663e",
+  "startingHead": "ea2796acbf311bfed4d527d308e00cf9a7155866",
+  "endingHead": "PENDING_COMMIT",
+  "ancestry": {
+    "pr67_ee5a19c": true,
+    "pr68_2aae5e1": true,
+    "pr69_a9c63b8": true,
+    "pr70_128a434": true,
+    "pr71_91e174f": true,
+    "pr72_ea2796a": true
+  },
+  "architectureReused": [
+    "quotes.status quote_status enum",
+    "FinanceService create/update/issue/convert",
+    "portal accept/decline + quote_acceptances",
+    "Row 87 displayOfficialQuoteNumber / resolveQuoteDisplayNumberLabel",
+    "emitBusinessEvent audit channel",
+    "Customer/Property/Job 360 surfaces"
+  ],
+  "migration": null,
+  "canonicalStateMachine": "packages/shared/src/quote-lifecycle.ts",
+  "stateMapping": {
+    "draft": "DRAFT",
+    "internal_review": "AWAITING_APPROVAL",
+    "approved_for_sending": "APPROVED_READY",
+    "sent": "SENT",
+    "viewed": "VIEWED",
+    "accepted": "ACCEPTED",
+    "declined": "DECLINED",
+    "converted": "CONVERTED",
+    "cancelled": "VOIDED (or ARCHIVED when cancelReason archive*)",
+    "superseded": "SUPERSEDED",
+    "expired": "EXPIRED",
+    "unknown": "UNKNOWN_REVIEW"
+  },
+  "stagingQuoteAudit": {
+    "totalQuotes": 253,
+    "countByCanonicalLifecycleState": {
+      "DRAFT": 1,
+      "AWAITING_APPROVAL": 0,
+      "APPROVED_READY": 0,
+      "SENT": 172,
+      "VIEWED": 0,
+      "ACCEPTED": 74,
+      "DECLINED": 6,
+      "CONVERTED": 0,
+      "VOIDED": 0,
+      "ARCHIVED": 0,
+      "SUPERSEDED": 0,
+      "EXPIRED": 0,
+      "UNKNOWN_REVIEW": 0
+    },
+    "invalidCombinations": [],
+    "invalidCombinationCount": 0,
+    "providerConflicts": [],
+    "providerConflictCount": 0,
+    "duplicateConversionRelationships": 0,
+    "unresolvedLifecycleRecords": 0
+  },
+  "safeFixtureProof": {
+    "create": "PASS",
+    "edit": "PASS",
+    "approval": "PASS",
+    "issue": "PASS",
+    "accept": "PASS",
+    "decline": "PASS",
+    "convert": "PASS",
+    "void": "PASS",
+    "archive": "PASS",
+    "idempotency": "PASS",
+    "providerBlockedNoFakeSuccess": "PASS",
+    "sendReadinessNoCustomerSend": "PASS",
+    "audit": "PASS \u2014 buildQuoteLifecycleAuditEvent covered by unit tests"
+  },
+  "royalCape": {
+    "display": "QU-0183",
+    "status": "sent",
+    "canonicalState": "SENT",
+    "allowedActions": [
+      "view",
+      "accept",
+      "decline",
+      "void",
+      "create_version"
+    ],
+    "titanQuoteIdUnchanged": true,
+    "xeroQuoteIdUnchanged": true,
+    "crcUnchanged": true,
+    "job000002Unchanged": true,
+    "quoteNumberUnchanged": true,
+    "check": {
+      "ok": true
+    }
+  },
+  "clientPortalRow88": {
+    "numberingAndState": "PASS_NUMBERING_AND_LIFECYCLE_SCOPE \u2014 uses official QuoteNumber + canonical accept/decline gates",
+    "isolation": "PASS \u2014 portal scoped by companyId+customerId",
+    "fullClientPortalE2E": "NOT_PASS \u2014 separate pre-V1 gate"
+  },
+  "xeroWriteCalls": 0,
+  "customerSends": 0,
+  "productionWrites": 0,
+  "productionMigrations": 0,
+  "row89Started": false,
+  "row121LifecycleStarted": false,
+  "clientPortalFinalValidation": "NOT_PASS \u2014 Row 88 numbering/lifecycle scope only",
+  "prUrl": "PENDING",
+  "commit": "PENDING_COMMIT"
+}

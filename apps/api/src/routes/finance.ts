@@ -386,6 +386,39 @@ export function createFinanceRouter({
   router.post('/quotes/:id/issue', requireAnyPermission('finance:write'), async (req, res) => {
     try { res.json({ data: { quote: await financeService.issueQuote(toFinanceActor(getAuth(req)), routeParam(req.params.id)) } }); } catch (error) { handleFinanceError(res, error); }
   });
+  router.get('/quotes/:id/lifecycle', requireAnyPermission('finance:read', 'finance:write'), async (req, res) => {
+    try {
+      res.json({ data: { lifecycle: await financeService.getQuoteLifecycle(toFinanceActor(getAuth(req)), routeParam(req.params.id)) } });
+    } catch (error) {
+      handleFinanceError(res, error);
+    }
+  });
+  router.post('/quotes/:id/prepare-send', requireAnyPermission('finance:write'), async (req, res) => {
+    try {
+      res.json({ data: await financeService.prepareQuoteSend(toFinanceActor(getAuth(req)), routeParam(req.params.id)) });
+    } catch (error) {
+      handleFinanceError(res, error);
+    }
+  });
+  router.post('/quotes/:id/void', requireAnyPermission('finance:write'), async (req, res) => {
+    try {
+      const reason = typeof req.body?.reason === 'string' ? req.body.reason : null;
+      res.json({
+        data: {
+          quote: await financeService.voidQuote(toFinanceActor(getAuth(req)), routeParam(req.params.id), { reason }),
+        },
+      });
+    } catch (error) {
+      handleFinanceError(res, error);
+    }
+  });
+  router.post('/quotes/:id/archive', requireAnyPermission('finance:write'), async (req, res) => {
+    try {
+      res.json({ data: { quote: await financeService.archiveQuote(toFinanceActor(getAuth(req)), routeParam(req.params.id)) } });
+    } catch (error) {
+      handleFinanceError(res, error);
+    }
+  });
   router.post('/quotes/:id/versions', requireAnyPermission('finance:write'), async (req, res) => {
     const parsed = z
       .object({
@@ -594,9 +627,22 @@ function handleFinanceError(res: import('express').Response, error: unknown) {
       error.code === 'JOB_NOT_FOUND' ||
       error.code === 'QUOTE_NOT_FOUND'
         ? 404
-        : error.code === 'SYNC_CONFLICT'
+        : error.code === 'SYNC_CONFLICT' ||
+            error.code === 'QUOTE_ALREADY_CONVERTED' ||
+            error.code === 'QUOTE_ALREADY_ACCEPTED' ||
+            error.code === 'QUOTE_ALREADY_DECLINED' ||
+            error.code === 'QUOTE_ALREADY_VOIDED'
           ? 409
-          : error.code === 'VALIDATION_ERROR'
+          : error.code === 'QUOTE_PROVIDER_ACTION_BLOCKED' ||
+              error.code === 'QUOTE_APPROVAL_REQUIRED' ||
+              error.code === 'QUOTE_STALE_APPROVAL' ||
+              error.code === 'QUOTE_TRANSITION_NOT_ALLOWED' ||
+              error.code === 'QUOTE_EDIT_NOT_ALLOWED' ||
+              error.code === 'QUOTE_NOT_ELIGIBLE_FOR_CONVERT' ||
+              error.code === 'QUOTE_NOT_ELIGIBLE_FOR_ACCEPT' ||
+              error.code === 'QUOTE_NOT_ELIGIBLE_FOR_DECLINE' ||
+              error.code === 'QUOTE_SEND_NOT_READY' ||
+              error.code === 'VALIDATION_ERROR'
             ? 400
             : 400;
 
