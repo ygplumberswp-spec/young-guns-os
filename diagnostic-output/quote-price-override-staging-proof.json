@@ -1,0 +1,140 @@
+{
+  "label": "quote-price-override-staging-proof",
+  "row": 93,
+  "generatedAt": "2026-08-08T09:56:11.540Z",
+  "stagingOnly": true,
+  "xeroWriteCalls": 0,
+  "customerSends": 0,
+  "productionWrites": 0,
+  "productionMigrations": 0,
+  "row94Started": false,
+  "row122Activated": false,
+  "realHistoricalQuoteChanges": 0,
+  "architecture": {
+    "existingOverridePaths": "belowFloorOverride (profit floor only — LEGACY for sell override)",
+    "canonical": "quote_line_price_overrides + quote-price-override shared workflow",
+    "persistence": "0212_quote_line_price_overrides",
+    "approval": "Owner approve envelope (propose→approve→execute) — not security_actions reuse"
+  },
+  "realDataAudit": {
+    "totalQuotes": 253,
+    "draftPreSend": 1,
+    "sent": 172,
+    "accepted": 74,
+    "declined": 6,
+    "converted": 0,
+    "statusCounts": {
+      "sent": 172,
+      "accepted": 74,
+      "declined": 6,
+      "draft": 1
+    },
+    "catalogueLinkedLines": 0,
+    "manualPriceLines": 1556,
+    "existingOverrideLike": "below_floor_override on quotes (profit floor — not sell override)",
+    "classification": {
+      "quote_line_price_overrides": "CANONICAL",
+      "belowFloorOverride": "LEGACY (profit floor)",
+      "row92_rules": "CANONICAL CONFIG (unchanged by Row 93)"
+    }
+  },
+  "safeFixture": {
+    "proposed": true,
+    "approved": true,
+    "executed": true,
+    "idempotentReplay": true,
+    "beforeTotalCents": 92000,
+    "afterTotalCents": 109250,
+    "vatExact": true,
+    "dbFixtureExecutedAndDeleted": true
+  },
+  "globalSafety": {
+    "row92Version": 1,
+    "row92Status": "DRAFT",
+    "row92AutomationEnabled": false,
+    "globalPricebookChanges": 0,
+    "cataloguePriceChanges": 0,
+    "sourceCostChanges": 0,
+    "ygInventoryRows": 0
+  },
+  "royalCape": {
+    "quoteNumber": "QU-0183",
+    "totalCents": 4272250,
+    "pricingPresentationMode": "ITEMISED",
+    "xeroQuoteId": "4d9b1ceb-83dc-4ac6-8d58-ce7ac08f6db8",
+    "customerId": "773497f7-2d71-4a3a-8d80-d113b841b843",
+    "jobId": "5920ef4a-51a9-44ec-8577-09d187ca9c33",
+    "unchanged": true
+  },
+  "results": [
+    {
+      "name": "safety_gates",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "fixture_propose_approve_execute_gate",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "fixture_idempotent",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "issued_blocked",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "staging_additive_migration_0212",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "real_data_audit_readonly",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "fixture_db_execute_once",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "fixture_cleaned",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "row92_unchanged_automation_off",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "royal_cape_unchanged",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "catalogue_source_cost_unchanged",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "row92_draft_template_still_inactive",
+      "status": "PASS",
+      "detail": ""
+    }
+  ],
+  "safety": {
+    "realYgHistoricalQuoteChanges": 0,
+    "xeroWrites": 0,
+    "customerSends": 0,
+    "productionWrites": 0,
+    "row94Started": false,
+    "row122Activated": false,
+    "row92AutomationEnabled": false
+  }
+}

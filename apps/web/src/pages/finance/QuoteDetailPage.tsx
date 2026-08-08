@@ -27,6 +27,7 @@ import {
 import { useAuth } from '../../lib/auth-context';
 import { useStaffMutationInvalidation } from '../../lib/cache-invalidation';
 import { FinanceNav } from '../../features/finance/FinanceNav';
+import { QuotePriceOverridePanel } from '../../features/finance/QuotePriceOverridePanel';
 import { canAccessFinance, canManageFinance, newFinanceClientActionId } from '../../features/finance/utils';
 import { useRecordRecentView } from '../../hooks/useRecordRecentView';
 
@@ -270,6 +271,23 @@ export function QuoteDetailPage() {
       {success ? <p className="form-success">{success}</p> : null}
 
       <div className="finance-detail finance-detail--workspace">
+        {accessToken && quote ? (
+          <QuotePriceOverridePanel
+            accessToken={accessToken}
+            quote={quote}
+            canWrite={canWrite}
+            isOwner={
+              user?.roleName === 'Owner' ||
+              user?.roleName === 'Company Owner' ||
+              (user?.permissions.includes('*') ?? false)
+            }
+            onExecuted={() => {
+              setSuccess('One-off price override executed');
+              void loadQuote();
+              invalidateQuotes();
+            }}
+          />
+        ) : null}
         <Panel title="Summary">
           <dl className="finance-detail-list">
             <div>
