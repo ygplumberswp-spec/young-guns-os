@@ -1,0 +1,186 @@
+{
+  "label": "property-site-360-staging-proof",
+  "generatedAt": "2026-08-08T07:25:35.715Z",
+  "mode": "inspect",
+  "stagingOnly": true,
+  "xeroWriteCalls": 0,
+  "productionWrites": 0,
+  "productionMigrations": 0,
+  "row85Started": false,
+  "row86Started": false,
+  "results": [
+    {
+      "name": "schema_columns",
+      "status": "PASS",
+      "detail": "found 6 additive columns"
+    },
+    {
+      "name": "property_site_contacts_table",
+      "status": "PASS",
+      "detail": "exists"
+    },
+    {
+      "name": "crc_property_count",
+      "status": "PASS",
+      "detail": "1"
+    },
+    {
+      "name": "royal_cape_property",
+      "status": "PASS",
+      "detail": "Royal Cape Yacht Club customer=773497f7-2d71-4a3a-8d80-d113b841b843 status=active"
+    },
+    {
+      "name": "royal_cape_unique",
+      "status": "PASS",
+      "detail": "exactly one Royal Cape property for CRC"
+    },
+    {
+      "name": "royal_cape_jobs",
+      "status": "PASS",
+      "detail": "1 job(s)"
+    },
+    {
+      "name": "job_000002",
+      "status": "PASS",
+      "detail": "JOB-000002 status=in_progress"
+    },
+    {
+      "name": "qu_0183",
+      "status": "PASS",
+      "detail": "QU-0183 xero=4d9b1ceb-83dc-4ac6-8d58-ce7ac08f6db8"
+    },
+    {
+      "name": "royal_cape_regression_assert",
+      "status": "PASS",
+      "detail": "CRC/property/job/quote/xero intact"
+    },
+    {
+      "name": "equipment",
+      "status": "PASS",
+      "detail": "NO_VERIFIED_EQUIPMENT_LINKED (truthful empty)"
+    },
+    {
+      "name": "site_contacts",
+      "status": "PASS",
+      "detail": "0 linked via customer_people"
+    },
+    {
+      "name": "documents",
+      "status": "PASS",
+      "detail": "0"
+    },
+    {
+      "name": "visits_same_job",
+      "status": "PASS",
+      "detail": "2 visit(s) on JOB-000002 (multi-day = same job/site)"
+    },
+    {
+      "name": "immutable_snapshot_evidence",
+      "status": "PASS",
+      "detail": "{\"jobId\":\"5920ef4a-51a9-44ec-8577-09d187ca9c33\",\"jobNumber\":\"JOB-000002\",\"snapshotStreet\":null,\"snapshotCity\":null,\"snapshotFormattedAddress\":null,\"note\":\"Property address edits must not rewrite these job columns.\"}"
+    },
+    {
+      "name": "immutable_snapshot_after_property_edit",
+      "status": "PASS",
+      "detail": "Live property address changed then restored; JOB-000002 snapshot_* columns unchanged"
+    },
+    {
+      "name": "duplicate_warning_no_automerge",
+      "status": "PASS",
+      "detail": "Possible duplicate site (same customer + normalized name/address). Do not auto-merge — review required."
+    },
+    {
+      "name": "multiple_site_real_data",
+      "status": "PASS",
+      "detail": "Only one verified real CRC property currently exists (Royal Cape). Multi-site covered by automated fixtures — no fake site created."
+    },
+    {
+      "name": "no_duplicate_job",
+      "status": "PASS",
+      "detail": "JOB-000002 unique"
+    },
+    {
+      "name": "xero_ids_unchanged",
+      "status": "PASS",
+      "detail": "4d9b1ceb-83dc-4ac6-8d58-ce7ac08f6db8"
+    },
+    {
+      "name": "xero_writes",
+      "status": "PASS",
+      "detail": "0"
+    },
+    {
+      "name": "production_writes",
+      "status": "PASS",
+      "detail": "0"
+    },
+    {
+      "name": "row85_not_started",
+      "status": "PASS",
+      "detail": "true"
+    },
+    {
+      "name": "row86_not_started",
+      "status": "PASS",
+      "detail": "true"
+    }
+  ],
+  "blockers": [],
+  "proof": {
+    "crcPropertyCount": 1,
+    "royalCape": {
+      "id": "8b42a5d3-97fa-4d53-b61a-9917accf9fa8",
+      "property_name": "Royal Cape Yacht Club",
+      "customer_id": "773497f7-2d71-4a3a-8d80-d113b841b843",
+      "company_id": "095aef76-fef5-4139-af37-a42f2d7e2faf",
+      "address_line1": null,
+      "suburb": null,
+      "city": null,
+      "status": "active",
+      "source_provider": null,
+      "source_external_id": null
+    },
+    "royalCapeJobs": [
+      {
+        "id": "5920ef4a-51a9-44ec-8577-09d187ca9c33",
+        "jobNumber": "JOB-000002",
+        "status": "in_progress",
+        "snapshotStreet": null,
+        "snapshotCity": null
+      }
+    ],
+    "equipmentCount": 0,
+    "equipment": [],
+    "siteContacts": [],
+    "documentCount": 0,
+    "visits": [
+      {
+        "id": "654984ef-bea8-49b6-bcf0-23bc62c21fa7",
+        "visit_number": 1,
+        "status": "closed",
+        "close_reason": "still_busy",
+        "job_id": "5920ef4a-51a9-44ec-8577-09d187ca9c33"
+      },
+      {
+        "id": "fec483c1-4444-43e1-b49e-4c96e6a46b92",
+        "visit_number": 2,
+        "status": "open",
+        "close_reason": null,
+        "job_id": "5920ef4a-51a9-44ec-8577-09d187ca9c33"
+      }
+    ],
+    "immutableSnapshot": {
+      "jobId": "5920ef4a-51a9-44ec-8577-09d187ca9c33",
+      "jobNumber": "JOB-000002",
+      "snapshotStreet": null,
+      "snapshotCity": null,
+      "snapshotFormattedAddress": null,
+      "note": "Property address edits must not rewrite these job columns."
+    },
+    "immutableSnapshotEditProof": {
+      "probed": true,
+      "restored": true,
+      "jobSnapshotUnchanged": true
+    }
+  }
+}

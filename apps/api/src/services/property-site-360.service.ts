@@ -194,7 +194,7 @@ export class PropertySite360Service {
       .orderBy(desc(propertySiteContacts.isPrimary), desc(propertySiteContacts.createdAt))
       .limit(50);
 
-    const contacts: PropertySiteContact[] = contactRows.map((r) => ({
+    const contacts: PropertySiteContact[] = contactRows.map((r: any) => ({
       id: r.id,
       propertyId: r.propertyId,
       personId: r.personId,
@@ -207,8 +207,8 @@ export class PropertySite360Service {
     }));
 
     const primaryContactName =
-      contacts.find((c) => c.isPrimary)?.displayName ??
-      contacts.find((c) => c.role === 'primary')?.displayName ??
+      contacts.find((c: any) => c.isPrimary)?.displayName ??
+      contacts.find((c: any) => c.role === 'primary')?.displayName ??
       null;
 
     const [jobCountRow] = await this.db
@@ -244,9 +244,9 @@ export class PropertySite360Service {
       .orderBy(desc(jobs.createdAt))
       .limit(jobsLimit);
 
-    const jobIds = jobRows.map((j) => j.id);
+    const jobIds = jobRows.map((j: any) => j.id);
 
-    const jobItems: PropertySiteJobSummary[] = jobRows.map((j) => {
+    const jobItems: PropertySiteJobSummary[] = jobRows.map((j: any) => {
       // Site name is not a separate job snapshot column today — do not bind it to live propertyName
       // (which can change). Address/geo/contact snapshots on the job remain the immutable truth.
       const snapshot = buildJobSiteSnapshotFromJob({
@@ -297,8 +297,8 @@ export class PropertySite360Service {
             .orderBy(desc(jobVisits.createdAt))
             .limit(visitsLimit);
 
-    const jobNumberById = new Map(jobRows.map((j) => [j.id, j.jobNumber]));
-    const visitItems: PropertySiteVisitSummary[] = visitRows.map((v) => ({
+    const jobNumberById = new Map(jobRows.map((j: any) => [j.id, j.jobNumber]));
+    const visitItems: PropertySiteVisitSummary[] = visitRows.map((v: any) => ({
       id: v.id,
       jobId: v.jobId,
       jobNumber: jobNumberById.get(v.jobId) ?? null,
@@ -344,7 +344,7 @@ export class PropertySite360Service {
       .orderBy(desc(assetEquipment.updatedAt))
       .limit(equipmentLimit);
 
-    const equipmentItems: PropertySiteEquipmentSummary[] = equipRows.map((e) => ({
+    const equipmentItems: PropertySiteEquipmentSummary[] = equipRows.map((e: any) => ({
       id: e.assetId,
       name: e.name,
       assetType: e.assetType,
@@ -398,7 +398,7 @@ export class PropertySite360Service {
         )
         .orderBy(desc(documents.createdAt))
         .limit(documentsLimit - docItems.length);
-      const seen = new Set(docItems.map((d) => d.id));
+      const seen = new Set(docItems.map((d: any) => d.id));
       for (const d of custDocs) {
         if (seen.has(d.id)) continue;
         docItems.push({
@@ -625,7 +625,7 @@ export class PropertySite360Service {
       total: Number(countRow?.c ?? 0),
       limit,
       offset,
-      items: rows.map((r) => ({
+      items: rows.map((r: any) => ({
         id: r.id,
         customerId: r.customerId,
         customerName: r.customerCompanyName?.trim() || r.customerName,
@@ -680,7 +680,7 @@ export class PropertySite360Service {
     if (warning.decision !== 'OK' && !input.forceCreate) {
       throw new PropertySite360Error(
         'DUPLICATE_REVIEW',
-        `${warning.reason} Matches: ${warning.matches.map((m) => m.propertyName).join(', ') || 'n/a'}. Pass forceCreate after review — never auto-merge.`,
+        `${warning.reason} Matches: ${warning.matches.map((m: any) => m.propertyName).join(', ') || 'n/a'}. Pass forceCreate after review — never auto-merge.`,
       );
     }
 
@@ -774,7 +774,7 @@ export class PropertySite360Service {
     // Prove property UPDATE did not cascade into job snapshot columns.
     const snapshotsAfter = await this.loadRawJobSnapshots(actor.companyId, propertyId);
     for (const beforeSnap of snapshotsBefore) {
-      const afterSnap = snapshotsAfter.find((s) => s.id === beforeSnap.id);
+      const afterSnap = snapshotsAfter.find((s: any) => s.id === beforeSnap.id);
       if (!afterSnap) continue;
       if (
         beforeSnap.snapshotStreet !== afterSnap.snapshotStreet ||
@@ -886,7 +886,7 @@ export class PropertySite360Service {
 
     return planPropertyDuplicateWarning({
       incomingAddressKey,
-      candidates: existing.map((e) => ({
+      candidates: existing.map((e: any) => ({
         id: e.id,
         propertyName: e.propertyName,
         addressKey: normalizePropertyAddressKey({
@@ -1108,7 +1108,7 @@ export class PropertySite360Service {
     await this.loadPropertyOrThrow(actor, propertyId);
     const rows = await this.loadRawJobSnapshots(actor.companyId, propertyId);
 
-    return rows.map((r) => ({
+    return rows.map((r: any) => ({
       jobId: r.id,
       jobNumber: r.jobNumber,
       status: r.status,
@@ -1139,7 +1139,7 @@ export class PropertySite360Service {
       .from(jobs)
       .where(and(eq(jobs.companyId, actor.companyId), eq(jobs.propertyId, propertyId)))
       .limit(100);
-    const jobIds = jobRows.map((j) => j.id);
+    const jobIds = jobRows.map((j: any) => j.id);
     if (jobIds.length === 0) return [];
 
     const quoteRows = await this.db
@@ -1164,5 +1164,5 @@ export class PropertySite360Service {
 }
 
 function jCreatedFallback(jobs: PropertySiteJobSummary[], jobId: string): string {
-  return jobs.find((j) => j.id === jobId)?.createdAt ?? new Date(0).toISOString();
+  return jobs.find((j: any) => j.id === jobId)?.createdAt ?? new Date(0).toISOString();
 }

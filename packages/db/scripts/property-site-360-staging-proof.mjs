@@ -287,6 +287,49 @@ try {
       note: 'Property address edits must not rewrite these job columns.',
     };
     pass('immutable_snapshot_evidence', JSON.stringify(report.proof.immutableSnapshot));
+
+    // Staging-only safety: temporarily change live property address, prove job snapshots unchanged, restore.
+    const beforeProp = await sql`
+      SELECT address_line1, updated_at FROM cx_customer_properties
+      WHERE company_id = ${YG} AND id = ${propId}
+    `;
+    const originalAddress = beforeProp[0]?.address_line1 ?? null;
+    const probeAddress = originalAddress
+      ? `${originalAddress} [P360-PROBE]`
+      : 'P360-SNAPSHOT-PROBE-DO-NOT-KEEP';
+    await sql`
+      UPDATE cx_customer_properties
+      SET address_line1 = ${probeAddress}, updated_at = now()
+      WHERE company_id = ${YG} AND id = ${propId}
+    `;
+    const afterJob = await sql`
+      SELECT snapshot_street, snapshot_city, snapshot_formatted_address, snapshot_suburb, snapshot_postal_code
+      FROM jobs WHERE company_id = ${YG} AND id = ${jobId}
+    `;
+    await sql`
+      UPDATE cx_customer_properties
+      SET address_line1 = ${originalAddress}, updated_at = now()
+      WHERE company_id = ${YG} AND id = ${propId}
+    `;
+    const snap = afterJob[0];
+    const unchanged =
+      snap &&
+      snap.snapshot_street === job000002.snapshot_street &&
+      snap.snapshot_city === job000002.snapshot_city &&
+      snap.snapshot_formatted_address === job000002.snapshot_formatted_address;
+    if (unchanged) {
+      pass(
+        'immutable_snapshot_after_property_edit',
+        'Live property address changed then restored; JOB-000002 snapshot_* columns unchanged',
+      );
+      report.proof.immutableSnapshotEditProof = {
+        probed: true,
+        restored: true,
+        jobSnapshotUnchanged: true,
+      };
+    } else {
+      fail('immutable_snapshot_after_property_edit', JSON.stringify(snap));
+    }
   }
 
   // Duplicate warning helper (no auto-merge) — fixture only
