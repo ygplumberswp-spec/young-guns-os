@@ -20,6 +20,7 @@ import type {
   UpdateInvoiceRequest,
 } from '@titan/shared';
 import {
+  assertIssuedInvoiceMutationAllowed,
   canEditInvoice,
   displayOfficialInvoiceNumber,
   displayOfficialQuoteNumber,
@@ -1581,8 +1582,18 @@ export class FinanceService {
       where: and(eq(invoices.id, invoiceId), eq(invoices.companyId, actor.companyId)),
     });
     if (!current) throw new FinanceError('NOT_FOUND', 'Invoice not found');
-    if (!canEditInvoice(current)) {
-      // Internal notes may still be updated on synced invoices (TITAN-owned, never customer-facing).
+    const issuedGateInput = {
+      status: current.status,
+      issuedAt: current.issuedAt,
+      invoiceNumber: current.invoiceNumber,
+      xeroInvoiceNumber: current.xeroInvoiceNumber,
+      numberAuthority: current.numberAuthority,
+      sourceProvider: current.sourceProvider,
+      xeroInvoiceId: current.sourceExternalId,
+    };
+    const issuedMutation = assertIssuedInvoiceMutationAllowed(issuedGateInput, 'edit');
+    if (!issuedMutation.allowed || !canEditInvoice(current)) {
+      // Internal notes may still be updated on synced/issued invoices (TITAN-owned, never customer-facing).
       const onlyInternalNote =
         sanitized.internalNotes !== undefined &&
         sanitized.notes === undefined &&
@@ -1593,8 +1604,24 @@ export class FinanceService {
         sanitized.status === undefined &&
         sanitized.dueDate === undefined &&
         sanitized.documentContent === undefined;
-      if (!onlyInternalNote) {
-        throw new FinanceError('SYNC_CONFLICT', 'Cannot edit synced invoice without approval workflow');
+      // Canonical corrections: void/archive via status=cancelled only (not casual field edits).
+      const onlyCanonicalCorrection =
+        sanitized.status === 'cancelled' &&
+        sanitized.lineItems === undefined &&
+        sanitized.notes === undefined &&
+        sanitized.paymentTerms === undefined &&
+        sanitized.customerReference === undefined &&
+        sanitized.customerPoNumber === undefined &&
+        sanitized.dueDate === undefined &&
+        sanitized.documentContent === undefined &&
+        assertIssuedInvoiceMutationAllowed(issuedGateInput, 'void').allowed;
+      if (!onlyInternalNote && !onlyCanonicalCorrection) {
+        throw new FinanceError(
+          'SYNC_CONFLICT',
+          issuedMutation.allowed === false
+            ? issuedMutation.message
+            : 'Cannot edit synced invoice without approval workflow',
+        );
       }
     }
 
