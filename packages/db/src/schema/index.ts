@@ -14,6 +14,7 @@ export * from './user-invites';
 export * from './customers';
 export * from './customer-duplicate-merge';
 export * from './customer-360';
+export * from './property-site-360';
 export * from './customer-activities';
 export * from './marketing-eligibility';
 export * from './job-execution-enums';

@@ -336,6 +336,7 @@ import { SalesFollowupIntelligenceService } from './services/sales-followup-inte
 import { SalesAnalyticsIntelligenceService } from './services/sales-analytics-intelligence.service.js';
 import { Customer360IntelligenceService } from './services/customer-360-intelligence.service.js';
 import { Customer360Service } from './services/customer-360.service.js';
+import { PropertySite360Service } from './services/property-site-360.service.js';
 import { PropertyIntelligenceService } from './services/property-intelligence.service.js';
 import { DocumentIntelligenceService } from './services/document-intelligence.service.js';
 import { ComplianceIntelligenceService } from './services/compliance-intelligence.service.js';
@@ -396,6 +397,7 @@ import { createSalesFollowupIntelligenceRouter } from './routes/sales-followup-i
 import { createSalesAnalyticsIntelligenceRouter } from './routes/sales-analytics-intelligence.js';
 import { createCustomer360IntelligenceRouter } from './routes/customer-360-intelligence.js';
 import { createCustomer360Router } from './routes/customer-360.js';
+import { createPropertySite360Router } from './routes/property-site-360.js';
 import { createPropertyIntelligenceRouter } from './routes/property-intelligence.js';
 import { createDocumentIntelligenceRouter } from './routes/document-intelligence.js';
 import { createComplianceIntelligenceRouter } from './routes/compliance-intelligence.js';
@@ -1148,6 +1150,7 @@ const salesFollowupIntelligenceService = new SalesFollowupIntelligenceService(db
 const salesAnalyticsIntelligenceService = new SalesAnalyticsIntelligenceService(db);
 const customer360IntelligenceService = new Customer360IntelligenceService(db);
 const customer360Service = new Customer360Service(db);
+const propertySite360Service = new PropertySite360Service(db);
 const propertyIntelligenceService = new PropertyIntelligenceService(db);
 const documentIntelligenceService = new DocumentIntelligenceService(db);
 const complianceIntelligenceService = new ComplianceIntelligenceService(db);
@@ -3167,6 +3170,15 @@ app.use(
   '/api/v1/customer-360',
   createCustomer360Router({
     customer360Service,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/property-360',
+  createPropertySite360Router({
+    propertySite360Service,
     teamService,
     jwtSecret: env.JWT_SECRET,
     authService,

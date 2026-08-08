@@ -1,0 +1,45 @@
+{
+  "row": 84,
+  "title": "CURRENT Property / Site 360",
+  "repoRoot": "/workspace",
+  "branch": "cursor/property-site-360-663e",
+  "startingHead": "2aae5e12b0e385559080d3fa4e6bb48a47330599",
+  "endingHead": "7dd884c6f4a4ddb2280e696c553a0bc5e894a120",
+  "ancestry": {
+    "pr67_ee5a19c": true,
+    "pr68_2aae5e1": true
+  },
+  "prUrl": "https://github.com/ygplumberswp-spec/young-guns-os/pull/69",
+  "baseBranch": "cursor/customer-360-current-663e",
+  "migration": {
+    "file": "packages/db/drizzle/0205_property_site_360.sql",
+    "purpose": "Additive property status/country/access/site_notes/source fields + property_site_contacts linking customer_people",
+    "stagingApplied": true,
+    "productionMigrations": 0
+  },
+  "xeroWriteCalls": 0,
+  "productionWrites": 0,
+  "row85Started": false,
+  "row86Started": false,
+  "stagingProof": "diagnostic-output/property-site-360-staging-proof.json",
+  "tests": {
+    "shared_property_site_360": "pass",
+    "shared_customer_360_regression": "pass",
+    "shared_royal_cape_regression": "pass",
+    "api_envelope": "pass",
+    "api_typecheck": "pass",
+    "api_build": "preexisting_fail_TS2589_db_schema_depth_not_introduced_by_row84_service",
+    "web_typecheck": "pass",
+    "web_build": "pass",
+    "web_test": "pass",
+    "db_build": "pass",
+    "staging_proof": "pass"
+  },
+  "knownUnsupported": [
+    "jobs table has no separate snapshot_site_name column \u2014 address/geo/contact snapshots are immutable; site name display for jobs uses snapshot formatted address/street fallback",
+    "CRC currently has exactly one verified real property (Royal Cape) \u2014 multi-site proven via automated fixtures",
+    "Royal Cape has NO_VERIFIED_EQUIPMENT_LINKED",
+    "Royal Cape site contacts via property_site_contacts currently 0 (Rowan remains on Customer 360 people; not force-linked)",
+    "API tsc build (tsconfig.build.json) still hits pre-existing TS2589 deep schema instantiation; api typecheck passes"
+  ]
+}

@@ -307,9 +307,13 @@ export function Customer360WorkspacePanel({ customerId, initialTab = 'overview' 
       {tab === 'properties' ? (
         <Panel title="Properties / sites">
           {properties.length === 0 ? (
-            <EmptyState title="No properties linked" description="Property/Site 360 remains a later item." />
+            <EmptyState
+              title="No properties linked"
+              description="Canonical sites appear here when linked — open Property / Site 360 from a site."
+            />
           ) : (
             <ul className="space-y-2">
+              <li className="text-sm text-slate-600">{properties.length} propert{properties.length === 1 ? 'y' : 'ies'}</li>
               {properties.map((p) => (
                 <li key={p.id}>
                   <Link href={p.href} className="font-medium text-slate-900 underline">

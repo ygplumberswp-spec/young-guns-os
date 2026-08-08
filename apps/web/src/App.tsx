@@ -478,6 +478,7 @@ export function App() {
                           path="/crm/duplicates"
                           component={OwnerPages.CustomerDuplicateMergePage}
                         />
+                        <Route path="/properties/:id" component={OwnerPages.PropertySite360Page} />
                         <Route path="/crm/:id" component={OwnerPages.CustomerDetailPage} />
                         <Route path="/crm" component={OwnerPages.CustomerListPage} />
                         <Route
