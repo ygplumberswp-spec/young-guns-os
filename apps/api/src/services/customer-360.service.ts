@@ -865,7 +865,7 @@ export class Customer360Service {
           p.formattedAddress ||
           null,
         isPrimary: p.isPrimary,
-        href: `/crm/${p.customerId}?tab=properties`,
+        href: `/properties/${p.id}`,
       })),
       equipment: assetRows.map((a) => ({
         id: a.id,

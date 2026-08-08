@@ -100,6 +100,13 @@ export const cxPlatformConfig = pgTable('cx_platform_config', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
+/** Row 84 — Property/Site lifecycle status (additive). */
+export const propertySiteStatusEnum = pgEnum('property_site_status', [
+  'active',
+  'inactive',
+  'archived',
+]);
+
 export const cxCustomerProperties = pgTable('cx_customer_properties', {
   id: uuid('id').primaryKey().defaultRandom(),
   companyId: uuid('company_id')
@@ -117,7 +124,13 @@ export const cxCustomerProperties = pgTable('cx_customer_properties', {
   province: text('province'),
   postalCode: text('postal_code'),
   unitNumber: text('unit_number'),
+  country: text('country'),
   isPrimary: boolean('is_primary').notNull().default(false),
+  status: propertySiteStatusEnum('status').notNull().default('active'),
+  accessInstructions: text('access_instructions'),
+  siteNotes: text('site_notes'),
+  sourceProvider: text('source_provider'),
+  sourceExternalId: text('source_external_id'),
   latitude: doublePrecision('latitude'),
   longitude: doublePrecision('longitude'),
   placeId: text('place_id'),
