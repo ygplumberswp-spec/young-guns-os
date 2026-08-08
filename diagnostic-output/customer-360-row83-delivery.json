@@ -4,6 +4,9 @@
   "repoRoot": "/workspace",
   "branch": "cursor/customer-360-current-663e",
   "startingHead": "ee5a19c1d3423868c86415e9d30fc93ad477bcbb",
+  "endingHead": "3d8f9911efe1ac7c18a54b0f3524a2a18f585fab",
+  "pr": "https://github.com/ygplumberswp-spec/young-guns-os/pull/68",
+  "commit": "3d8f9911efe1ac7c18a54b0f3524a2a18f585fab",
   "ancestry": {
     "pr65Tip25f50ee": true,
     "pr67TipEe5a19c": true
