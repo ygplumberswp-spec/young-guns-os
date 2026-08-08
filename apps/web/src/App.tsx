@@ -415,6 +415,10 @@ export function App() {
                           path="/finance/boq-imports/:id"
                           component={OwnerPages.BoqImportDetailPage}
                         />
+                        <Route
+                          path="/finance/job-procurement-chains/:chainId"
+                          component={OwnerPages.JobProcurementChainPage}
+                        />
                         <Route path="/finance/boq/:id" component={OwnerPages.BoqDetailPage} />
                         <Route path="/finance/boq" component={OwnerPages.BoqListPage} />
                         <Route

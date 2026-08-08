@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useRoute } from 'wouter';
+import { Link, useLocation, useRoute } from 'wouter';
 import { PageHeader } from '../../components/ux';
 import { Button, LoadingState, Panel } from '@titan/ui';
 import { ApiClientError } from '../../lib/api-client';
@@ -22,6 +22,7 @@ import {
   type SplitPurchaseProposalDetail,
   type SupplierQuoteMatchDetail,
 } from '../../lib/boq-api';
+import { createJobProcurementChainFromProposal } from '../../lib/job-procurement-chain-api';
 import { useAuth } from '../../lib/auth-context';
 import { FinanceNav } from '../../features/finance/FinanceNav';
 import { canManageFinance, newFinanceClientActionId } from '../../features/finance/utils';
@@ -29,6 +30,7 @@ import { canManageFinance, newFinanceClientActionId } from '../../features/finan
 export function BoqImportDetailPage() {
   const [, params] = useRoute('/finance/boq-imports/:id');
   const id = params?.id ?? '';
+  const [, navigate] = useLocation();
   const { accessToken, user } = useAuth();
   const canWrite = user ? canManageFinance(user.permissions) : false;
   const [detail, setDetail] = useState<BoqWorkbookImportDetail | null>(null);
@@ -44,6 +46,9 @@ export function BoqImportDetailPage() {
   const [clientActionId] = useState(() => newFinanceClientActionId('sup-boq-match'));
   const [proposalActionId] = useState(() => newFinanceClientActionId('split-purchase'));
   const [exportActionId] = useState(() => newFinanceClientActionId('boq-export'));
+  const [chainActionId] = useState(() => newFinanceClientActionId('job-proc-chain'));
+  const [lastChainId, setLastChainId] = useState<string | null>(null);
+  const [lastPoId, setLastPoId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!accessToken || !id) return;
@@ -233,6 +238,42 @@ export function BoqImportDetailPage() {
       );
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : 'Draft proposal failed');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function createPoFromReviewedProposal(proposalLineId?: string) {
+    if (!accessToken || !proposal?.proposal.id) return;
+    const status = (proposal.proposal.status ?? '').toUpperCase();
+    if (status !== 'REVIEWED' && status !== 'APPROVED' && status !== 'APPROVED_DRAFT') {
+      setError('Mark the proposal reviewed before creating a PO');
+      return;
+    }
+    const lineId = proposalLineId ?? proposal.lines[0]?.id;
+    if (!lineId) {
+      setError('No proposal line available to create a PO');
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      const result = await createJobProcurementChainFromProposal(accessToken, {
+        proposalId: proposal.proposal.id,
+        proposalLineId: lineId,
+        purchasePath: 'DIRECT_TO_JOB',
+        clientActionId: `${chainActionId}:${lineId}`,
+      });
+      setLastChainId(result.chain.id);
+      setLastPoId(result.purchaseOrder.id);
+      setSuccess(
+        result.idempotentReplay
+          ? 'Idempotent chain replay — opening existing PO/chain'
+          : `PO draft created from reviewed proposal · chain ${result.chain.status}`,
+      );
+      navigate(`/finance/job-procurement-chains/${result.chain.id}`);
+    } catch (err) {
+      setError(err instanceof ApiClientError ? err.message : 'Create PO from proposal failed');
     } finally {
       setBusy(false);
     }
@@ -491,6 +532,19 @@ export function BoqImportDetailPage() {
                 <Button type="button" disabled={busy} onClick={() => void saveDraftProposal(true)}>
                   Mark proposal reviewed
                 </Button>
+                <Button
+                  type="button"
+                  disabled={
+                    busy ||
+                    !proposal?.proposal.id ||
+                    !['REVIEWED', 'APPROVED', 'APPROVED_DRAFT'].includes(
+                      (proposal.proposal.status ?? '').toUpperCase(),
+                    )
+                  }
+                  onClick={() => void createPoFromReviewedProposal()}
+                >
+                  Create PO from reviewed proposal
+                </Button>
               </div>
             ) : null}
             {proposal ? (
@@ -501,6 +555,26 @@ export function BoqImportDetailPage() {
                     ? ' · totals incomplete (missing VAT/delivery stay unknown)'
                     : ''}
                 </p>
+                {lastChainId || lastPoId ? (
+                  <p className="page-muted">
+                    {lastPoId ? (
+                      <>
+                        <Link href={`/procurement/purchase-orders/${lastPoId}`} className="jobs-link">
+                          Open PO
+                        </Link>
+                        {' · '}
+                      </>
+                    ) : null}
+                    {lastChainId ? (
+                      <Link
+                        href={`/finance/job-procurement-chains/${lastChainId}`}
+                        className="jobs-link"
+                      >
+                        Continue delivery / invoice / cost
+                      </Link>
+                    ) : null}
+                  </p>
+                ) : null}
                 <p className="page-muted">
                   Subtotal{' '}
                   {proposal.proposal.supplierSubtotalCents != null
@@ -533,6 +607,22 @@ export function BoqImportDetailPage() {
                       {(line.mismatchFlags ?? []).length
                         ? ` · [${(line.mismatchFlags as string[]).join(', ')}]`
                         : ''}
+                      {canWrite &&
+                      ['REVIEWED', 'APPROVED', 'APPROVED_DRAFT'].includes(
+                        (proposal.proposal.status ?? '').toUpperCase(),
+                      ) ? (
+                        <>
+                          {' · '}
+                          <button
+                            type="button"
+                            className="jobs-link"
+                            disabled={busy}
+                            onClick={() => void createPoFromReviewedProposal(line.id)}
+                          >
+                            Create PO for line
+                          </button>
+                        </>
+                      ) : null}
                     </li>
                   ))}
                 </ul>

@@ -139,6 +139,10 @@ export const PORTAL_EXPANSION_FORBIDDEN_FIELDS = [
   'reconciliationInternals',
   'bankBalance',
   'runningBalanceCents',
+  // Row 118 — procurement E2E internals
+  'procurementE2eInternal',
+  'jobProcurementChainInternal',
+  'splitPurchaseProposalInternal',
 
   'xeroQuoteId',
   'xeroInvoiceNumber',
