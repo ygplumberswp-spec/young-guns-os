@@ -3,7 +3,15 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useRoute } from 'wouter';
 import { Button, LoadingState, Panel } from '@titan/ui';
 import type { InvoiceDetail } from '@titan/shared';
-import { canEditInvoice, formatMoney, INVOICE_STAGE_OPTIONS, INVOICE_STATUS_OPTIONS, buildPaymentRecordHref } from '@titan/shared';
+import {
+  buildPaymentRecordHref,
+  formatMoney,
+  INVOICE_STAGE_OPTIONS,
+  INVOICE_STATUS_OPTIONS,
+  normalizeInvoiceActionRole,
+  resolveCanonicalInvoiceDisplayStatus,
+  resolveInvoiceRowActions,
+} from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import { fetchInvoice } from '../../lib/finance-api';
 import { useAuth } from '../../lib/auth-context';
@@ -87,22 +95,57 @@ export function InvoiceDetailPage() {
     return null;
   }
 
+  const rowActions = resolveInvoiceRowActions({
+    role: normalizeInvoiceActionRole(user?.roleName),
+    permissions: user?.permissions,
+    invoice: {
+      status: invoice.status,
+      issuedAt: invoice.issuedAt,
+      invoiceNumber: invoice.invoiceNumber,
+      xeroInvoiceNumber: invoice.xeroInvoiceNumber,
+      numberAuthority: invoice.numberAuthority,
+      sourceProvider: invoice.numberAuthority === 'xero' ? 'xero' : null,
+      customerId: invoice.customerId,
+      jobId: invoice.jobId,
+    },
+  });
+  const displayStatus = resolveCanonicalInvoiceDisplayStatus({
+    status: invoice.status,
+    dueDate: invoice.dueDate,
+    balanceDueCents: invoice.outstandingCents,
+  });
+
   return (
     <div className="finance-page finance-page--workspace">
       <PageHeader
         title={invoice.displayOfficialInvoiceNumber}
-        description={invoice.customerName}
+        description={`${invoice.customerName} · ${displayStatus}`}
         actions={
           <div className="jobs-detail__actions">
-            {canWrite && canEditInvoice(invoice) ? (
+            {canWrite && rowActions.includes('edit') ? (
               <Link href={`/finance/invoices/${invoice.id}/edit`}>
                 <Button variant="secondary">Edit Invoice</Button>
               </Link>
             ) : null}
-            {canWrite ? (
+            {canWrite && rowActions.includes('payment_history') ? (
               <Link href={buildPaymentRecordHref({ invoiceId: invoice.id, jobId: invoice.jobId })}>
                 <Button>Record Payment</Button>
               </Link>
+            ) : null}
+            {rowActions.includes('customer') ? (
+              <Link href={`/crm/customers/${invoice.customerId}`}>
+                <Button variant="secondary">Customer</Button>
+              </Link>
+            ) : null}
+            {rowActions.includes('job') && invoice.jobId ? (
+              <Link href={`/jobs/${invoice.jobId}`}>
+                <Button variant="secondary">Job</Button>
+              </Link>
+            ) : null}
+            {canWrite && rowActions.includes('void') ? (
+              <span className="page-muted" title="Use Void / Credit Note / Archive — not casual edit">
+                Corrections: Void · Credit Note · Archive
+              </span>
             ) : null}
           </div>
         }
