@@ -181,6 +181,15 @@ export const quoteLineItems = pgTable('quote_line_items', {
    * (retained for costing; excluded from customer-facing charges).
    */
   customerVisible: boolean('customer_visible').notNull().default(true),
+  /** Row 91 — catalogue item identity snapshot (optional). */
+  catalogueItemId: uuid('catalogue_item_id'),
+  /** Row 91 — YGP code snapshot at selection. */
+  ygpCode: text('ygp_code'),
+  /**
+   * Row 91 — catalogue product taxonomy snapshot.
+   * Distinct from `category` (quote_line_category commercial bucket).
+   */
+  catalogueCategory: text('catalogue_category'),
   accountCode: text('account_code'),
   sourceExternalId: text('source_external_id'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

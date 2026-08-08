@@ -52,8 +52,12 @@ export async function searchFinanceCustomers(
 export async function searchFinanceCatalogue(
   accessToken: string,
   query: string,
+  filters?: { category?: string | null; itemType?: string | null },
 ): Promise<FinanceCatalogueItemSearchResult[]> {
-  const params = new URLSearchParams({ q: query });
+  const params = new URLSearchParams();
+  if (query.trim()) params.set('q', query);
+  if (filters?.category?.trim()) params.set('category', filters.category.trim());
+  if (filters?.itemType?.trim()) params.set('itemType', filters.itemType.trim());
   const data = await request<{ items: FinanceCatalogueItemSearchResult[] }>(
     `/finance/catalogue/search?${params.toString()}`,
     { accessToken },

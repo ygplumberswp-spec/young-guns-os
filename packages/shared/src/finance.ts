@@ -111,6 +111,11 @@ export type QuoteLineItemInput = {
   optionTier?: string | null;
   /** Row 90 — false = internal component (not customer-charged). */
   customerVisible?: boolean;
+  /** Row 91 — catalogue identity snapshot (optional). */
+  catalogueItemId?: string | null;
+  ygpCode?: string | null;
+  /** Row 91 — catalogue product taxonomy snapshot (not quote_line_category). */
+  catalogueCategory?: string | null;
 };
 
 export type QuoteLineItemSummary = {
@@ -130,6 +135,10 @@ export type QuoteLineItemSummary = {
   optionTier: string | null;
   /** Row 90 — false = internal pricing component. */
   customerVisible?: boolean;
+  /** Row 91 — catalogue identity snapshot. */
+  catalogueItemId?: string | null;
+  ygpCode?: string | null;
+  catalogueCategory?: string | null;
 };
 
 export type QuoteProfitSummary = {
