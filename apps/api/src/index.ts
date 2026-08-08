@@ -114,6 +114,7 @@ import { createJobProcurementChainRouter } from './routes/job-procurement-chain.
 import { createMaterialQuantityReconciliationRouter } from './routes/material-quantity-reconciliation.js';
 import { createMultiJobSupplierInvoiceAllocationRouter } from './routes/multi-job-supplier-invoice-allocation.js';
 import { createEstimatedActualGpRouter } from './routes/estimated-actual-gp.js';
+import { createJobProfitabilityTruthRouter } from './routes/job-profitability-truth.js';
 import { createDraftsRouter } from './routes/drafts.js';
 import { createJobDocumentPackRouter } from './routes/job-document-packs.js';
 import { createCompletionReportRouter } from './routes/completion-reports.js';
@@ -127,6 +128,7 @@ import { JobProcurementChainService } from './services/job-procurement-chain.ser
 import { MaterialQuantityReconciliationService } from './services/material-quantity-reconciliation.service.js';
 import { MultiJobSupplierInvoiceAllocationService } from './services/multi-job-supplier-invoice-allocation.service.js';
 import { EstimatedActualGpService } from './services/estimated-actual-gp.service.js';
+import { JobProfitabilityTruthService } from './services/job-profitability-truth.service.js';
 import { DraftAutosaveService } from './services/draft-autosave.service.js';
 import { InventoryService } from './services/inventory.service.js';
 import { StockMovementsService } from './services/stock-movements.service.js';
@@ -939,6 +941,7 @@ const jobProcurementChainService = new JobProcurementChainService(db, procuremen
 const materialQuantityReconciliationService = new MaterialQuantityReconciliationService(db);
 const multiJobSupplierInvoiceAllocationService = new MultiJobSupplierInvoiceAllocationService(db);
 const estimatedActualGpService = new EstimatedActualGpService(db);
+const jobProfitabilityTruthService = new JobProfitabilityTruthService(db);
 const executiveService = new ExecutiveService({
   db,
   intelligenceService,
@@ -2362,6 +2365,16 @@ app.use(
   '/api/v1/finance',
   createEstimatedActualGpRouter({
     estimatedActualGpService,
+    teamService,
+    db,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/finance',
+  createJobProfitabilityTruthRouter({
+    jobProfitabilityTruthService,
     teamService,
     db,
     jwtSecret: env.JWT_SECRET,

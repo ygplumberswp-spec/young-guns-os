@@ -1541,6 +1541,13 @@
       "when": 1788878400000,
       "tag": "0224_estimated_actual_gp",
       "breakpoints": true
+    },
+    {
+      "idx": 220,
+      "version": "7",
+      "when": 1788964800000,
+      "tag": "0225_job_profitability_truth",
+      "breakpoints": true
     }
   ]
 }

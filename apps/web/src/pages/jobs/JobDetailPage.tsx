@@ -41,6 +41,7 @@ import { canViewFinanceProfit } from '@titan/shared';
 import { JobCompletionFinancePanel } from '../../features/finance/JobCompletionFinancePanel';
 import { JobProfitabilityPanel } from '../../features/jobs/JobProfitabilityPanel';
 import { EstimatedActualGpPanel } from '../../features/jobs/EstimatedActualGpPanel';
+import { JobProfitabilityTruthPanel } from '../../features/jobs/JobProfitabilityTruthPanel';
 import { JobFinancialChecklist } from '../../features/jobs/JobFinancialChecklist';
 import { JobCompletionReportPanel } from '../../features/jobs/JobCompletionReportPanel';
 import { JobDocumentPackPanel } from '../../features/jobs/JobDocumentPackPanel';
@@ -1498,7 +1499,10 @@ export function JobDetailPage() {
                 canManageAdjustments={canWriteFinance}
               />
               {canViewProfitMargin ? (
-                <EstimatedActualGpPanel accessToken={accessToken} jobId={job.id} />
+                <>
+                  <EstimatedActualGpPanel accessToken={accessToken} jobId={job.id} />
+                  <JobProfitabilityTruthPanel accessToken={accessToken} jobId={job.id} />
+                </>
               ) : null}
             </>
           ) : undefined

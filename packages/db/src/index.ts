@@ -299,4 +299,11 @@ export type {
   NewEstimatedActualGpComparison,
 } from './schema/estimated-actual-gp.js';
 
+/** Explicit re-export — Row 107 job profitability truth. */
+export { jobProfitabilityTruthSnapshots } from './schema/job-profitability-truth.js';
+export type {
+  JobProfitabilityTruthSnapshot,
+  NewJobProfitabilityTruthSnapshot,
+} from './schema/job-profitability-truth.js';
+
 export { drizzle } from 'drizzle-orm/postgres-js';

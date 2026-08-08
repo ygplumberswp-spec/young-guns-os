@@ -119,6 +119,11 @@ export const PORTAL_EXPANSION_FORBIDDEN_FIELDS = [
   'actualGpCents',
   'gpVarianceCents',
   'marginVarianceBps',
+  'jobProfitabilityTruthInternal',
+  'jobOperatingContributionCents',
+  'missingMoneyAlerts',
+  'materialCostCents',
+  'labourCostCents',
 
   'xeroQuoteId',
   'xeroInvoiceNumber',

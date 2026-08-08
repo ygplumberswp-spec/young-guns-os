@@ -607,3 +607,47 @@ export async function compareJobEstimatedActualGp(
     },
   );
 }
+
+/** Row 107 — internal Job profitability truth + missing-money evidence alerts. */
+export type JobProfitabilityTruthDto = {
+  jobId: string;
+  revenueExVatCents: number | null;
+  materialCostCents: number | null;
+  labourCostCents: number | null;
+  otherJobCostCents: number | null;
+  totalKnownJobCostCents: number | null;
+  grossProfitCents: number | null;
+  grossMarginBps: number | null;
+  jobOperatingContributionCents: number | null;
+  estimatedRevenueExVatCents: number | null;
+  estimatedDirectCostCents: number | null;
+  estimatedGpCents: number | null;
+  estimatedMarginBps: number | null;
+  revenueVarianceCents: number | null;
+  costVarianceCents: number | null;
+  gpVarianceCents: number | null;
+  marginVarianceBps: number | null;
+  completeness: string;
+  lifecycleStatus: string;
+  warnings: string[];
+  missingInputs: string[];
+  alerts: Array<{ code: string; message: string; severity: string }>;
+  profitableOrLossLabelled: boolean;
+  overheadAllocated: boolean;
+  provenance: Record<string, unknown>;
+};
+
+export async function resolveJobProfitabilityTruth(
+  accessToken: string,
+  jobId: string,
+  clientActionId?: string | null,
+): Promise<{ truth: JobProfitabilityTruthDto; idempotentReplay: boolean }> {
+  return request<{ truth: JobProfitabilityTruthDto; idempotentReplay: boolean }>(
+    `/finance/job-profitability-truth/jobs/${jobId}`,
+    {
+      method: 'POST',
+      accessToken,
+      body: { clientActionId: clientActionId ?? null },
+    },
+  );
+}

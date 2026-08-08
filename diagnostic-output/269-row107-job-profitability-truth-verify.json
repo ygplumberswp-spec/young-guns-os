@@ -1,0 +1,123 @@
+{
+  "schemaVersion": "row107-job-profitability-truth-v1",
+  "generatedAt": "2026-08-08T13:00:30.623Z",
+  "pass": 21,
+  "fail": 0,
+  "results": [
+    {
+      "name": "migration_0225_applied",
+      "status": "PASS"
+    },
+    {
+      "name": "staging_readonly_profitability_audit",
+      "status": "PASS",
+      "jobsTotal": 2,
+      "jobsOpen": 2,
+      "jobsCompleted": 0,
+      "jobLinkedInvoices": 0,
+      "invoicesMissingJobLink": 590,
+      "materialJpeEntries": 0,
+      "labourJpeEntries": 0,
+      "otherJobCostJpeEntries": 0,
+      "jpeDirectCostEntries": 0,
+      "orphanUnlinkedJpeEntries": 0,
+      "quoteJobLinks": 1,
+      "jobsWithCompleteRevenue": 0,
+      "jobsWithCompleteCosts": 0,
+      "jobsWithComputableProfitability": 0,
+      "jobsProvisionalIncomplete": 2,
+      "storedTruthSnapshots": 0,
+      "duplicateSourceCandidates": 0,
+      "unresolvedProcurementCosts": 0,
+      "missingMoneyAlertCountsByType": {
+        "note": "No live Job profitability resolved; alerts would be evidence-based only"
+      },
+      "row92Status": "DRAFT",
+      "row92Automation": "OFF",
+      "note": "No fabricated profitability; invoice↔Job largely unlinked; JPE empty"
+    },
+    {
+      "name": "row92_off",
+      "status": "PASS"
+    },
+    {
+      "name": "royal_cape_unchanged_incomplete_truthful",
+      "status": "PASS",
+      "totalCents": 4272250,
+      "xeroQuoteId": "4d9b1ceb-83dc-4ac6-8d58-ce7ac08f6db8"
+    },
+    {
+      "name": "fixture_profitable",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_loss",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_provisional_open",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_overhead_not_allocated",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_contribution_exact",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_row105_not_dup",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_rbac",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_client_leak",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_safety",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_row108_not_started",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_totals",
+      "status": "PASS",
+      "pass": 10,
+      "fail": 0
+    },
+    {
+      "name": "cleanup_no_fabricated_yg_profitability",
+      "status": "PASS"
+    },
+    {
+      "name": "xero_writes",
+      "status": "PASS",
+      "count": 0
+    },
+    {
+      "name": "customer_sends",
+      "status": "PASS",
+      "count": 0
+    },
+    {
+      "name": "production_writes",
+      "status": "PASS",
+      "count": 0
+    },
+    {
+      "name": "row118_not_closed",
+      "status": "PASS"
+    },
+    {
+      "name": "row106_preserved",
+      "status": "PASS"
+    }
+  ]
+}
