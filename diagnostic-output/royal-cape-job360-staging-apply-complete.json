@@ -1,0 +1,218 @@
+{
+  "label": "royal-cape-job360-staging-apply-complete",
+  "generatedAt": "2026-08-08T06:49:55.313Z",
+  "branch": "cursor/royal-cape-job360-rehearsal-663e",
+  "pr": "https://github.com/ygplumberswp-spec/young-guns-os/pull/67",
+  "stagingOnly": true,
+  "productionUntouched": true,
+  "ownerCrcDecision": {
+    "company": "CRC",
+    "titanCustomerId": "773497f7-2d71-4a3a-8d80-d113b841b843",
+    "xeroContactId": "9ff6c727-561b-49cb-a2a5-a22e117af850",
+    "rowanCrcPreserved": "d73df05b-d1e1-4f17-bc1d-890baa9f1e7e",
+    "qu0183MovedToRowan": false,
+    "contactsMerged": false,
+    "anotherCrcCompanyCreated": false
+  },
+  "canonical": {
+    "customerId": "773497f7-2d71-4a3a-8d80-d113b841b843",
+    "customerName": "CRC",
+    "sitePropertyId": "8b42a5d3-97fa-4d53-b61a-9917accf9fa8",
+    "jobId": "5920ef4a-51a9-44ec-8577-09d187ca9c33",
+    "jobNumber": "JOB-000002",
+    "qu0183TitanId": "41178762-bb9a-4e5d-b568-07c330f18cbb",
+    "xeroQuoteId": "4d9b1ceb-83dc-4ac6-8d58-ce7ac08f6db8",
+    "xeroContactId": "9ff6c727-561b-49cb-a2a5-a22e117af850",
+    "relationship": "CRC → Royal Cape Yacht Club site → one Job → Job 360 → existing Xero QU-0183"
+  },
+  "firstApply": {
+    "status": "PASS",
+    "counts": {
+      "customersCreated": 0,
+      "sitesCreated": 1,
+      "jobsCreated": 1,
+      "quotesCreated": 0,
+      "quoteLinksCreated": 1,
+      "documentsCreated": 0
+    },
+    "created": {
+      "site": "8b42a5d3-97fa-4d53-b61a-9917accf9fa8",
+      "job": "5920ef4a-51a9-44ec-8577-09d187ca9c33",
+      "quoteLinked": true,
+      "quoteRecreated": false
+    },
+    "multiDayProof": {
+      "sameJobPersists": true,
+      "jobId": "5920ef4a-51a9-44ec-8577-09d187ca9c33",
+      "jobNumber": null,
+      "status": "in_progress",
+      "executionPhase": "work_continues",
+      "jobCompleted": false,
+      "stopForTodayDoesNotComplete": true,
+      "stillBusyKeepsOpen": true,
+      "separateVisitsAppended": true,
+      "visits": [
+        {
+          "visit_number": 1,
+          "status": "closed",
+          "close_reason": "still_busy",
+          "labour_minutes": 240,
+          "material_count": 0,
+          "photo_count": 0
+        },
+        {
+          "visit_number": 2,
+          "status": "open",
+          "close_reason": null,
+          "labour_minutes": 120,
+          "material_count": 0,
+          "photo_count": 0
+        }
+      ],
+      "rollup": {
+        "labourMinutes": 360,
+        "materialCount": 0,
+        "photoCount": 0
+      },
+      "finalInvoiceBlocked": true,
+      "invoiceGateReason": "Job is Still Busy / work continues — final COMPLETE JOB required before invoicing.",
+      "inventedEvidence": false
+    },
+    "auditEvents": [
+      "quote_matched",
+      "customer_matched",
+      "property_created",
+      "job_created",
+      "quote_linked_to_job"
+    ]
+  },
+  "secondApplyIdempotency": {
+    "status": "PASS",
+    "counts": {
+      "customersCreated": 0,
+      "sitesCreated": 0,
+      "jobsCreated": 0,
+      "quotesCreated": 0,
+      "quoteLinksCreated": 0,
+      "documentsCreated": 0
+    },
+    "duplicates": {
+      "customers": 0,
+      "sites": 0,
+      "jobs": 0,
+      "qu0183Records": 0,
+      "linksDocuments": 0
+    },
+    "note": "Same customer/site/job/quote IDs retained. Job number backfilled once to JOB-000002 on second run because first insert left job_number null before allocator was added."
+  },
+  "job360Proof": {
+    "core": {
+      "jobNumber": "JOB-000002",
+      "customerName": "CRC",
+      "siteName": "Royal Cape Yacht Club",
+      "description": "Work related to Xero quote QU-0183 — Royal Cape Yacht Club",
+      "status": "in_progress",
+      "provenance": [
+        "source:xero_quote",
+        "quote:QU-0183",
+        "xeroQuoteId:4d9b1ceb-83dc-4ac6-8d58-ce7ac08f6db8",
+        "pilot:royal_cape_staging_rehearsal"
+      ]
+    },
+    "commercial": {
+      "quoteNumber": "QU-0183",
+      "issuedAt": "2026-07-15T00:00:00.000Z",
+      "lineItemCount": 5,
+      "subtotalCents": 3715000,
+      "vatCents": 557250,
+      "totalCents": 4272250,
+      "currency": "ZAR",
+      "quoteStatus": "sent",
+      "xeroQuoteId": "4d9b1ceb-83dc-4ac6-8d58-ce7ac08f6db8",
+      "sourceExternalId": "4d9b1ceb-83dc-4ac6-8d58-ce7ac08f6db8"
+    },
+    "payment": {
+      "state": "unpaid_no_payment_record",
+      "paymentCount": 0,
+      "note": "No payment records — truthful unpaid/no-payment state. Do not invent deposits."
+    },
+    "documents": {
+      "quotePdfLinked": false,
+      "inventDocumentsForbidden": true
+    },
+    "history": [
+      "quote_matched",
+      "customer_matched",
+      "property_matched",
+      "job_matched",
+      "quote_linked_to_job"
+    ],
+    "invented": {
+      "photos": false,
+      "cocs": false,
+      "payments": false,
+      "signatures": false,
+      "technicians": false,
+      "materials": false
+    }
+  },
+  "multiDayProof": {
+    "sameJobPersists": true,
+    "jobId": "5920ef4a-51a9-44ec-8577-09d187ca9c33",
+    "jobNumber": "JOB-000002",
+    "status": "in_progress",
+    "executionPhase": "work_continues",
+    "jobCompleted": false,
+    "stopForTodayDoesNotComplete": true,
+    "stillBusyKeepsOpen": true,
+    "separateVisitsAppended": true,
+    "visits": [
+      {
+        "visit_number": 1,
+        "status": "closed",
+        "close_reason": "still_busy",
+        "labour_minutes": 240,
+        "material_count": 0,
+        "photo_count": 0
+      },
+      {
+        "visit_number": 2,
+        "status": "open",
+        "close_reason": null,
+        "labour_minutes": 120,
+        "material_count": 0,
+        "photo_count": 0
+      }
+    ],
+    "rollup": {
+      "labourMinutes": 360,
+      "materialCount": 0,
+      "photoCount": 0
+    },
+    "finalInvoiceBlocked": true,
+    "invoiceGateReason": "Job is Still Busy / work continues — final COMPLETE JOB required before invoicing.",
+    "inventedEvidence": false
+  },
+  "documentEvidence": {
+    "genuineAvailableCount": 0,
+    "invented": false,
+    "note": "No genuine pre-start documents found — missing evidence left truthful; nothing invented."
+  },
+  "syncStatusFailedInvestigation": {
+    "classification": "stale_outbound_write_block",
+    "report": "Mapping is failed because an outbound Xero quote_create write was blocked by approval gates. Xero quote ID already exists and a prior successful sync is recorded — treat as stale outbound metadata, not a missing import. Do not write to Xero merely to clear the flag.",
+    "xeroWriteRequiredToClear": false
+  },
+  "safety": {
+    "xeroWrites": 0,
+    "customerSends": 0,
+    "productionWrites": 0,
+    "productionMigrationApplied": false,
+    "productionDeployAttempted": false
+  },
+  "testsBuild": {
+    "sharedBuild": "PASS",
+    "royalCapeUnitTests": "11/11 PASS"
+  },
+  "stop": "STOP after Royal Cape — no production deployment/migration/writes."
+}

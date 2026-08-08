@@ -104,6 +104,23 @@ function skip(name, detail = '') {
   report.results.push({ name, status: 'SKIP', detail });
 }
 
+async function allocateJobNumber(sql, companyId) {
+  await sql`
+    INSERT INTO job_number_counters (company_id, last_value)
+    VALUES (${companyId}, 0)
+    ON CONFLICT (company_id) DO NOTHING
+  `;
+  const rows = await sql`
+    UPDATE job_number_counters
+    SET last_value = last_value + 1, updated_at = now()
+    WHERE company_id = ${companyId}
+    RETURNING last_value
+  `;
+  const value = rows[0]?.last_value;
+  if (value == null) throw new Error(`job_number allocation failed for ${companyId}`);
+  return `JOB-${String(value).padStart(6, '0')}`;
+}
+
 function writeReport() {
   fs.mkdirSync(path.dirname(outPath), { recursive: true });
   fs.writeFileSync(outPath, JSON.stringify(report, null, 2));
@@ -562,11 +579,13 @@ try {
           jobNumber = plan.jobPlan.job.jobNumber;
           pass('job_matched', jobId);
         } else {
+          const allocatedNumber = await allocateJobNumber(db, companyId);
           const [createdJob] = await db`
             INSERT INTO jobs (
               company_id,
               customer_id,
               property_id,
+              job_number,
               title,
               description,
               status,
@@ -580,6 +599,7 @@ try {
               ${companyId},
               ${customerId},
               ${propertyId},
+              ${allocatedNumber},
               ${`Royal Cape Yacht Club — ${ROYAL_CAPE_CANONICAL_QUOTE_NUMBER}`},
               ${`Staging Job 360 shell linked to Xero quote ${ROYAL_CAPE_CANONICAL_QUOTE_NUMBER}. No invented photos/payments/technicians.`},
               ${'new'},
@@ -593,7 +613,7 @@ try {
             RETURNING id, job_number
           `;
           jobId = createdJob?.id ?? null;
-          jobNumber = createdJob?.job_number ?? null;
+          jobNumber = createdJob?.job_number ?? allocatedNumber;
           jobCreated = Boolean(createdJob);
           if (jobCreated) report.counts.jobsCreated += 1;
           pass('job_created_once', `id=${jobId} number=${jobNumber}`);
@@ -601,6 +621,25 @@ try {
       }
     } else if (jobId) {
       pass('job_already_present', jobId);
+    }
+
+    // Backfill job_number once if a prior CREATE_ONCE left it null (idempotent).
+    if (jobId && !jobNumber) {
+      const current = await db`
+        SELECT job_number FROM jobs WHERE company_id = ${companyId} AND id = ${jobId} LIMIT 1
+      `;
+      jobNumber = current[0]?.job_number ?? null;
+      if (!jobNumber) {
+        const allocatedNumber = await allocateJobNumber(db, companyId);
+        const [updated] = await db`
+          UPDATE jobs
+          SET job_number = ${allocatedNumber}, updated_at = now()
+          WHERE company_id = ${companyId} AND id = ${jobId} AND job_number IS NULL
+          RETURNING job_number
+        `;
+        jobNumber = updated?.job_number ?? allocatedNumber;
+        pass('job_number_backfilled_once', jobNumber);
+      }
     }
 
     if (quote && jobId && quote.jobId !== jobId) {
@@ -762,7 +801,7 @@ try {
       }
     }
 
-    // Audit rows — security_audit_logs when available
+    // Audit rows — write once for create/link mutations; skip duplicate audit spam on idempotent re-run.
     const auditEvents = buildRoyalCapeAuditEvents({
       actorUserId: null,
       tenantCompanyId: companyId,
@@ -772,32 +811,36 @@ try {
       propertyCreated,
       jobId,
       jobCreated,
-      quoteLinked,
+      quoteLinked: report.counts.quoteLinksCreated > 0,
       documentLinked: false,
     });
-    for (const event of auditEvents) {
-      await db`
-        INSERT INTO security_audit_logs (
-          company_id, category, action, entity_type, entity_id, metadata, occurred_at
-        ) VALUES (
-          ${companyId},
-          ${'financial'},
-          ${event.action},
-          ${event.entityType},
-          ${event.entityId},
-          ${db.json({
-            source: event.source,
-            pilot: 'royal_cape_job360',
-            noXeroWrite: true,
-            noCustomerSend: true,
-            ownerCrcCustomerId: ROYAL_CAPE_OWNER_CRC.titanCustomerId,
-          })},
-          ${event.at}
-        )
-      `;
-    }
     report.auditEvents = auditEvents;
-    pass('audit_recorded', `${auditEvents.length} events`);
+    if (propertyCreated || jobCreated || report.counts.quoteLinksCreated > 0) {
+      for (const event of auditEvents) {
+        await db`
+          INSERT INTO security_audit_logs (
+            company_id, category, action, entity_type, entity_id, metadata, occurred_at
+          ) VALUES (
+            ${companyId},
+            ${'financial'},
+            ${event.action},
+            ${event.entityType},
+            ${event.entityId},
+            ${db.json({
+              source: event.source,
+              pilot: 'royal_cape_job360',
+              noXeroWrite: true,
+              noCustomerSend: true,
+              ownerCrcCustomerId: ROYAL_CAPE_OWNER_CRC.titanCustomerId,
+            })},
+            ${event.at}
+          )
+        `;
+      }
+      pass('audit_recorded', `${auditEvents.length} events`);
+    } else {
+      skip('audit_recorded', 'Idempotent re-run — no new create/link mutations; prior audit retained.');
+    }
   }
 
   let paymentCount = 0;
