@@ -39,6 +39,7 @@ export * from './job-profitability-truth';
 export * from './bank-feed-foundation';
 export * from './bank-transaction-matching';
 export * from './bank-reconciliation-states';
+export * from './bank-transaction-idempotency';
 export * from './draft-workspace';
 export * from './job-document-packs';
 export * from './completion-reports';

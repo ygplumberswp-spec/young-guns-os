@@ -131,6 +131,10 @@ export const bankTransactions = pgTable(
     reconReviewedBy: uuid('recon_reviewed_by').references(() => users.id, { onDelete: 'set null' }),
     reconReviewedAt: timestamp('recon_reviewed_at', { withTimezone: true }),
     reconReviewEvidence: jsonb('recon_review_evidence').$type<Record<string, unknown>>().notNull().default({}),
+    sourceIdempotencyKey: text('source_idempotency_key'),
+    supersedesTransactionId: uuid('supersedes_transaction_id'),
+    reversalOfTransactionId: uuid('reversal_of_transaction_id'),
+    isHistoricalVersion: boolean('is_historical_version').notNull().default(false),
     importBatchId: uuid('import_batch_id').references(() => bankStatementImportBatches.id, {
       onDelete: 'set null',
     }),
