@@ -4,7 +4,7 @@
   "repoRoot": "/workspace",
   "branch": "cursor/property-site-360-663e",
   "startingHead": "2aae5e12b0e385559080d3fa4e6bb48a47330599",
-  "endingHead": "pending_commit",
+  "endingHead": "7dd884c6f4a4ddb2280e696c553a0bc5e894a120",
   "ancestry": {
     "pr67_ee5a19c": true,
     "pr68_2aae5e1": true
