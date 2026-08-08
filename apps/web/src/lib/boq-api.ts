@@ -352,3 +352,94 @@ export async function updateSplitPurchaseProposal(
   );
   return data;
 }
+
+export type BoqExportReadinessDetail = {
+  readiness: {
+    allowed: boolean;
+    blockers: string[];
+    labelledDraftPreview: boolean;
+    auraNarrativeFacts: string[];
+  };
+  clientSafe: {
+    mode: string;
+    labelledDraftPreview: boolean;
+    sheetOrder: string[];
+    excludesSupplierCost: true;
+    excludesMarginGp: true;
+    excludesSplitPurchaseInternals: true;
+  };
+  provenance: {
+    boqImportId: string;
+    originalFilename: string;
+    importVersion: number;
+    revisionLabel: string | null;
+    hasNewerRevision: boolean;
+    status: string;
+  };
+};
+
+export type BoqReviewedExportResult = {
+  export: {
+    id: string;
+    format: string;
+    mode: string;
+    labelledDraftPreview: boolean;
+    contentFingerprintSha256: string;
+    mimeType: string;
+    byteLength: number;
+    importVersion: number;
+  };
+  contentBase64: string | null;
+  idempotentReplay?: boolean;
+  createsPurchaseOrder: false;
+  mutatesBoqSource?: false;
+  excludesSupplierCost?: true;
+};
+
+export async function fetchBoqExportReadiness(
+  accessToken: string,
+  boqImportId: string,
+  mode: 'DRAFT_PREVIEW' | 'REVIEWED_FINAL' = 'DRAFT_PREVIEW',
+): Promise<BoqExportReadinessDetail> {
+  const data = await request<BoqExportReadinessDetail>(
+    `/finance/boq-imports/${boqImportId}/export-readiness?mode=${mode}`,
+    { accessToken },
+  );
+  return data;
+}
+
+export async function exportReviewedBoq(
+  accessToken: string,
+  boqImportId: string,
+  body: {
+    format: 'XLSX' | 'PDF';
+    mode: 'DRAFT_PREVIEW' | 'REVIEWED_FINAL';
+    clientActionId?: string | null;
+  },
+): Promise<BoqReviewedExportResult> {
+  const data = await request<BoqReviewedExportResult>(
+    `/finance/boq-imports/${boqImportId}/exports`,
+    { method: 'POST', accessToken, body },
+  );
+  return data;
+}
+
+export async function markBoqImportReviewed(accessToken: string, boqImportId: string) {
+  return request(`/finance/boq-imports/${boqImportId}/mark-reviewed`, {
+    method: 'POST',
+    accessToken,
+  });
+}
+
+export function downloadBase64File(base64: string, filename: string, mimeType: string) {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+  const blob = new Blob([bytes], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}

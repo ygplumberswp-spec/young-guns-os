@@ -6,12 +6,17 @@ import { ApiClientError } from '../../lib/api-client';
 import {
   confirmSupplierQuoteMatchProposal,
   createSplitPurchaseProposal,
+  downloadBase64File,
+  exportReviewedBoq,
+  fetchBoqExportReadiness,
   fetchBoqSupplierComparison,
   fetchBoqWorkbookImport,
   fetchSupplierQuoteMatch,
+  markBoqImportReviewed,
   rejectSupplierQuoteMatchProposal,
   runSupplierQuoteBoqMatch,
   updateSplitPurchaseProposal,
+  type BoqExportReadinessDetail,
   type BoqSupplierComparisonDetail,
   type BoqWorkbookImportDetail,
   type SplitPurchaseProposalDetail,
@@ -30,6 +35,7 @@ export function BoqImportDetailPage() {
   const [match, setMatch] = useState<SupplierQuoteMatchDetail | null>(null);
   const [comparison, setComparison] = useState<BoqSupplierComparisonDetail | null>(null);
   const [proposal, setProposal] = useState<SplitPurchaseProposalDetail | null>(null);
+  const [exportReady, setExportReady] = useState<BoqExportReadinessDetail | null>(null);
   const [selections, setSelections] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -37,6 +43,7 @@ export function BoqImportDetailPage() {
   const [busy, setBusy] = useState(false);
   const [clientActionId] = useState(() => newFinanceClientActionId('sup-boq-match'));
   const [proposalActionId] = useState(() => newFinanceClientActionId('split-purchase'));
+  const [exportActionId] = useState(() => newFinanceClientActionId('boq-export'));
 
   const load = useCallback(async () => {
     if (!accessToken || !id) return;
@@ -56,6 +63,12 @@ export function BoqImportDetailPage() {
         setSelections((prev) => (Object.keys(prev).length ? prev : next));
       } catch {
         setComparison(null);
+      }
+      try {
+        const ready = await fetchBoqExportReadiness(accessToken, id, 'DRAFT_PREVIEW');
+        setExportReady(ready);
+      } catch {
+        setExportReady(null);
       }
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : 'Failed to load BOQ import');
@@ -135,6 +148,54 @@ export function BoqImportDetailPage() {
     }
   }
 
+  async function runExport(format: 'XLSX' | 'PDF', mode: 'DRAFT_PREVIEW' | 'REVIEWED_FINAL') {
+    if (!accessToken) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const result = await exportReviewedBoq(accessToken, id, {
+        format,
+        mode,
+        clientActionId: `${exportActionId}-${format}-${mode}`,
+      });
+      if (result.contentBase64) {
+        const ext = format === 'XLSX' ? 'xlsx' : 'pdf';
+        const label = mode === 'DRAFT_PREVIEW' ? 'draft-preview' : 'reviewed-final';
+        downloadBase64File(
+          result.contentBase64,
+          `boq-export-${label}-v${result.export.importVersion}.${ext}`,
+          result.export.mimeType,
+        );
+      }
+      setSuccess(
+        result.idempotentReplay
+          ? `Idempotent ${format} export replay`
+          : `${format} ${mode} export ready (${result.export.byteLength} bytes)`,
+      );
+      const ready = await fetchBoqExportReadiness(accessToken, id, mode);
+      setExportReady(ready);
+    } catch (err) {
+      setError(err instanceof ApiClientError ? err.message : 'Export failed');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function markReviewed() {
+    if (!accessToken) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await markBoqImportReviewed(accessToken, id);
+      setSuccess('BOQ import marked REVIEWED (source rows unchanged)');
+      await load();
+    } catch (err) {
+      setError(err instanceof ApiClientError ? err.message : 'Mark reviewed failed');
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function saveDraftProposal(markReviewed = false) {
     if (!accessToken || !comparison) return;
     setBusy(true);
@@ -200,6 +261,72 @@ export function BoqImportDetailPage() {
           Row 99 BOQ source is immutable here. Supplier prices are evidence only — not catalogue /
           quote / Row 92 / Xero. Row 101 comparison does not create POs or bills.
         </p>
+      </Panel>
+
+      <Panel title="Reviewed BOQ export (Row 102)">
+        <p className="page-muted">
+          Reconstructs the client commercial sequence from Row 99. Formulas export as provenance
+          text only (not recalculated). Supplier costs, margins, and split-purchase internals are
+          excluded from customer-safe export.
+        </p>
+        {exportReady ? (
+          <>
+            <p>
+              Source v{exportReady.provenance.importVersion}
+              {exportReady.provenance.revisionLabel
+                ? ` · ${exportReady.provenance.revisionLabel}`
+                : ''}{' '}
+              · {exportReady.provenance.status}
+              {exportReady.provenance.hasNewerRevision ? ' · NEWER REVISION EXISTS' : ''}
+            </p>
+            <p className="page-muted">
+              Draft preview allowed: {String(exportReady.readiness.allowed)} · Blockers:{' '}
+              {exportReady.readiness.blockers.join(', ') || 'none'}
+            </p>
+            {(exportReady.readiness.auraNarrativeFacts ?? []).slice(0, 2).map((fact) => (
+              <p key={fact} className="page-muted">
+                {fact}
+              </p>
+            ))}
+          </>
+        ) : (
+          <p className="page-muted">Export readiness unavailable.</p>
+        )}
+        {canWrite ? (
+          <div style={{ marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <Button type="button" disabled={busy} onClick={() => void markReviewed()}>
+              Mark import reviewed
+            </Button>
+            <Button
+              type="button"
+              disabled={busy}
+              onClick={() => void runExport('XLSX', 'DRAFT_PREVIEW')}
+            >
+              Draft XLSX preview
+            </Button>
+            <Button
+              type="button"
+              disabled={busy}
+              onClick={() => void runExport('PDF', 'DRAFT_PREVIEW')}
+            >
+              Draft PDF preview
+            </Button>
+            <Button
+              type="button"
+              disabled={busy}
+              onClick={() => void runExport('XLSX', 'REVIEWED_FINAL')}
+            >
+              Final XLSX export
+            </Button>
+            <Button
+              type="button"
+              disabled={busy}
+              onClick={() => void runExport('PDF', 'REVIEWED_FINAL')}
+            >
+              Final PDF export
+            </Button>
+          </div>
+        ) : null}
       </Panel>
 
       <Panel title="Supplier quote → BOQ matching (Row 100)">

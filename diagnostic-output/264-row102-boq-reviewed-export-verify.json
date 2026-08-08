@@ -1,0 +1,154 @@
+{
+  "schemaVersion": "row102-boq-reviewed-export-v1",
+  "generatedAt": "2026-08-08T12:09:18.601Z",
+  "pass": 33,
+  "fail": 0,
+  "results": [
+    {
+      "name": "migration_0220_applied",
+      "status": "PASS"
+    },
+    {
+      "name": "staging_readonly_boq_source_audit",
+      "status": "PASS",
+      "looseBoqLikeDocs": 0,
+      "authorisedBoqLike": 0,
+      "existingBoqImports": 0,
+      "authorisedSourceResult": "NO_AUTHORISED_BOQ_SOURCE_AVAILABLE",
+      "row92Status": "DRAFT",
+      "row92Automation": "OFF"
+    },
+    {
+      "name": "row92_off",
+      "status": "PASS"
+    },
+    {
+      "name": "royal_cape_unchanged",
+      "status": "PASS",
+      "totalCents": 4272250,
+      "pricingPresentationMode": "ITEMISED",
+      "xeroQuoteId": "4d9b1ceb-83dc-4ac6-8d58-ce7ac08f6db8"
+    },
+    {
+      "name": "fixture_multi_sheet_xlsx",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_sheet_order",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_row_order",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_section_preserved",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_duplicates_distinct",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_code_qty",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_original_vs_reviewed",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_formula_provenance",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_no_formula_cells",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_pdf_sequence",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_pdf_revision",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_final_blocked_unresolved",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_draft_labelled",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_superseded_block",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_no_supplier_cost",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_no_margin",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_no_split",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_client_safe",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_rbac",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_idempotency",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_safety",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_row103_not_started",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_source_hash_stable",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_totals",
+      "status": "PASS",
+      "pass": 23,
+      "fail": 0
+    },
+    {
+      "name": "cleanup_no_fake_client_boq_upload",
+      "status": "PASS"
+    },
+    {
+      "name": "xero_writes",
+      "status": "PASS",
+      "count": 0
+    },
+    {
+      "name": "customer_sends",
+      "status": "PASS",
+      "count": 0
+    },
+    {
+      "name": "production_writes",
+      "status": "PASS",
+      "count": 0
+    },
+    {
+      "name": "row103_plus_not_started",
+      "status": "PASS"
+    }
+  ]
+}

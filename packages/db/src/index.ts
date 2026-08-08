@@ -238,4 +238,14 @@ export type {
   BoqSplitPurchaseProposalLine,
 } from './schema/boq-supplier-comparison.js';
 
+/** Explicit re-export — Row 102 reviewed BOQ export. */
+export {
+  boqImportRowReviewedEdits,
+  boqReviewedExports,
+} from './schema/boq-reviewed-export.js';
+export type {
+  BoqImportRowReviewedEdit,
+  BoqReviewedExport,
+} from './schema/boq-reviewed-export.js';
+
 export { drizzle } from 'drizzle-orm/postgres-js';

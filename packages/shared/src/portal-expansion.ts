@@ -88,6 +88,16 @@ export const PORTAL_EXPANSION_FORBIDDEN_FIELDS = [
   'expectedSupplierCostCents',
   'supplierSubtotalCents',
   'boqComparisonInternal',
+  // Row 102 — reviewed BOQ export internals / supplier remnants never reach Client Portal
+  'boqReviewedExportInternal',
+  'boqExportInternal',
+  'contentFingerprintSha256',
+  'matchConfidenceScore',
+  'marginCents',
+  'grossProfitCents',
+  'markupPercent',
+  'row96CostModel',
+  'row97Intelligence',
 
   'xeroQuoteId',
   'xeroInvoiceNumber',
