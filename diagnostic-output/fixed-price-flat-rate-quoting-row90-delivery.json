@@ -4,8 +4,8 @@
   "repoRoot": "/workspace",
   "branch": "cursor/fixed-price-flat-rate-quoting-663e",
   "startingHead": "f06499a5c93242a86391dcbf5c91ce293a4d7ceb",
-  "endingHead": "e40142bec103846f7ad815d40decea87c9fa954e",
-  "commit": "e40142bec103846f7ad815d40decea87c9fa954e",
+  "endingHead": "e546261a2b68815f792d6bba366e7bbfda64f166",
+  "commit": "e546261a2b68815f792d6bba366e7bbfda64f166",
   "ancestry": "PR#67..#74 present",
   "pricingPresentationModel": "FLAT_RATE_INCLUDED | ITEMISED (explicit, per-quote)",
   "migration": "0209_fixed_price_flat_rate_quoting.sql (additive, staging applied)",
@@ -33,8 +33,10 @@
   },
   "knownGaps": [
     "Full Client Portal E2E remains a separate mandatory pre-v1 gate (Row 90 proves customer-safe projection only)",
-    "Canonical labour/call-out sell rates MISSING — Row 90 does not invent rates",
+    "Canonical labour/call-out sell rates MISSING \u2014 Row 90 does not invent rates",
     "All existing quote lines classified category=other in staging (labour/call-out detected via description heuristics for audit only)",
     "TS2589 baseline remains on full @titan/db build"
-  ]
+  ],
+  "prUrl": "https://github.com/ygplumberswp-spec/young-guns-os/pull/75",
+  "prNumber": 75
 }
