@@ -29,6 +29,7 @@ export * from './quotes';
 export * from './boq';
 export * from './boq-workbook-import';
 export * from './supplier-quote-boq-match';
+export * from './boq-supplier-comparison';
 export * from './draft-workspace';
 export * from './job-document-packs';
 export * from './completion-reports';

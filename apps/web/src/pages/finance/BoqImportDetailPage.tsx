@@ -5,11 +5,16 @@ import { Button, LoadingState, Panel } from '@titan/ui';
 import { ApiClientError } from '../../lib/api-client';
 import {
   confirmSupplierQuoteMatchProposal,
+  createSplitPurchaseProposal,
+  fetchBoqSupplierComparison,
   fetchBoqWorkbookImport,
   fetchSupplierQuoteMatch,
   rejectSupplierQuoteMatchProposal,
   runSupplierQuoteBoqMatch,
+  updateSplitPurchaseProposal,
+  type BoqSupplierComparisonDetail,
   type BoqWorkbookImportDetail,
+  type SplitPurchaseProposalDetail,
   type SupplierQuoteMatchDetail,
 } from '../../lib/boq-api';
 import { useAuth } from '../../lib/auth-context';
@@ -23,11 +28,15 @@ export function BoqImportDetailPage() {
   const canWrite = user ? canManageFinance(user.permissions) : false;
   const [detail, setDetail] = useState<BoqWorkbookImportDetail | null>(null);
   const [match, setMatch] = useState<SupplierQuoteMatchDetail | null>(null);
+  const [comparison, setComparison] = useState<BoqSupplierComparisonDetail | null>(null);
+  const [proposal, setProposal] = useState<SplitPurchaseProposalDetail | null>(null);
+  const [selections, setSelections] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [sheetFilter, setSheetFilter] = useState<string>('ALL');
   const [busy, setBusy] = useState(false);
   const [clientActionId] = useState(() => newFinanceClientActionId('sup-boq-match'));
+  const [proposalActionId] = useState(() => newFinanceClientActionId('split-purchase'));
 
   const load = useCallback(async () => {
     if (!accessToken || !id) return;
@@ -35,6 +44,19 @@ export function BoqImportDetailPage() {
       const data = await fetchBoqWorkbookImport(accessToken, id);
       setDetail(data);
       setError(null);
+      try {
+        const cmp = await fetchBoqSupplierComparison(accessToken, id);
+        setComparison(cmp);
+        const next: Record<string, string> = {};
+        for (const row of cmp.comparison.rows) {
+          if (row.cheapestEligibleOfferKey) {
+            next[row.boqImportRowId] = row.cheapestEligibleOfferKey;
+          }
+        }
+        setSelections((prev) => (Object.keys(prev).length ? prev : next));
+      } catch {
+        setComparison(null);
+      }
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : 'Failed to load BOQ import');
     }
@@ -84,6 +106,7 @@ export function BoqImportDetailPage() {
           ? 'Idempotent match replay'
           : `Match proposals: ${result.proposals.length}`,
       );
+      await load();
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : 'Supplier match failed');
     } finally {
@@ -104,8 +127,51 @@ export function BoqImportDetailPage() {
       const refreshed = await fetchSupplierQuoteMatch(accessToken, match.import.id);
       setMatch(refreshed);
       setSuccess(`Proposal ${action} ok (BOQ source unchanged)`);
+      await load();
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : `Proposal ${action} failed`);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function saveDraftProposal(markReviewed = false) {
+    if (!accessToken || !comparison) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const bodySelections = comparison.comparison.rows
+        .filter((r) => selections[r.boqImportRowId])
+        .map((r) => ({
+          boqImportRowId: r.boqImportRowId,
+          offerKey: selections[r.boqImportRowId]!,
+          quantityProposed: r.quantity,
+        }));
+      if (!bodySelections.length) {
+        setError('Select at least one supplier offer for the draft proposal');
+        return;
+      }
+      let result: SplitPurchaseProposalDetail;
+      if (proposal?.proposal.id) {
+        result = await updateSplitPurchaseProposal(accessToken, proposal.proposal.id, {
+          selections: bodySelections,
+          status: markReviewed ? 'REVIEWED' : undefined,
+        });
+      } else {
+        result = await createSplitPurchaseProposal(accessToken, id, {
+          selections: bodySelections,
+          clientActionId: proposalActionId,
+          status: markReviewed ? 'REVIEWED' : undefined,
+        });
+      }
+      setProposal(result);
+      setSuccess(
+        result.idempotentReplay
+          ? 'Idempotent draft proposal replay (no PO created)'
+          : `Draft split-purchase proposal saved · ${result.proposal.status}`,
+      );
+    } catch (err) {
+      setError(err instanceof ApiClientError ? err.message : 'Draft proposal failed');
     } finally {
       setBusy(false);
     }
@@ -132,7 +198,7 @@ export function BoqImportDetailPage() {
         <p>Sheets (order): {(imp.sheetOrder ?? []).join(' → ') || '—'}</p>
         <p className="page-muted">
           Row 99 BOQ source is immutable here. Supplier prices are evidence only — not catalogue /
-          quote / Row 92 / Xero.
+          quote / Row 92 / Xero. Row 101 comparison does not create POs or bills.
         </p>
       </Panel>
 
@@ -196,6 +262,160 @@ export function BoqImportDetailPage() {
           </div>
         ) : (
           <p className="page-muted">No supplier match run yet for this BOQ import.</p>
+        )}
+      </Panel>
+
+      <Panel title="Supplier comparison + split purchasing (Row 101)">
+        <p className="page-muted">
+          Review-first comparison. Cheapest ranking is informational and never silently prefers
+          substitutes, expired quotes, or unit/pack conflicts. Draft proposals only — no PO /
+          bill / payment.
+        </p>
+        {comparison ? (
+          <>
+            {(comparison.comparison.auraNarrativeFacts ?? []).slice(0, 3).map((fact) => (
+              <p key={fact} className="page-muted">
+                {fact}
+              </p>
+            ))}
+            <div style={{ overflowX: 'auto', marginTop: 12 }}>
+              <table className="titan-table" style={{ width: '100%', fontSize: 13 }}>
+                <thead>
+                  <tr>
+                    <th>BOQ row</th>
+                    <th>Supplier offer</th>
+                    <th>Flags</th>
+                    <th>Price / VAT</th>
+                    <th>Confidence</th>
+                    <th>Propose</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {comparison.comparison.rows.map((row) =>
+                    row.offers.length === 0 ? (
+                      <tr key={row.boqImportRowId}>
+                        <td>
+                          [{row.sheetName} r{row.originalRowNumber}] {row.itemCode ?? '—'}
+                          {row.description ? ` — ${row.description}` : ''}
+                        </td>
+                        <td colSpan={4} className="page-muted">
+                          MISSING supplier offer
+                        </td>
+                        <td>—</td>
+                      </tr>
+                    ) : (
+                      row.offers.map((offer, idx) => (
+                        <tr key={`${row.boqImportRowId}:${offer.offerKey}`}>
+                          {idx === 0 ? (
+                            <td rowSpan={row.offers.length}>
+                              [{row.sheetName} r{row.originalRowNumber}] {row.itemCode ?? '—'}
+                              {row.humanReviewRequired ? ' · review' : ''}
+                              {row.cheapestEligibleOfferKey
+                                ? ` · eligible cheapest=${row.cheapestEligibleOfferKey.slice(0, 8)}…`
+                                : ''}
+                            </td>
+                          ) : null}
+                          <td>
+                            {offer.supplierName}
+                            {offer.supplierDocumentRef ? ` · ${offer.supplierDocumentRef}` : ''}
+                            {offer.supplierSku ? ` · SKU ${offer.supplierSku}` : ''}
+                            {offer.isSubstitute ? ' · SUBSTITUTE' : ''}
+                            {offer.validTo ? ` · valid ${offer.validTo}` : ''}
+                            {offer.exclusions ? ` · excl: ${offer.exclusions}` : ''}
+                          </td>
+                          <td>{offer.mismatchFlags.join(', ') || '—'}</td>
+                          <td>
+                            {offer.unitPriceCents != null ? `${offer.unitPriceCents}c` : '—'}
+                            {` · ${offer.vatBasis}`}
+                            {offer.deliveryKnown
+                              ? ` · del ${offer.deliveryCents ?? 0}c`
+                              : ' · del unknown'}
+                          </td>
+                          <td>
+                            {offer.matchState} · {offer.matchConfidenceScore}
+                            {!offer.eligibleForAutoRank ? ' · not auto-rank' : ''}
+                          </td>
+                          <td>
+                            <input
+                              type="radio"
+                              name={`sel-${row.boqImportRowId}`}
+                              checked={selections[row.boqImportRowId] === offer.offerKey}
+                              disabled={!canWrite}
+                              onChange={() =>
+                                setSelections((prev) => ({
+                                  ...prev,
+                                  [row.boqImportRowId]: offer.offerKey,
+                                }))
+                              }
+                            />
+                          </td>
+                        </tr>
+                      ))
+                    ),
+                  )}
+                </tbody>
+              </table>
+            </div>
+            {canWrite ? (
+              <div style={{ marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <Button type="button" disabled={busy} onClick={() => void saveDraftProposal(false)}>
+                  Save draft split-purchase proposal
+                </Button>
+                <Button type="button" disabled={busy} onClick={() => void saveDraftProposal(true)}>
+                  Mark proposal reviewed
+                </Button>
+              </div>
+            ) : null}
+            {proposal ? (
+              <div style={{ marginTop: 12 }}>
+                <p>
+                  Proposal {proposal.proposal.status}
+                  {proposal.proposal.totalsIncomplete
+                    ? ' · totals incomplete (missing VAT/delivery stay unknown)'
+                    : ''}
+                </p>
+                <p className="page-muted">
+                  Subtotal{' '}
+                  {proposal.proposal.supplierSubtotalCents != null
+                    ? `${proposal.proposal.supplierSubtotalCents}c`
+                    : 'unknown'}{' '}
+                  · VAT{' '}
+                  {proposal.proposal.vatCents != null
+                    ? `${proposal.proposal.vatCents}c`
+                    : 'unknown'}{' '}
+                  · Delivery{' '}
+                  {proposal.proposal.deliveryCents != null
+                    ? `${proposal.proposal.deliveryCents}c`
+                    : 'unknown'}{' '}
+                  · Total{' '}
+                  {proposal.proposal.totalProposedPurchasingCostCents != null
+                    ? `${proposal.proposal.totalProposedPurchasingCostCents}c`
+                    : 'unknown'}
+                </p>
+                <p className="page-muted">
+                  PO created: {String(proposal.createsPurchaseOrder)} · Xero bill:{' '}
+                  {String(proposal.createsXeroBill)} · BOQ mutated:{' '}
+                  {String(proposal.mutatesBoqSource)}
+                </p>
+                <ul>
+                  {proposal.lines.map((line) => (
+                    <li key={line.id}>
+                      {line.supplierName} · {line.offerKey.slice(0, 12)}…
+                      {line.unitPriceCents != null ? ` · ${line.unitPriceCents}c` : ''}
+                      {line.isSubstitute ? ' · SUBSTITUTE' : ''}
+                      {(line.mismatchFlags ?? []).length
+                        ? ` · [${(line.mismatchFlags as string[]).join(', ')}]`
+                        : ''}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+          </>
+        ) : (
+          <p className="page-muted">
+            Comparison unavailable (need finance access + Row 100 match evidence).
+          </p>
         )}
       </Panel>
 

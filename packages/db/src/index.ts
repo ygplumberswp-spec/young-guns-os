@@ -228,4 +228,14 @@ export type {
   SupplierQuoteBoqMatchProposal,
 } from './schema/supplier-quote-boq-match.js';
 
+/** Explicit re-export — Row 101 split-purchase draft proposals. */
+export {
+  boqSplitPurchaseProposals,
+  boqSplitPurchaseProposalLines,
+} from './schema/boq-supplier-comparison.js';
+export type {
+  BoqSplitPurchaseProposal,
+  BoqSplitPurchaseProposalLine,
+} from './schema/boq-supplier-comparison.js';
+
 export { drizzle } from 'drizzle-orm/postgres-js';

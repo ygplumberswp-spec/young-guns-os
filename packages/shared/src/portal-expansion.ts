@@ -81,6 +81,13 @@ export const PORTAL_EXPANSION_FORBIDDEN_FIELDS = [
   'matchProposal',
   'matchSignals',
   'supplierBoqMatchInternal',
+  // Row 101 — supplier comparison / split-purchase internals never reach Client Portal
+  'boqSupplierComparison',
+  'splitPurchaseProposal',
+  'cheapestEligibleCostCents',
+  'expectedSupplierCostCents',
+  'supplierSubtotalCents',
+  'boqComparisonInternal',
 
   'xeroQuoteId',
   'xeroInvoiceNumber',

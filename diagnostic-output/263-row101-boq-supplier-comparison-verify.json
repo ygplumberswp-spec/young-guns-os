@@ -1,0 +1,138 @@
+{
+  "schemaVersion": "row101-boq-supplier-comparison-v1",
+  "generatedAt": "2026-08-08T11:58:44.067Z",
+  "pass": 29,
+  "fail": 0,
+  "results": [
+    {
+      "name": "migration_0219_already_present",
+      "status": "PASS"
+    },
+    {
+      "name": "staging_readonly_supplier_source_audit",
+      "status": "PASS",
+      "authorisedSupplierQuoteLike": 0,
+      "existingSupplierQuoteImports": 0,
+      "existingMatchProposals": 0,
+      "authorisedSourceResult": "NO_AUTHORISED_SUPPLIER_QUOTE_SOURCE_AVAILABLE",
+      "row92Status": "DRAFT",
+      "row92Automation": "OFF"
+    },
+    {
+      "name": "row92_off",
+      "status": "PASS"
+    },
+    {
+      "name": "royal_cape_unchanged",
+      "status": "PASS",
+      "totalCents": 4272250,
+      "pricingPresentationMode": "ITEMISED",
+      "xeroQuoteId": "4d9b1ceb-83dc-4ac6-8d58-ce7ac08f6db8"
+    },
+    {
+      "name": "fixture_two_valid_suppliers",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_cheapest_valid",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_substitute_not_selected",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_missing_row",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_duplicate",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_expired",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_vat_mismatch",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_unit_qty_pack",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_exclusion",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_split_suppliers",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_totals_exact",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_missing_vat_delivery_unknown",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_no_po",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_row99_100_preserved",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_rbac",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_client_leak",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_idempotency",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_safety",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_row102_not_started",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_totals",
+      "status": "PASS",
+      "pass": 19,
+      "fail": 0
+    },
+    {
+      "name": "cleanup_no_fake_authorised_supplier_quote",
+      "status": "PASS"
+    },
+    {
+      "name": "xero_writes",
+      "status": "PASS",
+      "count": 0
+    },
+    {
+      "name": "customer_sends",
+      "status": "PASS",
+      "count": 0
+    },
+    {
+      "name": "production_writes",
+      "status": "PASS",
+      "count": 0
+    },
+    {
+      "name": "row102_103_not_started",
+      "status": "PASS"
+    }
+  ]
+}

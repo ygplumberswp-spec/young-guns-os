@@ -220,3 +220,135 @@ export async function rejectSupplierQuoteMatchProposal(
     accessToken,
   });
 }
+
+export type BoqSupplierComparisonDetail = {
+  comparison: {
+    rows: Array<{
+      boqImportRowId: string;
+      sheetName: string;
+      originalRowNumber: number;
+      itemCode: string | null;
+      description: string | null;
+      unit: string | null;
+      quantity: number | null;
+      missingSupplierOffer: boolean;
+      mismatchFlags: string[];
+      cheapestEligibleOfferKey: string | null;
+      cheapestEligibleCostCents: number | null;
+      humanReviewRequired: boolean;
+      offers: Array<{
+        offerKey: string;
+        supplierName: string;
+        supplierDocumentRef: string | null;
+        sourceLineOrder: number;
+        supplierSku: string | null;
+        description: string | null;
+        unit: string | null;
+        quantity: number | null;
+        packSize: number | null;
+        unitPriceCents: number | null;
+        vatBasis: string;
+        deliveryCents: number | null;
+        deliveryKnown: boolean;
+        validTo: string | null;
+        exclusions: string | null;
+        isSubstitute: boolean;
+        matchState: string;
+        matchConfidenceScore: number;
+        mismatchFlags: string[];
+        commercialCostCents: number | null;
+        eligibleForAutoRank: boolean;
+        warnings: string[];
+      }>;
+    }>;
+    automaticPurchaseExecution: false;
+    row99Immutable: true;
+    row100EvidencePreserved: true;
+    auraNarrativeFacts: string[];
+  };
+  purchaseOrdersCreated: 0;
+  xeroBillsCreated: 0;
+};
+
+export type SplitPurchaseProposalDetail = {
+  proposal: {
+    id: string;
+    status: string;
+    supplierSubtotalCents: number | null;
+    vatCents: number | null;
+    deliveryCents: number | null;
+    totalProposedPurchasingCostCents: number | null;
+    totalsIncomplete: boolean;
+    missingFields: string[];
+    warnings: string[];
+    auraNarrativeFacts: string[];
+  };
+  lines: Array<{
+    id: string;
+    boqImportRowId: string;
+    offerKey: string;
+    supplierName: string;
+    quantityProposed: string | null;
+    unitPriceCents: number | null;
+    vatBasis: string;
+    expectedSupplierCostCents: number | null;
+    mismatchFlags: string[];
+    isSubstitute: boolean;
+  }>;
+  createsPurchaseOrder: false;
+  createsXeroBill: false;
+  mutatesBoqSource: false;
+  mutatesCatalogueOrQuotePrice?: false;
+  idempotentReplay?: boolean;
+};
+
+export async function fetchBoqSupplierComparison(
+  accessToken: string,
+  boqImportId: string,
+): Promise<BoqSupplierComparisonDetail> {
+  const data = await request<BoqSupplierComparisonDetail>(
+    `/finance/boq-imports/${boqImportId}/supplier-comparison`,
+    { accessToken },
+  );
+  return data;
+}
+
+export async function createSplitPurchaseProposal(
+  accessToken: string,
+  boqImportId: string,
+  body: {
+    selections?: Array<{
+      boqImportRowId: string;
+      offerKey: string;
+      quantityProposed?: number | null;
+    }>;
+    preferEligibleCheapest?: boolean;
+    clientActionId?: string | null;
+    status?: string;
+  },
+): Promise<SplitPurchaseProposalDetail> {
+  const data = await request<SplitPurchaseProposalDetail>(
+    `/finance/boq-imports/${boqImportId}/split-purchase-proposals`,
+    { method: 'POST', accessToken, body },
+  );
+  return data;
+}
+
+export async function updateSplitPurchaseProposal(
+  accessToken: string,
+  proposalId: string,
+  body: {
+    selections?: Array<{
+      boqImportRowId: string;
+      offerKey: string;
+      quantityProposed?: number | null;
+    }>;
+    status?: string;
+  },
+): Promise<SplitPurchaseProposalDetail> {
+  const data = await request<SplitPurchaseProposalDetail>(
+    `/finance/split-purchase-proposals/${proposalId}`,
+    { method: 'PATCH', accessToken, body },
+  );
+  return data;
+}
