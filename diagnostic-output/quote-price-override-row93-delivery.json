@@ -4,7 +4,7 @@
   "repoRoot": "/workspace",
   "branch": "cursor/quote-one-off-price-override-663e",
   "startingHead": "8609fce206f557d4fb8c0aed1183d1702024be62",
-  "endingHead": "PENDING",
+  "endingHead": "1d11d50f7221a14363653eb92816e1945a9e6187",
   "baseBranch": "cursor/pricebook-tier-markup-formula-663e",
   "ancestry": "PR #67 through PR #77 (merge-base --is-ancestor OK)",
   "prUrl": "PENDING",
@@ -22,7 +22,7 @@
   "migration": "0212_quote_line_price_overrides.sql",
   "canonicalOverrideModel": "quote_line_price_overrides + propose/preview/approve/execute",
   "evidence": "diagnostic-output/quote-price-override-staging-proof.json",
-  "ownerUi": "QuoteDetailPage → QuotePriceOverridePanel",
+  "ownerUi": "QuoteDetailPage \u2192 QuotePriceOverridePanel",
   "api": [
     "GET /api/v1/finance/quotes/:quoteId/price-overrides",
     "POST /api/v1/finance/quotes/:quoteId/price-overrides/preview",
