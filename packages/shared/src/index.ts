@@ -246,6 +246,7 @@ export * from './multi-job-supplier-invoice-allocation.js';
 export * from './estimated-actual-gp.js';
 export * from './job-profitability-truth.js';
 export * from './bank-feed-foundation.js';
+export * from './bank-transaction-truth.js';
 export * from './job-evidence.js';
 export * from './universal-evidence-upload.js';
 export * from './quality-assurance.js';

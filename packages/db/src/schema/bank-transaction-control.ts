@@ -122,6 +122,10 @@ export const bankTransactions = pgTable(
       onDelete: 'set null',
     }),
     sourceFingerprint: text('source_fingerprint').notNull(),
+    sourceFileHash: text('source_file_hash'),
+    maskedAccountIdentity: text('masked_account_identity'),
+    /** Exact signed amount (credit +, debit -). Never fabricated. */
+    signedAmountCents: integer('signed_amount_cents'),
     importBatchId: uuid('import_batch_id').references(() => bankStatementImportBatches.id, {
       onDelete: 'set null',
     }),
