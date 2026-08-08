@@ -240,6 +240,7 @@ export * from './boq.js';
 // Row 99: import via `@titan/shared/boq-workbook-import` (Node-only; not browser-bundled).
 export * from './supplier-quote-boq-match.js';
 export * from './boq-supplier-comparison.js';
+export * from './job-procurement-chain.js';
 export * from './job-evidence.js';
 export * from './universal-evidence-upload.js';
 export * from './quality-assurance.js';

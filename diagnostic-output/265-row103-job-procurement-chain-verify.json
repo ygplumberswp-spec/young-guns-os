@@ -1,0 +1,144 @@
+{
+  "schemaVersion": "row103-job-procurement-chain-v1",
+  "generatedAt": "2026-08-08T12:20:05.023Z",
+  "pass": 30,
+  "fail": 0,
+  "results": [
+    {
+      "name": "migration_0221_already_present",
+      "status": "PASS"
+    },
+    {
+      "name": "staging_readonly_procurement_audit",
+      "status": "PASS",
+      "suppliers": 0,
+      "purchaseOrders": 0,
+      "purchaseOrdersWithJobId": 0,
+      "purchaseOrdersFreeTextJobOnly": 0,
+      "xeroBillsImported": 1,
+      "jpeMaterialLikeCosts": 0,
+      "row92Status": "DRAFT",
+      "row92Automation": "OFF",
+      "note": "No fabricated YG PO/delivery/invoice/Xero bill for Royal Cape"
+    },
+    {
+      "name": "row92_off",
+      "status": "PASS"
+    },
+    {
+      "name": "royal_cape_unchanged",
+      "status": "PASS",
+      "totalCents": 4272250,
+      "xeroQuoteId": "4d9b1ceb-83dc-4ac6-8d58-ce7ac08f6db8"
+    },
+    {
+      "name": "fixture_boq_quote_job",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_approved_to_po",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_po_retains_job",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_free_text_rejected",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_delivery_partial",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_invoice_missing_stays_missing",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_xero_absent",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_xero_linked_mock",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_direct_jpe_once",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_stock_receipt_no_job_cost",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_double_count_blocked",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_wrong_job",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_cross_tenant",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_unreviewed_blocked",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_rows_99_102_preserved",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_rbac",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_client_leak",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_idempotency",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_safety",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_row104_105_106_107_not_started",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_totals",
+      "status": "PASS",
+      "pass": 20,
+      "fail": 0
+    },
+    {
+      "name": "cleanup_no_fabricated_yg_procurement",
+      "status": "PASS"
+    },
+    {
+      "name": "xero_writes",
+      "status": "PASS",
+      "count": 0
+    },
+    {
+      "name": "customer_sends",
+      "status": "PASS",
+      "count": 0
+    },
+    {
+      "name": "production_writes",
+      "status": "PASS",
+      "count": 0
+    },
+    {
+      "name": "row118_not_closed",
+      "status": "PASS"
+    }
+  ]
+}

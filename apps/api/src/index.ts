@@ -110,6 +110,7 @@ import { createBoqWorkbookImportRouter } from './routes/boq-workbook-import.js';
 import { createSupplierQuoteBoqMatchRouter } from './routes/supplier-quote-boq-match.js';
 import { createBoqSupplierComparisonRouter } from './routes/boq-supplier-comparison.js';
 import { createBoqReviewedExportRouter } from './routes/boq-reviewed-export.js';
+import { createJobProcurementChainRouter } from './routes/job-procurement-chain.js';
 import { createDraftsRouter } from './routes/drafts.js';
 import { createJobDocumentPackRouter } from './routes/job-document-packs.js';
 import { createCompletionReportRouter } from './routes/completion-reports.js';
@@ -119,6 +120,7 @@ import { BoqWorkbookImportService } from './services/boq-workbook-import.service
 import { SupplierQuoteBoqMatchService } from './services/supplier-quote-boq-match.service.js';
 import { BoqSupplierComparisonService } from './services/boq-supplier-comparison.service.js';
 import { BoqReviewedExportService } from './services/boq-reviewed-export.service.js';
+import { JobProcurementChainService } from './services/job-procurement-chain.service.js';
 import { DraftAutosaveService } from './services/draft-autosave.service.js';
 import { InventoryService } from './services/inventory.service.js';
 import { StockMovementsService } from './services/stock-movements.service.js';
@@ -927,6 +929,7 @@ const procurementService = new ProcurementService({
   inventoryService,
   stockMovementsService,
 });
+const jobProcurementChainService = new JobProcurementChainService(db, procurementService);
 const executiveService = new ExecutiveService({
   db,
   intelligenceService,
@@ -2310,6 +2313,16 @@ app.use(
   '/api/v1/finance',
   createBoqReviewedExportRouter({
     boqReviewedExportService,
+    teamService,
+    db,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/finance',
+  createJobProcurementChainRouter({
+    jobProcurementChainService,
     teamService,
     db,
     jwtSecret: env.JWT_SECRET,

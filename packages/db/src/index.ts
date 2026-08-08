@@ -248,4 +248,18 @@ export type {
   BoqReviewedExport,
 } from './schema/boq-reviewed-export.js';
 
+/** Explicit re-export — Row 103 job-linked procurement chain. */
+export {
+  jobProcurementChains,
+  jobProcurementChainLinks,
+  jobProcurementDeliveryEvidence,
+  jobProcurementSupplierInvoiceEvidence,
+} from './schema/job-procurement-chain.js';
+export type {
+  JobProcurementChain,
+  JobProcurementChainLink,
+  JobProcurementDeliveryEvidence,
+  JobProcurementSupplierInvoiceEvidence,
+} from './schema/job-procurement-chain.js';
+
 export { drizzle } from 'drizzle-orm/postgres-js';

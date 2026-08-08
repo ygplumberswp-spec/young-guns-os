@@ -98,6 +98,13 @@ export const PORTAL_EXPANSION_FORBIDDEN_FIELDS = [
   'markupPercent',
   'row96CostModel',
   'row97Intelligence',
+  // Row 103 — job-linked procurement / supplier-cost / Xero bill / JPE internals
+  'jobProcurementChain',
+  'purchaseOrderInternal',
+  'supplierInvoiceCost',
+  'xeroBillProjection',
+  'jpeProfitCents',
+  'lineCostCents',
 
   'xeroQuoteId',
   'xeroInvoiceNumber',
