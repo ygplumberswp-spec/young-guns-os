@@ -4,7 +4,7 @@
   "repoRoot": "/workspace",
   "branch": "cursor/ygp-service-item-codes-categories-663e",
   "startingHead": "db449e1db09ee13f7f040f798868938e24871bb1",
-  "endingHead": "84b9278f61dddec80735c60556fe7f4a3fcbd11b",
+  "endingHead": "549e25f7e121c66d1ad89b0e5b6c1275494adb16",
   "ancestry": "PR#67..#75 present",
   "canonicalCatalogue": "inventory_items (no parallel service catalogue)",
   "migration": "0210_ygp_catalogue_classification.sql",
@@ -32,5 +32,7 @@
     "No mass historical quote_line_category reclassification (issued snapshots preserved)",
     "TS2589 baseline remains on full @titan/db build"
   ],
-  "commit": "84b9278f61dddec80735c60556fe7f4a3fcbd11b"
+  "commit": "549e25f7e121c66d1ad89b0e5b6c1275494adb16",
+  "prUrl": "https://github.com/ygplumberswp-spec/young-guns-os/pull/76",
+  "prNumber": 76
 }
