@@ -164,4 +164,13 @@ export {
   equipmentImportAuditActionEnum,
 } from './schema/equipment-assets-import.js';
 
+/** Explicit re-export — Row 92 pricebook tier formula rule sets. */
+export {
+  companyPricebookRuleSets,
+} from './schema/pricebook-tier-formula.js';
+export type {
+  CompanyPricebookRuleSet,
+  NewCompanyPricebookRuleSet,
+} from './schema/pricebook-tier-formula.js';
+
 export { drizzle } from 'drizzle-orm/postgres-js';

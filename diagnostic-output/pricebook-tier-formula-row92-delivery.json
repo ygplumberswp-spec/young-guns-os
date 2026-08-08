@@ -1,0 +1,59 @@
+{
+  "row": 92,
+  "title": "Configurable Young Guns Pricebook Tier Formula",
+  "repoRoot": "/workspace",
+  "branch": "cursor/pricebook-tier-markup-formula-663e",
+  "startingHead": "83c8b5d79922fb5f2b67d57326ae143ddb35f9e2",
+  "endingHead": "16b9db295c433e88cee05dc394e9b528cf357669",
+  "baseBranch": "cursor/ygp-service-item-codes-categories-663e",
+  "ancestry": "PR #67 through PR #76 (merge-base --is-ancestor OK for all tips)",
+  "prUrl": "https://github.com/ygplumberswp-spec/young-guns-os/pull/77",
+  "stagingOnly": true,
+  "productionDeploy": 0,
+  "productionMigration": 0,
+  "productionWrites": 0,
+  "xeroWrites": 0,
+  "customerSends": 0,
+  "realYgPriceChanges": 0,
+  "row93Started": false,
+  "row122Activated": false,
+  "globalAutomationEnabled": false,
+  "migration": "0211_pricebook_tier_formula.sql",
+  "canonicalRuleModel": "company_pricebook_rule_sets + resolvePricebookSellPrice",
+  "ygRuleStatus": "DRAFT",
+  "ygRuleVersion": 1,
+  "exactTiers": [
+    {
+      "maxInclusiveCents": 50000,
+      "multiplier": 2.2
+    },
+    {
+      "minExclusiveCents": 50000,
+      "maxInclusiveCents": 150000,
+      "multiplier": 2.0
+    },
+    {
+      "minExclusiveCents": 150000,
+      "multiplier": 1.68
+    }
+  ],
+  "baseCostAuthority": "SUPPLIER_NET_DISCOUNTED with provenance required; never UNKNOWN; never double-discount",
+  "vatBasis": "multiplier on ex-VAT base; VAT via canonical tax handling",
+  "rounding": "HALF_UP_CENTS integer fraction",
+  "activationLock": "PRICEBOOK_RULE_OWNER_CONFIRMATION_REQUIRED",
+  "ownerUi": "/settings/pricebook-tiers",
+  "api": [
+    "GET /api/v1/finance/pricebook-rules",
+    "PUT /api/v1/finance/pricebook-rules/draft",
+    "POST /api/v1/finance/pricebook-rules/preview",
+    "GET /api/v1/finance/pricebook-rules/bulk-impact",
+    "POST /api/v1/finance/pricebook-rules/activate (always blocked)"
+  ],
+  "evidence": "diagnostic-output/pricebook-tier-formula-staging-proof.json",
+  "knownGaps": [
+    "YG inventory_items = 0 \u2014 bulk impact preview truthfully empty",
+    "Temp YOUNG_GUNS_APPROVED_FINANCE_PRICEBOOK constants have unitCostCents=null \u2014 READ ONLY, not converted to catalogue",
+    "Full Client Portal E2E remains OPEN (separate gate)",
+    "TS2589 baseline debt on packages/db createDb remains; build uses --noEmitOnError false"
+  ]
+}

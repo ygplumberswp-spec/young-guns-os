@@ -4,6 +4,7 @@ const tabs = [
   { href: '/settings/company', label: 'Company' },
   { href: '/settings/team', label: 'Team & Access' },
   { href: '/settings/security', label: 'Security' },
+  { href: '/settings/pricebook-tiers', label: 'Pricebook Tiers' },
   { href: '/settings/documents-records', label: 'Documents' },
   { href: '/settings/notifications', label: 'Notifications' },
   { href: '/settings/advanced/data-protection', label: 'Data Protection' },

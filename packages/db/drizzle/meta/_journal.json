@@ -1443,6 +1443,13 @@
       "when": 1787668800000,
       "tag": "0210_ygp_catalogue_classification",
       "breakpoints": true
+    },
+    {
+      "idx": 206,
+      "version": "7",
+      "when": 1787755200000,
+      "tag": "0211_pricebook_tier_formula",
+      "breakpoints": true
     }
   ]
 }

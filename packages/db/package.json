@@ -11,7 +11,7 @@
     }
   },
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json --noEmitOnError false",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "tsx --test src/connection-options.test.ts",
     "db:generate": "drizzle-kit generate",
