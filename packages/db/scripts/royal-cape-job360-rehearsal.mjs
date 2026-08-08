@@ -41,18 +41,24 @@ const APPLY = process.argv.includes('--apply');
 
 function loadEnv(filePath) {
   const out = {};
-  if (!fs.existsSync(filePath)) return out;
-  for (const line of fs.readFileSync(filePath, 'utf8').split('\n')) {
-    const s = line.trim();
-    if (!s || s.startsWith('#')) continue;
-    const i = s.indexOf('=');
-    if (i < 0) continue;
-    let v = s.slice(i + 1).trim();
-    if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) {
-      v = v.slice(1, -1);
+  if (fs.existsSync(filePath)) {
+    for (const line of fs.readFileSync(filePath, 'utf8').split('\n')) {
+      const s = line.trim();
+      if (!s || s.startsWith('#')) continue;
+      const i = s.indexOf('=');
+      if (i < 0) continue;
+      let v = s.slice(i + 1).trim();
+      if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) {
+        v = v.slice(1, -1);
+      }
+      out[s.slice(0, i).trim()] = v;
     }
-    out[s.slice(0, i).trim()] = v;
   }
+  // Allow Owner/cloud injection without writing secrets to disk. Never log these values.
+  if (process.env.APP_ENV) out.APP_ENV = process.env.APP_ENV;
+  if (process.env.TITAN_ENV) out.TITAN_ENV = process.env.TITAN_ENV;
+  if (process.env.STAGING_DATABASE_URL) out.DATABASE_URL = process.env.STAGING_DATABASE_URL;
+  else if (process.env.DATABASE_URL) out.DATABASE_URL = process.env.DATABASE_URL;
   return out;
 }
 
