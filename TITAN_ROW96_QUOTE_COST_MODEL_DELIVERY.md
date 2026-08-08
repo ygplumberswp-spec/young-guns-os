@@ -42,7 +42,7 @@
 1. **repo root** — `/Users/keanuventer/Downloads/Titan-Aura-Row95` (maps `/workspace`)
 2. **branch** — `cursor/canonical-quote-cost-model-663e`
 3. **starting HEAD** — `63871e6`
-4. **ending HEAD** — *(filled after commit)*
+4. **ending HEAD** — `0e8a20504f3172b9e38047919861021da9e77321`
 5. **ancestry** — PR #80 (`cursor/quote-scenarios-663e` @ `63871e6`)
 6. **architecture reused** — FinanceService quote engine, Row 90/91/92/93/94/95, JPE cost separation, portal forbid list, audit/RBAC
 7. **files changed** — shared model+tests, migration `0215`, db schema, API service+routes, web panel+API client, portal forbid fields, verify JSON, this report
@@ -92,8 +92,8 @@
 51. **Royal Cape** — QU-0183 total 4,272,250; ITEMISED; Xero ID unchanged; estimated cost 0 (incomplete — not backfilled)
 52. **tests/builds** — shared Row96 11/11; focused 103/103; web build PASS; db TS2589 baseline truthful
 53. **known gaps** — inventory catalogue still 0; all 1556 YG lines lack unit cost; company overhead rate setting not present; Client Portal full E2E remains OPEN; API not redeployed in this pass (schema applied via staging SQL)
-54. **commit** — *(filled after commit)*
-55. **PR URL** — *(filled after create)*
+54. **commit** — `0e8a205` feat(finance): add Row 96 canonical quote cost model
+55. **PR URL** — create via https://github.com/ygplumberswp-spec/young-guns-os/compare/cursor/quote-scenarios-663e...cursor/canonical-quote-cost-model-663e?expand=1 (local `gh` unauthenticated; branch pushed)
 56. **Row 97 not started** — true
 57. **Row 98 not started** — true
 58. **Row 99 not started** — true
