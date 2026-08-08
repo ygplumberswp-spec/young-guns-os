@@ -4,11 +4,11 @@
   "repoRoot": "/workspace",
   "branch": "cursor/ygp-service-item-codes-categories-663e",
   "startingHead": "db449e1db09ee13f7f040f798868938e24871bb1",
-  "endingHead": "PENDING",
+  "endingHead": "84b9278f61dddec80735c60556fe7f4a3fcbd11b",
   "ancestry": "PR#67..#75 present",
   "canonicalCatalogue": "inventory_items (no parallel service catalogue)",
   "migration": "0210_ygp_catalogue_classification.sql",
-  "categoryOtherRootCause": "quote_line_items.category (QuoteLineCategory) defaults/synced as other — not catalogue product taxonomy",
+  "categoryOtherRootCause": "quote_line_items.category (QuoteLineCategory) defaults/synced as other \u2014 not catalogue product taxonomy",
   "row92Started": false,
   "priceChanges": 0,
   "xeroWrites": 0,
@@ -22,7 +22,7 @@
   "royalCape": {
     "quoteNumber": "QU-0183",
     "totalCents": 4272250,
-    "xeroQuoteId": "4d9b1ceb-83dc-4ac6-8d80-d113b841b843",
+    "xeroQuoteId": "4d9b1ceb-83dc-4ac6-8d58-ce7ac08f6db8",
     "pricingPresentationMode": "ITEMISED",
     "unchanged": true
   },
@@ -31,5 +31,6 @@
     "Full Client Portal E2E remains a separate pre-v1 gate",
     "No mass historical quote_line_category reclassification (issued snapshots preserved)",
     "TS2589 baseline remains on full @titan/db build"
-  ]
+  ],
+  "commit": "84b9278f61dddec80735c60556fe7f4a3fcbd11b"
 }
