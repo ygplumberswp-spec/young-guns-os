@@ -3,8 +3,8 @@
   "title": "Official Xero QuoteNumber / InvoiceNumber Authority",
   "repoRoot": "/workspace",
   "branch": "cursor/xero-official-number-authority-663e",
-  "startingHead": "91e174f",
-  "endingHead": "407f3016e97a7f9448d3e57e8046d56ceefd94e2",
+  "startingHead": "91e174f73aef63efb5b2809b4e1a8ef8ca05ecf2",
+  "endingHead": "ae09f00eac9752ad4d433957ddcd4ff223146814",
   "ancestry": {
     "pr67_ee5a19c": true,
     "pr68_2aae5e1": true,
@@ -67,5 +67,5 @@
   "row88Started": false,
   "clientPortalFinalValidation": "NOT_PASS \u2014 numbering-specific check only",
   "prUrl": "https://github.com/ygplumberswp-spec/young-guns-os/pull/72",
-  "commit": "407f3016e97a7f9448d3e57e8046d56ceefd94e2"
+  "commit": "ae09f00eac9752ad4d433957ddcd4ff223146814"
 }
