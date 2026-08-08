@@ -112,6 +112,7 @@ import { createBoqSupplierComparisonRouter } from './routes/boq-supplier-compari
 import { createBoqReviewedExportRouter } from './routes/boq-reviewed-export.js';
 import { createJobProcurementChainRouter } from './routes/job-procurement-chain.js';
 import { createMaterialQuantityReconciliationRouter } from './routes/material-quantity-reconciliation.js';
+import { createMultiJobSupplierInvoiceAllocationRouter } from './routes/multi-job-supplier-invoice-allocation.js';
 import { createDraftsRouter } from './routes/drafts.js';
 import { createJobDocumentPackRouter } from './routes/job-document-packs.js';
 import { createCompletionReportRouter } from './routes/completion-reports.js';
@@ -123,6 +124,7 @@ import { BoqSupplierComparisonService } from './services/boq-supplier-comparison
 import { BoqReviewedExportService } from './services/boq-reviewed-export.service.js';
 import { JobProcurementChainService } from './services/job-procurement-chain.service.js';
 import { MaterialQuantityReconciliationService } from './services/material-quantity-reconciliation.service.js';
+import { MultiJobSupplierInvoiceAllocationService } from './services/multi-job-supplier-invoice-allocation.service.js';
 import { DraftAutosaveService } from './services/draft-autosave.service.js';
 import { InventoryService } from './services/inventory.service.js';
 import { StockMovementsService } from './services/stock-movements.service.js';
@@ -933,6 +935,7 @@ const procurementService = new ProcurementService({
 });
 const jobProcurementChainService = new JobProcurementChainService(db, procurementService);
 const materialQuantityReconciliationService = new MaterialQuantityReconciliationService(db);
+const multiJobSupplierInvoiceAllocationService = new MultiJobSupplierInvoiceAllocationService(db);
 const executiveService = new ExecutiveService({
   db,
   intelligenceService,
@@ -2336,6 +2339,16 @@ app.use(
   '/api/v1/finance',
   createMaterialQuantityReconciliationRouter({
     materialQuantityReconciliationService,
+    teamService,
+    db,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/finance',
+  createMultiJobSupplierInvoiceAllocationRouter({
+    multiJobSupplierInvoiceAllocationService,
     teamService,
     db,
     jwtSecret: env.JWT_SECRET,

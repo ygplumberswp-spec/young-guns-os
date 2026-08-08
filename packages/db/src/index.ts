@@ -278,4 +278,18 @@ export type {
   MaterialReturnToStockEvent,
 } from './schema/material-quantity-reconciliation.js';
 
+/** Explicit re-export — Row 105 multi-job supplier invoice allocation. */
+export {
+  multiJobSupplierInvoices,
+  multiJobSupplierInvoiceLines,
+  multiJobSupplierInvoiceAllocations,
+  multiJobSupplierInvoiceAllocationCorrections,
+} from './schema/multi-job-supplier-invoice-allocation.js';
+export type {
+  MultiJobSupplierInvoice,
+  MultiJobSupplierInvoiceLine,
+  MultiJobSupplierInvoiceAllocation,
+  MultiJobSupplierInvoiceAllocationCorrection,
+} from './schema/multi-job-supplier-invoice-allocation.js';
+
 export { drizzle } from 'drizzle-orm/postgres-js';

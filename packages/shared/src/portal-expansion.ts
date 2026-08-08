@@ -110,6 +110,10 @@ export const PORTAL_EXPANSION_FORBIDDEN_FIELDS = [
   'supplierCreditAmountCents',
   'materialWasteInternal',
   'supplierReturnInternal',
+  'multiJobAllocInternal',
+  'supplierInvoiceAllocation',
+  'allocationNetCents',
+  'allocationVatCents',
 
   'xeroQuoteId',
   'xeroInvoiceNumber',

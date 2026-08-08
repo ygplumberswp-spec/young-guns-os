@@ -1,0 +1,140 @@
+{
+  "schemaVersion": "row105-multi-job-supplier-invoice-allocation-v1",
+  "generatedAt": "2026-08-08T12:40:08.252Z",
+  "pass": 27,
+  "fail": 0,
+  "results": [
+    {
+      "name": "migration_0223_applied",
+      "status": "PASS"
+    },
+    {
+      "name": "staging_readonly_allocation_audit",
+      "status": "PASS",
+      "supplierInvoiceEvidence": 0,
+      "supplierInvoiceLines": 0,
+      "multiJobInvoices": 0,
+      "multiJobCandidateInvoices": 0,
+      "invoicesLinkedToPo": 0,
+      "invoicesLinkedToJob": 0,
+      "importedXeroBills": 1,
+      "allocationRecords": 0,
+      "unallocatedAmount": null,
+      "overAllocationCases": 0,
+      "jpeSupplierInvoiceMaterialEntries": 0,
+      "possibleDuplicatePostingPaths": 0,
+      "suppliers": 0,
+      "purchaseOrders": 0,
+      "row92Status": "DRAFT",
+      "row92Automation": "OFF",
+      "note": "No fabricated YG invoices/allocations; procurement remains largely empty"
+    },
+    {
+      "name": "row92_off",
+      "status": "PASS"
+    },
+    {
+      "name": "royal_cape_unchanged",
+      "status": "PASS",
+      "totalCents": 4272250,
+      "xeroQuoteId": "4d9b1ceb-83dc-4ac6-8d58-ce7ac08f6db8"
+    },
+    {
+      "name": "fixture_one_job",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_two_jobs",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_over_blocked",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_rounding",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_missing_vat",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_po_mismatch",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_free_text_rejected",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_xero_absent",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_jpe_split_once",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_credit_once",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_ambiguous_credit",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_correction_history",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_rbac",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_client_leak",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_safety",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_row106_107_not_started",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_totals",
+      "status": "PASS",
+      "pass": 16,
+      "fail": 0
+    },
+    {
+      "name": "cleanup_no_fabricated_yg_allocations",
+      "status": "PASS"
+    },
+    {
+      "name": "xero_writes",
+      "status": "PASS",
+      "count": 0
+    },
+    {
+      "name": "customer_sends",
+      "status": "PASS",
+      "count": 0
+    },
+    {
+      "name": "production_writes",
+      "status": "PASS",
+      "count": 0
+    },
+    {
+      "name": "row118_not_closed",
+      "status": "PASS"
+    },
+    {
+      "name": "rows103_104_preserved",
+      "status": "PASS"
+    }
+  ]
+}

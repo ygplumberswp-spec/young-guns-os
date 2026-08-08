@@ -1527,6 +1527,13 @@
       "when": 1788705600000,
       "tag": "0222_material_quantity_reconciliation",
       "breakpoints": true
+    },
+    {
+      "idx": 218,
+      "version": "7",
+      "when": 1788792000000,
+      "tag": "0223_multi_job_supplier_invoice_allocation",
+      "breakpoints": true
     }
   ]
 }
