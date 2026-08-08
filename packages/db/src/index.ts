@@ -182,4 +182,16 @@ export type {
   NewQuoteLinePriceOverride,
 } from './schema/quote-price-override.js';
 
+/** Explicit re-export — Row 94 plan / floor-plan estimates. */
+export {
+  planEstimates,
+  planEstimateItems,
+  planEstimateCostComponents,
+} from './schema/plan-estimates.js';
+export type {
+  PlanEstimate,
+  PlanEstimateItem,
+  PlanEstimateCostComponent,
+} from './schema/plan-estimates.js';
+
 export { drizzle } from 'drizzle-orm/postgres-js';

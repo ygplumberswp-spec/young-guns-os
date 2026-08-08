@@ -115,6 +115,14 @@ export const QuoteEditPage = lazyNamed(
   () => import('../pages/finance/QuoteEditPage'),
   'QuoteEditPage',
 );
+export const PlanEstimateListPage = lazyNamed(
+  () => import('../pages/finance/PlanEstimateListPage'),
+  'PlanEstimateListPage',
+);
+export const PlanEstimateDetailPage = lazyNamed(
+  () => import('../pages/finance/PlanEstimateDetailPage'),
+  'PlanEstimateDetailPage',
+);
 export const BoqListPage = lazyNamed(() => import('../pages/finance/BoqListPage'), 'BoqListPage');
 export const BoqCreatePage = lazyNamed(
   () => import('../pages/finance/BoqCreatePage'),

@@ -1,0 +1,281 @@
+{
+  "label": "plan-estimate-staging-proof",
+  "row": 94,
+  "generatedAt": "2026-08-08T10:11:16.701Z",
+  "stagingOnly": true,
+  "xeroWriteCalls": 0,
+  "customerSends": 0,
+  "productionWrites": 0,
+  "productionMigrations": 0,
+  "row95Started": false,
+  "row96Started": false,
+  "row98AiTakeoffStarted": false,
+  "row92AutomationEnabled": false,
+  "architecture": {
+    "existingPlanTakeoff": "NONE_PRIOR — new canonical plan_estimates*",
+    "reused": [
+      "quotes / quote_line_items (FinanceService createQuote pattern)",
+      "documents (source provenance link by id)",
+      "JPE / job profitability (comparison layer only — not rebuilt)",
+      "Row 90 fixed-price presentation",
+      "Row 92 DRAFT pricebook rules (inactive)",
+      "Row 93 quote override (quote-specific; untouched)",
+      "security_audit_logs",
+      "RBAC finance:read/write + technician deny"
+    ],
+    "persistence": "0213_plan_estimates",
+    "aiTakeoff": "NOT_IMPLEMENTED (Row 98 out of scope)",
+    "annotationCoordinates": "GAP — page/textual reference only"
+  },
+  "realSourceAudit": {
+    "planLikeDocumentSample": [],
+    "planLikeDocumentCount": 0,
+    "authorisedPlanDocumentCount": 0,
+    "existingEstimates": 0,
+    "quoteLinkedEstimates": 0,
+    "jobLinkedEstimates": 0,
+    "royalCapePlanDocumentLinked": false,
+    "note": "NO_AUTHORISED_PLAN_SOURCE_AVAILABLE"
+  },
+  "estimateModel": {
+    "water": true,
+    "waste": true,
+    "geyser": true,
+    "materials": true,
+    "labour": true,
+    "siteCost": true,
+    "directCostCents": 158500,
+    "sellExVatCents": 275000,
+    "estimatedGpCents": 116500
+  },
+  "review": {
+    "confirmedItems": true,
+    "reviewRequired": true,
+    "insufficientInformation": true,
+    "missingScale": true,
+    "missingCosts": true
+  },
+  "safeFixture": {
+    "created": true,
+    "reviewed": true,
+    "approved": true,
+    "quoteGenerated": true,
+    "quoteIdempotent": true,
+    "planRevisionSupersede": true,
+    "jobLinked": true,
+    "actualComparison": "PROVISIONAL",
+    "sourceFilename": "TITAN-ROW94-FIXTURE-PLAN-REV-A.pdf",
+    "sourceHash": "sha256:row94-fixture-rev-a",
+    "estimateId": "1c654562-7263-42fa-9f73-4f9957714045",
+    "revBId": "3807f704-afb3-4f21-a534-341b71c1d306",
+    "quoteId": "b8b070c4-4a52-4a99-8bfe-322f2868a7e0",
+    "cleanup": true
+  },
+  "globalSafety": {
+    "row92Version": 1,
+    "row92Status": "DRAFT",
+    "row92AutomationEnabled": false,
+    "globalPricebookChanges": 0,
+    "historicalQuoteMutations": 0,
+    "ygInventoryRows": 0
+  },
+  "royalCape": {
+    "quoteNumber": "QU-0183",
+    "totalCents": 4272250,
+    "pricingPresentationMode": "ITEMISED",
+    "xeroQuoteId": "4d9b1ceb-83dc-4ac6-8d58-ce7ac08f6db8",
+    "customerId": "773497f7-2d71-4a3a-8d80-d113b841b843",
+    "jobId": "5920ef4a-51a9-44ec-8577-09d187ca9c33",
+    "crc": "773497f7-2d71-4a3a-8d80-d113b841b843",
+    "planEstimatesLinked": 0,
+    "fakeRoyalCapePlan": false,
+    "unchanged": true
+  },
+  "results": [
+    {
+      "name": "safety_gates",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "gp_incomplete_when_cost_missing",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "direct_cost_and_estimated_gp_exact_cents",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "missing_scale_blocks_length",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "verified_scale_allows_measured_length",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "review_required_cannot_approve",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "reviewed_cannot_generate_quote_until_approved",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "review_approve_generate_gates",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "ambiguous_item_forces_review_required",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "plan_revision_flags",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "quote_mapping_confirmed_only_customer_safe",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "client_projection_safe",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "rbac_tech_denied_owner_ok",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "open_job_comparison_provisional",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "completed_job_comparison_final",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "staging_additive_migration_0213",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "real_source_audit",
+      "status": "PASS",
+      "detail": "NO_AUTHORISED_PLAN_SOURCE_AVAILABLE"
+    },
+    {
+      "name": "row92_inactive_before_fixture",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "estimate_create_once",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "takeoff_water_waste_geyser_uncertain",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cost_components_known_and_missing",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "db_fixture_gp_blocked_when_cost_missing",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "human_review",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "approved_for_quote",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "quote_generation_idempotent",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "plan_revision_does_not_mutate_quote",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "job_linkage",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "actual_comparison_provisional_or_no_job",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cross_tenant_isolation",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "audit_trail",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "fixture_cleaned",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "row92_unchanged_automation_off",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "royal_cape_unchanged_no_fake_plan",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "row92_draft_template_still_inactive",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "inventory_truth_no_invented_catalogue",
+      "status": "PASS",
+      "detail": ""
+    }
+  ],
+  "safety": {
+    "realYgHistoricalQuoteChanges": 0,
+    "xeroWrites": 0,
+    "customerSends": 0,
+    "productionWrites": 0,
+    "row95Started": false,
+    "row96Started": false,
+    "row98AiTakeoffStarted": false,
+    "row92AutomationEnabled": false
+  }
+}

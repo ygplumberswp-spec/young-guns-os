@@ -3,6 +3,7 @@ import { MoreMenu } from '../../components/ux/MoreMenu';
 
 const sectionTabs = [
   { href: '/finance/quotes', label: 'Quotes' },
+  { href: '/finance/plan-estimates', label: 'Plan Estimates' },
   { href: '/finance/boq', label: 'BOQs' },
   { href: '/finance/invoices', label: 'Invoices' },
   { href: '/finance/payments', label: 'Payments' },
