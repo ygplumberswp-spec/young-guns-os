@@ -2,11 +2,13 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
   ROYAL_CAPE_CANONICAL_QUOTE_NUMBER,
+  ROYAL_CAPE_OWNER_CRC,
   ROYAL_CAPE_PRODUCTION_FORBIDDEN,
   ROYAL_CAPE_SAFETY_CONTRACT,
   ROYAL_CAPE_SCREENSHOT_EVIDENCE,
   ROYAL_CAPE_STAGING_IDENTITY,
   assertFullHistoryRuleRemainsActive,
+  assertOwnerCrcCanonical,
   assertRoyalCapeIdempotency,
   assertRoyalCapeJpeRelationship,
   assertRoyalCapeRbacSeparation,
@@ -14,6 +16,7 @@ import {
   buildRoyalCapeAuditEvents,
   buildRoyalCapeJob360View,
   buildRoyalCapeRehearsalPlan,
+  classifyQuoteSyncFailure,
   compareScreenshotToXeroQuote,
   planCanonicalQuoteMatch,
   planCustomerMatch,
@@ -109,16 +112,81 @@ describe('Royal Cape Yacht Club staging Job 360 rehearsal', () => {
     assert.equal(dupes.decision, 'REVIEW_REQUIRED');
   });
 
-  it('stops customer/site/job matching for review on duplicates', () => {
+  it('keeps quote-linked company canonical and preserves related contacts without merge', () => {
     const customer = planCustomerMatch({
-      quoteCustomerId: 'cust-1',
+      quoteCustomerId: ROYAL_CAPE_OWNER_CRC.titanCustomerId,
       candidates: [
-        { id: 'cust-1', name: 'Xero Customer', email: null, phone: null, sourceExternalId: 'x1', matchReasons: ['quote'] },
-        { id: 'cust-2', name: 'CRC', email: null, phone: null, sourceExternalId: null, matchReasons: ['label'] },
+        {
+          id: ROYAL_CAPE_OWNER_CRC.titanCustomerId,
+          name: 'CRC',
+          email: 'rowan@crcon.co.za',
+          phone: null,
+          sourceExternalId: ROYAL_CAPE_OWNER_CRC.xeroContactId,
+          matchReasons: ['quote'],
+        },
+        {
+          id: ROYAL_CAPE_OWNER_CRC.rowanCrcCustomerId,
+          name: 'Rowan CRC',
+          email: 'Rowan@crcon.co.za',
+          phone: null,
+          sourceExternalId: 'b37e7820-178f-42d1-8855-11d647c42d62',
+          matchReasons: ['name'],
+        },
       ],
     });
-    assert.equal(customer.decision, 'REVIEW_REQUIRED');
-    assert.equal(customer.duplicateCandidates.length, 1);
+    assert.equal(customer.decision, 'USE_EXISTING');
+    assert.equal(customer.customer?.id, ROYAL_CAPE_OWNER_CRC.titanCustomerId);
+    assert.equal(customer.duplicateCandidates.length, 0);
+    assert.equal(customer.relatedContactsToPreserve.length, 1);
+    assert.equal(customer.relatedContactsToPreserve[0]?.id, ROYAL_CAPE_OWNER_CRC.rowanCrcCustomerId);
+
+    const ownerOk = assertOwnerCrcCanonical({
+      quoteCustomerId: ROYAL_CAPE_OWNER_CRC.titanCustomerId,
+      xeroContactId: ROYAL_CAPE_OWNER_CRC.xeroContactId,
+      selectedCustomerId: ROYAL_CAPE_OWNER_CRC.titanCustomerId,
+    });
+    assert.equal(ownerOk.ok, true);
+    assert.equal(
+      assertOwnerCrcCanonical({
+        quoteCustomerId: ROYAL_CAPE_OWNER_CRC.titanCustomerId,
+        xeroContactId: ROYAL_CAPE_OWNER_CRC.xeroContactId,
+        selectedCustomerId: ROYAL_CAPE_OWNER_CRC.rowanCrcCustomerId,
+      }).ok,
+      false,
+    );
+
+    const syncFail = classifyQuoteSyncFailure({
+      syncStatus: 'failed',
+      lastError: 'Xero write blocked: no approval for quote_create on quote:41178762',
+      xeroQuoteId: '4d9b1ceb-83dc-4ac6-8d58-ce7ac08f6db8',
+      lastSuccessfulSyncAt: '2026-08-04T13:31:44.608Z',
+    });
+    assert.equal(syncFail.classification, 'stale_outbound_write_block');
+    assert.equal(syncFail.xeroWriteRequiredToClear, false);
+
+    const strictReview = planCustomerMatch({
+      quoteCustomerId: ROYAL_CAPE_OWNER_CRC.titanCustomerId,
+      preserveRelatedContactsWithoutMerge: false,
+      candidates: [
+        {
+          id: ROYAL_CAPE_OWNER_CRC.titanCustomerId,
+          name: 'CRC',
+          email: null,
+          phone: null,
+          sourceExternalId: ROYAL_CAPE_OWNER_CRC.xeroContactId,
+          matchReasons: ['quote'],
+        },
+        {
+          id: ROYAL_CAPE_OWNER_CRC.rowanCrcCustomerId,
+          name: 'Rowan CRC',
+          email: null,
+          phone: null,
+          sourceExternalId: 'x2',
+          matchReasons: ['name'],
+        },
+      ],
+    });
+    assert.equal(strictReview.decision, 'REVIEW_REQUIRED');
 
     const sites = planRoyalCapePropertyMatch({
       customerId: 'cust-1',

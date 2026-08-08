@@ -35,6 +35,24 @@ export const ROYAL_CAPE_PRODUCTION_FORBIDDEN = {
 export const ROYAL_CAPE_CANONICAL_QUOTE_NUMBER = 'QU-0183';
 
 /**
+ * Owner-confirmed customer model for QU-0183 (staging).
+ * CRC is ONE company. Rowan / Ruahn are distinct people/contacts — preserve, do not merge.
+ */
+export const ROYAL_CAPE_OWNER_CRC = {
+  companyLabel: 'CRC',
+  titanCustomerId: '773497f7-2d71-4a3a-8d80-d113b841b843',
+  xeroContactId: '9ff6c727-561b-49cb-a2a5-a22e117af850',
+  /** Known related contact record — not the QU-0183 company. Do not select/merge/delete. */
+  rowanCrcCustomerId: 'd73df05b-d1e1-4f17-bc1d-890baa9f1e7e',
+  doNotMoveQuoteToRowan: true,
+  doNotMergeRelatedContacts: true,
+  doNotCreateAnotherCrcCompany: true,
+} as const;
+
+export const ROYAL_CAPE_JOB_SOURCE_KEY = `royal-cape-job:${ROYAL_CAPE_CANONICAL_QUOTE_NUMBER}`;
+export const ROYAL_CAPE_SITE_SOURCE_KEY_PREFIX = 'royal-cape-site:';
+
+/**
  * Owner-confirmed screenshot evidence. Supporting only — if Xero differs, Xero wins.
  * Amounts in cents (ZAR).
  */
@@ -284,13 +302,110 @@ export function planCanonicalQuoteMatch(input: {
   };
 }
 
+/**
+ * Enforce Owner CRC decision before staging apply.
+ * Rowan CRC must never become the QU-0183 company.
+ */
+export function assertOwnerCrcCanonical(input: {
+  quoteCustomerId: string | null;
+  xeroContactId: string | null;
+  selectedCustomerId: string | null;
+}): { ok: true; reason: string } | { ok: false; reason: string } {
+  if (input.quoteCustomerId !== ROYAL_CAPE_OWNER_CRC.titanCustomerId) {
+    return {
+      ok: false,
+      reason: `QU-0183 customer must be CRC ${ROYAL_CAPE_OWNER_CRC.titanCustomerId}; got ${input.quoteCustomerId ?? 'null'}.`,
+    };
+  }
+  if (input.xeroContactId !== ROYAL_CAPE_OWNER_CRC.xeroContactId) {
+    return {
+      ok: false,
+      reason: `QU-0183 Xero Contact ID must be ${ROYAL_CAPE_OWNER_CRC.xeroContactId}; got ${input.xeroContactId ?? 'null'}.`,
+    };
+  }
+  if (input.selectedCustomerId !== ROYAL_CAPE_OWNER_CRC.titanCustomerId) {
+    return {
+      ok: false,
+      reason: `Selected company must be CRC ${ROYAL_CAPE_OWNER_CRC.titanCustomerId} — Rowan CRC ${ROYAL_CAPE_OWNER_CRC.rowanCrcCustomerId} (and other related contacts) must not be selected for QU-0183.`,
+    };
+  }
+  return {
+    ok: true,
+    reason:
+      'Owner CRC confirmed: CRC company + Xero contact retained; Rowan/related contacts preserved without merge.',
+  };
+}
+
+/**
+ * Investigate xero_quote_mappings.sync_status without writing to Xero.
+ */
+export function classifyQuoteSyncFailure(input: {
+  syncStatus: string | null;
+  lastError: string | null;
+  xeroQuoteId: string | null;
+  lastSuccessfulSyncAt: string | null;
+}): {
+  classification:
+    | 'not_failed'
+    | 'stale_outbound_write_block'
+    | 'import_issue'
+    | 'genuine_unresolved_sync';
+  report: string;
+  xeroWriteRequiredToClear: false;
+} {
+  if (input.syncStatus !== 'failed') {
+    return {
+      classification: 'not_failed',
+      report: `syncStatus=${input.syncStatus ?? 'null'} — not failed.`,
+      xeroWriteRequiredToClear: false,
+    };
+  }
+  const err = (input.lastError ?? '').toLowerCase();
+  const hasXeroId = Boolean(input.xeroQuoteId);
+  const hadSuccess = Boolean(input.lastSuccessfulSyncAt);
+  if (
+    hasXeroId &&
+    (err.includes('xero write blocked') ||
+      err.includes('no approval') ||
+      err.includes('quote_create'))
+  ) {
+    return {
+      classification: 'stale_outbound_write_block',
+      report:
+        'Mapping is failed because an outbound Xero quote_create write was blocked by approval gates. ' +
+        'Xero quote ID already exists and a prior successful sync is recorded — treat as stale outbound metadata, not a missing import. Do not write to Xero merely to clear the flag.',
+      xeroWriteRequiredToClear: false,
+    };
+  }
+  if (!hasXeroId) {
+    return {
+      classification: 'import_issue',
+      report:
+        'syncStatus=failed and no Xero quote ID — possible import/mapping gap. Investigate import; do not invent a quote.',
+      xeroWriteRequiredToClear: false,
+    };
+  }
+  return {
+    classification: hadSuccess ? 'stale_outbound_write_block' : 'genuine_unresolved_sync',
+    report: `syncStatus=failed with xeroQuoteId present. lastError=${input.lastError ?? 'null'}. Do not modify Xero solely to clear the flag.`,
+    xeroWriteRequiredToClear: false,
+  };
+}
+
 export function planCustomerMatch(input: {
   quoteCustomerId: string | null;
   candidates: RoyalCapeCustomerCandidate[];
+  /**
+   * Owner-confirmed: quote-linked company is canonical; other name-similar Xero contacts
+   * (e.g. Rowan CRC / Ruahn CRC people) are preserved separately and must not block apply.
+   */
+  preserveRelatedContactsWithoutMerge?: boolean;
 }): {
   decision: RoyalCapeMatchDecision;
   customer: RoyalCapeCustomerCandidate | null;
   duplicateCandidates: RoyalCapeCustomerCandidate[];
+  /** Related people/contacts under the same company — preserve; do not merge/delete. */
+  relatedContactsToPreserve: RoyalCapeCustomerCandidate[];
   reason: string;
 } {
   if (!input.quoteCustomerId) {
@@ -298,27 +413,41 @@ export function planCustomerMatch(input: {
       decision: 'REVIEW_REQUIRED',
       customer: null,
       duplicateCandidates: input.candidates,
+      relatedContactsToPreserve: [],
       reason: 'Quote has no customerId — do not assume CRC legal name from screenshot.',
     };
   }
 
   const linked = input.candidates.filter((c) => c.id === input.quoteCustomerId);
   const others = input.candidates.filter((c) => c.id !== input.quoteCustomerId);
+  const preserveRelated = input.preserveRelatedContactsWithoutMerge !== false;
 
   if (linked.length === 1 && others.length === 0) {
     return {
       decision: 'USE_EXISTING',
       customer: linked[0]!,
       duplicateCandidates: [],
+      relatedContactsToPreserve: [],
       reason: 'Use the Xero-linked customer as canonical — screenshot CRC label is not authority.',
     };
   }
 
   if (linked.length === 1 && others.length > 0) {
+    if (preserveRelated) {
+      return {
+        decision: 'USE_EXISTING',
+        customer: linked[0]!,
+        duplicateCandidates: [],
+        relatedContactsToPreserve: others,
+        reason:
+          'Use quote-linked company/customer as canonical. Other name-similar Xero contacts are related people/contacts to preserve — do not merge, delete, or reassign QU-0183.',
+      };
+    }
     return {
       decision: 'REVIEW_REQUIRED',
       customer: linked[0]!,
       duplicateCandidates: others,
+      relatedContactsToPreserve: [],
       reason: 'Additional customer candidates exist — stop for review; do not silently merge.',
     };
   }
@@ -328,6 +457,7 @@ export function planCustomerMatch(input: {
       decision: 'REVIEW_REQUIRED',
       customer: null,
       duplicateCandidates: others,
+      relatedContactsToPreserve: [],
       reason: 'Multiple customer candidates without a quote-linked customer — review required.',
     };
   }
@@ -336,6 +466,7 @@ export function planCustomerMatch(input: {
     decision: 'MISSING_CANONICAL',
     customer: null,
     duplicateCandidates: others,
+    relatedContactsToPreserve: [],
     reason: 'Canonical customer for QU-0183 not found in TITAN.',
   };
 }
@@ -834,6 +965,8 @@ export function buildRoyalCapeRehearsalPlan(input: {
   const customerPlan = planCustomerMatch({
     quoteCustomerId: quote?.customerId ?? null,
     candidates: input.customers,
+    // Owner-confirmed CRC company model: related people/contacts stay separate.
+    preserveRelatedContactsWithoutMerge: true,
   });
   const propertyPlan = planRoyalCapePropertyMatch({
     customerId: customerPlan.customer?.id ?? quote?.customerId ?? null,
