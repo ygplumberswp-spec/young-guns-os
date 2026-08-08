@@ -45,6 +45,21 @@ import {
   canViewFinanceProfit,
   sanitizeFinanceDocumentWriteRequest,
   resolveYoungGunsPricebookForTenant,
+  assertQuoteEditable,
+  assertQuoteStatusTransition,
+  buildQuoteLifecycleAuditEvent,
+  evaluateArchiveQuote,
+  evaluateConvertQuote,
+  evaluateIssueQuote,
+  evaluateQuoteSendReadiness,
+  evaluateVoidQuote,
+  getAllowedQuoteActions,
+  normalizeQuoteLifecycleRole,
+  resolveProviderActionOutcome,
+  applyProviderOutcomeToBusinessState,
+  resolveQuotePaymentVisibility,
+  toCanonicalQuoteLifecycleState,
+  QuoteLifecycleError,
   type FinanceDocumentPreviewModel,
 } from '@titan/shared';
 import { FinanceDocumentSectionsService } from './finance-document-sections.service.js';
@@ -505,7 +520,24 @@ export class FinanceService {
     );
     const current = await this.db.query.quotes.findFirst({ where: and(eq(quotes.id, quoteId), eq(quotes.companyId, actor.companyId)) });
     if (!current) throw new FinanceError('NOT_FOUND', 'Quote not found');
-    if (current.isImmutable) throw new FinanceError('VALIDATION_ERROR', 'Issued quotes are immutable; create a version');
+    try {
+      assertQuoteEditable({
+        id: current.id,
+        status: current.status,
+        isImmutable: current.isImmutable,
+        cancelReason: current.cancelReason,
+      });
+    } catch (error) {
+      throw this.mapQuoteLifecycleError(error);
+    }
+    const nextStatus = sanitized.status ?? current.status;
+    if (nextStatus !== current.status) {
+      try {
+        assertQuoteStatusTransition({ from: current.status, to: nextStatus });
+      } catch (error) {
+        throw this.mapQuoteLifecycleError(error);
+      }
+    }
     const settings = await this.ensureFinanceSettings(actor.companyId);
     const computed = sanitized.lineItems ? quoteAmounts(sanitized.lineItems, settings.profitFloorMarginBps, sanitized.discountCents ?? current.discountCents) : null;
     if (computed) this.assertFloor(actor, computed.profit.belowFloor, sanitized.belowFloorOverride, sanitized.belowFloorReason, settings.allowBelowFloorWithOverride);
@@ -517,7 +549,7 @@ export class FinanceService {
     }
     const addressUpdate = resolveDocumentAddressColumns(current, sanitized);
     await this.db.update(quotes).set({
-      status: sanitized.status ?? current.status, currency: sanitized.currency?.trim() || current.currency,
+      status: nextStatus, currency: sanitized.currency?.trim() || current.currency,
       jobId: sanitized.jobId === undefined ? current.jobId : sanitized.jobId ?? null,
       customerNotes: sanitized.customerNotes === undefined ? current.customerNotes : normalizeOptionalText(sanitized.customerNotes),
       validUntil: sanitized.validUntil === undefined ? current.validUntil : parseOptionalDate(sanitized.validUntil), notes: sanitized.notes === undefined ? current.notes : normalizeOptionalText(sanitized.notes),
@@ -540,15 +572,343 @@ export class FinanceService {
         content: sanitized.documentContent,
       });
     }
+    const lifecycleEventType =
+      current.status === 'draft' && nextStatus === 'internal_review'
+        ? 'quote_approval_requested'
+        : current.status === 'internal_review' && nextStatus === 'approved_for_sending'
+          ? 'quote_approved'
+          : nextStatus !== current.status
+            ? 'quote_edited'
+            : 'quote_edited';
+    const audit = buildQuoteLifecycleAuditEvent({
+      eventType: lifecycleEventType,
+      companyId: actor.companyId,
+      quoteId,
+      quoteNumber: current.quoteNumber,
+      displayQuoteNumber: displayOfficialQuoteNumber({ xeroQuoteNumber: current.xeroQuoteNumber }),
+      actorId: actor.userId ?? null,
+      fromState: current.status,
+      toState: nextStatus,
+      sourceProvider: current.sourceProvider,
+    });
+    emitBusinessEvent({
+      companyId: audit.companyId,
+      eventType: audit.eventType,
+      entityType: audit.entityType,
+      entityId: audit.entityId,
+      payload: audit.payload,
+    });
     return (await this.getQuote(actor.companyId, quoteId))!;
   }
 
   async issueQuote(actorOrCompany: FinanceActor | string, quoteId: string): Promise<QuoteSummary> {
-    const actor = toActor(actorOrCompany); const quote = await this.db.query.quotes.findFirst({ where: and(eq(quotes.id, quoteId), eq(quotes.companyId, actor.companyId)) });
+    const actor = toActor(actorOrCompany);
+    const quote = await this.db.query.quotes.findFirst({
+      where: and(eq(quotes.id, quoteId), eq(quotes.companyId, actor.companyId)),
+    });
     if (!quote) throw new FinanceError('NOT_FOUND', 'Quote not found');
+    const decision = evaluateIssueQuote({
+      id: quote.id,
+      status: quote.status,
+      isImmutable: quote.isImmutable,
+      issuedAt: quote.issuedAt,
+      sourceProvider: quote.sourceProvider,
+      xeroQuoteId: quote.xeroQuoteId,
+      xeroQuoteNumber: quote.xeroQuoteNumber,
+    });
+    if (decision.kind === 'idempotent') {
+      return (await this.getQuote(actor.companyId, quoteId))!;
+    }
+    if (decision.kind === 'reject') {
+      throw new FinanceError(decision.code ?? 'QUOTE_TRANSITION_NOT_ALLOWED', decision.message ?? 'Cannot issue quote');
+    }
     this.assertFloor(actor, quote.totalCents < quote.profitFloorCents && quote.estimatedCostCents > 0, quote.belowFloorOverride, quote.belowFloorReason, true);
+    // Issue marks send-ready / issued in TITAN. Staging proof must not send customer messages.
     await this.db.update(quotes).set({ status: 'sent', isImmutable: true, issuedAt: new Date(), updatedAt: new Date() }).where(eq(quotes.id, quoteId));
+    const audit = buildQuoteLifecycleAuditEvent({
+      eventType: 'quote_sent',
+      companyId: actor.companyId,
+      quoteId,
+      quoteNumber: quote.quoteNumber,
+      displayQuoteNumber: displayOfficialQuoteNumber({ xeroQuoteNumber: quote.xeroQuoteNumber }),
+      actorId: actor.userId ?? null,
+      fromState: quote.status,
+      toState: 'sent',
+      sourceProvider: quote.sourceProvider,
+      reason: 'issueQuote — TITAN issued/send-ready; customer send not performed by this path',
+      extra: { customerSend: false },
+    });
+    emitBusinessEvent({
+      companyId: audit.companyId,
+      eventType: audit.eventType,
+      entityType: audit.entityType,
+      entityId: audit.entityId,
+      payload: audit.payload,
+    });
     return (await this.getQuote(actor.companyId, quoteId))!;
+  }
+
+  async prepareQuoteSend(actorOrCompany: FinanceActor | string, quoteId: string) {
+    const actor = toActor(actorOrCompany);
+    const quote = await this.db.query.quotes.findFirst({
+      where: and(eq(quotes.id, quoteId), eq(quotes.companyId, actor.companyId)),
+    });
+    if (!quote) throw new FinanceError('NOT_FOUND', 'Quote not found');
+    const displayQuoteNumber = resolveQuoteDisplayNumberLabel({
+      id: quote.id,
+      quoteNumber: quote.quoteNumber,
+      xeroQuoteNumber: quote.xeroQuoteNumber,
+      xeroQuoteId: quote.xeroQuoteId,
+      sourceProvider: quote.sourceProvider,
+      sourceExternalId: quote.sourceExternalId,
+    });
+    const readiness = evaluateQuoteSendReadiness({
+      record: {
+        id: quote.id,
+        status: quote.status,
+        isImmutable: quote.isImmutable,
+        issuedAt: quote.issuedAt,
+        sourceProvider: quote.sourceProvider,
+        xeroQuoteId: quote.xeroQuoteId,
+        xeroQuoteNumber: quote.xeroQuoteNumber,
+      },
+      displayQuoteNumber,
+      customerId: quote.customerId,
+      totalCents: quote.totalCents,
+      hasPdfContent: true,
+      role: normalizeQuoteLifecycleRole(actor.roleName),
+    });
+    const audit = buildQuoteLifecycleAuditEvent({
+      eventType: readiness.ready ? 'quote_send_prepared' : 'quote_action_blocked',
+      companyId: actor.companyId,
+      quoteId,
+      quoteNumber: quote.quoteNumber,
+      displayQuoteNumber,
+      actorId: actor.userId ?? null,
+      fromState: quote.status,
+      toState: quote.status,
+      sourceProvider: quote.sourceProvider,
+      reason: readiness.ready ? 'Send readiness OK — customer send blocked in staging' : readiness.blockers.join('; '),
+      extra: { customerSendAllowed: false, blockers: readiness.blockers },
+    });
+    emitBusinessEvent({
+      companyId: audit.companyId,
+      eventType: audit.eventType,
+      entityType: audit.entityType,
+      entityId: audit.entityId,
+      payload: audit.payload,
+    });
+    return {
+      readiness,
+      customerSend: false as const,
+      quote: await this.getQuote(actor.companyId, quoteId),
+    };
+  }
+
+  async voidQuote(
+    actorOrCompany: FinanceActor | string,
+    quoteId: string,
+    input: { reason?: string | null; allowProviderWrite?: boolean } = {},
+  ): Promise<QuoteSummary> {
+    const actor = toActor(actorOrCompany);
+    const quote = await this.db.query.quotes.findFirst({
+      where: and(eq(quotes.id, quoteId), eq(quotes.companyId, actor.companyId)),
+    });
+    if (!quote) throw new FinanceError('NOT_FOUND', 'Quote not found');
+    const decision = evaluateVoidQuote({
+      id: quote.id,
+      status: quote.status,
+      isImmutable: quote.isImmutable,
+      issuedAt: quote.issuedAt,
+      sourceProvider: quote.sourceProvider,
+      xeroQuoteId: quote.xeroQuoteId,
+      xeroQuoteNumber: quote.xeroQuoteNumber,
+      cancelReason: quote.cancelReason,
+    });
+    if (decision.kind === 'idempotent') {
+      return (await this.getQuote(actor.companyId, quoteId))!;
+    }
+    if (decision.kind === 'reject') {
+      throw new FinanceError(decision.code ?? 'QUOTE_TRANSITION_NOT_ALLOWED', decision.message ?? 'Cannot void quote');
+    }
+    if (decision.kind === 'provider_gate') {
+      // Unauthorised Xero writes remain blocked — do not fake VOIDED.
+      const outcome = resolveProviderActionOutcome({
+        requested: 'void',
+        providerWriteAttempted: true,
+        providerWriteAllowed: Boolean(input.allowProviderWrite),
+        providerError: decision.message,
+      });
+      const applied = applyProviderOutcomeToBusinessState({
+        currentStatus: quote.status,
+        requestedToStatus: 'cancelled',
+        outcome,
+      });
+      const audit = buildQuoteLifecycleAuditEvent({
+        eventType: 'quote_action_blocked',
+        companyId: actor.companyId,
+        quoteId,
+        quoteNumber: quote.quoteNumber,
+        displayQuoteNumber: displayOfficialQuoteNumber({ xeroQuoteNumber: quote.xeroQuoteNumber }),
+        actorId: actor.userId ?? null,
+        fromState: quote.status,
+        toState: applied.nextStatus,
+        sourceProvider: quote.sourceProvider,
+        reason: outcome.outcome === 'BLOCKED' ? outcome.reason : decision.message,
+        extra: { providerOutcome: outcome.outcome, xeroWrite: false },
+      });
+      emitBusinessEvent({
+        companyId: audit.companyId,
+        eventType: audit.eventType,
+        entityType: audit.entityType,
+        entityId: audit.entityId,
+        payload: audit.payload,
+      });
+      throw new FinanceError(
+        'QUOTE_PROVIDER_ACTION_BLOCKED',
+        decision.message ?? 'Xero-backed void blocked — business state unchanged',
+      );
+    }
+    await this.db
+      .update(quotes)
+      .set({
+        status: 'cancelled',
+        cancelledAt: new Date(),
+        cancelReason: normalizeOptionalText(input.reason) ?? 'voided',
+        updatedAt: new Date(),
+      })
+      .where(eq(quotes.id, quoteId));
+    const audit = buildQuoteLifecycleAuditEvent({
+      eventType: 'quote_voided',
+      companyId: actor.companyId,
+      quoteId,
+      quoteNumber: quote.quoteNumber,
+      displayQuoteNumber: displayOfficialQuoteNumber({ xeroQuoteNumber: quote.xeroQuoteNumber }),
+      actorId: actor.userId ?? null,
+      fromState: quote.status,
+      toState: 'cancelled',
+      sourceProvider: quote.sourceProvider,
+      reason: input.reason ?? 'voided',
+    });
+    emitBusinessEvent({
+      companyId: audit.companyId,
+      eventType: audit.eventType,
+      entityType: audit.entityType,
+      entityId: audit.entityId,
+      payload: audit.payload,
+    });
+    return (await this.getQuote(actor.companyId, quoteId))!;
+  }
+
+  async archiveQuote(
+    actorOrCompany: FinanceActor | string,
+    quoteId: string,
+  ): Promise<QuoteSummary> {
+    const actor = toActor(actorOrCompany);
+    const quote = await this.db.query.quotes.findFirst({
+      where: and(eq(quotes.id, quoteId), eq(quotes.companyId, actor.companyId)),
+    });
+    if (!quote) throw new FinanceError('NOT_FOUND', 'Quote not found');
+    const decision = evaluateArchiveQuote({
+      id: quote.id,
+      status: quote.status,
+      cancelReason: quote.cancelReason,
+      isImmutable: quote.isImmutable,
+    });
+    if (decision.kind === 'idempotent') {
+      return (await this.getQuote(actor.companyId, quoteId))!;
+    }
+    if (decision.kind === 'reject') {
+      throw new FinanceError(decision.code ?? 'QUOTE_TRANSITION_NOT_ALLOWED', decision.message ?? 'Cannot archive quote');
+    }
+    await this.db
+      .update(quotes)
+      .set({
+        status: 'cancelled',
+        cancelledAt: quote.cancelledAt ?? new Date(),
+        cancelReason: decision.cancelReason ?? 'archived: lifecycle archive preserves history',
+        updatedAt: new Date(),
+      })
+      .where(eq(quotes.id, quoteId));
+    const audit = buildQuoteLifecycleAuditEvent({
+      eventType: 'quote_archived',
+      companyId: actor.companyId,
+      quoteId,
+      quoteNumber: quote.quoteNumber,
+      displayQuoteNumber: displayOfficialQuoteNumber({ xeroQuoteNumber: quote.xeroQuoteNumber }),
+      actorId: actor.userId ?? null,
+      fromState: quote.status,
+      toState: 'cancelled',
+      sourceProvider: quote.sourceProvider,
+      reason: decision.cancelReason ?? null,
+    });
+    emitBusinessEvent({
+      companyId: audit.companyId,
+      eventType: audit.eventType,
+      entityType: audit.entityType,
+      entityId: audit.entityId,
+      payload: audit.payload,
+    });
+    return (await this.getQuote(actor.companyId, quoteId))!;
+  }
+
+  async getQuoteLifecycle(actorOrCompany: FinanceActor | string, quoteId: string) {
+    const actor = toActor(actorOrCompany);
+    const quote = await this.db.query.quotes.findFirst({
+      where: and(eq(quotes.id, quoteId), eq(quotes.companyId, actor.companyId)),
+      with: { invoices: { columns: { id: true, status: true, amountPaidCents: true, totalCents: true, stage: true } } },
+    });
+    if (!quote) throw new FinanceError('NOT_FOUND', 'Quote not found');
+    const role = normalizeQuoteLifecycleRole(actor.roleName);
+    const linkedInvoiceCount = quote.invoices?.length ?? 0;
+    const hasInvoice = linkedInvoiceCount > 0;
+    const primaryInvoice = quote.invoices?.[0] ?? null;
+    const paymentVisibility = resolveQuotePaymentVisibility({
+      quoteStatus: quote.status,
+      depositPercent: quote.depositPercent,
+      hasLinkedInvoice: hasInvoice,
+      invoiceStatus: primaryInvoice?.status ?? null,
+      amountPaidCents: primaryInvoice?.amountPaidCents ?? null,
+      invoiceTotalCents: primaryInvoice?.totalCents ?? null,
+    });
+    const displayQuoteNumber = resolveQuoteDisplayNumberLabel({
+      id: quote.id,
+      quoteNumber: quote.quoteNumber,
+      xeroQuoteNumber: quote.xeroQuoteNumber,
+      xeroQuoteId: quote.xeroQuoteId,
+      sourceProvider: quote.sourceProvider,
+      sourceExternalId: quote.sourceExternalId,
+    });
+    const allowedActions = getAllowedQuoteActions({
+      status: quote.status,
+      sourceProvider: quote.sourceProvider,
+      xeroQuoteId: quote.xeroQuoteId,
+      xeroQuoteNumber: quote.xeroQuoteNumber,
+      isImmutable: quote.isImmutable,
+      issuedAt: quote.issuedAt,
+      validUntil: quote.validUntil,
+      cancelReason: quote.cancelReason,
+      role,
+      hasInvoice,
+      linkedInvoiceCount,
+    });
+    return {
+      quoteId: quote.id,
+      displayQuoteNumber,
+      quoteNumber: quote.quoteNumber,
+      xeroQuoteNumber: quote.xeroQuoteNumber,
+      xeroQuoteId: quote.xeroQuoteId,
+      sourceProvider: quote.sourceProvider,
+      sourceExternalId: quote.sourceExternalId,
+      status: quote.status,
+      canonicalState: toCanonicalQuoteLifecycleState(quote.status, { cancelReason: quote.cancelReason }),
+      allowedActions,
+      paymentVisibility,
+      linkedInvoiceCount,
+      customerId: quote.customerId,
+      jobId: quote.jobId,
+      role,
+    };
   }
 
   async createQuoteVersion(actorOrCompany: FinanceActor | string, quoteId: string, input: CreateQuoteVersionRequest): Promise<QuoteSummary> {
@@ -565,13 +925,109 @@ export class FinanceService {
 
   async createInvoiceFromQuote(actorOrCompany: FinanceActor | string, quoteId: string, input: CreateInvoiceFromQuoteRequest): Promise<InvoiceSummary> {
     const actor = toActor(actorOrCompany);
-    const quote = await this.db.query.quotes.findFirst({ where: and(eq(quotes.id, quoteId), eq(quotes.companyId, actor.companyId)), with: { lineItems: true, job: true } });
+    const quote = await this.db.query.quotes.findFirst({
+      where: and(eq(quotes.id, quoteId), eq(quotes.companyId, actor.companyId)),
+      with: { lineItems: true, job: true, invoices: { columns: { id: true, stage: true } } },
+    });
     if (!quote) throw new FinanceError('NOT_FOUND', 'Quote not found');
-    if (quote.status !== 'accepted') throw new FinanceError('VALIDATION_ERROR', 'Only accepted quotes can be invoiced');
+
+    // Idempotent replay via clientActionId happens inside createInvoice.
+    if (input.clientActionId) {
+      const existingInvoice = await this.db.query.invoices.findFirst({
+        where: and(eq(invoices.companyId, actor.companyId), eq(invoices.clientActionId, input.clientActionId)),
+        with: { customer: true, job: true, quote: true },
+      });
+      if (existingInvoice) return toInvoiceSummary(existingInvoice);
+    }
+
+    const decision = evaluateConvertQuote({
+      id: quote.id,
+      status: quote.status,
+      isImmutable: quote.isImmutable,
+      sourceProvider: quote.sourceProvider,
+      xeroQuoteId: quote.xeroQuoteId,
+      xeroQuoteNumber: quote.xeroQuoteNumber,
+      hasLinkedInvoice: (quote.invoices?.length ?? 0) > 0,
+      linkedInvoiceCount: quote.invoices?.length ?? 0,
+    });
+    if (decision.kind === 'idempotent') {
+      // Already converted — return existing final/standard invoice when present; never create another conversion.
+      const existing = quote.invoices?.[0];
+      if (existing) {
+        const summary = await this.getInvoice(actor.companyId, existing.id);
+        if (summary) return summary;
+      }
+      throw new FinanceError('QUOTE_ALREADY_CONVERTED', decision.message ?? 'Quote already converted');
+    }
+    if (decision.kind === 'reject') {
+      throw new FinanceError(
+        decision.code ?? 'QUOTE_NOT_ELIGIBLE_FOR_CONVERT',
+        decision.message ?? 'Only accepted quotes can be invoiced',
+      );
+    }
+
+    const conversionRequested = buildQuoteLifecycleAuditEvent({
+      eventType: 'quote_conversion_requested',
+      companyId: actor.companyId,
+      quoteId: quote.id,
+      quoteNumber: quote.quoteNumber,
+      displayQuoteNumber: displayOfficialQuoteNumber({ xeroQuoteNumber: quote.xeroQuoteNumber }),
+      actorId: actor.userId ?? null,
+      fromState: quote.status,
+      toState: input.stage === 'final' || !quote.lineItems.length ? 'converted' : 'accepted',
+      sourceProvider: quote.sourceProvider,
+      extra: { stage: input.stage ?? 'standard' },
+    });
+    emitBusinessEvent({
+      companyId: conversionRequested.companyId,
+      eventType: conversionRequested.eventType,
+      entityType: conversionRequested.entityType,
+      entityId: conversionRequested.entityId,
+      payload: conversionRequested.payload,
+    });
+
+    // Local TITAN invoice creation only. Outbound Xero invoice_create remains approval-gated elsewhere.
+    // Never mark converted when a provider write was requested and blocked.
+    const providerOutcome = resolveProviderActionOutcome({
+      requested: 'convert',
+      providerWriteAttempted: false,
+      providerWriteAllowed: false,
+    });
+
     const lines = quote.lineItems.map(line => ({ category: line.category, description: line.description, quantity: Number(line.quantity), unitPriceCents: line.unitPriceCents, vatRateBps: line.vatRateBps }));
     const invoice = await this.createInvoice(actor, { customerId: quote.customerId, jobId: quote.jobId, quoteId: quote.id, propertyId: quote.propertyId, stage: input.stage, dueDate: input.dueDate, notes: input.notes, amountCents: input.amountCents ?? quote.totalCents, lineItems: lines, clientActionId: input.clientActionId });
     await this.db.update(invoices).set({ quoteVersionNumber: quote.versionNumber, xeroReference: quote.job?.jobNumber ?? null }).where(eq(invoices.id, invoice.id));
-    if (input.stage === 'final' || !quote.lineItems.length) await this.db.update(quotes).set({ status: 'converted', updatedAt: new Date() }).where(eq(quotes.id, quote.id));
+
+    const shouldConvert = input.stage === 'final' || !quote.lineItems.length;
+    if (shouldConvert) {
+      const applied = applyProviderOutcomeToBusinessState({
+        currentStatus: quote.status,
+        requestedToStatus: 'converted',
+        outcome: providerOutcome,
+      });
+      if (applied.applied) {
+        await this.db.update(quotes).set({ status: 'converted', updatedAt: new Date() }).where(eq(quotes.id, quote.id));
+        const convertedAudit = buildQuoteLifecycleAuditEvent({
+          eventType: 'quote_converted',
+          companyId: actor.companyId,
+          quoteId: quote.id,
+          quoteNumber: quote.quoteNumber,
+          displayQuoteNumber: displayOfficialQuoteNumber({ xeroQuoteNumber: quote.xeroQuoteNumber }),
+          actorId: actor.userId ?? null,
+          fromState: quote.status,
+          toState: 'converted',
+          sourceProvider: quote.sourceProvider,
+          extra: { invoiceId: invoice.id, stage: input.stage ?? 'standard' },
+        });
+        emitBusinessEvent({
+          companyId: convertedAudit.companyId,
+          eventType: convertedAudit.eventType,
+          entityType: convertedAudit.entityType,
+          entityId: convertedAudit.entityId,
+          payload: convertedAudit.payload,
+        });
+      }
+    }
     return (await this.getInvoice(actor.companyId, invoice.id))!;
   }
 
@@ -1227,6 +1683,14 @@ export class FinanceService {
     return canViewFinanceProfit(actor.permissions ?? [], actor.roleName ?? null);
   }
 
+  private mapQuoteLifecycleError(error: unknown): FinanceError {
+    if (error instanceof QuoteLifecycleError) {
+      return new FinanceError(error.code, error.message);
+    }
+    if (error instanceof FinanceError) return error;
+    return new FinanceError('VALIDATION_ERROR', error instanceof Error ? error.message : 'Quote lifecycle error');
+  }
+
   private assertFloor(actor: FinanceActor, belowFloor: boolean, override?: boolean, reason?: string | null, allowed = true) {
     if (!belowFloor) return;
     if (!override || !reason?.trim() || !allowed || actor.canWrite === false) {
@@ -1319,6 +1783,9 @@ function toQuoteSummary(row: QuoteWithRelations & Record<string, any>, profit: Q
     acceptedAt: row.acceptedAt?.toISOString() ?? null,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
+    sourceProvider: row.sourceProvider ?? null,
+    sourceExternalId: row.sourceExternalId ?? null,
+    xeroQuoteId: row.xeroQuoteId ?? null,
     ...(profit ? { profit } : {}),
   };
 }

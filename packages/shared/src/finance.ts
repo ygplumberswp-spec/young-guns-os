@@ -168,6 +168,10 @@ export type QuoteSummary = {
   createdAt: string;
   updatedAt: string;
   profit?: QuoteProfitSummary | null;
+  /** Provenance — Xero-backed quotes keep provider state authoritative. */
+  sourceProvider?: string | null;
+  sourceExternalId?: string | null;
+  xeroQuoteId?: string | null;
 };
 
 export type QuoteAcceptanceSummary = {
@@ -656,7 +660,7 @@ const EDITABLE_QUOTE_STATUSES = new Set<QuoteStatus>([
   'approved_for_sending',
 ]);
 
-/** Draft quotes can be edited until issued. */
+/** Draft quotes can be edited until issued. Row 88: issued/terminal states are not draft-editable. */
 export function canEditQuote(quote: { isImmutable: boolean; status: QuoteStatus }): boolean {
   return !quote.isImmutable && EDITABLE_QUOTE_STATUSES.has(quote.status);
 }
@@ -677,6 +681,11 @@ export function nextQuoteApprovalAction(
     return { label: 'Approve For Sending', nextStatus: 'approved_for_sending' };
   }
   return null;
+}
+
+/** @deprecated Prefer getAllowedQuoteActions from quote-lifecycle — kept for UI compatibility. */
+export function canConvertQuoteToInvoice(quote: { status: QuoteStatus }): boolean {
+  return quote.status === 'accepted';
 }
 
 export { formatMoney } from './localisation.js';

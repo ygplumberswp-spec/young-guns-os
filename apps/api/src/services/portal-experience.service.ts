@@ -19,6 +19,9 @@ import {
   displayOfficialInvoiceNumber,
   displayOfficialQuoteNumber,
   pickPaymentInvoiceDisplayNumber,
+  evaluateAcceptQuote,
+  evaluateDeclineQuote,
+  buildQuoteLifecycleAuditEvent,
 } from '@titan/shared';
 import type { PortalAccessPermission } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
@@ -701,7 +704,30 @@ export class PortalExperienceService {
       );
     }
 
+    // Row 88 — canonical accept/decline evaluation (idempotent + illegal transition truth).
     if (decision === 'accepted') {
+      const acceptEval = evaluateAcceptQuote({
+        id: quote.id,
+        status: quote.status,
+        isImmutable: quote.isImmutable,
+        issuedAt: quote.issuedAt,
+        validUntil: quote.validUntil,
+      });
+      if (acceptEval.kind === 'idempotent') {
+        const prior = await this.db.query.quoteAcceptances.findFirst({
+          where: and(
+            eq(quoteAcceptances.quoteId, quote.id),
+            eq(quoteAcceptances.decision, 'accepted'),
+          ),
+        });
+        if (prior) return { ...toAcceptanceSummary(prior), idempotentReplay: true };
+      }
+      if (acceptEval.kind === 'reject') {
+        throw new PortalExperienceError(
+          acceptEval.code ?? 'VALIDATION_ERROR',
+          acceptEval.message ?? 'Quote cannot be accepted',
+        );
+      }
       const priorAccept = await this.db.query.quoteAcceptances.findFirst({
         where: and(
           eq(quoteAcceptances.quoteId, quote.id),
@@ -709,9 +735,30 @@ export class PortalExperienceService {
         ),
       });
       if (priorAccept) {
+        return { ...toAcceptanceSummary(priorAccept), idempotentReplay: true };
+      }
+    }
+    if (decision === 'declined') {
+      const declineEval = evaluateDeclineQuote({
+        id: quote.id,
+        status: quote.status,
+        isImmutable: quote.isImmutable,
+        issuedAt: quote.issuedAt,
+        validUntil: quote.validUntil,
+      });
+      if (declineEval.kind === 'idempotent') {
+        const prior = await this.db.query.quoteAcceptances.findFirst({
+          where: and(
+            eq(quoteAcceptances.quoteId, quote.id),
+            eq(quoteAcceptances.decision, 'declined'),
+          ),
+        });
+        if (prior) return { ...toAcceptanceSummary(prior), idempotentReplay: true };
+      }
+      if (declineEval.kind === 'reject') {
         throw new PortalExperienceError(
-          'VALIDATION_ERROR',
-          'This quote version has already been accepted',
+          declineEval.code ?? 'VALIDATION_ERROR',
+          declineEval.message ?? 'Quote cannot be declined',
         );
       }
     }
@@ -763,17 +810,34 @@ export class PortalExperienceService {
       return inserted;
     });
 
-    if (decision === 'accepted') {
-      emitBusinessEvent({
+    if (decision === 'accepted' || decision === 'declined') {
+      const audit = buildQuoteLifecycleAuditEvent({
+        eventType: decision === 'accepted' ? 'quote_accepted' : 'quote_declined',
         companyId: scope.companyId,
-        eventType: 'quote.accepted',
-        entityType: 'quote',
-        entityId: quote.id,
+        quoteId: quote.id,
+        quoteNumber: quote.quoteNumber,
+        displayQuoteNumber: displayOfficialQuoteNumber({ xeroQuoteNumber: quote.xeroQuoteNumber }),
+        actorId: scope.portalUserId,
+        fromState: quote.status,
+        toState: decision === 'accepted' ? 'accepted' : 'declined',
+        sourceProvider: quote.sourceProvider,
+        extra: {
+          customerId: scope.customerId,
+          versionNumber: quote.versionNumber,
+          amountCents: quote.amountCents,
+        },
+      });
+      emitBusinessEvent({
+        companyId: audit.companyId,
+        eventType: audit.eventType,
+        entityType: audit.entityType,
+        entityId: audit.entityId,
         payload: {
+          ...audit.payload,
           customerId: scope.customerId,
           quote: {
             id: quote.id,
-            status: 'accepted',
+            status: decision === 'accepted' ? 'accepted' : 'declined',
             customerId: scope.customerId,
             amountCents: quote.amountCents,
             versionNumber: quote.versionNumber,
