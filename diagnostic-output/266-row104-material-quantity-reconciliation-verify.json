@@ -1,0 +1,162 @@
+{
+  "schemaVersion": "row104-material-quantity-reconciliation-v1",
+  "generatedAt": "2026-08-08T12:29:39.968Z",
+  "pass": 31,
+  "fail": 0,
+  "results": [
+    {
+      "name": "migration_0222_already_present",
+      "status": "PASS"
+    },
+    {
+      "name": "staging_readonly_material_audit",
+      "status": "PASS",
+      "suppliers": 0,
+      "purchaseOrders": 0,
+      "purchaseOrderLines": 0,
+      "receiptsDeliveryEvidence": 0,
+      "inventoryReceipts": 0,
+      "directJobMaterialPurchases": 0,
+      "stockMaterialUseTransactions": 0,
+      "jobMaterialReturnsToStock": 0,
+      "supplierReturns": 0,
+      "supplierCredits": 0,
+      "wasteEvents": 0,
+      "jpeMaterialLikeCosts": 0,
+      "recordsMissingJobLink": {
+        "purchaseOrders": 0,
+        "stockIssues": 0
+      },
+      "potentialDuplicateSourceEvents": 0,
+      "quantityMismatches": {
+        "overReceivedPoLines": 0
+      },
+      "row92Status": "DRAFT",
+      "row92Automation": "OFF",
+      "note": "No fabricated YG returns/credits/waste for Royal Cape; suppliers/POs remain 0"
+    },
+    {
+      "name": "row92_off",
+      "status": "PASS"
+    },
+    {
+      "name": "royal_cape_unchanged",
+      "status": "PASS",
+      "totalCents": 4272250,
+      "xeroQuoteId": "4d9b1ceb-83dc-4ac6-8d58-ce7ac08f6db8"
+    },
+    {
+      "name": "fixture_quote_baseline",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_order_qty",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_partial_receipt",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_full_receipt",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_used_qty",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_unaccounted_zero",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_supplier_return_ok",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_supplier_credit_not_linked",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_waste_ok",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_over_received",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_return_exceeds_blocked",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_unit_mismatch",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_stock_receipt_no_job_cost",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_credit_retry_no_dup",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_return_credit_no_double",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_quote_unchanged",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_row103_preserved",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_rbac",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_client_leak",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_safety",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_row105_not_started",
+      "status": "PASS"
+    },
+    {
+      "name": "fixture_totals",
+      "status": "PASS",
+      "pass": 21,
+      "fail": 0
+    },
+    {
+      "name": "cleanup_no_fabricated_yg_material_events",
+      "status": "PASS"
+    },
+    {
+      "name": "xero_writes",
+      "status": "PASS",
+      "count": 0
+    },
+    {
+      "name": "customer_sends",
+      "status": "PASS",
+      "count": 0
+    },
+    {
+      "name": "production_writes",
+      "status": "PASS",
+      "count": 0
+    },
+    {
+      "name": "row118_not_closed",
+      "status": "PASS"
+    }
+  ]
+}

@@ -105,6 +105,11 @@ export const PORTAL_EXPANSION_FORBIDDEN_FIELDS = [
   'xeroBillProjection',
   'jpeProfitCents',
   'lineCostCents',
+  // Row 104 — material qty reconciliation / return / credit internals
+  'materialQtyReconInternal',
+  'supplierCreditAmountCents',
+  'materialWasteInternal',
+  'supplierReturnInternal',
 
   'xeroQuoteId',
   'xeroInvoiceNumber',

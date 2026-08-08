@@ -1520,6 +1520,13 @@
       "when": 1788619200000,
       "tag": "0221_job_procurement_chain",
       "breakpoints": true
+    },
+    {
+      "idx": 217,
+      "version": "7",
+      "when": 1788705600000,
+      "tag": "0222_material_quantity_reconciliation",
+      "breakpoints": true
     }
   ]
 }

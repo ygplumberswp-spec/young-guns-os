@@ -262,4 +262,20 @@ export type {
   JobProcurementSupplierInvoiceEvidence,
 } from './schema/job-procurement-chain.js';
 
+/** Explicit re-export — Row 104 material quantity reconciliation. */
+export {
+  materialQuantityReconciliations,
+  materialSupplierReturnEvents,
+  materialSupplierCreditEvents,
+  materialWasteEvents,
+  materialReturnToStockEvents,
+} from './schema/material-quantity-reconciliation.js';
+export type {
+  MaterialQuantityReconciliation,
+  MaterialSupplierReturnEvent,
+  MaterialSupplierCreditEvent,
+  MaterialWasteEvent,
+  MaterialReturnToStockEvent,
+} from './schema/material-quantity-reconciliation.js';
+
 export { drizzle } from 'drizzle-orm/postgres-js';
