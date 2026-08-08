@@ -93,7 +93,7 @@
 52. **tests/builds** — shared Row96 11/11; focused 103/103; web build PASS; db TS2589 baseline truthful
 53. **known gaps** — inventory catalogue still 0; all 1556 YG lines lack unit cost; company overhead rate setting not present; Client Portal full E2E remains OPEN; API not redeployed in this pass (schema applied via staging SQL)
 54. **commit** — `0e8a205` feat(finance): add Row 96 canonical quote cost model
-55. **PR URL** — create via https://github.com/ygplumberswp-spec/young-guns-os/compare/cursor/quote-scenarios-663e...cursor/canonical-quote-cost-model-663e?expand=1 (local `gh` unauthenticated; branch pushed)
+55. **PR URL** — https://github.com/ygplumberswp-spec/young-guns-os/compare/cursor/quote-scenarios-663e...cursor/canonical-quote-cost-model-663e?expand=1 (branch pushed; `gh` auth missing for automated PR create)
 56. **Row 97 not started** — true
 57. **Row 98 not started** — true
 58. **Row 99 not started** — true
