@@ -5,7 +5,7 @@
   "mappedFromWorkspace": "/workspace \u2192 Titan-Aura-Row95 worktree (Row 94 tip; no prior Row 95 WIP found on disk)",
   "branch": "cursor/quote-scenarios-663e",
   "startingHead": "606c9b6",
-  "endingHead": "3f339f8369f9103fb73faa2be24c9b4c89809d7d",
+  "endingHead": "0a4cee69562727a0dafb9c997d0517286fd293bb",
   "baseBranch": "cursor/plan-floor-plan-quotation-663e",
   "ancestry": "PR #67\u2013#79 (Rows 87\u201394) are ancestors of 606c9b6; Row 95 branched from Row 94 tip",
   "prUrl": "https://github.com/ygplumberswp-spec/young-guns-os/pull/80",
