@@ -46,6 +46,10 @@ export const AboutSettingsPage = lazyNamed(
   () => import('../pages/settings/AboutSettingsPage'),
   'AboutSettingsPage',
 );
+export const PricebookTierRulesPage = lazyNamed(
+  () => import('../pages/settings/PricebookTierRulesPage'),
+  'PricebookTierRulesPage',
+);
 export const TeamSettingsPage = lazyNamed(
   () => import('../pages/settings/TeamSettingsPage'),
   'TeamSettingsPage',

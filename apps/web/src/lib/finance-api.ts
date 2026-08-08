@@ -293,3 +293,65 @@ export async function fetchJobLinkageControlQueue(
   );
   return data.queue;
 }
+
+export type PricebookRuleSetDto = import('@titan/shared').PricebookRuleSet;
+
+export async function fetchPricebookRuleSet(accessToken: string): Promise<{
+  ruleSet: PricebookRuleSetDto;
+  persisted: boolean;
+  globalAutomationEnabled: false;
+  message: string;
+}> {
+  return request('/finance/pricebook-rules', { accessToken });
+}
+
+export async function savePricebookRuleDraft(
+  accessToken: string,
+  body: {
+    name?: string;
+    baseCostType?: PricebookRuleSetDto['baseCostType'];
+    status?: 'DRAFT' | 'INACTIVE';
+    tiers: PricebookRuleSetDto['tiers'];
+  },
+): Promise<{ ruleSet: PricebookRuleSetDto; created: boolean; unchanged: boolean }> {
+  const data = await request<{
+    ruleSet: PricebookRuleSetDto;
+    created: boolean;
+    unchanged: boolean;
+  }>('/finance/pricebook-rules/draft', {
+    accessToken,
+    method: 'PUT',
+    body,
+  });
+  return data;
+}
+
+export async function previewPricebookBaseCost(
+  accessToken: string,
+  body: { baseCostCents: number | null; isDiscountedNet?: boolean; costSource?: string },
+): Promise<{
+  result: import('@titan/shared').PricebookResolveResult;
+  ruleStatus: string;
+  ruleVersion: number;
+  globalAutomationEnabled: false;
+  applied: 0;
+}> {
+  return request('/finance/pricebook-rules/preview', {
+    accessToken,
+    method: 'POST',
+    body,
+  });
+}
+
+export async function fetchPricebookBulkImpact(accessToken: string): Promise<{
+  rows: import('@titan/shared').PricebookBulkImpactRow[];
+  applied: 0;
+  proposedCount: number;
+  missingCostCount: number;
+  reviewRequiredCount: number;
+  catalogueRowCount: number;
+  globalAutomationEnabled: false;
+  note: string;
+}> {
+  return request('/finance/pricebook-rules/bulk-impact', { accessToken });
+}

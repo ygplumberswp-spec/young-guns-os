@@ -698,6 +698,10 @@ export function App() {
                           component={OwnerPages.CompanySettingsPage}
                         />
                         <Route path="/settings/about" component={OwnerPages.AboutSettingsPage} />
+                        <Route
+                          path="/settings/pricebook-tiers"
+                          component={OwnerPages.PricebookTierRulesPage}
+                        />
                         <Route path="/settings/team" component={OwnerPages.TeamSettingsPage} />
                         <Route
                           path="/settings/dashboard"

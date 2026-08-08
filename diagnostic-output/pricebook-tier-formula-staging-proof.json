@@ -1,0 +1,288 @@
+{
+  "label": "pricebook-tier-formula-staging-proof",
+  "row": 92,
+  "generatedAt": "2026-08-08T09:45:14.947Z",
+  "stagingOnly": true,
+  "xeroWriteCalls": 0,
+  "customerSends": 0,
+  "productionWrites": 0,
+  "productionMigrations": 0,
+  "row93Started": false,
+  "row122Activated": false,
+  "realYgPriceChanges": 0,
+  "historicalQuotePriceChanges": 0,
+  "invoicePriceChanges": 0,
+  "config": {
+    "ruleModel": "company_pricebook_rule_sets + resolvePricebookSellPrice",
+    "ygRuleVersion": 1,
+    "status": "DRAFT",
+    "globalAutomationEnabled": false,
+    "exactTiers": [
+      {
+        "minCentsInclusive": 0,
+        "maxCentsInclusive": 50000,
+        "multiplierNumerator": 11,
+        "multiplierDenominator": 5,
+        "label": "Up to R500 → 2.2x"
+      },
+      {
+        "minCentsInclusive": 50001,
+        "maxCentsInclusive": 150000,
+        "multiplierNumerator": 2,
+        "multiplierDenominator": 1,
+        "label": "R500.01–R1,500 → 2.0x"
+      },
+      {
+        "minCentsInclusive": 150001,
+        "maxCentsInclusive": null,
+        "multiplierNumerator": 168,
+        "multiplierDenominator": 100,
+        "label": "Above R1,500 → 1.68x"
+      }
+    ],
+    "baseCostType": "SUPPLIER_NET_DISCOUNTED"
+  },
+  "data": {
+    "ygCatalogueRows": 0,
+    "platformInventoryRows": 3,
+    "tempCatalogueSource": "YOUNG_GUNS_APPROVED_FINANCE_PRICEBOOK (constants, unitCostCents=null) — READ ONLY",
+    "baseCostFields": [
+      "inventory_items.unit_cost_cents",
+      "inventory_items.sell_price_cents"
+    ],
+    "costProvenanceQuality": "unit_cost_cents exists; confirmed SUPPLIER_NET_DISCOUNTED provenance NOT available on catalogue rows → REVIEW_REQUIRED for bulk",
+    "existingRealPriceRows": 0,
+    "ruleTable": "company_pricebook_rule_sets",
+    "persistedYgRules": [
+      {
+        "id": "dafaf107-7c73-4377-8b5e-15259ebfe51e",
+        "company_id": "095aef76-fef5-4139-af37-a42f2d7e2faf",
+        "version": 1,
+        "status": "DRAFT",
+        "global_automation_enabled": false,
+        "base_cost_type": "SUPPLIER_NET_DISCOUNTED"
+      }
+    ]
+  },
+  "formulaProof": {
+    "1": {
+      "multiplier": 2.2,
+      "sellPriceExVatCents": 2,
+      "tier": "Up to R500 → 2.2x"
+    },
+    "49999": {
+      "multiplier": 2.2,
+      "sellPriceExVatCents": 109998,
+      "tier": "Up to R500 → 2.2x"
+    },
+    "50000": {
+      "multiplier": 2.2,
+      "sellPriceExVatCents": 110000,
+      "tier": "Up to R500 → 2.2x"
+    },
+    "50001": {
+      "multiplier": 2,
+      "sellPriceExVatCents": 100002,
+      "tier": "R500.01–R1,500 → 2.0x"
+    },
+    "149999": {
+      "multiplier": 2,
+      "sellPriceExVatCents": 299998,
+      "tier": "R500.01–R1,500 → 2.0x"
+    },
+    "150000": {
+      "multiplier": 2,
+      "sellPriceExVatCents": 300000,
+      "tier": "R500.01–R1,500 → 2.0x"
+    },
+    "150001": {
+      "multiplier": 1.68,
+      "sellPriceExVatCents": 252002,
+      "tier": "Above R1,500 → 1.68x"
+    },
+    "r499_99": {
+      "multiplier": 2.2,
+      "sellPriceExVatCents": 109998,
+      "tier": "Up to R500 → 2.2x"
+    },
+    "r500": {
+      "multiplier": 2.2,
+      "sellPriceExVatCents": 110000,
+      "tier": "Up to R500 → 2.2x"
+    },
+    "r500_01": {
+      "multiplier": 2,
+      "sellPriceExVatCents": 100002,
+      "tier": "R500.01–R1,500 → 2.0x"
+    },
+    "r1500": {
+      "multiplier": 2,
+      "sellPriceExVatCents": 300000,
+      "tier": "R500.01–R1,500 → 2.0x"
+    },
+    "r1500_01": {
+      "multiplier": 1.68,
+      "sellPriceExVatCents": 252002,
+      "tier": "Above R1,500 → 1.68x"
+    },
+    "rounding": "HALF_UP_CENTS via integer fraction"
+  },
+  "preview": {
+    "recordsPreviewed": 0,
+    "valid": 0,
+    "missingCost": 0,
+    "reviewRequired": 0,
+    "proposedOnly": true,
+    "applied": 0,
+    "note": "YG catalogue = 0 → bulk preview 0 rows (no catalogue invented)"
+  },
+  "architectureAudit": {
+    "inventory_items": "CANONICAL sell catalogue",
+    "company_finance_settings": "VAT/profit floor — not tier markup (CANONICAL adjacent)",
+    "YOUNG_GUNS_APPROVED_FINANCE_PRICEBOOK": "LEGACY/TEMPORARY constants — READ ONLY; unitCost null",
+    "company_pricebook_rule_sets": "CANONICAL Row 92 rule model",
+    "resolvePricebookSellPrice": "CANONICAL",
+    "hardCoded_2_2_2_0_1_68_in_pricing": "NONE prior — now only in pricebook-tier-formula (CANONICAL)",
+    "thresholds_500_1500": "ONLY in pricebook-tier-formula tiers (CANONICAL)",
+    "vatBasis": "ex-VAT multiplier; VAT via canonical tax handling",
+    "rounding": "HALF_UP_CENTS integer fraction",
+    "classification": {
+      "pricebook_tier_formula": "CANONICAL",
+      "temp_pricebook_constants": "LEGACY / REVIEW REQUIRED for cost (null unit cost)",
+      "duplicate_engines": "NONE"
+    }
+  },
+  "royalCape": {
+    "quoteId": "41178762-bb9a-4e5d-b568-07c330f18cbb",
+    "quoteNumber": "QU-0183",
+    "totalCents": 4272250,
+    "pricingPresentationMode": "ITEMISED",
+    "xeroQuoteId": "4d9b1ceb-83dc-4ac6-8d58-ce7ac08f6db8",
+    "customerId": "773497f7-2d71-4a3a-8d80-d113b841b843",
+    "jobId": "5920ef4a-51a9-44ec-8577-09d187ca9c33",
+    "unchanged": true
+  },
+  "results": [
+    {
+      "name": "safety_gates",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "draft_rule_valid",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "boundary_1",
+      "status": "PASS",
+      "detail": "2.2x → 2c"
+    },
+    {
+      "name": "boundary_49999",
+      "status": "PASS",
+      "detail": "2.2x → 109998c"
+    },
+    {
+      "name": "boundary_50000",
+      "status": "PASS",
+      "detail": "2.2x → 110000c"
+    },
+    {
+      "name": "boundary_50001",
+      "status": "PASS",
+      "detail": "2x → 100002c"
+    },
+    {
+      "name": "boundary_149999",
+      "status": "PASS",
+      "detail": "2x → 299998c"
+    },
+    {
+      "name": "boundary_150000",
+      "status": "PASS",
+      "detail": "2x → 300000c"
+    },
+    {
+      "name": "boundary_150001",
+      "status": "PASS",
+      "detail": "1.68x → 252002c"
+    },
+    {
+      "name": "missing_cost_blocked",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "activation_blocked",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "inactive_cannot_apply",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "inactive_mutate_guard",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "row90_row91_regression_helpers",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "staging_additive_migration_0211",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "yg_draft_rule_already_present",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "yg_rule_status_draft_automation_off",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "bulk_preview_empty_no_mutation",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "real_yg_price_changes_zero",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "architecture_audit_readonly",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "royal_cape_unchanged",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "historical_quote_unchanged",
+      "status": "PASS",
+      "detail": ""
+    }
+  ],
+  "safety": {
+    "realYgPriceChanges": 0,
+    "historicalQuotePriceChanges": 0,
+    "invoicePriceChanges": 0,
+    "row93Started": false,
+    "row122Activated": false,
+    "xeroWrites": 0,
+    "customerSends": 0,
+    "productionWrites": 0,
+    "globalAutomationEnabled": false
+  }
+}

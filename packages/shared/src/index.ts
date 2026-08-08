@@ -57,6 +57,7 @@ export * from './quote-lifecycle.js';
 export * from './finance-document-metadata.js';
 export * from './fixed-price-quoting.js';
 export * from './ygp-catalogue-classification.js';
+export * from './pricebook-tier-formula.js';
 export * from './contact-validation.js';
 export * from './job-contract.js';
 export * from './job-execution.js';
