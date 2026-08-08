@@ -147,9 +147,12 @@ const createQuoteSchema = z
     issuedAt: z.string().datetime().optional().nullable(),
     notes: z.string().trim().max(5000).optional().nullable(),
     customerNotes: z.string().trim().max(5000).optional().nullable(),
+    internalNotes: z.string().trim().max(5000).optional().nullable(),
     scopeOfWork: z.string().trim().max(10000).optional().nullable(),
     exclusions: z.string().trim().max(10000).optional().nullable(),
+    assumptions: z.string().trim().max(10000).optional().nullable(),
     paymentTerms: z.string().trim().max(2000).optional().nullable(),
+    depositPercent: z.number().min(0).max(100).optional().nullable(),
     billingAddress: z.string().trim().max(5000).optional().nullable(),
     siteAddress: z.string().trim().max(5000).optional().nullable(),
     postalAddress: z.string().trim().max(5000).optional().nullable(),
@@ -171,8 +174,11 @@ const createInvoiceSchema = z.object({
   currency: z.string().trim().min(3).max(3).optional(),
   dueDate: z.string().datetime().optional().nullable(),
   notes: z.string().trim().max(5000).optional().nullable(),
+  internalNotes: z.string().trim().max(5000).optional().nullable(),
   issuedAt: z.string().datetime().optional().nullable(),
   customerReference: z.string().trim().max(200).optional().nullable(),
+  customerPoNumber: z.string().trim().max(200).optional().nullable(),
+  paymentTerms: z.string().trim().max(2000).optional().nullable(),
   billingAddress: z.string().trim().max(5000).optional().nullable(),
   siteAddress: z.string().trim().max(5000).optional().nullable(),
   postalAddress: z.string().trim().max(5000).optional().nullable(),
@@ -376,7 +382,10 @@ export function createFinanceRouter({
 
   router.get('/quotes/:id', requireAnyPermission('finance:read', 'finance:write'), async (req, res) => {
     const auth = getAuth(req);
-    const quote = await financeService.getQuoteDetail(auth.companyId, routeParam(req.params.id), { includeProfit: canViewProfit(auth) });
+    const quote = await financeService.getQuoteDetail(auth.companyId, routeParam(req.params.id), {
+      includeProfit: canViewProfit(auth),
+      includeInternalNotes: hasAnyPermission(auth.permissions, ['finance:write', 'finance:read', '*']),
+    });
     if (!quote) { res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Quote not found' } }); return; }
     res.json({ data: { quote } });
   });
@@ -502,7 +511,10 @@ export function createFinanceRouter({
   });
   router.get('/invoices/:id', requireAnyPermission('finance:read', 'finance:write'), async (req, res) => {
     const auth = getAuth(req);
-    const invoice = await financeService.getInvoiceDetail(auth.companyId, routeParam(req.params.id), { includeProfit: canViewProfit(auth) });
+    const invoice = await financeService.getInvoiceDetail(auth.companyId, routeParam(req.params.id), {
+      includeProfit: canViewProfit(auth),
+      includeInternalNotes: hasAnyPermission(auth.permissions, ['finance:write', 'finance:read', '*']),
+    });
     if (!invoice) { res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Invoice not found' } }); return; }
     res.json({ data: { invoice } });
   });

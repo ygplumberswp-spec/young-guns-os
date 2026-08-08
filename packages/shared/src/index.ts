@@ -54,6 +54,7 @@ export * from './customer-duplicate-reconciliation.js';
 export * from './equipment-assets-import.js';
 export * from './xero-official-number-authority.js';
 export * from './quote-lifecycle.js';
+export * from './finance-document-metadata.js';
 export * from './contact-validation.js';
 export * from './job-contract.js';
 export * from './job-execution.js';

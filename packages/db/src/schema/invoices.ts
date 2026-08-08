@@ -40,7 +40,10 @@ export const invoices = pgTable('invoices', {
   invoiceNumber: text('invoice_number').notNull(),
   internalNumber: text('internal_number'),
   xeroInvoiceNumber: text('xero_invoice_number'),
+  /** Provider/Xero Reference — provider-authoritative when Xero-backed. */
   xeroReference: text('xero_reference'),
+  /** Customer PO number (TITAN-owned). Distinct from xero_reference. */
+  customerPoNumber: text('customer_po_number'),
   numberAuthority: text('number_authority').notNull().default('internal_pending_xero'),
   /** Legacy DB column — not user-facing (Phase J-6). Application always sets customer name or ''. */
   title: text('title').notNull().default(''),
@@ -59,7 +62,10 @@ export const invoices = pgTable('invoices', {
   billingAddress: text('billing_address'),
   siteAddress: text('site_address'),
   postalAddress: text('postal_address'),
+  /** Customer-facing notes — explicitly visible on PDF/portal when authorised. */
   notes: text('notes'),
+  /** Staff-only — never leak to customer surfaces. */
+  internalNotes: text('internal_notes'),
   cancelReason: text('cancel_reason'),
   clientActionId: text('client_action_id'),
   issuedAt: timestamp('issued_at', { withTimezone: true }),

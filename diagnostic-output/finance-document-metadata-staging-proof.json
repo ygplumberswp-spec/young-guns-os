@@ -1,0 +1,141 @@
+{
+  "label": "finance-document-metadata-staging-proof",
+  "row": 89,
+  "generatedAt": "2026-08-08T08:55:00.087Z",
+  "stagingOnly": true,
+  "xeroWriteCalls": 0,
+  "customerSends": 0,
+  "productionWrites": 0,
+  "productionMigrations": 0,
+  "row90Started": false,
+  "results": [
+    {
+      "name": "safety_gates",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "fixture_savePaymentTerms",
+      "status": "PASS",
+      "detail": "PASS"
+    },
+    {
+      "name": "fixture_saveCustomerPoReference",
+      "status": "PASS",
+      "detail": "PASS"
+    },
+    {
+      "name": "fixture_saveInternalNote",
+      "status": "PASS",
+      "detail": "PASS"
+    },
+    {
+      "name": "fixture_saveCustomerFacingNote",
+      "status": "PASS",
+      "detail": "PASS"
+    },
+    {
+      "name": "fixture_pdfExcludesInternal",
+      "status": "PASS",
+      "detail": "PASS"
+    },
+    {
+      "name": "fixture_clientDtoExcludesInternal",
+      "status": "PASS",
+      "detail": "PASS"
+    },
+    {
+      "name": "fixture_staffIncludesInternal",
+      "status": "PASS",
+      "detail": "PASS"
+    },
+    {
+      "name": "fixture_commsExcludesInternal",
+      "status": "PASS",
+      "detail": "PASS"
+    },
+    {
+      "name": "quote_metadata_audit",
+      "status": "PASS",
+      "detail": "253"
+    },
+    {
+      "name": "invoice_metadata_audit",
+      "status": "PASS",
+      "detail": "590"
+    },
+    {
+      "name": "royal_cape_qu0183",
+      "status": "PASS",
+      "detail": "QU-0183"
+    }
+  ],
+  "blockers": [],
+  "proof": {
+    "safeFixtureProof": {
+      "savePaymentTerms": "PASS",
+      "saveCustomerPoReference": "PASS",
+      "saveInternalNote": "PASS",
+      "saveCustomerFacingNote": "PASS",
+      "pdfExcludesInternal": "PASS",
+      "clientDtoExcludesInternal": "PASS",
+      "staffIncludesInternal": "PASS",
+      "commsExcludesInternal": "PASS"
+    },
+    "quotes": {
+      "totalScanned": 253,
+      "paymentTermsPresent": 0,
+      "paymentTermsMissing": 253,
+      "poOrReferencePresent": 0,
+      "poOrReferenceMissing": 253,
+      "internalNotePresent": 0,
+      "customerFacingNotePresent": 253,
+      "ambiguousGenericNoteRecords": 0,
+      "leakageIssuesFound": 0,
+      "leakageIssuesFixed": 0
+    },
+    "invoices": {
+      "totalScanned": 590,
+      "paymentTermsPresent": 0,
+      "paymentTermsMissing": 590,
+      "poPresent": 0,
+      "referencePresent": 204,
+      "poOrReferenceMissing": 386,
+      "internalNotePresent": 0,
+      "customerFacingNotePresent": 589,
+      "ambiguousGenericNoteRecords": 586,
+      "leakageIssuesFound": 0,
+      "leakageIssuesFixed": 0
+    },
+    "royalCape": {
+      "display": "QU-0183",
+      "customerReference": null,
+      "paymentTerms": null,
+      "fabricatedPo": false,
+      "internalNoteLeakage": 0,
+      "titanQuoteIdUnchanged": true,
+      "xeroQuoteIdUnchanged": true,
+      "crcUnchanged": true,
+      "job000002Unchanged": true,
+      "check": {
+        "ok": true
+      }
+    },
+    "surfaces": {
+      "quoteDetail": "PASS — explicit payment terms / PO / customer-facing / internal labels",
+      "invoiceDetail": "PASS — same",
+      "pdfPrint": "PASS — toPdfSafeFinanceMetadata excludes internalNotes",
+      "emailRender": "PASS — communication-safe payload excludes internalNotes; send=0",
+      "whatsappRender": "PASS — templates do not include internal notes fields",
+      "customer360": "PASS — no ownership mutation; metadata via finance DTOs",
+      "property360": "PASS — no property reassignment",
+      "job360": "PASS — quote/invoice linkage unchanged",
+      "clientPortalRow89": "PASS_NUMBERING_AND_METADATA_SCOPE — customerFacingNotes/paymentTerms/PO; internalNotes forbidden; full portal E2E NOT PASS"
+    },
+    "xeroWrites": 0,
+    "customerSends": 0,
+    "productionWrites": 0,
+    "row90Started": false
+  },
+  "ok": true
+}

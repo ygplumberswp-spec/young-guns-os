@@ -194,8 +194,32 @@ export function InvoiceDetailPage() {
             </div>
             <div>
               <dt>Payment terms</dt>
-              <dd>{invoice.paymentTerms ?? '—'}</dd>
+              <dd>{invoice.paymentTerms?.trim() || 'Not specified'}</dd>
             </div>
+            <div>
+              <dt>Customer PO / reference</dt>
+              <dd>
+                {invoice.customerPoNumber?.trim() ||
+                  invoice.customerReference?.trim() ||
+                  'Not provided'}
+              </dd>
+            </div>
+            <div>
+              <dt>Customer-facing note</dt>
+              <dd>
+                <span className="page-muted">Visible to customer</span>
+                <div>{invoice.notes?.trim() || '—'}</div>
+              </dd>
+            </div>
+            {invoice.internalNotes ? (
+              <div>
+                <dt>Internal note</dt>
+                <dd>
+                  <span className="page-muted">Internal — not visible to customer</span>
+                  <div>{invoice.internalNotes}</div>
+                </dd>
+              </div>
+            ) : null}
           </dl>
         </Panel>
 
