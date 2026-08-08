@@ -1583,6 +1583,13 @@
       "when": 1789396800000,
       "tag": "0230_bank_transaction_idempotency",
       "breakpoints": true
+    },
+    {
+      "idx": 226,
+      "version": "7",
+      "when": 1789483200000,
+      "tag": "0231_bank_finance_exactly_once",
+      "breakpoints": true
     }
   ]
 }

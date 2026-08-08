@@ -250,6 +250,7 @@ export * from './bank-transaction-truth.js';
 export * from './bank-transaction-matching.js';
 export * from './bank-reconciliation-states.js';
 export * from './bank-transaction-idempotency.js';
+export * from './bank-finance-exactly-once.js';
 export * from './job-evidence.js';
 export * from './universal-evidence-upload.js';
 export * from './quality-assurance.js';

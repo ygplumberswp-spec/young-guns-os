@@ -135,6 +135,9 @@ export const bankTransactions = pgTable(
     supersedesTransactionId: uuid('supersedes_transaction_id'),
     reversalOfTransactionId: uuid('reversal_of_transaction_id'),
     isHistoricalVersion: boolean('is_historical_version').notNull().default(false),
+    economicEventKey: text('economic_event_key'),
+    financeFeedStatus: text('finance_feed_status').notNull().default('not_eligible'),
+    jpeFeedStatus: text('jpe_feed_status').notNull().default('not_eligible'),
     importBatchId: uuid('import_batch_id').references(() => bankStatementImportBatches.id, {
       onDelete: 'set null',
     }),
