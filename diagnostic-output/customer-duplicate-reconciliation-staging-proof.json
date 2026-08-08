@@ -1,0 +1,529 @@
+{
+  "label": "customer-duplicate-reconciliation-staging-proof",
+  "generatedAt": "2026-08-08T07:47:24.779Z",
+  "mode": "read-only-scan",
+  "stagingOnly": true,
+  "xeroWriteCalls": 0,
+  "productionWrites": 0,
+  "productionMigrations": 0,
+  "realMergesExecuted": 0,
+  "row86Started": false,
+  "results": [
+    {
+      "name": "reconciliation_table",
+      "status": "PASS",
+      "detail": "exists"
+    },
+    {
+      "name": "customers_scanned",
+      "status": "PASS",
+      "detail": "842"
+    },
+    {
+      "name": "candidate_pairs",
+      "status": "PASS",
+      "detail": "11"
+    },
+    {
+      "name": "high_confidence",
+      "status": "PASS",
+      "detail": "0"
+    },
+    {
+      "name": "possible",
+      "status": "PASS",
+      "detail": "7"
+    },
+    {
+      "name": "same_company_different_person",
+      "status": "PASS",
+      "detail": "1"
+    },
+    {
+      "name": "review_required",
+      "status": "PASS",
+      "detail": "3"
+    },
+    {
+      "name": "crc_rowan_regression",
+      "status": "PASS",
+      "detail": "SAME_COMPANY — DIFFERENT PERSON; no destructive merge"
+    },
+    {
+      "name": "crc_rowan_classification",
+      "status": "PASS",
+      "detail": "SAME_COMPANY_DIFFERENT_CONTACT"
+    },
+    {
+      "name": "royal_cape_property360_qu0183",
+      "status": "PASS",
+      "detail": "intact"
+    },
+    {
+      "name": "fixture_canonicalization_in_transaction",
+      "status": "PASS",
+      "detail": "soft merge pointer works; rolling back"
+    },
+    {
+      "name": "fixture_rolled_back",
+      "status": "PASS",
+      "detail": "no permanent fixture customers left"
+    },
+    {
+      "name": "no_permanent_fake_customers",
+      "status": "PASS",
+      "detail": "0"
+    },
+    {
+      "name": "no_real_merge",
+      "status": "PASS",
+      "detail": "0 real Young Guns merges executed"
+    },
+    {
+      "name": "xero_writes",
+      "status": "PASS",
+      "detail": "0"
+    },
+    {
+      "name": "production_writes",
+      "status": "PASS",
+      "detail": "0"
+    },
+    {
+      "name": "row86_not_started",
+      "status": "PASS",
+      "detail": "true"
+    }
+  ],
+  "blockers": [],
+  "proof": {
+    "totalCustomersScanned": 842,
+    "oversizedSharedContactGroupsSkipped": {
+      "email": 1,
+      "phone": 0,
+      "vat": 0
+    },
+    "candidatePairsGenerated": 11,
+    "counts": {
+      "HIGH_CONFIDENCE_DUPLICATE": 0,
+      "POSSIBLE_DUPLICATE": 7,
+      "SAME_COMPANY_DIFFERENT_CONTACT": 1,
+      "LIKELY_DIFFERENT": 0,
+      "REVIEW_REQUIRED": 3
+    },
+    "strongestCandidates": [
+      {
+        "leftCustomerId": "e5afe6b3-3687-48c4-82f2-a40ed3fa5ad6",
+        "rightCustomerId": "fe11bbcf-32bd-45a5-af24-02af777d2e5a",
+        "leftName": "Breathecoat SA",
+        "rightName": "Bio Beauty",
+        "leftXeroContactIds": [
+          "728f4f82-b681-4d27-9ef9-467a7106251f"
+        ],
+        "rightXeroContactIds": [
+          "71052d31-4f3f-4879-8b74-ac13fdfe28e9"
+        ],
+        "keyReasons": [
+          "phone"
+        ],
+        "confidenceLabel": "POSSIBLE_DUPLICATE",
+        "suggestedResolution": null,
+        "matchSignals": [
+          "exact_normalized_email",
+          "exact_normalized_phone"
+        ],
+        "differingSignals": [
+          "different_xero_contact_ids:left=728f4f82-b681-4d27-9ef9-467a7106251f;right=71052d31-4f3f-4879-8b74-ac13fdfe28e9"
+        ],
+        "score": 75,
+        "autoMerge": false,
+        "linkedHistory": {
+          "left": {
+            "jobs": 0,
+            "quotes": 2,
+            "invoices": 9
+          },
+          "right": {
+            "jobs": 0,
+            "quotes": 1,
+            "invoices": 3
+          }
+        }
+      },
+      {
+        "leftCustomerId": "773497f7-2d71-4a3a-8d80-d113b841b843",
+        "rightCustomerId": "d73df05b-d1e1-4f17-bc1d-890baa9f1e7e",
+        "leftName": "CRC",
+        "rightName": "Rowan CRC",
+        "leftXeroContactIds": [
+          "9ff6c727-561b-49cb-a2a5-a22e117af850"
+        ],
+        "rightXeroContactIds": [
+          "b37e7820-178f-42d1-8855-11d647c42d62"
+        ],
+        "keyReasons": [
+          "email"
+        ],
+        "confidenceLabel": "SAME_COMPANY_DIFFERENT_CONTACT",
+        "suggestedResolution": "SAME_COMPANY_DIFFERENT_PERSON",
+        "matchSignals": [
+          "exact_normalized_email"
+        ],
+        "differingSignals": [
+          "different_xero_contact_ids:left=9ff6c727-561b-49cb-a2a5-a22e117af850;right=b37e7820-178f-42d1-8855-11d647c42d62"
+        ],
+        "score": 60,
+        "autoMerge": false,
+        "linkedHistory": {
+          "left": {
+            "jobs": 1,
+            "quotes": 17,
+            "invoices": 44
+          },
+          "right": {
+            "jobs": 0,
+            "quotes": 1,
+            "invoices": 2
+          }
+        }
+      },
+      {
+        "leftCustomerId": "0956971b-22a1-4b94-b647-7aa97013da87",
+        "rightCustomerId": "6c38dec4-1dfe-4d5c-a53a-4665c95447eb",
+        "leftName": "D&A Financial Advisors CC",
+        "rightName": "Eric Olivier",
+        "leftXeroContactIds": [
+          "dbde3c69-f6dd-474b-a496-948b8a9b232f"
+        ],
+        "rightXeroContactIds": [
+          "669547fc-fc3d-4b35-bf5a-412777cf3af4"
+        ],
+        "keyReasons": [
+          "email"
+        ],
+        "confidenceLabel": "POSSIBLE_DUPLICATE",
+        "suggestedResolution": null,
+        "matchSignals": [
+          "exact_normalized_email"
+        ],
+        "differingSignals": [
+          "different_xero_contact_ids:left=dbde3c69-f6dd-474b-a496-948b8a9b232f;right=669547fc-fc3d-4b35-bf5a-412777cf3af4"
+        ],
+        "score": 50,
+        "autoMerge": false,
+        "linkedHistory": {
+          "left": {
+            "jobs": 0,
+            "quotes": 0,
+            "invoices": 1
+          },
+          "right": {
+            "jobs": 0,
+            "quotes": 0,
+            "invoices": 2
+          }
+        }
+      },
+      {
+        "leftCustomerId": "72f3e3c6-c936-49f3-bbf6-015017f88e57",
+        "rightCustomerId": "73db9543-2fcc-492a-9f7f-84120a0f4b2f",
+        "leftName": "Teneil Conradie",
+        "rightName": "Seville Property Owners Association",
+        "leftXeroContactIds": [
+          "3ef9ee2d-ac9a-4294-a6c6-f6cfc2a90710"
+        ],
+        "rightXeroContactIds": [
+          "04ae102b-dee8-48cf-bbe4-80af2c7d2842"
+        ],
+        "keyReasons": [
+          "email"
+        ],
+        "confidenceLabel": "POSSIBLE_DUPLICATE",
+        "suggestedResolution": null,
+        "matchSignals": [
+          "exact_normalized_email"
+        ],
+        "differingSignals": [
+          "different_xero_contact_ids:left=3ef9ee2d-ac9a-4294-a6c6-f6cfc2a90710;right=04ae102b-dee8-48cf-bbe4-80af2c7d2842"
+        ],
+        "score": 50,
+        "autoMerge": false,
+        "linkedHistory": {
+          "left": {
+            "jobs": 0,
+            "quotes": 0,
+            "invoices": 1
+          },
+          "right": {
+            "jobs": 0,
+            "quotes": 0,
+            "invoices": 1
+          }
+        }
+      },
+      {
+        "leftCustomerId": "05368766-50c2-4cd0-bd36-3f19d4760099",
+        "rightCustomerId": "55e274cb-0e34-4065-8c65-0acaa0c1b2c6",
+        "leftName": "Mauritz",
+        "rightName": "Protea Academy",
+        "leftXeroContactIds": [
+          "c17d7d93-3400-4a1a-a98d-d35cda350b1c"
+        ],
+        "rightXeroContactIds": [
+          "da041890-95a6-42fb-b3d1-59efef72d1ab"
+        ],
+        "keyReasons": [
+          "phone"
+        ],
+        "confidenceLabel": "POSSIBLE_DUPLICATE",
+        "suggestedResolution": null,
+        "matchSignals": [
+          "exact_normalized_phone"
+        ],
+        "differingSignals": [
+          "different_xero_contact_ids:left=c17d7d93-3400-4a1a-a98d-d35cda350b1c;right=da041890-95a6-42fb-b3d1-59efef72d1ab"
+        ],
+        "score": 50,
+        "autoMerge": false,
+        "linkedHistory": {
+          "left": {
+            "jobs": 0,
+            "quotes": 0,
+            "invoices": 1
+          },
+          "right": {
+            "jobs": 0,
+            "quotes": 0,
+            "invoices": 2
+          }
+        }
+      },
+      {
+        "leftCustomerId": "484e4b8b-9ef6-4fcc-bbe6-d2090d8e0639",
+        "rightCustomerId": "93985aa8-9dc7-41bb-aac3-465bc0802065",
+        "leftName": "Sandylands Body Corporate",
+        "rightName": "Eben Snyman",
+        "leftXeroContactIds": [
+          "11f16361-d44b-4d11-b60f-a969af988e9f"
+        ],
+        "rightXeroContactIds": [
+          "8ce37a85-3004-4948-9e58-d1dfb7c35ac2"
+        ],
+        "keyReasons": [
+          "phone"
+        ],
+        "confidenceLabel": "POSSIBLE_DUPLICATE",
+        "suggestedResolution": null,
+        "matchSignals": [
+          "exact_normalized_phone"
+        ],
+        "differingSignals": [
+          "different_xero_contact_ids:left=11f16361-d44b-4d11-b60f-a969af988e9f;right=8ce37a85-3004-4948-9e58-d1dfb7c35ac2"
+        ],
+        "score": 50,
+        "autoMerge": false,
+        "linkedHistory": {
+          "left": {
+            "jobs": 0,
+            "quotes": 1,
+            "invoices": 5
+          },
+          "right": {
+            "jobs": 0,
+            "quotes": 0,
+            "invoices": 4
+          }
+        }
+      },
+      {
+        "leftCustomerId": "1ccd70fe-d0f9-4aee-a9e1-654a2e2b098b",
+        "rightCustomerId": "63869be3-655c-403e-b864-1d995ed17fd0",
+        "leftName": "Hannes Oosthuisen",
+        "rightName": "Rococo erf 4410 (PTY) LTD",
+        "leftXeroContactIds": [
+          "2281d79b-e496-4525-8a4d-15f2ceb5adf5"
+        ],
+        "rightXeroContactIds": [
+          "c737edae-42f0-4b7f-98c2-d7380faa3ab3"
+        ],
+        "keyReasons": [
+          "phone"
+        ],
+        "confidenceLabel": "POSSIBLE_DUPLICATE",
+        "suggestedResolution": null,
+        "matchSignals": [
+          "exact_normalized_phone"
+        ],
+        "differingSignals": [
+          "different_xero_contact_ids:left=2281d79b-e496-4525-8a4d-15f2ceb5adf5;right=c737edae-42f0-4b7f-98c2-d7380faa3ab3"
+        ],
+        "score": 50,
+        "autoMerge": false,
+        "linkedHistory": {
+          "left": {
+            "jobs": 0,
+            "quotes": 1,
+            "invoices": 2
+          },
+          "right": {
+            "jobs": 0,
+            "quotes": 0,
+            "invoices": 1
+          }
+        }
+      },
+      {
+        "leftCustomerId": "dd549d11-7d25-4e90-9389-633421d5d84d",
+        "rightCustomerId": "eec828f5-1214-4895-bed9-4045e7607ec4",
+        "leftName": "2 Springfield Close",
+        "rightName": "Huthman",
+        "leftXeroContactIds": [
+          "784a34ed-140c-4245-a367-ffc526ad521e"
+        ],
+        "rightXeroContactIds": [
+          "5a3ceedd-01cf-4758-8223-5ca6adb303a0"
+        ],
+        "keyReasons": [
+          "phone"
+        ],
+        "confidenceLabel": "POSSIBLE_DUPLICATE",
+        "suggestedResolution": null,
+        "matchSignals": [
+          "exact_normalized_phone"
+        ],
+        "differingSignals": [
+          "different_xero_contact_ids:left=784a34ed-140c-4245-a367-ffc526ad521e;right=5a3ceedd-01cf-4758-8223-5ca6adb303a0"
+        ],
+        "score": 50,
+        "autoMerge": false,
+        "linkedHistory": {
+          "left": {
+            "jobs": 0,
+            "quotes": 0,
+            "invoices": 1
+          },
+          "right": {
+            "jobs": 0,
+            "quotes": 0,
+            "invoices": 1
+          }
+        }
+      },
+      {
+        "leftCustomerId": "400dd20d-2847-4b52-b876-546f327ad46d",
+        "rightCustomerId": "d650fcae-49de-4126-92bb-c243558ba529",
+        "leftName": "keanu",
+        "rightName": "keanu",
+        "leftXeroContactIds": [
+          null
+        ],
+        "rightXeroContactIds": [
+          null
+        ],
+        "keyReasons": [
+          "xero"
+        ],
+        "confidenceLabel": "REVIEW_REQUIRED",
+        "suggestedResolution": "DEFER",
+        "matchSignals": [
+          "exact_company_name"
+        ],
+        "differingSignals": [],
+        "score": 20,
+        "autoMerge": false,
+        "linkedHistory": {
+          "left": {
+            "jobs": 0,
+            "quotes": 0,
+            "invoices": 0
+          },
+          "right": {
+            "jobs": 0,
+            "quotes": 0,
+            "invoices": 0
+          }
+        }
+      },
+      {
+        "leftCustomerId": "397a9290-3172-4e40-bd4b-141312cddd35",
+        "rightCustomerId": "400dd20d-2847-4b52-b876-546f327ad46d",
+        "leftName": "keanu",
+        "rightName": "keanu",
+        "leftXeroContactIds": [
+          null
+        ],
+        "rightXeroContactIds": [
+          null
+        ],
+        "keyReasons": [
+          "xero"
+        ],
+        "confidenceLabel": "REVIEW_REQUIRED",
+        "suggestedResolution": "DEFER",
+        "matchSignals": [
+          "exact_company_name"
+        ],
+        "differingSignals": [],
+        "score": 20,
+        "autoMerge": false,
+        "linkedHistory": {
+          "left": {
+            "jobs": 0,
+            "quotes": 0,
+            "invoices": 0
+          },
+          "right": {
+            "jobs": 0,
+            "quotes": 0,
+            "invoices": 0
+          }
+        }
+      },
+      {
+        "leftCustomerId": "397a9290-3172-4e40-bd4b-141312cddd35",
+        "rightCustomerId": "d650fcae-49de-4126-92bb-c243558ba529",
+        "leftName": "keanu",
+        "rightName": "keanu",
+        "leftXeroContactIds": [
+          null
+        ],
+        "rightXeroContactIds": [
+          null
+        ],
+        "keyReasons": [
+          "xero"
+        ],
+        "confidenceLabel": "REVIEW_REQUIRED",
+        "suggestedResolution": "DEFER",
+        "matchSignals": [
+          "exact_company_name"
+        ],
+        "differingSignals": [],
+        "score": 20,
+        "autoMerge": false,
+        "linkedHistory": {
+          "left": {
+            "jobs": 0,
+            "quotes": 0,
+            "invoices": 0
+          },
+          "right": {
+            "jobs": 0,
+            "quotes": 0,
+            "invoices": 0
+          }
+        }
+      }
+    ],
+    "crcRowan": {
+      "classification": "SAME_COMPANY_DIFFERENT_CONTACT",
+      "crcMerged": false,
+      "rowanMerged": false,
+      "personCount": 1,
+      "associationCount": 1,
+      "rowanXeroContactId": "b37e7820-178f-42d1-8855-11d647c42d62",
+      "qu0183CustomerId": "773497f7-2d71-4a3a-8d80-d113b841b843",
+      "qu0183XeroQuoteId": "4d9b1ceb-83dc-4ac6-8d58-ce7ac08f6db8"
+    }
+  }
+}
