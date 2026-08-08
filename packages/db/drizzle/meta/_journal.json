@@ -1394,6 +1394,13 @@
       "when": 1787064000000,
       "tag": "0203_historical_import_completion",
       "breakpoints": true
+    },
+    {
+      "idx": 199,
+      "version": "7",
+      "when": 1787150400000,
+      "tag": "0204_customer_360_people_associations",
+      "breakpoints": true
     }
   ]
 }

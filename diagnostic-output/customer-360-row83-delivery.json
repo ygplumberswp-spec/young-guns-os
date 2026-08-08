@@ -1,0 +1,68 @@
+{
+  "label": "customer-360-row83-delivery",
+  "generatedAt": "2026-08-08T07:15:00.000Z",
+  "repoRoot": "/workspace",
+  "branch": "cursor/customer-360-current-663e",
+  "startingHead": "ee5a19c1d3423868c86415e9d30fc93ad477bcbb",
+  "ancestry": {
+    "pr65Tip25f50ee": true,
+    "pr67TipEe5a19c": true
+  },
+  "stagingOnly": true,
+  "productionUntouched": true,
+  "row84Started": false,
+  "row85Started": false,
+  "architectureReused": [
+    "customers",
+    "customer_activities",
+    "xero_customer_mappings",
+    "cx_customer_properties",
+    "customer_marketing_consents",
+    "jobs/quotes/invoices/payments",
+    "documents/communications/leads",
+    "asset_equipment via recurring maintenance",
+    "customer-360-intelligence timeline builders + RBAC",
+    "security_audit_logs",
+    "CRM /crm/:id CustomerDetailPage"
+  ],
+  "additiveModel": {
+    "customer_people": "first-class contacts under canonical customer",
+    "customer_source_associations": "non-destructive link to related Xero/source customer rows"
+  },
+  "migration": "0204_customer_360_people_associations.sql",
+  "api": "/api/v1/customer-360",
+  "crcProof": {
+    "canonicalCustomerId": "773497f7-2d71-4a3a-8d80-d113b841b843",
+    "rowanSourceCustomerId": "d73df05b-d1e1-4f17-bc1d-890baa9f1e7e",
+    "rowanPersonId": "b218163a-b115-4882-b4ff-0ac409100866",
+    "rowanAssocId": "b4a6484d-fd40-444f-a67d-16b8b2945b8b",
+    "rowanXeroContactIdPreserved": "b37e7820-178f-42d1-8855-11d647c42d62",
+    "ruahn": "NOT_FOUND — no invent; association skipped",
+    "ownershipUnchanged": true,
+    "royalCapeUnchanged": {
+      "quoteId": "41178762-bb9a-4e5d-b568-07c330f18cbb",
+      "quoteNumber": "QU-0183",
+      "customerId": "773497f7-2d71-4a3a-8d80-d113b841b843",
+      "xeroQuoteId": "4d9b1ceb-83dc-4ac6-8d58-ce7ac08f6db8",
+      "jobId": "5920ef4a-51a9-44ec-8577-09d187ca9c33"
+    }
+  },
+  "safety": {
+    "xeroWrites": 0,
+    "customerSends": 0,
+    "productionWrites": 0,
+    "destructiveMerge": false
+  },
+  "tests": {
+    "sharedCustomer360": "12/12 PASS",
+    "sharedRoyalCapeRegression": "11/11 PASS",
+    "sharedC360Intelligence": "PASS",
+    "typecheckApi": "PASS",
+    "typecheckWeb": "PASS",
+    "buildApi": "PASS",
+    "buildWeb": "PASS",
+    "buildShared": "PASS",
+    "buildDb": "PASS"
+  },
+  "stop": "STOP after Row 83 — no Row 84/85, no production deploy/migration/writes."
+}
