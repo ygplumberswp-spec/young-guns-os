@@ -4,7 +4,6 @@
   "repoRoot": "/workspace",
   "branch": "cursor/plan-floor-plan-quotation-663e",
   "startingHead": "a2ff9a33783533865e25f48e0f63979694d58d6c",
-  "endingHead": "65fcca2efe7171afa87f1cc973296732fd8778c3",
   "baseBranch": "cursor/quote-one-off-price-override-663e",
   "ancestry": "PR #67 through PR #78 (Row 87–93 feat commits are ancestors of a2ff9a3; merge-base --is-ancestor OK)",
   "prUrl": null,
