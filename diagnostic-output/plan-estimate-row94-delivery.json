@@ -4,7 +4,7 @@
   "repoRoot": "/workspace",
   "branch": "cursor/plan-floor-plan-quotation-663e",
   "startingHead": "a2ff9a33783533865e25f48e0f63979694d58d6c",
-  "endingHead": "3e976d8a1b5e5ca6f8fb8bf1e0efc8a2d999aa10",
+  "endingHead": "82161089c47450cc74e76ac8e38310cd59e78403",
   "baseBranch": "cursor/quote-one-off-price-override-663e",
   "ancestry": "PR #67 through PR #78 (Row 87–93 feat commits are ancestors of a2ff9a3; merge-base --is-ancestor OK)",
   "prUrl": "https://github.com/ygplumberswp-spec/young-guns-os/pull/79",
