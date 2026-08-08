@@ -37,6 +37,8 @@ export type FinanceDocumentPreviewLineInput = {
   quantity: number;
   unitPriceCents: number;
   vatRateBps: number;
+  /** Row 90 — false hides line from customer PDF/preview. */
+  customerVisible?: boolean;
 };
 
 export type FinanceDocumentPreviewCustomerInput = {
@@ -54,6 +56,10 @@ export type FinanceDocumentPreviewInput = {
   dueDate?: string | null;
   addresses?: FinanceDocumentAddressSnapshot | null;
   lines: FinanceDocumentPreviewLineInput[];
+  /** Row 90 — when set, PDF/preview hides absorbed labour/call-out lines. */
+  pricingPresentationMode?: 'FLAT_RATE_INCLUDED' | 'ITEMISED' | null;
+  labourIncluded?: boolean | null;
+  calloutIncluded?: boolean | null;
   notes?: string | null;
   paymentTerms?: string | null;
   scopeOfWork?: string | null;
@@ -132,8 +138,33 @@ export function financeDocumentPreviewFilename(kind: FinanceDocumentPreviewKind)
   return kind === 'quote' ? 'YGP-Draft-Quote.pdf' : 'YGP-Draft-Invoice.pdf';
 }
 
-function buildPreviewLineItems(lines: FinanceDocumentPreviewLineInput[]): DocumentLineItem[] {
-  const usable = lines.filter((line) => line.description.trim());
+function isPreviewCustomerFacingLine(
+  line: FinanceDocumentPreviewLineInput,
+  input: Pick<
+    FinanceDocumentPreviewInput,
+    'pricingPresentationMode' | 'labourIncluded' | 'calloutIncluded'
+  >,
+): boolean {
+  if (line.customerVisible === false) return false;
+  if (input.pricingPresentationMode !== 'FLAT_RATE_INCLUDED') return true;
+  const category = (line.category ?? '').toLowerCase();
+  if (input.labourIncluded && category === 'labour') return false;
+  if (input.calloutIncluded && category === 'travel') return false;
+  return true;
+}
+
+function buildPreviewLineItems(
+  lines: FinanceDocumentPreviewLineInput[],
+  input?: Pick<
+    FinanceDocumentPreviewInput,
+    'pricingPresentationMode' | 'labourIncluded' | 'calloutIncluded'
+  >,
+): DocumentLineItem[] {
+  const usable = lines.filter(
+    (line) =>
+      line.description.trim() &&
+      isPreviewCustomerFacingLine(line, input ?? {}),
+  );
   if (usable.length === 0) {
     return [
       buildLineItem(
@@ -270,7 +301,7 @@ export function buildFinanceDocumentPreviewModel(
   input: FinanceDocumentPreviewInput,
 ): FinanceDocumentPreviewModel {
   const documentType = input.kind;
-  const lineItems = buildPreviewLineItems(input.lines);
+  const lineItems = buildPreviewLineItems(input.lines, input);
   const totals = computeDocumentTotals({
     lineItems,
     amountPaidCents: input.amountPaidCents ?? 0,

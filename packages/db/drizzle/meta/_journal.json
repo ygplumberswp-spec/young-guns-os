@@ -1429,6 +1429,13 @@
       "when": 1787496000000,
       "tag": "0208_finance_document_metadata",
       "breakpoints": true
+    },
+    {
+      "idx": 204,
+      "version": "7",
+      "when": 1787582400000,
+      "tag": "0209_fixed_price_flat_rate_quoting",
+      "breakpoints": true
     }
   ]
 }

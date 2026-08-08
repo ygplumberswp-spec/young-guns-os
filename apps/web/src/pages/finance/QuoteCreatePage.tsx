@@ -41,6 +41,11 @@ import { FinanceDocumentPhotosPanel } from '../../features/finance/FinanceDocume
 import { linkPhotosAfterFinanceSave } from '../../features/finance/finance-document-editor-save';
 import { FinanceDocumentSectionsFields } from '../../features/finance/FinanceDocumentSectionsFields';
 import {
+  DEFAULT_FINANCE_PRICING_PRESENTATION,
+  FinancePricingPresentationFields,
+  type FinancePricingPresentationState,
+} from '../../features/finance/FinancePricingPresentationFields';
+import {
   emptyFinanceDocumentSectionsEditorState,
   quoteSectionsToApiPayload,
   type FinanceDocumentSectionsEditorState,
@@ -74,6 +79,9 @@ export function QuoteCreatePage() {
   const [lines, setLines] = useState<FinanceEditorLine[]>(() => createBlankEditorLines());
   const [vatMode, setVatMode] = useState<FinanceDocumentVatMode>('standard');
   const [priceMode, setPriceMode] = useState<FinanceDocumentPriceMode>('excluding_vat');
+  const [pricingPresentation, setPricingPresentation] = useState<FinancePricingPresentationState>(
+    DEFAULT_FINANCE_PRICING_PRESENTATION,
+  );
   const [savedQuoteId, setSavedQuoteId] = useState<string | null>(null);
   const [photos, setPhotos] = useState<DocumentPhoto[]>([]);
 
@@ -275,6 +283,10 @@ export function QuoteCreatePage() {
         ...addressesToApiPayload(addresses),
         ...quoteSectionsToApiPayload(documentSections),
         lineItems: lineItems!,
+        pricingPresentationMode: pricingPresentation.pricingPresentationMode,
+        labourIncluded: pricingPresentation.labourIncluded,
+        calloutIncluded: pricingPresentation.calloutIncluded,
+        calloutAllocation: pricingPresentation.calloutAllocation,
         clientActionId,
       };
 
@@ -297,6 +309,10 @@ export function QuoteCreatePage() {
           postalAddress: body.postalAddress,
           ...quoteSectionsToApiPayload(documentSections),
           lineItems: body.lineItems,
+          pricingPresentationMode: body.pricingPresentationMode,
+          labourIncluded: body.labourIncluded,
+          calloutIncluded: body.calloutIncluded,
+          calloutAllocation: body.calloutAllocation,
         });
         setStatus(updated.status);
         return updated;
@@ -315,6 +331,10 @@ export function QuoteCreatePage() {
         postalAddress: body.postalAddress,
         ...quoteSectionsToApiPayload(documentSections),
         lineItems: body.lineItems,
+        pricingPresentationMode: body.pricingPresentationMode,
+        labourIncluded: body.labourIncluded,
+        calloutIncluded: body.calloutIncluded,
+        calloutAllocation: body.calloutAllocation,
         clientActionId,
       });
       setSavedQuoteId(created.id);
@@ -335,6 +355,7 @@ export function QuoteCreatePage() {
       message,
       notify,
       priceMode,
+      pricingPresentation,
       quoteDate,
       savedQuoteId,
       validUntil,
@@ -414,6 +435,9 @@ export function QuoteCreatePage() {
           jobReference: job?.title ?? null,
           status,
           photos,
+          pricingPresentationMode: pricingPresentation.pricingPresentationMode,
+          labourIncluded: pricingPresentation.labourIncluded,
+          calloutIncluded: pricingPresentation.calloutIncluded,
         }),
       );
       return;
@@ -564,6 +588,14 @@ export function QuoteCreatePage() {
 
           <FinanceEditorCard title="Addresses" className="finance-editor-card--full finance-editor-card--addresses">
             <FinanceDocumentAddressesFields addresses={addresses} onChange={setAddresses} />
+          </FinanceEditorCard>
+
+          <FinanceEditorCard title="Pricing presentation" className="finance-editor-card--full">
+            <FinancePricingPresentationFields
+              value={pricingPresentation}
+              onChange={setPricingPresentation}
+              disabled={!canWrite}
+            />
           </FinanceEditorCard>
 
           <FinanceEditorCard title="Line Items" className="finance-editor-card--full finance-editor-card--lines">

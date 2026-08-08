@@ -109,6 +109,8 @@ export type QuoteLineItemInput = {
   vatRateBps?: number;
   isOptional?: boolean;
   optionTier?: string | null;
+  /** Row 90 — false = internal component (not customer-charged). */
+  customerVisible?: boolean;
 };
 
 export type QuoteLineItemSummary = {
@@ -126,6 +128,8 @@ export type QuoteLineItemSummary = {
   lineCostCents: number | null;
   isOptional: boolean;
   optionTier: string | null;
+  /** Row 90 — false = internal pricing component. */
+  customerVisible?: boolean;
 };
 
 export type QuoteProfitSummary = {
@@ -208,6 +212,30 @@ export type QuoteDetail = QuoteSummary & {
   notes: string | null;
   /** Explicit alias of notes. */
   customerFacingNotes?: string | null;
+  /** Row 90 — explicit pricing presentation mode. */
+  pricingPresentationMode?: 'FLAT_RATE_INCLUDED' | 'ITEMISED';
+  labourIncluded?: boolean;
+  calloutIncluded?: boolean;
+  calloutAllocation?: 'PER_JOB' | 'PER_UNIT';
+  /** Row 90 — authorised staff internal pricing breakdown (never client/technician). */
+  internalPricing?: {
+    customerFixedSellCents: number;
+    labourSellAllocationCents: number;
+    calloutSellAllocationCents: number;
+    materialSellCents: number;
+    totalInternalCostCents: number;
+    customerRevenueCents: number;
+    components: Array<{
+      kind: string;
+      category: string;
+      description: string;
+      quantity: number;
+      sellAllocationCents: number;
+      costCents: number;
+      absorbed: boolean;
+      customerVisible: boolean;
+    }>;
+  } | null;
   addresses: FinanceDocumentAddressSnapshot;
   lineItems: QuoteLineItemSummary[];
   acceptance: QuoteAcceptanceSummary | null;
@@ -376,6 +404,11 @@ export type CreateQuoteRequest = {
   /** @deprecated legacy aggregate — prefer lineItems */
   amountCents?: number;
   documentContent?: FinanceDocumentContent | null;
+  /** Row 90 — pricing presentation (default ITEMISED). */
+  pricingPresentationMode?: 'FLAT_RATE_INCLUDED' | 'ITEMISED';
+  labourIncluded?: boolean;
+  calloutIncluded?: boolean;
+  calloutAllocation?: 'PER_JOB' | 'PER_UNIT';
 };
 
 export type UpdateQuoteRequest = Partial<Omit<CreateQuoteRequest, 'customerId' | 'clientActionId'>> & {

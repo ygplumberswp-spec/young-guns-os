@@ -843,8 +843,24 @@ export class PortalExpansionService {
     },
   ): PortalSafeQuote {
     const actionable = canRespondToQuote(row);
+    // Row 90 — portal sees customer-facing lines only (absorbed labour/call-out hidden).
+    const pricingMode =
+      (row as { pricingPresentationMode?: string | null }).pricingPresentationMode ===
+      'FLAT_RATE_INCLUDED'
+        ? 'FLAT_RATE_INCLUDED'
+        : 'ITEMISED';
+    const labourIncluded = Boolean((row as { labourIncluded?: boolean | null }).labourIncluded);
+    const calloutIncluded = Boolean((row as { calloutIncluded?: boolean | null }).calloutIncluded);
     const lines = [...(row.lineItems ?? [])]
       .sort((a, b) => a.position - b.position)
+      .filter((line) => {
+        const visible = (line as { customerVisible?: boolean | null }).customerVisible !== false;
+        if (!visible) return false;
+        if (pricingMode !== 'FLAT_RATE_INCLUDED') return true;
+        if (labourIncluded && line.category === 'labour') return false;
+        if (calloutIncluded && line.category === 'travel') return false;
+        return true;
+      })
       .map((line) =>
         toPortalSafeQuoteLine({
           id: line.id,

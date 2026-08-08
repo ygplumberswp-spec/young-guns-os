@@ -356,6 +356,59 @@ export function QuoteDetailPage() {
           ) : null}
         </Panel>
 
+        <Panel title="Pricing presentation">
+          <dl className="finance-detail-list">
+            <div>
+              <dt>Customer pricing mode</dt>
+              <dd>
+                {quote.pricingPresentationMode === 'FLAT_RATE_INCLUDED'
+                  ? 'Flat-rate (labour/call-out included in service price)'
+                  : 'Itemised'}
+              </dd>
+            </div>
+            {quote.pricingPresentationMode === 'FLAT_RATE_INCLUDED' ? (
+              <>
+                <div>
+                  <dt>Labour included</dt>
+                  <dd>{quote.labourIncluded ? 'Yes' : 'No'}</dd>
+                </div>
+                <div>
+                  <dt>Call-out included</dt>
+                  <dd>
+                    {quote.calloutIncluded
+                      ? `Yes (${quote.calloutAllocation === 'PER_UNIT' ? 'per unit' : 'per job'})`
+                      : 'No'}
+                  </dd>
+                </div>
+              </>
+            ) : null}
+          </dl>
+        </Panel>
+
+        {quote.internalPricing && quote.profit ? (
+          <Panel title="Internal pricing components">
+            <p className="page-muted">Authorised staff only — not shown to Client or Technician.</p>
+            <dl className="finance-detail-list">
+              <div>
+                <dt>Customer fixed price (incl. VAT basis total)</dt>
+                <dd>{formatMoney(quote.internalPricing.customerFixedSellCents, quote.currency)}</dd>
+              </div>
+              <div>
+                <dt>Labour allocation (internal)</dt>
+                <dd>{formatMoney(quote.internalPricing.labourSellAllocationCents, quote.currency)}</dd>
+              </div>
+              <div>
+                <dt>Call-out allocation (internal)</dt>
+                <dd>{formatMoney(quote.internalPricing.calloutSellAllocationCents, quote.currency)}</dd>
+              </div>
+              <div>
+                <dt>Material / service sell (customer-facing)</dt>
+                <dd>{formatMoney(quote.internalPricing.materialSellCents, quote.currency)}</dd>
+              </div>
+            </dl>
+          </Panel>
+        ) : null}
+
         {(quote.scopeOfWork ||
           quote.exclusions ||
           quote.paymentTerms ||
