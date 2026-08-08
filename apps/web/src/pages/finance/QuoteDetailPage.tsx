@@ -291,6 +291,34 @@ export function QuoteDetailPage() {
         <Panel title="Summary">
           <dl className="finance-detail-list">
             <div>
+              <dt>Quote type / scenario</dt>
+              <dd>
+                {quote.scenarioLabel ?? 'Standard quote'}
+                {quote.scenarioIsLegacyFallback ? (
+                  <div className="page-muted">Legacy / unclassified fallback</div>
+                ) : null}
+                {quote.variationParentQuoteId ? (
+                  <div className="page-muted">
+                    Variation of{' '}
+                    <Link href={`/finance/quotes/${quote.variationParentQuoteId}`}>
+                      parent quote
+                    </Link>
+                  </div>
+                ) : null}
+                {quote.phases?.length ? (
+                  <div className="page-muted">
+                    Phases: {quote.phases.map((p) => p.label).join(', ')}
+                  </div>
+                ) : null}
+                {quote.milestones?.length ? (
+                  <div className="page-muted">
+                    Milestones (commercial only):{' '}
+                    {quote.milestones.map((m) => m.label).join(', ')}
+                  </div>
+                ) : null}
+              </dd>
+            </div>
+            <div>
               <dt>Status</dt>
               <dd>
                 <span className={`finance-status finance-status--${quote.status}`}>

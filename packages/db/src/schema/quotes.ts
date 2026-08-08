@@ -135,6 +135,18 @@ export const quotes = pgTable('quotes', {
   calloutIncluded: boolean('callout_included').notNull().default(false),
   /** Row 90 — PER_JOB | PER_UNIT */
   calloutAllocation: text('callout_allocation').notNull().default('PER_JOB'),
+  /**
+   * Row 95 — explicit quote scenario code.
+   * NULL / missing → STANDARD legacy fallback at read time (never inferred from descriptions).
+   */
+  scenario: text('scenario'),
+  /** Row 95 — scenario-specific metadata (validated server-side). */
+  scenarioMetadata: jsonb('scenario_metadata')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
+  /** Row 95 — VARIATION parent quote (original issued quote unchanged). */
+  variationParentQuoteId: uuid('variation_parent_quote_id'),
   billingAddress: text('billing_address'),
   siteAddress: text('site_address'),
   postalAddress: text('postal_address'),
@@ -190,10 +202,70 @@ export const quoteLineItems = pgTable('quote_line_items', {
    * Distinct from `category` (quote_line_category commercial bucket).
    */
   catalogueCategory: text('catalogue_category'),
+  /** Row 95 — MULTI_PHASE_PROJECT line→phase association. */
+  phaseKey: text('phase_key'),
   accountCode: text('account_code'),
   sourceExternalId: text('source_external_id'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+/** Row 95 — multi-phase grouping (phase status ≠ quote lifecycle). */
+export const quotePhases = pgTable('quote_phases', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  companyId: uuid('company_id')
+    .notNull()
+    .references(() => companies.id, { onDelete: 'cascade' }),
+  quoteId: uuid('quote_id')
+    .notNull()
+    .references(() => quotes.id, { onDelete: 'cascade' }),
+  phaseKey: text('phase_key').notNull(),
+  label: text('label').notNull(),
+  sequence: integer('sequence').notNull().default(0),
+  status: text('status').notNull().default('PLANNED'),
+  totalCents: integer('total_cents'),
+  notes: text('notes'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+/** Row 95 — commercial milestone definitions only (never payment truth). */
+export const quoteCommercialMilestones = pgTable('quote_commercial_milestones', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  companyId: uuid('company_id')
+    .notNull()
+    .references(() => companies.id, { onDelete: 'cascade' }),
+  quoteId: uuid('quote_id')
+    .notNull()
+    .references(() => quotes.id, { onDelete: 'cascade' }),
+  kind: text('kind').notNull(),
+  label: text('label').notNull(),
+  sequence: integer('sequence').notNull().default(0),
+  percentBps: integer('percent_bps'),
+  amountCents: integer('amount_cents'),
+  notes: text('notes'),
+  isPayment: boolean('is_payment').notNull().default(false),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+/** Row 95 — scenario change audit evidence. */
+export const quoteScenarioAuditEvents = pgTable('quote_scenario_audit_events', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  companyId: uuid('company_id')
+    .notNull()
+    .references(() => companies.id, { onDelete: 'cascade' }),
+  quoteId: uuid('quote_id')
+    .notNull()
+    .references(() => quotes.id, { onDelete: 'cascade' }),
+  actorUserId: uuid('actor_user_id').references(() => users.id, { onDelete: 'set null' }),
+  eventType: text('event_type').notNull(),
+  previousScenario: text('previous_scenario'),
+  nextScenario: text('next_scenario').notNull(),
+  previousMetadata: jsonb('previous_metadata').$type<Record<string, unknown>>(),
+  nextMetadata: jsonb('next_metadata').$type<Record<string, unknown>>(),
+  clientActionId: text('client_action_id'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
 export const quoteAcceptances = pgTable('quote_acceptances', {
@@ -230,3 +302,6 @@ export type NewQuote = typeof quotes.$inferInsert;
 export type QuoteLineItem = typeof quoteLineItems.$inferSelect;
 export type QuoteAcceptance = typeof quoteAcceptances.$inferSelect;
 export type CompanyFinanceSettings = typeof companyFinanceSettings.$inferSelect;
+export type QuotePhase = typeof quotePhases.$inferSelect;
+export type QuoteCommercialMilestone = typeof quoteCommercialMilestones.$inferSelect;
+export type QuoteScenarioAuditEvent = typeof quoteScenarioAuditEvents.$inferSelect;

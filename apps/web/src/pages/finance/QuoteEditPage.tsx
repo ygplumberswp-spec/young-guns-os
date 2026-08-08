@@ -45,6 +45,11 @@ import {
   type FinancePricingPresentationState,
 } from '../../features/finance/FinancePricingPresentationFields';
 import {
+  DEFAULT_QUOTE_SCENARIO_STATE,
+  QuoteScenarioFields,
+  type QuoteScenarioEditorState,
+} from '../../features/finance/QuoteScenarioFields';
+import {
   emptyFinanceDocumentSectionsEditorState,
   quoteSectionsToApiPayload,
   sectionsFromQuoteDetail,
@@ -86,6 +91,9 @@ export function QuoteEditPage() {
   const [priceMode, setPriceMode] = useState<FinanceDocumentPriceMode>('excluding_vat');
   const [pricingPresentation, setPricingPresentation] = useState<FinancePricingPresentationState>(
     DEFAULT_FINANCE_PRICING_PRESENTATION,
+  );
+  const [quoteScenario, setQuoteScenario] = useState<QuoteScenarioEditorState>(
+    DEFAULT_QUOTE_SCENARIO_STATE,
   );
   const [photos, setPhotos] = useState<DocumentPhoto[]>([]);
 
@@ -177,6 +185,10 @@ export function QuoteEditPage() {
           calloutIncluded: Boolean(quote.calloutIncluded),
           calloutAllocation: quote.calloutAllocation === 'PER_UNIT' ? 'PER_UNIT' : 'PER_JOB',
         });
+        setQuoteScenario({
+          scenario: quote.scenario ?? 'STANDARD',
+          metadata: quote.scenarioMetadata ?? {},
+        });
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof ApiClientError ? err.message : 'Unable to load quote');
@@ -240,6 +252,8 @@ export function QuoteEditPage() {
         labourIncluded: pricingPresentation.labourIncluded,
         calloutIncluded: pricingPresentation.calloutIncluded,
         calloutAllocation: pricingPresentation.calloutAllocation,
+        scenario: quoteScenario.scenario,
+        scenarioMetadata: quoteScenario.metadata,
       });
     },
     [
@@ -256,6 +270,7 @@ export function QuoteEditPage() {
       pricingPresentation,
       quoteDate,
       quoteId,
+      quoteScenario,
       status,
       validUntil,
       vatMode,
@@ -463,6 +478,14 @@ export function QuoteEditPage() {
 
           <FinanceEditorCard title="Addresses" className="finance-editor-card--full finance-editor-card--addresses">
             <FinanceDocumentAddressesFields addresses={addresses} onChange={setAddresses} />
+          </FinanceEditorCard>
+
+          <FinanceEditorCard title="Quote type / scenario" className="finance-editor-card--full">
+            <QuoteScenarioFields
+              value={quoteScenario}
+              onChange={setQuoteScenario}
+              disabled={!canWrite}
+            />
           </FinanceEditorCard>
 
           <FinanceEditorCard title="Pricing presentation" className="finance-editor-card--full">

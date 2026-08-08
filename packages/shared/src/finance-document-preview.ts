@@ -80,6 +80,12 @@ export type FinanceDocumentPreviewInput = {
   amountPaidCents?: number | null;
   depositReceivedCents?: number | null;
   photos?: DocumentPhoto[];
+  /**
+   * Row 95 — customer-safe scenario context only (human label + safe notes).
+   * Never pass raw enums, costs, margins, or approval internals.
+   */
+  scenarioCustomerLabel?: string | null;
+  scenarioCustomerContext?: Record<string, string> | null;
 };
 
 export type FinanceDocumentPreviewAttachment = {
@@ -318,9 +324,16 @@ export function buildFinanceDocumentPreviewModel(
   const paymentTerms = input.paymentTerms?.trim() || null;
   const scopeOfWork = input.scopeOfWork?.trim() || null;
   const exclusions = input.exclusions?.trim() || null;
+  // Row 95 — append only customer-safe scenario label/context (never raw enums/costs).
+  const scenarioSafeBits = [
+    input.scenarioCustomerLabel?.trim() || null,
+    ...Object.values(input.scenarioCustomerContext ?? {}).map((v) => String(v).trim()).filter(Boolean),
+  ].filter(Boolean) as string[];
+  const scenarioSafeNote = scenarioSafeBits.length ? scenarioSafeBits.join('\n') : null;
+  const scopeWithScenario = [scopeOfWork, scenarioSafeNote].filter(Boolean).join('\n\n') || null;
 
   if (documentType === 'quote') {
-    sections = applyTextSection(sections, 'scope_of_work', scopeOfWork ?? notes);
+    sections = applyTextSection(sections, 'scope_of_work', scopeWithScenario ?? notes);
     const termsText = [exclusions, paymentTerms].filter(Boolean).join('\n\n') || null;
     sections = applyTextSection(sections, 'terms_exclusions', termsText);
   } else {

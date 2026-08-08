@@ -71,8 +71,14 @@ import {
   buildInternalPricingBreakdown,
   projectCustomerFacingLines,
   assertHistoricalQuoteNotSilentlyRepriced,
+  resolveQuoteScenario,
+  validateQuoteScenario,
+  normalizeQuoteScenarioMetadata,
+  buildScenarioChangeAudit,
   type FixedPriceQuoteConfig,
   type FinanceDocumentPreviewModel,
+  type QuoteScenarioCode,
+  type QuoteScenarioMetadata,
 } from '@titan/shared';
 import { FinanceDocumentSectionsService } from './finance-document-sections.service.js';
 import {
@@ -96,6 +102,9 @@ import {
   paymentReceipts,
   payments,
   quoteLineItems,
+  quoteCommercialMilestones,
+  quotePhases,
+  quoteScenarioAuditEvents,
   quotes,
   securityAuditLogs,
 } from '@titan/db';
@@ -119,6 +128,21 @@ function invoiceMeta(row: { customerPoNumber?: string | null; internalNotes?: st
   return {
     customerPoNumber: row?.customerPoNumber ?? null,
     internalNotes: row?.internalNotes ?? null,
+  };
+}
+
+/** Row 95 additive scenario columns — safe access under TS2589 baseline. */
+type QuoteScenarioColumns = {
+  scenario?: string | null;
+  scenarioMetadata?: Record<string, unknown> | null;
+  variationParentQuoteId?: string | null;
+};
+
+function quoteScenarioCols(row: QuoteScenarioColumns | null | undefined): QuoteScenarioColumns {
+  return {
+    scenario: row?.scenario ?? null,
+    scenarioMetadata: (row?.scenarioMetadata as Record<string, unknown> | null) ?? {},
+    variationParentQuoteId: row?.variationParentQuoteId ?? null,
   };
 }
 
@@ -299,6 +323,34 @@ export class FinanceService {
     if (!computed.validation.ok) {
       throw new FinanceError(computed.validation.code, computed.validation.message);
     }
+    const scenarioInput = (sanitized as CreateQuoteRequest).scenario ?? 'STANDARD';
+    const scenarioMetadata = normalizeQuoteScenarioMetadata(
+      ((sanitized as CreateQuoteRequest).scenarioMetadata ?? {}) as QuoteScenarioMetadata,
+    );
+    const scenarioValidation = validateQuoteScenario({
+      scenario: scenarioInput,
+      metadata: scenarioMetadata,
+      quoteTotalCents: computed.totalCents,
+      pricingPresentationMode: pricingConfig.pricingPresentationMode,
+      pricebookAutomationEnabled: false,
+      inferredFromDescription: false,
+    });
+    if (!scenarioValidation.ok) {
+      throw new FinanceError(scenarioValidation.code, scenarioValidation.message);
+    }
+    const resolvedScenario = resolveQuoteScenario({
+      scenario: scenarioInput,
+      metadata: scenarioMetadata,
+    });
+    const variationParentQuoteId =
+      resolvedScenario.scenario === 'VARIATION'
+        ? scenarioMetadata.parentQuoteId ??
+          (sanitized as CreateQuoteRequest).variationParentQuoteId ??
+          null
+        : null;
+    if (variationParentQuoteId) {
+      await this.ensureVariationParent(companyId, variationParentQuoteId);
+    }
     this.assertFloor(actor, computed.profit.belowFloor, sanitized.belowFloorOverride, sanitized.belowFloorReason, settings.allowBelowFloorWithOverride);
     const [created] = await this.db.insert(quotes).values({
       companyId, customerId: sanitized.customerId, jobId: sanitized.jobId ?? null, propertyId: sanitized.propertyId ?? null,
@@ -319,6 +371,9 @@ export class FinanceService {
       labourIncluded: pricingConfig.labourIncluded,
       calloutIncluded: pricingConfig.calloutIncluded,
       calloutAllocation: pricingConfig.calloutAllocation,
+      scenario: resolvedScenario.scenario,
+      scenarioMetadata: scenarioMetadata as Record<string, unknown>,
+      variationParentQuoteId,
       issuedAt: parseOptionalDate(sanitized.issuedAt),
       billingAddress: normalizeOptionalText(sanitized.billingAddress),
       siteAddress: normalizeOptionalText(sanitized.siteAddress),
@@ -326,7 +381,16 @@ export class FinanceService {
       clientActionId: normalizeOptionalText(sanitized.clientActionId),
     }).returning();
     if (!created) throw new FinanceError('CREATE_FAILED', 'Unable to create quote');
-    await this.insertQuoteLines(created.id, companyId, computed.lines);
+    await this.insertQuoteLines(created.id, companyId, computed.lines, scenarioMetadata);
+    await this.syncQuoteScenarioRelations(companyId, created.id, resolvedScenario.scenario, scenarioMetadata);
+    await this.recordQuoteScenarioAudit(actor, {
+      quoteId: created.id,
+      previousScenario: null,
+      nextScenario: resolvedScenario.scenario,
+      previousMetadata: null,
+      nextMetadata: scenarioMetadata,
+      clientActionId: sanitized.clientActionId ?? null,
+    });
     if (sanitized.documentContent) {
       await this.documentSections.saveSections(toSectionsActor(actor), {
         quoteId: created.id,
@@ -635,6 +699,7 @@ export class FinanceService {
       labourIncluded: pricing.labourIncluded,
       calloutIncluded: pricing.calloutIncluded,
       calloutAllocation: pricing.calloutAllocation,
+      ...this.mapQuoteScenarioDetail(row as QuoteScenarioColumns),
       internalPricing,
       addresses: toFinanceDocumentAddressSnapshot(row),
       depositPercent: row.depositPercent, optionTier: row.optionTier, discountCents: row.discountCents,
@@ -747,6 +812,38 @@ export class FinanceService {
       throw new FinanceError('VALIDATION_ERROR', 'Invalid quote date');
     }
     const addressUpdate = resolveDocumentAddressColumns(current, sanitized);
+    const currentScenarioCols = quoteScenarioCols(current as QuoteScenarioColumns);
+    const nextScenarioCode: QuoteScenarioCode =
+      sanitized.scenario !== undefined
+        ? resolveQuoteScenario({ scenario: sanitized.scenario }).scenario
+        : resolveQuoteScenario({ scenario: currentScenarioCols.scenario }).scenario;
+    const nextScenarioMetadata = normalizeQuoteScenarioMetadata(
+      sanitized.scenarioMetadata !== undefined
+        ? (sanitized.scenarioMetadata as QuoteScenarioMetadata)
+        : ((currentScenarioCols.scenarioMetadata ?? {}) as QuoteScenarioMetadata),
+    );
+    const nextTotalForScenario = computed?.totalCents ?? (current.totalCents ?? current.amountCents);
+    const scenarioValidation = validateQuoteScenario({
+      scenario: nextScenarioCode,
+      metadata: nextScenarioMetadata,
+      quoteTotalCents: nextTotalForScenario,
+      pricingPresentationMode: nextPricing.pricingPresentationMode,
+      pricebookAutomationEnabled: false,
+      inferredFromDescription: false,
+    });
+    if (!scenarioValidation.ok) {
+      throw new FinanceError(scenarioValidation.code, scenarioValidation.message);
+    }
+    const variationParentQuoteId =
+      nextScenarioCode === 'VARIATION'
+        ? nextScenarioMetadata.parentQuoteId ??
+          sanitized.variationParentQuoteId ??
+          currentScenarioCols.variationParentQuoteId ??
+          null
+        : null;
+    if (variationParentQuoteId) {
+      await this.ensureVariationParent(actor.companyId, variationParentQuoteId);
+    }
     await this.db.update(quotes).set({
       status: nextStatus, currency: sanitized.currency?.trim() || current.currency,
       jobId: sanitized.jobId === undefined ? current.jobId : sanitized.jobId ?? null,
@@ -766,12 +863,39 @@ export class FinanceService {
       labourIncluded: nextPricing.labourIncluded,
       calloutIncluded: nextPricing.calloutIncluded,
       calloutAllocation: nextPricing.calloutAllocation,
+      scenario: nextScenarioCode,
+      scenarioMetadata: nextScenarioMetadata as Record<string, unknown>,
+      variationParentQuoteId,
       ...(issuedAtUpdate !== undefined ? { issuedAt: issuedAtUpdate } : {}),
       ...(addressUpdate ?? {}),
       ...computed && { amountCents: computed.totalCents, subtotalCents: computed.subtotalCents, vatCents: computed.vatCents, totalCents: computed.totalCents, estimatedCostCents: computed.profit.estimatedCostCents, grossProfitCents: computed.profit.grossProfitCents, markupBps: computed.profit.markupBps, marginBps: computed.profit.marginBps, profitFloorCents: computed.profit.profitFloorCents, targetPriceCents: computed.profit.targetPriceCents },
       updatedAt: new Date(),
     }).where(eq(quotes.id, quoteId));
-    if (computed) { await this.db.delete(quoteLineItems).where(eq(quoteLineItems.quoteId, quoteId)); await this.insertQuoteLines(quoteId, actor.companyId, computed.lines); }
+    if (computed) {
+      await this.db.delete(quoteLineItems).where(eq(quoteLineItems.quoteId, quoteId));
+      await this.insertQuoteLines(quoteId, actor.companyId, computed.lines, nextScenarioMetadata);
+    }
+    await this.syncQuoteScenarioRelations(
+      actor.companyId,
+      quoteId,
+      nextScenarioCode,
+      nextScenarioMetadata,
+    );
+    const scenarioChanged =
+      (currentScenarioCols.scenario ?? null) !== nextScenarioCode ||
+      JSON.stringify(currentScenarioCols.scenarioMetadata ?? {}) !==
+        JSON.stringify(nextScenarioMetadata);
+    if (scenarioChanged) {
+      await this.recordQuoteScenarioAudit(actor, {
+        quoteId,
+        previousScenario: currentScenarioCols.scenario ?? null,
+        nextScenario: nextScenarioCode,
+        previousMetadata: (currentScenarioCols.scenarioMetadata ??
+          null) as QuoteScenarioMetadata | null,
+        nextMetadata: nextScenarioMetadata,
+        clientActionId: null,
+      });
+    }
     await this.auditQuotePricingChanges(actor, current as QuotePricingColumns & { id: string; quoteNumber: string; totalCents?: number | null; amountCents: number }, {
       pricing: nextPricing,
       previousPricing: currentPricing,
@@ -1140,6 +1264,11 @@ export class FinanceService {
     const replay = await this.db.query.quotes.findFirst({ where: and(eq(quotes.companyId, actor.companyId), eq(quotes.clientActionId, input.clientActionId)), with: { customer: true, job: true } });
     if (replay) return toQuoteSummary(replay);
     const sourcePricing = quotePricing(source as QuotePricingColumns);
+    const sourceScenario = quoteScenarioCols(source as QuoteScenarioColumns);
+    const resolvedSourceScenario = resolveQuoteScenario({
+      scenario: sourceScenario.scenario,
+      metadata: (sourceScenario.scenarioMetadata ?? {}) as QuoteScenarioMetadata,
+    });
     const next = await this.createQuote(actor, {
       customerId: source.customerId,
       jobId: source.jobId,
@@ -1166,6 +1295,9 @@ export class FinanceService {
       labourIncluded: sourcePricing.labourIncluded,
       calloutIncluded: sourcePricing.calloutIncluded,
       calloutAllocation: sourcePricing.calloutAllocation,
+      scenario: resolvedSourceScenario.scenario,
+      scenarioMetadata: resolvedSourceScenario.metadata,
+      variationParentQuoteId: sourceScenario.variationParentQuoteId,
     });
     await this.db.update(quotes).set({ rootQuoteId: source.rootQuoteId ?? source.id, supersedesQuoteId: source.id, versionNumber: source.versionNumber + 1 }).where(eq(quotes.id, next.id));
     await this.db.update(quotes).set({ status: 'superseded', updatedAt: new Date() }).where(eq(quotes.id, source.id));
@@ -2264,8 +2396,138 @@ export class FinanceService {
     }
   }
 
-  private async insertQuoteLines(quoteId: string, companyId: string, lines: ReturnType<typeof quoteAmounts>['lines']) {
+  private mapQuoteScenarioDetail(row: QuoteScenarioColumns): Pick<
+    QuoteDetail,
+    | 'scenario'
+    | 'scenarioIsLegacyFallback'
+    | 'scenarioLabel'
+    | 'scenarioMetadata'
+    | 'variationParentQuoteId'
+    | 'phases'
+    | 'milestones'
+  > {
+    const resolved = resolveQuoteScenario({
+      scenario: row.scenario,
+      metadata: (row.scenarioMetadata ?? {}) as QuoteScenarioMetadata,
+    });
+    return {
+      scenario: resolved.scenario,
+      scenarioIsLegacyFallback: resolved.isLegacyFallback,
+      scenarioLabel: resolved.label,
+      scenarioMetadata: resolved.metadata,
+      variationParentQuoteId: row.variationParentQuoteId ?? null,
+      phases: resolved.metadata.phases ?? null,
+      milestones: resolved.metadata.milestones ?? null,
+    };
+  }
+
+  private async ensureVariationParent(companyId: string, parentQuoteId: string): Promise<void> {
+    const parent = await this.db.query.quotes.findFirst({
+      where: and(eq(quotes.id, parentQuoteId), eq(quotes.companyId, companyId)),
+    });
+    if (!parent) {
+      throw new FinanceError('INCOMPATIBLE_RELATIONSHIP', 'VARIATION parent quote not found in tenant.');
+    }
+  }
+
+  private async recordQuoteScenarioAudit(
+    actor: FinanceActor,
+    input: {
+      quoteId: string;
+      previousScenario: string | null;
+      nextScenario: QuoteScenarioCode;
+      previousMetadata: QuoteScenarioMetadata | null;
+      nextMetadata: QuoteScenarioMetadata | null;
+      clientActionId?: string | null;
+    },
+  ): Promise<void> {
+    const event = buildScenarioChangeAudit({
+      quoteId: input.quoteId,
+      companyId: actor.companyId,
+      actorUserId: actor.userId ?? null,
+      previousScenario: input.previousScenario,
+      nextScenario: input.nextScenario,
+      previousMetadata: input.previousMetadata,
+      nextMetadata: input.nextMetadata,
+      clientActionId: input.clientActionId ?? null,
+    });
+    await this.db.insert(quoteScenarioAuditEvents).values({
+      companyId: event.companyId,
+      quoteId: event.quoteId,
+      actorUserId: event.actorUserId ?? null,
+      eventType: event.type,
+      previousScenario: event.previousScenario,
+      nextScenario: event.nextScenario,
+      previousMetadata: (event.previousMetadata ?? null) as Record<string, unknown> | null,
+      nextMetadata: (event.nextMetadata ?? null) as Record<string, unknown> | null,
+      clientActionId: event.clientActionId ?? null,
+    });
+    await this.db.insert(securityAuditLogs).values({
+      companyId: event.companyId,
+      category: 'security',
+      action: `quote.scenario.${event.type}`,
+      entityType: 'quote',
+      entityId: event.quoteId,
+      userId: actor.userId ?? null,
+      metadata: {
+        previousScenario: event.previousScenario,
+        nextScenario: event.nextScenario,
+        clientActionId: event.clientActionId,
+      },
+    });
+  }
+
+  private async syncQuoteScenarioRelations(
+    companyId: string,
+    quoteId: string,
+    scenario: QuoteScenarioCode,
+    metadata: QuoteScenarioMetadata,
+  ): Promise<void> {
+    await this.db.delete(quotePhases).where(eq(quotePhases.quoteId, quoteId));
+    await this.db
+      .delete(quoteCommercialMilestones)
+      .where(eq(quoteCommercialMilestones.quoteId, quoteId));
+
+    if (scenario === 'MULTI_PHASE_PROJECT' && metadata.phases?.length) {
+      await this.db.insert(quotePhases).values(
+        metadata.phases.map((phase, index) => ({
+          companyId,
+          quoteId,
+          phaseKey: phase.key,
+          label: phase.label,
+          sequence: phase.sequence ?? index,
+          status: phase.status ?? 'PLANNED',
+          totalCents: phase.totalCents ?? null,
+          notes: phase.notes ?? null,
+        })),
+      );
+    }
+
+    if (scenario === 'DEPOSIT_PROGRESS_FINAL' && metadata.milestones?.length) {
+      await this.db.insert(quoteCommercialMilestones).values(
+        metadata.milestones.map((milestone, index) => ({
+          companyId,
+          quoteId,
+          kind: milestone.kind,
+          label: milestone.label,
+          sequence: milestone.sequence ?? index,
+          percentBps: milestone.percentBps ?? null,
+          amountCents: milestone.amountCents ?? null,
+          notes: milestone.notes ?? null,
+          isPayment: false,
+        })),
+      );
+    }
+  }
+
+  private async insertQuoteLines(
+    quoteId: string,
+    companyId: string,
+    lines: ReturnType<typeof quoteAmounts>['lines'],
+    scenarioMetadata?: QuoteScenarioMetadata | null,
+  ) {
     if (!lines.length) return;
+    const linePhaseMap = scenarioMetadata?.linePhaseMap ?? {};
     await this.db.insert(quoteLineItems).values(lines.map((line, position) => ({
       companyId, quoteId, position, category: line.category ?? 'other', description: line.description.trim(),
       quantity: String(line.quantity), unitPriceCents: line.unitPriceCents, unitCostCents: line.unitCostCents ?? 0,
@@ -2275,6 +2537,10 @@ export class FinanceService {
       catalogueItemId: (line as { catalogueItemId?: string | null }).catalogueItemId ?? null,
       ygpCode: (line as { ygpCode?: string | null }).ygpCode ?? null,
       catalogueCategory: (line as { catalogueCategory?: string | null }).catalogueCategory ?? null,
+      phaseKey:
+        (line as { id?: string }).id && linePhaseMap[(line as { id?: string }).id!]
+          ? linePhaseMap[(line as { id?: string }).id!]
+          : (line as { phaseKey?: string | null }).phaseKey ?? null,
     })));
   }
 

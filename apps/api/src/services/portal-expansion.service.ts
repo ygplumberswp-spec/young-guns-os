@@ -23,6 +23,7 @@ import {
   isPortalSafeCommunicationVisibility,
   summarizePortalSafePaymentStatuses,
   toPortalSafeQuoteLine,
+  projectCustomerSafeScenarioContext,
 } from '@titan/shared';
 import type { PortalAccessPermission } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
@@ -898,6 +899,11 @@ export class PortalExpansionService {
       customerPoNumber: row.customerNotes?.match(/^PO[-_\s]?\d+/i)?.[0] ?? null,
       paymentTerms: row.paymentTerms ?? null,
       customerFacingNotes: row.notes ?? null,
+      customerFacingScenarioLabel: projectCustomerSafeScenarioContext({
+        scenario: (row as { scenario?: string | null }).scenario,
+        metadata: ((row as { scenarioMetadata?: Record<string, unknown> | null }).scenarioMetadata ??
+          {}) as import('@titan/shared').QuoteScenarioMetadata,
+      }).customerFacingLabel,
       depositPercent: row.depositPercent ?? null,
       lineItems: lines,
       canRequestClarification: ['sent', 'viewed'].includes(row.status),
