@@ -1450,6 +1450,13 @@
       "when": 1787755200000,
       "tag": "0211_pricebook_tier_formula",
       "breakpoints": true
+    },
+    {
+      "idx": 207,
+      "version": "7",
+      "when": 1787841600000,
+      "tag": "0212_quote_line_price_overrides",
+      "breakpoints": true
     }
   ]
 }

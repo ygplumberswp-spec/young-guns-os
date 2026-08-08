@@ -173,4 +173,13 @@ export type {
   NewCompanyPricebookRuleSet,
 } from './schema/pricebook-tier-formula.js';
 
+/** Explicit re-export — Row 93 quote one-off price overrides. */
+export {
+  quoteLinePriceOverrides,
+} from './schema/quote-price-override.js';
+export type {
+  QuoteLinePriceOverride,
+  NewQuoteLinePriceOverride,
+} from './schema/quote-price-override.js';
+
 export { drizzle } from 'drizzle-orm/postgres-js';

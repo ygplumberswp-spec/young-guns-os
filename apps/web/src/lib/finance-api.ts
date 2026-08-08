@@ -355,3 +355,80 @@ export async function fetchPricebookBulkImpact(accessToken: string): Promise<{
 }> {
   return request('/finance/pricebook-rules/bulk-impact', { accessToken });
 }
+
+export type QuotePriceOverrideDto = import('@titan/shared').QuotePriceOverrideRecord;
+export type QuotePriceOverridePreviewDto = import('@titan/shared').QuotePriceOverridePreview;
+
+export async function fetchQuotePriceOverrides(
+  accessToken: string,
+  quoteId: string,
+): Promise<{ overrides: QuotePriceOverrideDto[] }> {
+  return request(`/finance/quotes/${quoteId}/price-overrides`, { accessToken });
+}
+
+export async function previewQuotePriceOverride(
+  accessToken: string,
+  quoteId: string,
+  body: {
+    reason: string;
+    lines: Array<{
+      lineId: string;
+      targetSellPriceCents?: number | null;
+      targetMultiplier?: number | null;
+    }>;
+  },
+): Promise<{
+  preview: QuotePriceOverridePreviewDto;
+  warnings: string[];
+  row92Status: string | null;
+  row92AutomationEnabled: false;
+}> {
+  return request(`/finance/quotes/${quoteId}/price-overrides/preview`, {
+    accessToken,
+    method: 'POST',
+    body,
+  });
+}
+
+export async function proposeQuotePriceOverride(
+  accessToken: string,
+  quoteId: string,
+  body: {
+    reason: string;
+    lines: Array<{
+      lineId: string;
+      targetSellPriceCents?: number | null;
+      targetMultiplier?: number | null;
+    }>;
+  },
+): Promise<{
+  override: QuotePriceOverrideDto;
+  preview: QuotePriceOverridePreviewDto;
+  warnings: string[];
+}> {
+  return request(`/finance/quotes/${quoteId}/price-overrides`, {
+    accessToken,
+    method: 'POST',
+    body,
+  });
+}
+
+export async function approveQuotePriceOverride(
+  accessToken: string,
+  overrideId: string,
+): Promise<{ override: QuotePriceOverrideDto }> {
+  return request(`/finance/price-overrides/${overrideId}/approve`, {
+    accessToken,
+    method: 'POST',
+  });
+}
+
+export async function executeQuotePriceOverride(
+  accessToken: string,
+  overrideId: string,
+): Promise<{ override: QuotePriceOverrideDto; idempotent: boolean; quoteTotalCents: number }> {
+  return request(`/finance/price-overrides/${overrideId}/execute`, {
+    accessToken,
+    method: 'POST',
+  });
+}

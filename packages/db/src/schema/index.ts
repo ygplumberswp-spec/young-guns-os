@@ -35,6 +35,7 @@ export * from './payments';
 export * from './inventory-locations';
 export * from './inventory-items';
 export * from './pricebook-tier-formula';
+export * from './quote-price-override';
 export * from './inventory-stock-levels';
 export * from './inventory-stock-movements';
 export * from './vehicles';

@@ -1,0 +1,39 @@
+{
+  "row": 93,
+  "title": "One-off Owner-approved quote markup / price override",
+  "repoRoot": "/workspace",
+  "branch": "cursor/quote-one-off-price-override-663e",
+  "startingHead": "8609fce206f557d4fb8c0aed1183d1702024be62",
+  "endingHead": "PENDING",
+  "baseBranch": "cursor/pricebook-tier-markup-formula-663e",
+  "ancestry": "PR #67 through PR #77 (merge-base --is-ancestor OK)",
+  "prUrl": "PENDING",
+  "stagingOnly": true,
+  "productionDeploy": 0,
+  "productionMigration": 0,
+  "productionWrites": 0,
+  "xeroWrites": 0,
+  "customerSends": 0,
+  "realHistoricalQuoteChanges": 0,
+  "row94Started": false,
+  "row122Activated": false,
+  "row92AutomationEnabled": false,
+  "row92Status": "DRAFT",
+  "migration": "0212_quote_line_price_overrides.sql",
+  "canonicalOverrideModel": "quote_line_price_overrides + propose/preview/approve/execute",
+  "evidence": "diagnostic-output/quote-price-override-staging-proof.json",
+  "ownerUi": "QuoteDetailPage → QuotePriceOverridePanel",
+  "api": [
+    "GET /api/v1/finance/quotes/:quoteId/price-overrides",
+    "POST /api/v1/finance/quotes/:quoteId/price-overrides/preview",
+    "POST /api/v1/finance/quotes/:quoteId/price-overrides",
+    "POST /api/v1/finance/price-overrides/:id/approve",
+    "POST /api/v1/finance/price-overrides/:id/reject",
+    "POST /api/v1/finance/price-overrides/:id/execute"
+  ],
+  "knownGaps": [
+    "Full Client Portal E2E remains OPEN",
+    "Invoice conversion / PDF / Xero projection covered by shared projectors + existing FinanceService paths; no separate E2E send",
+    "TS2589 baseline debt on packages/db createDb remains"
+  ]
+}
